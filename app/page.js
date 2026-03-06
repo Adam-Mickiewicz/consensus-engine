@@ -65,7 +65,7 @@ const ROUND_LABELS = {
   4: "Propozycja konsensusu", 5: "Finalna synteza",
 };
 
-const LANG = "Always respond in the same language as the user's question.";
+const LANG = "Always respond in the same language as the user's question. If the question is in Polish, respond in Polish. If in English, respond in English.";
 
 const SYSTEM_PROMPTS = {
   openai: (detail, webSearch) => `You are a synthesizer AI expert in a multi-agent consensus system. Your role is to synthesize competing viewpoints into one practical, coherent, decision-ready recommendation. ${webSearch ? "You have access to web search — use it to find current, accurate information and cite your sources." : ""} ${detail} Use markdown formatting with **bold**, bullet points, and headers where appropriate. Respond ONLY in valid JSON with these exact fields: problem_definition (string), assumptions (string), proposed_solution (string), risks (string), tradeoffs (string), recommended_next_steps (string), confidence (number 0-100). ${LANG}`,
@@ -78,6 +78,8 @@ const REVISED_PROMPT = (myRole, reviews, detail) => `You are the ${myRole}. Base
 const CONSENSUS_PROMPT = (all, detail) => `You are the Consensus Builder. Here are revised proposals from three AI experts: ${all} Build the BEST POSSIBLE consensus. ${detail} Use rich markdown formatting. Respond ONLY in valid JSON: final_recommendation (string), rationale (string), agreed_points (array of strings), disputed_but_resolved_points (array of strings), unresolved_questions (array of strings), action_plan (array of strings), confidence_score (number 0-100). ${LANG}`;
 const SINGLE_FOLLOWUP_PROMPT = (role, consensus, question, detail) => `You are the ${role} in a multi-agent AI system. The previous consensus was: ${consensus} The user asks: ${question} ${detail} Respond from your unique perspective. Use markdown. Respond ONLY in valid JSON: final_recommendation (string), rationale (string), agreed_points (array of strings), disputed_but_resolved_points (array of strings), unresolved_questions (array of strings), action_plan (array of strings), confidence_score (number 0-100). ${LANG}`;
 const ALL_FOLLOWUP_PROMPT = (consensus, question, detail) => `You are the Consensus Builder. Previous consensus: ${consensus} New question from user: ${question} Re-engage all perspectives and build updated consensus. ${detail} Use rich markdown. Respond ONLY in valid JSON: final_recommendation (string), rationale (string), agreed_points (array of strings), disputed_but_resolved_points (array of strings), unresolved_questions (array of strings), action_plan (array of strings), confidence_score (number 0-100). ${LANG}`;
+
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 function toStr(val) {
   if (val === null || val === undefined) return "";
@@ -325,7 +327,7 @@ function FollowupSection({ t, onFollowup, followupLoading }) {
   const [localWebSearch, setLocalWebSearch] = useState(false);
   const accent = "#b8763a";
   return (
-    <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: 20, marginTop: 4 }}>
+    <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: 20, marginTop: 16 }}>
       <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 10 }}>POGŁĘB ANALIZĘ</div>
       <div style={{ marginBottom: 14 }}>
         <div style={{ color: t.textSub, fontSize: 11, marginBottom: 8 }}>Kto ma odpowiedzieć?</div>
@@ -544,12 +546,12 @@ export default function ConsensusEngine() {
   const logRef = useRef(null);
 
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [log]);
-  useEffect(() => { loadDebates().then(setDebates); }, []);
+  useEffect(() => { loadDebates().then(setDebates).catch(console.error); }, []);
 
   function addLog(msg) { setLog(l => [...l, { time: new Date().toLocaleTimeString(), msg }]); }
   const detail = DETAIL_LEVELS.find(d => d.id === detailLevel)?.instruction || "";
 
-  function loadDebate(d) {
+  function handleLoadDebate(d) {
     setProblem(d.problem);
     setMode(d.mode || "consensus");
     setDetailLevel(d.detail_level || "standard");
@@ -580,12 +582,15 @@ export default function ConsensusEngine() {
         addLog(`  ${PROVIDERS[id].emoji} gotowy (${res.confidence ?? "?"}%)`);
       }));
       setRounds(prev => ({ ...prev, 1: r1 }));
-      finalRounds = { ...finalRounds, 1: r1 };
+      finalRounds = { 1: r1 };
       if (mode === "compare") {
-        await saveDebate({ problem, mode, detailLevel, webSearch: useWebSearch, rounds: finalRounds, consensus: null, followupResponses: [] });
+        await saveDebate({ problem, mode, detailLevel, webSearch: useWebSearch, rounds: finalRounds, consensus: null, followupResponses: [] }).catch(console.error);
+        loadDebates().then(setDebates).catch(console.error);
         setPhase("done"); return;
       }
 
+      addLog("⏳ Pauza 15s...");
+      await sleep(15000);
       setCurrentRound(2);
       addLog("Runda 2: Cross-review...");
       const r2 = {};
@@ -597,6 +602,8 @@ export default function ConsensusEngine() {
       setRounds(prev => ({ ...prev, 2: r2 }));
       finalRounds = { ...finalRounds, 2: r2 };
 
+      addLog("⏳ Pauza 15s...");
+      await sleep(15000);
       setCurrentRound(3);
       addLog("Runda 3: Poprawione propozycje...");
       const r3 = {};
@@ -608,10 +615,13 @@ export default function ConsensusEngine() {
       setRounds(prev => ({ ...prev, 3: r3 }));
       finalRounds = { ...finalRounds, 3: r3 };
       if (mode === "debate") {
-        await saveDebate({ problem, mode, detailLevel, webSearch: useWebSearch, rounds: finalRounds, consensus: null, followupResponses: [] });
+        await saveDebate({ problem, mode, detailLevel, webSearch: useWebSearch, rounds: finalRounds, consensus: null, followupResponses: [] }).catch(console.error);
+        loadDebates().then(setDebates).catch(console.error);
         setPhase("done"); return;
       }
 
+      addLog("⏳ Pauza 15s...");
+      await sleep(15000);
       setCurrentRound(4);
       addLog("Runda 4→5: Budowanie konsensusu...");
       const allRevised = Object.entries(r3).map(([k, v]) => `${PROVIDERS[k].name}: ${summarize(v)}`).join("\n\n");
@@ -620,8 +630,8 @@ export default function ConsensusEngine() {
       finalConsensus = fin;
       setCurrentRound(5);
       addLog("✅ Konsensus gotowy!");
-      await saveDebate({ problem, mode, detailLevel, webSearch: useWebSearch, rounds: finalRounds, consensus: finalConsensus, followupResponses: [] });
-      loadDebates().then(setDebates);
+      await saveDebate({ problem, mode, detailLevel, webSearch: useWebSearch, rounds: finalRounds, consensus: finalConsensus, followupResponses: [] }).catch(console.error);
+      loadDebates().then(setDebates).catch(console.error);
     } catch (e) {
       addLog("❌ Błąd: " + e.message);
     }
@@ -641,9 +651,8 @@ export default function ConsensusEngine() {
         const p = PROVIDERS[target];
         data = await callAPI(target, SYSTEM_PROMPTS[target](detail, webSearch), SINGLE_FOLLOWUP_PROMPT(p.role, consensusSummary, question, detail), null, webSearch);
       }
-      addLog(`✅ Odpowiedź gotowa!`);
-      const newFollowups = [...followupResponses, { question, target, webSearch, data }];
-      setFollowupResponses(newFollowups);
+      addLog("✅ Odpowiedź gotowa!");
+      setFollowupResponses(prev => [...prev, { question, target, webSearch, data }]);
     } catch (e) {
       addLog("❌ Błąd: " + e.message);
     }
@@ -662,10 +671,10 @@ export default function ConsensusEngine() {
 
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2 }}>HISTORIA</div>
+            <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2 }}>HISTORIA ({debates.length})</div>
             <button onClick={() => setShowHistory(h => !h)} style={{ background: "none", border: "none", cursor: "pointer", color: t.textSub, fontSize: 11, fontFamily: "inherit" }}>{showHistory ? "▴ ukryj" : "▾ pokaż"}</button>
           </div>
-          {showHistory && <HistoryPanel debates={debates} onLoad={loadDebate} t={t} accent={accent} />}
+          {showHistory && <HistoryPanel debates={debates} onLoad={handleLoadDebate} t={t} accent={accent} />}
         </div>
 
         <div style={{ marginBottom: 24 }}>
@@ -756,7 +765,7 @@ export default function ConsensusEngine() {
           {log.map((l, i) => (
             <div key={i} style={{ marginBottom: 6, lineHeight: 1.55 }}>
               <span style={{ color: t.logTime }}>{l.time} </span>
-              <span style={{ color: l.msg.startsWith("✅") ? "#0d9e6e" : l.msg.startsWith("❌") ? "#c0392b" : l.msg.startsWith("❓") ? accent : l.msg.startsWith("  ") ? t.logText : t.textSub }}>{l.msg}</span>
+              <span style={{ color: l.msg.startsWith("✅") ? "#0d9e6e" : l.msg.startsWith("❌") ? "#c0392b" : l.msg.startsWith("❓") ? accent : l.msg.startsWith("⏳") ? "#2563eb" : l.msg.startsWith("  ") ? t.logText : t.textSub }}>{l.msg}</span>
             </div>
           ))}
           {(phase === "running" || followupLoading) && <div style={{ color: accent, animation: "blink 1s infinite" }}>▋</div>}
@@ -785,3 +794,5 @@ export default function ConsensusEngine() {
     </div>
   );
 }
+```
+
