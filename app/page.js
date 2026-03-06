@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
+import { saveDebate, loadDebates } from "../lib/supabase";
 
 const THEMES = {
   light: {
@@ -373,19 +374,16 @@ function ConsensusView({ data, t, onFollowup, followupLoading, followupResponses
           )}
         </div>
       </div>
-
       <div style={{ marginBottom: 18 }}>
         <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 6 }}>FINALNA REKOMENDACJA</div>
         <MD content={toStr(data.final_recommendation)} t={t} />
       </div>
-
       {data.rationale && (
         <div style={{ marginBottom: 18 }}>
           <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 6 }}>UZASADNIENIE</div>
           <MD content={toStr(data.rationale)} t={t} />
         </div>
       )}
-
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 18 }}>
         {agreedPoints.length > 0 && (
           <div style={{ background: "rgba(13,158,110,0.07)", borderRadius: 10, padding: 14, border: "1px solid rgba(13,158,110,0.16)" }}>
@@ -400,14 +398,12 @@ function ConsensusView({ data, t, onFollowup, followupLoading, followupResponses
           </div>
         )}
       </div>
-
       {unresolved.length > 0 && (
         <div style={{ marginBottom: 18, padding: "12px 14px", background: "rgba(200,60,30,0.05)", borderRadius: 10, border: "1px solid rgba(200,60,30,0.12)" }}>
           <div style={{ color: "#b83020", fontWeight: 700, marginBottom: 8, fontSize: 12 }}>❓ Nierozwiązane pytania</div>
           {unresolved.map((q, i) => <div key={i} style={{ color: t.textSub, fontSize: 11, marginBottom: 4 }}>• {toStr(q)}</div>)}
         </div>
       )}
-
       {actionPlan.length > 0 && (
         <div style={{ marginBottom: 18 }}>
           <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 10 }}>PLAN DZIAŁAŃ</div>
@@ -419,10 +415,8 @@ function ConsensusView({ data, t, onFollowup, followupLoading, followupResponses
           ))}
         </div>
       )}
-
       <Citations citations={citations} t={t} />
       <ImageGenerator problem={problem} consensus={toStr(data.final_recommendation)} t={t} />
-
       {followupResponses.length > 0 && (
         <div style={{ marginTop: 20 }}>
           {followupResponses.map((fr, i) => (
@@ -438,7 +432,6 @@ function ConsensusView({ data, t, onFollowup, followupLoading, followupResponses
           ))}
         </div>
       )}
-
       <FollowupSection t={t} onFollowup={onFollowup} followupLoading={followupLoading} />
     </div>
   );
@@ -509,6 +502,26 @@ function ContextField({ value, onChange, t, accent }) {
   );
 }
 
+function HistoryPanel({ debates, onLoad, t, accent }) {
+  if (debates.length === 0) return (
+    <div style={{ color: t.textMuted, fontSize: 11, textAlign: "center", padding: "20px 0" }}>Brak historii debat</div>
+  );
+  return (
+    <div>
+      {debates.map((d) => (
+        <div key={d.id} onClick={() => onLoad(d)} style={{ padding: "10px 12px", borderRadius: 8, border: `1px solid ${t.border}`, marginBottom: 6, cursor: "pointer", background: t.modeBtnBg }} onMouseEnter={e => e.currentTarget.style.borderColor = accent} onMouseLeave={e => e.currentTarget.style.borderColor = t.border}>
+          <div style={{ color: t.text, fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 3 }}>{d.problem.slice(0, 60)}{d.problem.length > 60 ? "…" : ""}</div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <span style={{ color: t.textMuted, fontSize: 10 }}>{new Date(d.created_at).toLocaleDateString("pl-PL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+            <span style={{ background: `${accent}20`, color: accent, fontSize: 9, fontWeight: 700, borderRadius: 4, padding: "1px 5px" }}>{d.mode}</span>
+            {d.web_search && <span style={{ color: "#2563eb", fontSize: 10 }}>🌐</span>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function ConsensusEngine() {
   const [dark, setDark] = useState(false);
   const t = THEMES[dark ? "dark" : "light"];
@@ -526,17 +539,36 @@ export default function ConsensusEngine() {
   const [followupLoading, setFollowupLoading] = useState(false);
   const [followupResponses, setFollowupResponses] = useState([]);
   const [log, setLog] = useState([]);
+  const [debates, setDebates] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
   const logRef = useRef(null);
 
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [log]);
+  useEffect(() => { loadDebates().then(setDebates); }, []);
+
   function addLog(msg) { setLog(l => [...l, { time: new Date().toLocaleTimeString(), msg }]); }
   const detail = DETAIL_LEVELS.find(d => d.id === detailLevel)?.instruction || "";
+
+  function loadDebate(d) {
+    setProblem(d.problem);
+    setMode(d.mode || "consensus");
+    setDetailLevel(d.detail_level || "standard");
+    setUseWebSearch(d.web_search || false);
+    setRounds(d.rounds || {});
+    setConsensus(d.consensus || null);
+    setFollowupResponses(d.followup_responses || []);
+    setPhase("done");
+    setShowHistory(false);
+    setLog([{ time: new Date().toLocaleTimeString(), msg: "📂 Załadowano z historii" }]);
+  }
 
   async function run() {
     if (!problem.trim()) return;
     setPhase("running"); setRounds({}); setConsensus(null); setLog([]); setCurrentRound(0); setFollowupResponses([]);
     const fullPrompt = buildPrompt(problem, contextText, attachments);
     const pdfAtt = attachments.find(a => a.content?.isPDF);
+    let finalRounds = {};
+    let finalConsensus = null;
     try {
       setCurrentRound(1);
       addLog(`Runda 1: Niezależna analiza${useWebSearch ? " 🌐" : ""}...`);
@@ -545,11 +577,14 @@ export default function ConsensusEngine() {
         addLog(`  ${PROVIDERS[id].emoji} ${PROVIDERS[id].name} analizuje...`);
         const res = await callAPI(id, SYSTEM_PROMPTS[id](detail, useWebSearch), fullPrompt, pdfAtt?.content?.base64, useWebSearch);
         r1[id] = res;
-        const src = res._citations?.length || 0;
-        addLog(`  ${PROVIDERS[id].emoji} gotowy (${res.confidence ?? "?"}%)${src ? ` · ${src} źródeł` : ""}`);
+        addLog(`  ${PROVIDERS[id].emoji} gotowy (${res.confidence ?? "?"}%)`);
       }));
       setRounds(prev => ({ ...prev, 1: r1 }));
-      if (mode === "compare") { setPhase("done"); return; }
+      finalRounds = { ...finalRounds, 1: r1 };
+      if (mode === "compare") {
+        await saveDebate({ problem, mode, detailLevel, webSearch: useWebSearch, rounds: finalRounds, consensus: null, followupResponses: [] });
+        setPhase("done"); return;
+      }
 
       setCurrentRound(2);
       addLog("Runda 2: Cross-review...");
@@ -560,6 +595,7 @@ export default function ConsensusEngine() {
         addLog(`  ${PROVIDERS[id].emoji} cross-review gotowy`);
       }));
       setRounds(prev => ({ ...prev, 2: r2 }));
+      finalRounds = { ...finalRounds, 2: r2 };
 
       setCurrentRound(3);
       addLog("Runda 3: Poprawione propozycje...");
@@ -570,15 +606,22 @@ export default function ConsensusEngine() {
         addLog(`  ${PROVIDERS[id].emoji} propozycja poprawiona`);
       }));
       setRounds(prev => ({ ...prev, 3: r3 }));
-      if (mode === "debate") { setPhase("done"); return; }
+      finalRounds = { ...finalRounds, 3: r3 };
+      if (mode === "debate") {
+        await saveDebate({ problem, mode, detailLevel, webSearch: useWebSearch, rounds: finalRounds, consensus: null, followupResponses: [] });
+        setPhase("done"); return;
+      }
 
       setCurrentRound(4);
       addLog("Runda 4→5: Budowanie konsensusu...");
       const allRevised = Object.entries(r3).map(([k, v]) => `${PROVIDERS[k].name}: ${summarize(v)}`).join("\n\n");
       const fin = await callAPI("claude", "You are the Consensus Builder.", CONSENSUS_PROMPT(allRevised, detail), null, false);
       setConsensus(fin);
+      finalConsensus = fin;
       setCurrentRound(5);
       addLog("✅ Konsensus gotowy!");
+      await saveDebate({ problem, mode, detailLevel, webSearch: useWebSearch, rounds: finalRounds, consensus: finalConsensus, followupResponses: [] });
+      loadDebates().then(setDebates);
     } catch (e) {
       addLog("❌ Błąd: " + e.message);
     }
@@ -598,8 +641,9 @@ export default function ConsensusEngine() {
         const p = PROVIDERS[target];
         data = await callAPI(target, SYSTEM_PROMPTS[target](detail, webSearch), SINGLE_FOLLOWUP_PROMPT(p.role, consensusSummary, question, detail), null, webSearch);
       }
-      addLog(`✅ Odpowiedź gotowa!${data._citations?.length ? ` · ${data._citations.length} źródeł` : ""}`);
-      setFollowupResponses(prev => [...prev, { question, target, webSearch, data }]);
+      addLog(`✅ Odpowiedź gotowa!`);
+      const newFollowups = [...followupResponses, { question, target, webSearch, data }];
+      setFollowupResponses(newFollowups);
     } catch (e) {
       addLog("❌ Błąd: " + e.message);
     }
@@ -615,6 +659,15 @@ export default function ConsensusEngine() {
           <div><div style={{ color: accent, fontWeight: 800, fontSize: 15, letterSpacing: 2 }}>CONSENSUS</div><div style={{ color: t.textMuted, fontSize: 11, letterSpacing: 1 }}>ENGINE v1.0</div></div>
           <ThemeToggle dark={dark} onToggle={() => setDark(d => !d)} t={t} />
         </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2 }}>HISTORIA</div>
+            <button onClick={() => setShowHistory(h => !h)} style={{ background: "none", border: "none", cursor: "pointer", color: t.textSub, fontSize: 11, fontFamily: "inherit" }}>{showHistory ? "▴ ukryj" : "▾ pokaż"}</button>
+          </div>
+          {showHistory && <HistoryPanel debates={debates} onLoad={loadDebate} t={t} accent={accent} />}
+        </div>
+
         <div style={{ marginBottom: 24 }}>
           <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 10 }}>TRYB PRACY</div>
           {MODES.map(m => (
