@@ -576,6 +576,7 @@ export default function ConsensusEngine() {
   const [currentDebateId, setCurrentDebateId] = useState(null);
   const [aiModel, setAiModel] = useState("claude-haiku-4-5-20251001");
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [activeProviders, setActiveProviders] = useState(["openai", "claude", "gemini"]);
   const logRef = useRef(null);
 
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [log]);
@@ -808,15 +809,52 @@ export default function ConsensusEngine() {
 
             {showDetailModal && (
               <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div style={{ background: t.cardBg, borderRadius: 16, padding: 32, width: 400, border: `1px solid ${t.border}`, boxShadow: "0 8px 32px rgba(0,0,0,0.2)" }}>
-                  <div style={{ color: t.text, fontWeight: 800, fontSize: 16, marginBottom: 8 }}>Jak szczegółowa ma być debata?</div>
-                  <div style={{ color: t.textMuted, fontSize: 12, marginBottom: 24 }}>Wybierz poziom szczegółowości odpowiedzi modeli</div>
-                  {DETAIL_LEVELS.map(d => (
-                    <button key={d.id} onClick={() => { setDetailLevel(d.id); setShowDetailModal(false); run(); }} style={{ display: "block", width: "100%", textAlign: "left", background: detailLevel === d.id ? accent + "12" : t.modeBtnBg, border: "1px solid " + (detailLevel === d.id ? accent : t.border), borderRadius: 10, padding: "12px 16px", marginBottom: 8, cursor: "pointer", fontFamily: "inherit" }}>
-                      <div style={{ color: detailLevel === d.id ? accent : t.text, fontWeight: 700, fontSize: 13 }}>{d.label}</div>
-                      <div style={{ color: t.textMuted, fontSize: 11, marginTop: 2 }}>{d.id === "short" ? "Szybka · max 150 słów · najtańsza" : d.id === "standard" ? "Zbalansowana · ok. 300 słów" : "Wyczerpująca · 500+ słów · najdroższa"}</div>
-                    </button>
-                  ))}
+                <div style={{ background: t.cardBg, borderRadius: 16, padding: 32, width: 480, border: "1px solid " + t.border, boxShadow: "0 8px 32px rgba(0,0,0,0.2)", maxHeight: "90vh", overflowY: "auto" }}>
+                  <div style={{ color: t.text, fontWeight: 800, fontSize: 16, marginBottom: 4 }}>Ustaw debatę</div>
+                  <div style={{ color: t.textMuted, fontSize: 12, marginBottom: 24 }}>Skonfiguruj przed startem</div>
+
+                  <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 8 }}>1. SZCZEGÓŁOWOŚĆ</div>
+                  <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
+                    {DETAIL_LEVELS.map(d => (
+                      <button key={d.id} onClick={() => setDetailLevel(d.id)} style={{ flex: 1, padding: "10px 6px", borderRadius: 10, border: "1px solid " + (detailLevel === d.id ? accent : t.border), background: detailLevel === d.id ? accent + "12" : t.modeBtnBg, cursor: "pointer", fontFamily: "inherit" }}>
+                        <div style={{ color: detailLevel === d.id ? accent : t.text, fontWeight: 700, fontSize: 12, textAlign: "center" }}>{d.label}</div>
+                        <div style={{ color: t.textMuted, fontSize: 9, textAlign: "center", marginTop: 3 }}>{d.id === "short" ? "~150 słów" : d.id === "standard" ? "~300 słów" : "500+ słów"}</div>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 8 }}>2. WEB SEARCH</div>
+                  <div onClick={() => setUseWebSearch(w => !w)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 10, border: "1px solid " + (useWebSearch ? "#2563eb55" : t.border), background: useWebSearch ? "rgba(37,99,235,0.06)" : t.modeBtnBg, cursor: "pointer", userSelect: "none", marginBottom: 20 }}>
+                    <div style={{ width: 36, height: 20, borderRadius: 10, background: useWebSearch ? "#2563eb" : t.pendingDot, position: "relative", flexShrink: 0 }}>
+                      <div style={{ position: "absolute", top: 2, left: useWebSearch ? 18 : 2, width: 16, height: 16, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+                    </div>
+                    <div>
+                      <div style={{ color: useWebSearch ? "#2563eb" : t.textSub, fontSize: 12, fontWeight: 700 }}>Wyszukiwanie w internecie</div>
+                      <div style={{ color: t.textMuted, fontSize: 10 }}>{useWebSearch ? "Modele przeszukują internet i cytują źródła" : "Tylko wiedza treningowa modeli"}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 8 }}>3. KTÓRE AI BIORĄ UDZIAŁ</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 6 }}>
+                    {Object.entries(PROVIDERS).map(([id, p]) => {
+                      const active = activeProviders.includes(id);
+                      return (
+                        <button key={id} onClick={() => setActiveProviders(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])} style={{ padding: "12px 6px", borderRadius: 10, border: "1px solid " + (active ? p.color : t.border), background: active ? p.color + "12" : t.modeBtnBg, cursor: "pointer", fontFamily: "inherit", textAlign: "center" }}>
+                          <div style={{ fontSize: 18 }}>{p.emoji}</div>
+                          <div style={{ color: active ? p.color : t.textSub, fontSize: 11, fontWeight: 700, marginTop: 4 }}>{p.name}</div>
+                          <div style={{ color: t.textMuted, fontSize: 9, marginTop: 2 }}>{p.role}</div>
+                          <div style={{ marginTop: 6, width: 16, height: 16, borderRadius: "50%", border: "2px solid " + (active ? p.color : t.border), background: active ? p.color : "transparent", margin: "6px auto 0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            {active && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff" }} />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {activeProviders.length === 0 && <div style={{ color: "#b83020", fontSize: 11, marginBottom: 8 }}>Wybierz co najmniej 1 model</div>}
+
+                  <button onClick={() => { if (activeProviders.length > 0) { setShowDetailModal(false); run(); } }} disabled={activeProviders.length === 0} style={{ marginTop: 20, width: "100%", background: activeProviders.length > 0 ? accent : t.cardBorder, color: activeProviders.length > 0 ? "#fff" : t.textMuted, border: "none", borderRadius: 10, padding: "13px", fontSize: 13, fontWeight: 800, cursor: activeProviders.length > 0 ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
+                    Start debaty
+                  </button>
                   <button onClick={() => setShowDetailModal(false)} style={{ marginTop: 8, background: "none", border: "none", color: t.textMuted, cursor: "pointer", fontFamily: "inherit", fontSize: 12, width: "100%", textAlign: "center" }}>Anuluj</button>
                 </div>
               </div>
