@@ -23,7 +23,7 @@ export async function POST(request) {
     if (useWebSearch) {
       const response = await client.messages.create({
         model: "claude-sonnet-4-5",
-        max_tokens: 4000,
+        max_tokens: 2000,
         system: systemPrompt,
         messages: [{ role: "user", content }],
         tools: [{ type: "web_search_20250305", name: "web_search" }],
@@ -32,7 +32,7 @@ export async function POST(request) {
     } else {
       const response = await client.messages.create({
         model: "claude-sonnet-4-5",
-        max_tokens: 4000,
+        max_tokens: 2000,
         system: systemPrompt,
         messages: [{ role: "user", content }],
       });

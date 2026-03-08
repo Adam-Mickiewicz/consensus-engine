@@ -634,7 +634,7 @@ export default function ConsensusEngine() {
       }
 
       addLog("⏳ Pauza 30s...");
-      await sleep(30000);
+      await sleep(10000);
       setCurrentRound(2);
       addLog("Runda 2: Cross-review...");
       const r2 = {};
@@ -647,7 +647,7 @@ export default function ConsensusEngine() {
       finalRounds = { ...finalRounds, 2: r2 };
 
       addLog("⏳ Pauza 30s...");
-      await sleep(30000);
+      await sleep(10000);
       setCurrentRound(3);
       addLog("Runda 3: Poprawione propozycje...");
       const r3 = {};
@@ -666,7 +666,7 @@ export default function ConsensusEngine() {
       }
 
       addLog("⏳ Pauza 30s...");
-      await sleep(60000);
+      await sleep(10000);
       setCurrentRound(4);
       addLog("Runda 4→5: Budowanie konsensusu...");
       const allRevised = Object.entries(r3).map(([k, v]) => `${PROVIDERS[k].name}: ${summarize(v)}`).join("\n\n");
