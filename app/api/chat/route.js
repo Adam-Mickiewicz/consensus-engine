@@ -88,9 +88,23 @@ export async function POST(request) {
       return Response.json({ success: true, text: jsonText, citations: [] });
     } catch(e) {}
 
-    // Próba 2: urwany JSON - usun ostatnie niekompletne pole i zamknij
+    // Próba 2: urwany JSON - zamień newliny i napraw
     try {
-      let fixed = jsonText
+      // Zamień wszystkie niezescapowane newliny na \n
+      let fixed = "";
+      let inString = false;
+      let escaped = false;
+      for (let i = 0; i < jsonText.length; i++) {
+        const c = jsonText[i];
+        if (escaped) { fixed += c; escaped = false; continue; }
+        if (c === "\\") { escaped = true; fixed += c; continue; }
+        if (c === "\"") inString = !inString;
+        if (inString && c === "\n") { fixed += "\\n"; continue; }
+        if (inString && c === "\r") { fixed += "\\r"; continue; }
+        fixed += c;
+      }
+      // Usun urwane pole na końcu
+      fixed = fixed
         .replace(/,\s*"[^"]*"\s*:\s*"[^"]*$/, "")
         .replace(/,\s*"[^"]*"\s*:\s*$/, "")
         .replace(/,\s*$/, "")
