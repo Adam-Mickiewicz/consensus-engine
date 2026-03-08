@@ -601,7 +601,7 @@ export default function ConsensusEngine() {
   const [aiModel, setAiModel] = useState("claude-haiku-4-5-20251001");
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [activeProviders, setActiveProviders] = useState(["openai", "claude", "gemini"]);
-  const [selectedOpenaiModel, setSelectedOpenaiModel] = useState("gpt-5-mini");
+  const [selectedOpenaiModel, setSelectedOpenaiModel] = useState("gpt-4o-mini");
   const [selectedGeminiModel, setSelectedGeminiModel] = useState("gemini-2.5-flash");
   const logRef = useRef(null);
 
