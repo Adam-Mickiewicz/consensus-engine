@@ -853,7 +853,7 @@ export default function ConsensusEngine() {
         </div>
       </div>
 
-      <div style={{ padding: 36, overflowY: "auto", background: t.bgCenter }}>
+      <div style={{ padding: isMobile ? 16 : 36, overflowY: "auto", background: t.bgCenter, minHeight: isMobile ? "100vh" : "auto" }}>
         {isMobile && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, paddingBottom: 16, borderBottom: `1px solid ${t.border}` }}>
             <button onClick={() => setSidebarOpen(o => !o)} style={{ background: "none", border: `1px solid ${t.border}`, borderRadius: 8, padding: "8px 12px", cursor: "pointer", color: t.text, fontSize: 18, fontFamily: "inherit" }}>☰</button>
