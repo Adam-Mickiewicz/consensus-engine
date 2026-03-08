@@ -1,5 +1,6 @@
+"use client";
 import { useState, useEffect } from "react";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../../lib/supabase";
 
 export default function AuthPage() {
   const [mode, setMode] = useState("login"); // login | register | reset
