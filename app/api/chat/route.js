@@ -35,6 +35,7 @@ export async function POST(request) {
         })
       });
       const data = await res.json();
+      console.log("GEMINI RAW:", JSON.stringify(data).slice(0, 300));
       rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     // CLAUDE (default)
