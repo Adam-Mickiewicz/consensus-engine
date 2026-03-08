@@ -111,7 +111,10 @@ function toStr(val) {
   if (val === null || val === undefined) return "";
   if (Array.isArray(val)) return val.join("\n");
   if (typeof val === "object") return JSON.stringify(val);
-  return String(val);
+  return String(val)
+    .replace(/\\n/g, "\n")
+    .replace(/\\t/g, "\t")
+    .replace(/\\"/g, "\"");
 }
 
 async function callAPI(provider, systemPrompt, userMessage, pdfBase64 = null, useWebSearch = false) {
