@@ -683,6 +683,7 @@ export default function ConsensusEngine() {
   }
 
   async function run() {
+    if (!user) { window.location.href = "/auth"; return; }
     if (!problem.trim()) return;
     setPhase("running"); setRounds({}); setConsensus(null); setLog([]); setCurrentRound(0); setFollowupResponses([]); setCurrentDebateId(null);
     const fullPrompt = buildPrompt(problem, contextText, attachments);
