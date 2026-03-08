@@ -74,6 +74,11 @@ export async function POST(request) {
       .replace(/`{1,3}\s*/gi, "")
       .trim();
 
+    // Napraw niezescapowane newliny wewnątrz JSON stringów
+    clean = clean.replace(/"((?:[^"\\]|\\.)*)"/gs, (match) => {
+      return match.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
+    });
+
     const start = clean.indexOf("{");
     const end = clean.lastIndexOf("}");
 
