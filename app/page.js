@@ -575,6 +575,7 @@ export default function ConsensusEngine() {
   const [showHistory, setShowHistory] = useState(false);
   const [currentDebateId, setCurrentDebateId] = useState(null);
   const [aiModel, setAiModel] = useState("claude-haiku-4-5-20251001");
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const logRef = useRef(null);
 
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [log]);
@@ -723,6 +724,9 @@ export default function ConsensusEngine() {
         </div>
 
         <div style={{ marginBottom: 20 }}>
+          <button onClick={() => { setPhase("input"); setRounds({}); setConsensus(null); setLog([]); setCurrentRound(0); setFollowupResponses([]); setCurrentDebateId(null); }} style={{ display: "block", width: "100%", background: accent, color: "#fff", border: "none", borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, textAlign: "center" }}>
+            + Nowa debata
+          </button>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2 }}>HISTORIA ({debates.length})</div>
             <button onClick={() => setShowHistory(h => !h)} style={{ background: "none", border: "none", cursor: "pointer", color: t.textSub, fontSize: 11, fontFamily: "inherit" }}>{showHistory ? "▴ ukryj" : "▾ pokaż"}</button>
@@ -798,9 +802,25 @@ export default function ConsensusEngine() {
             <div style={{ marginBottom: 24 }}>
               <WebSearchToggle value={useWebSearch} onChange={setUseWebSearch} t={t} />
             </div>
-            <button onClick={run} disabled={!problem.trim()} style={{ background: problem.trim() ? accent : t.cardBorder, color: problem.trim() ? "#fff" : t.textMuted, border: "none", borderRadius: 10, padding: "13px 30px", fontSize: 13, fontWeight: 800, cursor: problem.trim() ? "pointer" : "not-allowed", fontFamily: "inherit", letterSpacing: 0.8, boxShadow: problem.trim() ? `0 4px 18px ${accent}38` : "none" }}>
+            <button onClick={() => problem.trim() && setShowDetailModal(true)} disabled={!problem.trim()} style={{ background: problem.trim() ? accent : t.cardBorder, color: problem.trim() ? "#fff" : t.textMuted, border: "none", borderRadius: 10, padding: "13px 30px", fontSize: 13, fontWeight: 800, cursor: problem.trim() ? "pointer" : "not-allowed", fontFamily: "inherit", letterSpacing: 0.8, boxShadow: problem.trim() ? `0 4px 18px ${accent}38` : "none" }}>
               ▶ URUCHOM DEBATĘ{useWebSearch ? " 🌐" : ""}
             </button>
+
+            {showDetailModal && (
+              <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ background: t.cardBg, borderRadius: 16, padding: 32, width: 400, border: `1px solid ${t.border}`, boxShadow: "0 8px 32px rgba(0,0,0,0.2)" }}>
+                  <div style={{ color: t.text, fontWeight: 800, fontSize: 16, marginBottom: 8 }}>Jak szczegółowa ma być debata?</div>
+                  <div style={{ color: t.textMuted, fontSize: 12, marginBottom: 24 }}>Wybierz poziom szczegółowości odpowiedzi modeli</div>
+                  {DETAIL_LEVELS.map(d => (
+                    <button key={d.id} onClick={() => { setDetailLevel(d.id); setShowDetailModal(false); run(); }} style={{ display: "block", width: "100%", textAlign: "left", background: detailLevel === d.id ? accent + "12" : t.modeBtnBg, border: "1px solid " + (detailLevel === d.id ? accent : t.border), borderRadius: 10, padding: "12px 16px", marginBottom: 8, cursor: "pointer", fontFamily: "inherit" }}>
+                      <div style={{ color: detailLevel === d.id ? accent : t.text, fontWeight: 700, fontSize: 13 }}>{d.label}</div>
+                      <div style={{ color: t.textMuted, fontSize: 11, marginTop: 2 }}>{d.id === "short" ? "Szybka · max 150 słów · najtańsza" : d.id === "standard" ? "Zbalansowana · ok. 300 słów" : "Wyczerpująca · 500+ słów · najdroższa"}</div>
+                    </button>
+                  ))}
+                  <button onClick={() => setShowDetailModal(false)} style={{ marginTop: 8, background: "none", border: "none", color: t.textMuted, cursor: "pointer", fontFamily: "inherit", fontSize: 12, width: "100%", textAlign: "center" }}>Anuluj</button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
