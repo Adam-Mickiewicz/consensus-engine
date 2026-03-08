@@ -48,7 +48,7 @@ export async function POST(request) {
     // Znajdź pierwszy { i ostatni }
     const start = clean.indexOf("{");
     const end = clean.lastIndexOf("}");
-
+console.log("RAW RESPONSE:", clean.slice(0, 500));
     if (start === -1 || end === -1) {
       return Response.json({ success: false, error: "Model did not return valid JSON" }, { status: 500 });
     }
