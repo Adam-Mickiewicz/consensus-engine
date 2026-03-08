@@ -872,7 +872,7 @@ export default function ConsensusEngine() {
                               {OPENAI_MODELS.map(m => (
                                 <button key={m.id} onClick={() => setSelectedOpenaiModel(m.id)} style={{ flex: 1, padding: "6px 4px", borderRadius: 8, border: "1px solid " + (selectedOpenaiModel === m.id ? p.color : t.border), background: selectedOpenaiModel === m.id ? p.color + "14" : t.modeBtnBg, cursor: "pointer", fontFamily: "inherit" }}>
                                   <div style={{ color: selectedOpenaiModel === m.id ? p.color : t.textSub, fontSize: 10, fontWeight: 700, textAlign: "center" }}>{m.label}</div>
-                                  <div style={{ color: t.textMuted, fontSize: 8, textAlign: "center", marginTop: 2 }}>{m.desc}</div>
+                                  <div style={{ color: t.textSub, fontSize: 10, textAlign: "center", marginTop: 2 }}>{m.desc}</div>
                                 </button>
                               ))}
                             </div>
@@ -882,7 +882,7 @@ export default function ConsensusEngine() {
                               {AI_MODELS.map(m => (
                                 <button key={m.id} onClick={() => setAiModel(m.id)} style={{ flex: 1, padding: "6px 4px", borderRadius: 8, border: "1px solid " + (aiModel === m.id ? p.color : t.border), background: aiModel === m.id ? p.color + "14" : t.modeBtnBg, cursor: "pointer", fontFamily: "inherit" }}>
                                   <div style={{ color: aiModel === m.id ? p.color : t.textSub, fontSize: 10, fontWeight: 700, textAlign: "center" }}>{m.label}</div>
-                                  <div style={{ color: t.textMuted, fontSize: 8, textAlign: "center", marginTop: 2 }}>{m.desc}</div>
+                                  <div style={{ color: t.textSub, fontSize: 10, textAlign: "center", marginTop: 2 }}>{m.desc}</div>
                                 </button>
                               ))}
                             </div>
@@ -892,7 +892,7 @@ export default function ConsensusEngine() {
                               {GEMINI_MODELS.map(m => (
                                 <button key={m.id} onClick={() => setSelectedGeminiModel(m.id)} style={{ flex: 1, padding: "6px 4px", borderRadius: 8, border: "1px solid " + (selectedGeminiModel === m.id ? p.color : t.border), background: selectedGeminiModel === m.id ? p.color + "14" : t.modeBtnBg, cursor: "pointer", fontFamily: "inherit" }}>
                                   <div style={{ color: selectedGeminiModel === m.id ? p.color : t.textSub, fontSize: 10, fontWeight: 700, textAlign: "center" }}>{m.label}</div>
-                                  <div style={{ color: t.textMuted, fontSize: 8, textAlign: "center", marginTop: 2 }}>{m.desc}</div>
+                                  <div style={{ color: t.textSub, fontSize: 10, textAlign: "center", marginTop: 2 }}>{m.desc}</div>
                                 </button>
                               ))}
                             </div>
