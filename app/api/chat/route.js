@@ -97,7 +97,7 @@ export async function POST(request) {
     return Response.json({ success: true, text: jsonText, citations: [] });
 
   } catch (error) {
-    console.error("API Error:", error);
+    console.error("API Error:", provider, error.message, error.stack?.slice(0,200));
     return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 }
