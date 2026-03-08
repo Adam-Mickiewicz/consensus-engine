@@ -6,7 +6,6 @@ export async function POST(request) {
     const { provider, systemPrompt, userMessage, pdfBase64, useWebSearch, aiModel, openaiModel, geminiModel } = JSON.parse(body);
 
     let rawText = "";
-    let citations = [];
 
     // OPENAI
     if (provider === "openai") {
@@ -18,10 +17,9 @@ export async function POST(request) {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.OPENAI_API_KEY}` },
-        body: JSON.stringify({ model, messages, ...(model.startsWith("gpt-5") ? { max_completion_tokens: 8000 } : { max_tokens: 1000 }) })
+        body: JSON.stringify({ model, messages, ...(model.startsWith("gpt-5") ? { max_completion_tokens: 8000 } : { max_tokens: 2000 }) })
       });
       const data = await res.json();
-      console.log("OPENAI FULL:", JSON.stringify(data).slice(0, 500));
       if (data.error) throw new Error("OpenAI: " + data.error.message);
       rawText = data.choices?.[0]?.message?.content || "";
       if (!rawText) throw new Error("OpenAI returned empty response");
@@ -41,7 +39,7 @@ export async function POST(request) {
       if (data.error) throw new Error("Gemini: " + data.error.message);
       rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    // CLAUDE
+    // CLAUDE - streaming
     } else {
       const claudeModel = aiModel || "claude-haiku-4-5-20251001";
       const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -56,28 +54,26 @@ export async function POST(request) {
         content = userMessage;
       }
 
-      if (useWebSearch) {
-        const response = await client.messages.create({
-          model: claudeModel, max_tokens: 1000, system: systemPrompt,
-          messages: [{ role: "user", content }],
-          tools: [{ type: "web_search_20250305", name: "web_search" }],
-        });
-        rawText = response.content.filter(b => b.type === "text").map(b => b.text || "").join("");
-      } else {
-        const response = await client.messages.create({
-          model: claudeModel, max_tokens: 1000, system: systemPrompt,
-          messages: [{ role: "user", content }],
-        });
-        rawText = response.content.filter(b => b.type === "text").map(b => b.text || "").join("");
+      const stream = await client.messages.stream({
+        model: claudeModel,
+        max_tokens: 4000,
+        system: systemPrompt,
+        messages: [{ role: "user", content }],
+      });
+
+      for await (const chunk of stream) {
+        if (chunk.type === "content_block_delta" && chunk.delta?.type === "text_delta") {
+          rawText += chunk.delta.text;
+        }
       }
     }
 
+    // Czyszczenie
     let clean = rawText
       .replace(/`{1,3}json\s*/gi, "")
       .replace(/`{1,3}\s*/gi, "")
       .trim();
 
-    console.log("PROVIDER:", provider, "RAW START:", clean.slice(0, 200), "RAW END:", clean.slice(-200));
     const start = clean.indexOf("{");
     const end = clean.lastIndexOf("}");
 
@@ -90,10 +86,10 @@ export async function POST(request) {
     try {
       JSON.parse(jsonText);
     } catch (e) {
-      return Response.json({ success: true, text: JSON.stringify({ proposed_solution: jsonText, confidence: 50 }), citations });
+      return Response.json({ success: true, text: JSON.stringify({ proposed_solution: jsonText, confidence: 50 }), citations: [] });
     }
 
-    return Response.json({ success: true, text: jsonText, citations });
+    return Response.json({ success: true, text: jsonText, citations: [] });
 
   } catch (error) {
     console.error("API Error:", error);
