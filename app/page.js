@@ -853,7 +853,17 @@ export default function ConsensusEngine() {
                   <div style={{ color: t.text, fontWeight: 800, fontSize: 16, marginBottom: 4 }}>Ustaw debatę</div>
                   <div style={{ color: t.textMuted, fontSize: 12, marginBottom: 24 }}>Skonfiguruj przed startem</div>
 
-                  <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 8 }}>1. SZCZEGÓŁOWOŚĆ</div>
+                  <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 8 }}>1. TRYB PRACY</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20 }}>
+                    {MODES.map(m => (
+                      <button key={m.id} onClick={() => setMode(m.id)} style={{ textAlign: "left", padding: "10px 14px", borderRadius: 10, border: "1px solid " + (mode === m.id ? accent : t.border), background: mode === m.id ? accent + "12" : t.modeBtnBg, cursor: "pointer", fontFamily: "inherit" }}>
+                        <div style={{ color: mode === m.id ? accent : t.text, fontWeight: 700, fontSize: 12 }}>{m.label}</div>
+                        <div style={{ color: t.textMuted, fontSize: 10, marginTop: 2 }}>{m.tooltip}</div>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 8 }}>2. SZCZEGÓŁOWOŚĆ</div>
                   <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
                     {DETAIL_LEVELS.map(d => (
                       <button key={d.id} onClick={() => setDetailLevel(d.id)} style={{ flex: 1, padding: "10px 6px", borderRadius: 10, border: "1px solid " + (detailLevel === d.id ? accent : t.border), background: detailLevel === d.id ? accent + "12" : t.modeBtnBg, cursor: "pointer", fontFamily: "inherit" }}>
