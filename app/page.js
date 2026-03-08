@@ -686,6 +686,7 @@ export default function ConsensusEngine() {
     if (!user) { window.location.href = "/auth"; return; }
     if (!problem.trim()) return;
     setPhase("running"); setRounds({}); setConsensus(null); setLog([]); setCurrentRound(0); setFollowupResponses([]); setCurrentDebateId(null);
+    setTimeout(() => { if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); }, 100);
     const fullPrompt = buildPrompt(problem, contextText, attachments);
     const pdfAtt = attachments.find(a => a.content?.isPDF);
     let finalRounds = {};
@@ -994,9 +995,9 @@ export default function ConsensusEngine() {
                 {useWebSearch && <span style={{ marginLeft: 8, color: "#2563eb", fontSize: 11 }}>🌐 Web Search</span>}
               </p>
             </div>
-            {rounds[1] && <div style={{ marginBottom: 28 }}><div style={{ color: accent, fontSize: 11, fontWeight: 700, letterSpacing: 1.2, marginBottom: 14 }}>RUNDA 1 — NIEZALEŻNA ANALIZA</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>{activeProviders.map(id => <ModelCard key={id} id={id} data={rounds[1][id]} t={t} />)}</div></div>}
-            {rounds[2] && <div style={{ marginBottom: 28 }}><div style={{ color: "#2563eb", fontSize: 11, fontWeight: 700, letterSpacing: 1.2, marginBottom: 14 }}>RUNDA 2 — CROSS-REVIEW</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>{activeProviders.map(id => <ModelCard key={id} id={id} data={rounds[2][id]} t={t} />)}</div></div>}
-            {rounds[3] && <div style={{ marginBottom: 28 }}><div style={{ color: "#0d9e6e", fontSize: 11, fontWeight: 700, letterSpacing: 1.2, marginBottom: 14 }}>RUNDA 3 — POPRAWIONE PROPOZYCJE</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>{activeProviders.map(id => <ModelCard key={id} id={id} data={rounds[3][id]} t={t} />)}</div></div>}
+            {rounds[1] && <div style={{ marginBottom: 28 }}><div style={{ color: accent, fontSize: 11, fontWeight: 700, letterSpacing: 1.2, marginBottom: 14 }}>RUNDA 1 — NIEZALEŻNA ANALIZA</div><div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 12 }}>{activeProviders.map(id => <ModelCard key={id} id={id} data={rounds[1][id]} t={t} />)}</div></div>}
+            {rounds[2] && <div style={{ marginBottom: 28 }}><div style={{ color: "#2563eb", fontSize: 11, fontWeight: 700, letterSpacing: 1.2, marginBottom: 14 }}>RUNDA 2 — CROSS-REVIEW</div><div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 12 }}>{activeProviders.map(id => <ModelCard key={id} id={id} data={rounds[2][id]} t={t} />)}</div></div>}
+            {rounds[3] && <div style={{ marginBottom: 28 }}><div style={{ color: "#0d9e6e", fontSize: 11, fontWeight: 700, letterSpacing: 1.2, marginBottom: 14 }}>RUNDA 3 — POPRAWIONE PROPOZYCJE</div><div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 12 }}>{activeProviders.map(id => <ModelCard key={id} id={id} data={rounds[3][id]} t={t} />)}</div></div>}
             {consensus && <ConsensusView data={consensus} t={t} onFollowup={handleFollowup} followupLoading={followupLoading} followupResponses={followupResponses} problem={problem} debateId={currentDebateId} />}
             {phase === "done" && (
               <button onClick={() => { setPhase("input"); setRounds({}); setConsensus(null); setLog([]); setCurrentRound(0); setFollowupResponses([]); setCurrentDebateId(null); }} style={{ marginTop: 24, background: "none", border: `1px solid ${t.border}`, color: t.textSub, borderRadius: 8, padding: "10px 20px", cursor: "pointer", fontFamily: "inherit", fontSize: 12 }}>← Nowa debata</button>
