@@ -627,7 +627,7 @@ export default function ConsensusEngine() {
       setCurrentRound(1);
       addLog(`Runda 1: Niezależna analiza${useWebSearch ? " 🌐" : ""}...`);
       const r1 = {};
-      await Promise.all(Object.keys(PROVIDERS).map(async (id) => {
+      await Promise.all(activeProviders.map(async (id) => {
         addLog(`  ${PROVIDERS[id].emoji} ${PROVIDERS[id].name} analizuje...`);
         const res = await callAPI(id, SYSTEM_PROMPTS[id](detail, useWebSearch), fullPrompt, pdfAtt?.content?.base64, useWebSearch);
         r1[id] = res;
@@ -647,7 +647,7 @@ export default function ConsensusEngine() {
       setCurrentRound(2);
       addLog("Runda 2: Cross-review...");
       const r2 = {};
-      await Promise.all(Object.keys(PROVIDERS).map(async (id) => {
+      await Promise.all(activeProviders.map(async (id) => {
         const others = Object.entries(r1).filter(([k]) => k !== id).map(([k, v]) => `${PROVIDERS[k].name}: ${summarize(v)}`).join("\n\n");
         r2[id] = await callAPI(id, `You are the ${PROVIDERS[id].role}.`, CROSS_REVIEW_PROMPT(PROVIDERS[id].role, others, detail), null, false);
         addLog(`  ${PROVIDERS[id].emoji} cross-review gotowy`);
@@ -660,7 +660,7 @@ export default function ConsensusEngine() {
       setCurrentRound(3);
       addLog("Runda 3: Poprawione propozycje...");
       const r3 = {};
-      await Promise.all(Object.keys(PROVIDERS).map(async (id) => {
+      await Promise.all(activeProviders.map(async (id) => {
         const reviews = Object.entries(r2).filter(([k]) => k !== id).map(([k, v]) => `${PROVIDERS[k].name}: ${summarize(v)}`).join("\n\n");
         r3[id] = await callAPI(id, `You are the ${PROVIDERS[id].role}.`, REVISED_PROMPT(PROVIDERS[id].role, reviews, detail), null, false);
         addLog(`  ${PROVIDERS[id].emoji} propozycja poprawiona`);
@@ -769,7 +769,7 @@ export default function ConsensusEngine() {
         </div>
         <div style={{ marginBottom: 24 }}>
           <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 10 }}>MODELE</div>
-          {Object.keys(PROVIDERS).map(id => (
+          {activeProviders.map(id => (
             <div key={id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: `1px solid ${t.border}` }}>
               <span>{PROVIDERS[id].emoji}</span>
               <div><div style={{ color: PROVIDERS[id].color, fontSize: 12, fontWeight: 700 }}>{PROVIDERS[id].name}</div><div style={{ color: t.textMuted, fontSize: 10 }}>{PROVIDERS[id].role}</div></div>
@@ -871,9 +871,9 @@ export default function ConsensusEngine() {
                 {useWebSearch && <span style={{ marginLeft: 8, color: "#2563eb", fontSize: 11 }}>🌐 Web Search</span>}
               </p>
             </div>
-            {rounds[1] && <div style={{ marginBottom: 28 }}><div style={{ color: accent, fontSize: 11, fontWeight: 700, letterSpacing: 1.2, marginBottom: 14 }}>RUNDA 1 — NIEZALEŻNA ANALIZA</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>{Object.keys(PROVIDERS).map(id => <ModelCard key={id} id={id} data={rounds[1][id]} t={t} />)}</div></div>}
-            {rounds[2] && <div style={{ marginBottom: 28 }}><div style={{ color: "#2563eb", fontSize: 11, fontWeight: 700, letterSpacing: 1.2, marginBottom: 14 }}>RUNDA 2 — CROSS-REVIEW</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>{Object.keys(PROVIDERS).map(id => <ModelCard key={id} id={id} data={rounds[2][id]} t={t} />)}</div></div>}
-            {rounds[3] && <div style={{ marginBottom: 28 }}><div style={{ color: "#0d9e6e", fontSize: 11, fontWeight: 700, letterSpacing: 1.2, marginBottom: 14 }}>RUNDA 3 — POPRAWIONE PROPOZYCJE</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>{Object.keys(PROVIDERS).map(id => <ModelCard key={id} id={id} data={rounds[3][id]} t={t} />)}</div></div>}
+            {rounds[1] && <div style={{ marginBottom: 28 }}><div style={{ color: accent, fontSize: 11, fontWeight: 700, letterSpacing: 1.2, marginBottom: 14 }}>RUNDA 1 — NIEZALEŻNA ANALIZA</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>{activeProviders.map(id => <ModelCard key={id} id={id} data={rounds[1][id]} t={t} />)}</div></div>}
+            {rounds[2] && <div style={{ marginBottom: 28 }}><div style={{ color: "#2563eb", fontSize: 11, fontWeight: 700, letterSpacing: 1.2, marginBottom: 14 }}>RUNDA 2 — CROSS-REVIEW</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>{activeProviders.map(id => <ModelCard key={id} id={id} data={rounds[2][id]} t={t} />)}</div></div>}
+            {rounds[3] && <div style={{ marginBottom: 28 }}><div style={{ color: "#0d9e6e", fontSize: 11, fontWeight: 700, letterSpacing: 1.2, marginBottom: 14 }}>RUNDA 3 — POPRAWIONE PROPOZYCJE</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>{activeProviders.map(id => <ModelCard key={id} id={id} data={rounds[3][id]} t={t} />)}</div></div>}
             {consensus && <ConsensusView data={consensus} t={t} onFollowup={handleFollowup} followupLoading={followupLoading} followupResponses={followupResponses} problem={problem} debateId={currentDebateId} />}
             {phase === "done" && (
               <button onClick={() => { setPhase("input"); setRounds({}); setConsensus(null); setLog([]); setCurrentRound(0); setFollowupResponses([]); setCurrentDebateId(null); }} style={{ marginTop: 24, background: "none", border: `1px solid ${t.border}`, color: t.textSub, borderRadius: 8, padding: "10px 20px", cursor: "pointer", fontFamily: "inherit", fontSize: 12 }}>← Nowa debata</button>
