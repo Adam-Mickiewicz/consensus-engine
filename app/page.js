@@ -59,6 +59,17 @@ const DETAIL_LEVELS = [
   { id: "detailed", label: "Szczegółowa", instruction: "Be very comprehensive and detailed. Minimum 500 words per field. Include examples, edge cases, and nuanced analysis." },
 ];
 
+const OPENAI_MODELS = [
+  { id: "gpt-5-mini", label: "GPT-5 mini", desc: "Nowy · tani · $0.03/debata" },
+  { id: "gpt-4o-mini", label: "GPT-4o mini", desc: "Sprawdzony · tani · $0.02/debata" },
+  { id: "gpt-5.4", label: "GPT-5.4", desc: "Najmocniejszy · $0.15/debata" },
+];
+
+const GEMINI_MODELS = [
+  { id: "gemini-2.5-flash", label: "2.5 Flash", desc: "Najlepszy balans · $0.02/debata" },
+  { id: "gemini-2.5-pro", label: "2.5 Pro", desc: "Najmocniejszy · $0.20/debata" },
+];
+
 const AI_MODELS = [
   { id: "claude-haiku-4-5-20251001", label: "Haiku", desc: "Szybki · ~$0.03/debata" },
   { id: "claude-sonnet-4-5", label: "Sonnet", desc: "Inteligentny · ~$0.50/debata" },
@@ -97,7 +108,7 @@ async function callAPI(provider, systemPrompt, userMessage, pdfBase64 = null, us
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ provider, systemPrompt, userMessage, pdfBase64, useWebSearch, aiModel: window.__aiModel || "claude-haiku-4-5-20251001" }),
+    body: JSON.stringify({ provider, systemPrompt, userMessage, pdfBase64, useWebSearch, aiModel: window.__aiModel || "claude-haiku-4-5-20251001", openaiModel: window.__openaiModel || "gpt-5-mini", geminiModel: window.__geminiModel || "gemini-2.5-flash" }),
   });
   const data = await res.json();
   if (!data.success) throw new Error(data.error);
@@ -577,10 +588,14 @@ export default function ConsensusEngine() {
   const [aiModel, setAiModel] = useState("claude-haiku-4-5-20251001");
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [activeProviders, setActiveProviders] = useState(["openai", "claude", "gemini"]);
+  const [selectedOpenaiModel, setSelectedOpenaiModel] = useState("gpt-5-mini");
+  const [selectedGeminiModel, setSelectedGeminiModel] = useState("gemini-2.5-flash");
   const logRef = useRef(null);
 
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [log]);
   useEffect(() => { if (typeof window !== "undefined") window.__aiModel = aiModel; }, [aiModel]);
+  useEffect(() => { if (typeof window !== "undefined") window.__openaiModel = selectedOpenaiModel; }, [selectedOpenaiModel]);
+  useEffect(() => { if (typeof window !== "undefined") window.__geminiModel = selectedGeminiModel; }, [selectedGeminiModel]);
 
   useEffect(() => {
     loadDebates().then(setDebates).catch(console.error);
@@ -835,18 +850,54 @@ export default function ConsensusEngine() {
                   </div>
 
                   <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 8 }}>3. KTÓRE AI BIORĄ UDZIAŁ</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 6 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 6 }}>
                     {Object.entries(PROVIDERS).map(([id, p]) => {
                       const active = activeProviders.includes(id);
                       return (
-                        <button key={id} onClick={() => setActiveProviders(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])} style={{ padding: "12px 6px", borderRadius: 10, border: "1px solid " + (active ? p.color : t.border), background: active ? p.color + "12" : t.modeBtnBg, cursor: "pointer", fontFamily: "inherit", textAlign: "center" }}>
-                          <div style={{ fontSize: 18 }}>{p.emoji}</div>
-                          <div style={{ color: active ? p.color : t.textSub, fontSize: 11, fontWeight: 700, marginTop: 4 }}>{p.name}</div>
-                          <div style={{ color: t.textMuted, fontSize: 9, marginTop: 2 }}>{p.role}</div>
-                          <div style={{ marginTop: 6, width: 16, height: 16, borderRadius: "50%", border: "2px solid " + (active ? p.color : t.border), background: active ? p.color : "transparent", margin: "6px auto 0", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            {active && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff" }} />}
+                        <div key={id} style={{ border: "1px solid " + (active ? p.color : t.border), borderRadius: 10, padding: "10px 12px", background: active ? p.color + "08" : t.modeBtnBg }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: active ? 10 : 0 }}>
+                            <button onClick={() => setActiveProviders(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, flex: 1, fontFamily: "inherit", padding: 0 }}>
+                              <div style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid " + (active ? p.color : t.border), background: active ? p.color : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                {active && <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#fff" }} />}
+                              </div>
+                              <span style={{ fontSize: 16 }}>{p.emoji}</span>
+                              <div style={{ textAlign: "left" }}>
+                                <div style={{ color: active ? p.color : t.textSub, fontSize: 12, fontWeight: 700 }}>{p.name}</div>
+                                <div style={{ color: t.textMuted, fontSize: 9 }}>{p.role}</div>
+                              </div>
+                            </button>
                           </div>
-                        </button>
+                          {active && id === "openai" && (
+                            <div style={{ display: "flex", gap: 6 }}>
+                              {OPENAI_MODELS.map(m => (
+                                <button key={m.id} onClick={() => setSelectedOpenaiModel(m.id)} style={{ flex: 1, padding: "6px 4px", borderRadius: 8, border: "1px solid " + (selectedOpenaiModel === m.id ? p.color : t.border), background: selectedOpenaiModel === m.id ? p.color + "14" : t.modeBtnBg, cursor: "pointer", fontFamily: "inherit" }}>
+                                  <div style={{ color: selectedOpenaiModel === m.id ? p.color : t.textSub, fontSize: 10, fontWeight: 700, textAlign: "center" }}>{m.label}</div>
+                                  <div style={{ color: t.textMuted, fontSize: 8, textAlign: "center", marginTop: 2 }}>{m.desc}</div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {active && id === "claude" && (
+                            <div style={{ display: "flex", gap: 6 }}>
+                              {AI_MODELS.map(m => (
+                                <button key={m.id} onClick={() => setAiModel(m.id)} style={{ flex: 1, padding: "6px 4px", borderRadius: 8, border: "1px solid " + (aiModel === m.id ? p.color : t.border), background: aiModel === m.id ? p.color + "14" : t.modeBtnBg, cursor: "pointer", fontFamily: "inherit" }}>
+                                  <div style={{ color: aiModel === m.id ? p.color : t.textSub, fontSize: 10, fontWeight: 700, textAlign: "center" }}>{m.label}</div>
+                                  <div style={{ color: t.textMuted, fontSize: 8, textAlign: "center", marginTop: 2 }}>{m.desc}</div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {active && id === "gemini" && (
+                            <div style={{ display: "flex", gap: 6 }}>
+                              {GEMINI_MODELS.map(m => (
+                                <button key={m.id} onClick={() => setSelectedGeminiModel(m.id)} style={{ flex: 1, padding: "6px 4px", borderRadius: 8, border: "1px solid " + (selectedGeminiModel === m.id ? p.color : t.border), background: selectedGeminiModel === m.id ? p.color + "14" : t.modeBtnBg, cursor: "pointer", fontFamily: "inherit" }}>
+                                  <div style={{ color: selectedGeminiModel === m.id ? p.color : t.textSub, fontSize: 10, fontWeight: 700, textAlign: "center" }}>{m.label}</div>
+                                  <div style={{ color: t.textMuted, fontSize: 8, textAlign: "center", marginTop: 2 }}>{m.desc}</div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
                   </div>

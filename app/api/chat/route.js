@@ -3,14 +3,14 @@ import Anthropic from "@anthropic-ai/sdk";
 export async function POST(request) {
   try {
     const body = await request.text();
-    const { provider, systemPrompt, userMessage, pdfBase64, useWebSearch, aiModel } = JSON.parse(body);
+    const { provider, systemPrompt, userMessage, pdfBase64, useWebSearch, aiModel, openaiModel, geminiModel } = JSON.parse(body);
 
     let rawText = "";
     let citations = [];
 
     // OPENAI
     if (provider === "openai") {
-      const model = "gpt-4o-mini";
+      const model = openaiModel || "gpt-4o-mini";
       const messages = [
         { role: "system", content: systemPrompt },
         { role: "user", content: userMessage }
@@ -21,11 +21,12 @@ export async function POST(request) {
         body: JSON.stringify({ model, messages, max_tokens: 2000 })
       });
       const data = await res.json();
+      if (data.error) throw new Error("OpenAI: " + data.error.message);
       rawText = data.choices?.[0]?.message?.content || "";
 
     // GEMINI
     } else if (provider === "gemini") {
-      const model = "gemini-2.5-flash";
+      const model = geminiModel || "gemini-2.5-flash";
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -35,10 +36,10 @@ export async function POST(request) {
         })
       });
       const data = await res.json();
-      console.log("GEMINI RAW:", JSON.stringify(data).slice(0, 300));
+      if (data.error) throw new Error("Gemini: " + data.error.message);
       rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    // CLAUDE (default)
+    // CLAUDE
     } else {
       const claudeModel = aiModel || "claude-haiku-4-5-20251001";
       const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -69,12 +70,9 @@ export async function POST(request) {
       }
     }
 
-    // Czyszczenie
     let clean = rawText
-      .replace(/\`\`\`json\s*/gi, "")
-      .replace(/\`\`\`\s*/gi, "")
-      .replace(/^[\s]*\`+/gm, "")
-      .replace(/\`+[\s]*$/gm, "")
+      .replace(/`{1,3}json\s*/gi, "")
+      .replace(/`{1,3}\s*/gi, "")
       .trim();
 
     const start = clean.indexOf("{");
