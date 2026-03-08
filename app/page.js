@@ -58,9 +58,9 @@ const FOLLOWUP_TARGETS = [
 ];
 
 const MODES = [
-  { id: "consensus", label: "Consensus", desc: "Pełna debata → jeden wynik" },
-  { id: "debate", label: "Debate", desc: "Wzajemna polemika modeli" },
-  { id: "compare", label: "Compare", desc: "3 odpowiedzi obok siebie" },
+  { id: "consensus", label: "Consensus", desc: "Pełna debata → jeden wynik", tooltip: "5 rund · modele analizują, krytykują i budują wspólną rekomendację · najdokładniejszy · ~3 min" },
+  { id: "debate", label: "Debate", desc: "Wzajemna polemika modeli", tooltip: "3 rundy · modele ścierają się ze sobą bez finalnego konsensusu · dobry gdy chcesz zobaczyć różne perspektywy · ~2 min" },
+  { id: "compare", label: "Compare", desc: "3 odpowiedzi obok siebie", tooltip: "1 runda · każdy model odpowiada niezależnie · szybki i tani · idealny do porównania podejść · ~30 sek" },
 ];
 
 const DETAIL_LEVELS = [
@@ -769,10 +769,12 @@ export default function ConsensusEngine() {
         <div style={{ marginBottom: 24 }}>
           <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 10 }}>TRYB PRACY</div>
           {MODES.map(m => (
-            <button key={m.id} onClick={() => setMode(m.id)} style={{ display: "block", width: "100%", textAlign: "left", background: mode === m.id ? `${accent}12` : t.modeBtnBg, border: `1px solid ${mode === m.id ? `${accent}38` : t.border}`, borderRadius: 8, padding: "8px 12px", marginBottom: 6, cursor: "pointer", fontFamily: "inherit" }}>
-              <div style={{ color: mode === m.id ? accent : t.textSub, fontSize: 12, fontWeight: 700 }}>{m.label}</div>
-              <div style={{ color: t.textMuted, fontSize: 10, marginTop: 1 }}>{m.desc}</div>
-            </button>
+            <Tooltip key={m.id} text={m.tooltip}>
+              <button onClick={() => setMode(m.id)} style={{ display: "block", width: "100%", textAlign: "left", background: mode === m.id ? `${accent}12` : t.modeBtnBg, border: `1px solid ${mode === m.id ? `${accent}38` : t.border}`, borderRadius: 8, padding: "8px 12px", marginBottom: 6, cursor: "pointer", fontFamily: "inherit" }}>
+                <div style={{ color: mode === m.id ? accent : t.textSub, fontSize: 12, fontWeight: 700 }}>{m.label} ℹ</div>
+                <div style={{ color: t.textMuted, fontSize: 10, marginTop: 1 }}>{m.desc}</div>
+              </button>
+            </Tooltip>
           ))}
         </div>
         <div style={{ marginBottom: 24 }}>
