@@ -789,16 +789,6 @@ export default function ConsensusEngine() {
         <div style={{ marginBottom: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div><div style={{ color: accent, fontWeight: 800, fontSize: 15, letterSpacing: 2 }}>CONSENSUS</div><div style={{ color: t.textMuted, fontSize: 11, letterSpacing: 1 }}>ENGINE v1.0</div></div>
           <ThemeToggle dark={dark} onToggle={() => setDark(d => !d)} t={t} />
-          <div style={{ marginTop: 8, borderTop: `1px solid ${t.border}`, paddingTop: 12 }}>
-            {user ? (
-              <div>
-                <div style={{ color: t.textMuted, fontSize: 10, marginBottom: 6 }}>👤 {user.email}</div>
-                <button onClick={async () => { const { supabase } = await import("../lib/supabase"); await supabase.auth.signOut(); setUser(null); }} style={{ width: "100%", background: "none", border: `1px solid ${t.border}`, borderRadius: 8, padding: "8px 12px", cursor: "pointer", color: t.textSub, fontSize: 11, fontFamily: "inherit" }}>Wyloguj</button>
-              </div>
-            ) : (
-              <button onClick={() => window.location.href = "/auth"} style={{ width: "100%", background: accent + "12", border: `1px solid ${accent}38`, borderRadius: 8, padding: "8px 12px", cursor: "pointer", color: accent, fontSize: 11, fontFamily: "inherit", fontWeight: 700 }}>Zaloguj się</button>
-            )}
-          </div>
         </div>
 
         <div style={{ marginBottom: 20 }}>
