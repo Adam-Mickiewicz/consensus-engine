@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
-import { saveDebate, loadDebates } from "../lib/supabase";
+import { saveDebate, updateDebate, loadDebates } from "../lib/supabase";
 
 function useWindowSize() {
   const [width, setWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
@@ -687,6 +687,9 @@ export default function ConsensusEngine() {
     if (!problem.trim()) return;
     setPhase("running"); setRounds({}); setConsensus(null); setLog([]); setCurrentRound(0); setFollowupResponses([]); setCurrentDebateId(null);
     setTimeout(() => { if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); }, 100);
+    const initialSave = await saveDebate({ problem, mode, detailLevel, webSearch: useWebSearch, rounds: {}, consensus: null, followupResponses: [] }).catch(console.error);
+    const debateId = initialSave?.id || null;
+    if (debateId) { setCurrentDebateId(debateId); loadDebates().then(setDebates).catch(console.error); }
     const fullPrompt = buildPrompt(problem, contextText, attachments);
     const pdfAtt = attachments.find(a => a.content?.isPDF);
     let finalRounds = {};
@@ -709,8 +712,7 @@ export default function ConsensusEngine() {
       setRounds(prev => ({ ...prev, 1: r1 }));
       finalRounds = { 1: r1 };
       if (mode === "compare") {
-        const saved = await saveDebate({ problem, mode, detailLevel, webSearch: useWebSearch, rounds: finalRounds, consensus: null, followupResponses: [] }).catch(console.error);
-        if (saved?.id) setCurrentDebateId(saved.id);
+        if (debateId) await updateDebate(debateId, { rounds: finalRounds, consensus: null, followupResponses: [] }).catch(console.error);
         loadDebates().then(setDebates).catch(console.error);
         setPhase("done"); return;
       }
@@ -742,8 +744,7 @@ export default function ConsensusEngine() {
         finalRounds = { ...finalRounds, 3: r3 };
       }
       if (mode === "debate") {
-        const saved = await saveDebate({ problem, mode, detailLevel, webSearch: useWebSearch, rounds: finalRounds, consensus: null, followupResponses: [] }).catch(console.error);
-        if (saved?.id) setCurrentDebateId(saved.id);
+        if (debateId) await updateDebate(debateId, { rounds: finalRounds, consensus: null, followupResponses: [] }).catch(console.error);
         loadDebates().then(setDebates).catch(console.error);
         setPhase("done"); return;
       }
@@ -758,8 +759,7 @@ export default function ConsensusEngine() {
       finalConsensus = fin;
       setCurrentRound(5);
       addLog("✅ Konsensus gotowy!");
-      const saved = await saveDebate({ problem, mode, detailLevel, webSearch: useWebSearch, rounds: finalRounds, consensus: finalConsensus, followupResponses: [] }).catch(console.error);
-      if (saved?.id) setCurrentDebateId(saved.id);
+      if (debateId) await updateDebate(debateId, { rounds: finalRounds, consensus: finalConsensus, followupResponses: [] }).catch(console.error);
       loadDebates().then(setDebates).catch(console.error);
     } catch (e) {
       addLog("❌ Błąd: " + e.message);
