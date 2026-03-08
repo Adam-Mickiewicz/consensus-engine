@@ -76,21 +76,42 @@ export async function POST(request) {
     });
 
     const start = clean.indexOf("{");
-    const end = clean.lastIndexOf("}");
-
-    if (start === -1 || end === -1) {
-      return Response.json({ success: false, error: "Model did not return valid JSON" }, { status: 500 });
+    if (start === -1) {
+      return Response.json({ success: true, text: JSON.stringify({ proposed_solution: clean, confidence: 50 }), citations: [] });
     }
 
-    const jsonText = clean.slice(start, end + 1);
+    let jsonText = clean.slice(start);
 
+    // Próba 1: bezpośredni parse
     try {
       JSON.parse(jsonText);
-    } catch (e) {
-      return Response.json({ success: true, text: JSON.stringify({ proposed_solution: jsonText, confidence: 50 }), citations: [] });
+      return Response.json({ success: true, text: jsonText, citations: [] });
+    } catch(e) {}
+
+    // Próba 2: urwany JSON - usun ostatnie niekompletne pole i zamknij
+    try {
+      let fixed = jsonText
+        .replace(/,\s*"[^"]*"\s*:\s*"[^"]*$/, "")
+        .replace(/,\s*"[^"]*"\s*:\s*$/, "")
+        .replace(/,\s*$/, "")
+        .trimEnd();
+      if (!fixed.endsWith("}")) fixed += "}";
+      JSON.parse(fixed);
+      return Response.json({ success: true, text: fixed, citations: [] });
+    } catch(e) {}
+
+    // Próba 3: wyciagnij pola regexem
+    const fields = {};
+    const re1 = /"(\w+)"\s*:\s*"((?:[^"\]|\[\s\S])*)"/g;
+    const re2 = /"(\w+)"\s*:\s*(\d+)/g;
+    let m;
+    while ((m = re1.exec(jsonText)) !== null) fields[m[1]] = m[2];
+    while ((m = re2.exec(jsonText)) !== null) fields[m[1]] = parseInt(m[2]);
+    if (Object.keys(fields).length > 0) {
+      return Response.json({ success: true, text: JSON.stringify(fields), citations: [] });
     }
 
-    return Response.json({ success: true, text: jsonText, citations: [] });
+    return Response.json({ success: true, text: JSON.stringify({ proposed_solution: clean.slice(0, 3000), confidence: 50 }), citations: [] });
 
   } catch (error) {
     console.error("API Error:", provider, error.message, error.stack?.slice(0,200));
