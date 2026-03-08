@@ -18,7 +18,7 @@ export async function POST(request) {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.OPENAI_API_KEY}` },
-        body: JSON.stringify({ model, messages, ...(model.startsWith("gpt-5") ? { max_completion_tokens: 8000 } : { max_tokens: 2000 }) })
+        body: JSON.stringify({ model, messages, ...(model.startsWith("gpt-5") ? { max_completion_tokens: 8000 } : { max_tokens: 1000 }) })
       });
       const data = await res.json();
       console.log("OPENAI FULL:", JSON.stringify(data).slice(0, 500));
@@ -58,14 +58,14 @@ export async function POST(request) {
 
       if (useWebSearch) {
         const response = await client.messages.create({
-          model: claudeModel, max_tokens: 2000, system: systemPrompt,
+          model: claudeModel, max_tokens: 1000, system: systemPrompt,
           messages: [{ role: "user", content }],
           tools: [{ type: "web_search_20250305", name: "web_search" }],
         });
         rawText = response.content.filter(b => b.type === "text").map(b => b.text || "").join("");
       } else {
         const response = await client.messages.create({
-          model: claudeModel, max_tokens: 2000, system: systemPrompt,
+          model: claudeModel, max_tokens: 1000, system: systemPrompt,
           messages: [{ role: "user", content }],
         });
         rawText = response.content.filter(b => b.type === "text").map(b => b.text || "").join("");
