@@ -450,7 +450,7 @@ function ConsensusView({ data, t, onFollowup, followupLoading, followupResponses
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14, marginBottom: 18 }}>
+      <div style={{ display: "grid", gridTemplateColumns: window.innerWidth < 768 ? "1fr" : "1fr 1fr", gap: 14, marginBottom: 18 }}>
         {agreedPoints.length > 0 && (
           <div style={{ background: "rgba(13,158,110,0.07)", borderRadius: 10, padding: 14, border: "1px solid rgba(13,158,110,0.16)" }}>
             <div style={{ color: "#0d9e6e", fontWeight: 700, marginBottom: 8, fontSize: 12 }}>✓ Punkty zgodne</div>
