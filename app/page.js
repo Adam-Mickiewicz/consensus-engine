@@ -794,17 +794,7 @@ export default function ConsensusEngine() {
             ))}
           </div>
         </div>
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 10 }}>MODEL AI</div>
-          <div style={{ display: "flex", gap: 6 }}>
-            {AI_MODELS.map(m => (
-              <button key={m.id} onClick={() => setAiModel(m.id)} style={{ flex: 1, background: aiModel === m.id ? accent + "12" : t.modeBtnBg, border: "1px solid " + (aiModel === m.id ? accent + "38" : t.border), borderRadius: 8, padding: "6px 4px", cursor: "pointer", fontFamily: "inherit" }}>
-                <div style={{ color: aiModel === m.id ? accent : t.textSub, fontSize: 10, fontWeight: 700, textAlign: "center" }}>{m.label}</div>
-                <div style={{ color: t.textMuted, fontSize: 9, textAlign: "center", marginTop: 2 }}>{m.desc}</div>
-              </button>
-            ))}
-          </div>
-        </div>
+
 
         <div>
           <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 10 }}>RUNDY</div>
