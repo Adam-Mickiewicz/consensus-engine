@@ -21,8 +21,10 @@ export async function POST(request) {
         body: JSON.stringify({ model, messages, ...(model.startsWith("gpt-5") ? { max_completion_tokens: 2000 } : { max_tokens: 2000 }) })
       });
       const data = await res.json();
+      console.log("OPENAI FULL:", JSON.stringify(data).slice(0, 500));
       if (data.error) throw new Error("OpenAI: " + data.error.message);
       rawText = data.choices?.[0]?.message?.content || "";
+      if (!rawText) throw new Error("OpenAI returned empty response");
 
     // GEMINI
     } else if (provider === "gemini") {
