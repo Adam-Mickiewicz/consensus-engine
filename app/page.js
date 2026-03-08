@@ -657,9 +657,14 @@ export default function ConsensusEngine() {
       const r1 = {};
       await Promise.all(activeProviders.map(async (id) => {
         addLog(`  ${PROVIDERS[id].emoji} ${PROVIDERS[id].name} analizuje...`);
-        const res = await callAPI(id, SYSTEM_PROMPTS[id](detail, useWebSearch), fullPrompt, pdfAtt?.content?.base64, useWebSearch);
-        r1[id] = res;
-        addLog(`  ${PROVIDERS[id].emoji} gotowy (${res.confidence ?? "?"}%)`);
+        try {
+          const res = await callAPI(id, SYSTEM_PROMPTS[id](detail, useWebSearch), fullPrompt, pdfAtt?.content?.base64, useWebSearch);
+          r1[id] = res;
+          addLog(`  ${PROVIDERS[id].emoji} gotowy (${res.confidence ?? "?"}%)`);
+        } catch(e) {
+          addLog(`  ${PROVIDERS[id].emoji} ❌ ${PROVIDERS[id].name} błąd: ${e.message.slice(0,80)}`);
+          r1[id] = { proposed_solution: "Błąd modelu: " + e.message, confidence: 0 };
+        }
       }));
       setRounds(prev => ({ ...prev, 1: r1 }));
       finalRounds = { 1: r1 };
