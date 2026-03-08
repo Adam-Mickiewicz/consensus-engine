@@ -121,7 +121,7 @@ async function callAPI(provider, systemPrompt, userMessage, pdfBase64 = null, us
     body: JSON.stringify({ provider, systemPrompt, userMessage, pdfBase64, useWebSearch, aiModel: window.__aiModel || "claude-haiku-4-5-20251001", openaiModel: window.__openaiModel || "gpt-5-mini", geminiModel: window.__geminiModel || "gemini-2.5-flash" }),
   });
   const data = await res.json();
-  if (!data.success) throw new Error(data.error);
+  if (!data.success) throw new Error(`[${provider.toUpperCase()}] ${data.error}`);
   try {
     const parsed = JSON.parse(data.text);
     if (data.citations?.length) parsed._citations = data.citations;
