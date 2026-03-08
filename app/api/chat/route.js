@@ -41,8 +41,10 @@ export async function POST(request) {
 
     // Agresywne czyszczenie
     let clean = rawText
-      .replace(/json\s*/gi, "")
-      .replace(/\s*/gi, "")
+      .replace(/\`\`\`json\s*/gi, "")
+      .replace(/\`\`\`\s*/gi, "")
+      .replace(/^[\s]*\`+/gm, "")
+      .replace(/\`+[\s]*$/gm, "")
       .trim();
 
     // Znajdź pierwszy { i ostatni }
