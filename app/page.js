@@ -59,6 +59,11 @@ const DETAIL_LEVELS = [
   { id: "detailed", label: "Szczegółowa", instruction: "Be very comprehensive and detailed. Minimum 500 words per field. Include examples, edge cases, and nuanced analysis." },
 ];
 
+const AI_MODELS = [
+  { id: "claude-haiku-4-5-20251001", label: "Haiku", desc: "Szybki · ~$0.03/debata" },
+  { id: "claude-sonnet-4-5", label: "Sonnet", desc: "Inteligentny · ~$0.50/debata" },
+];
+
 const ROUND_LABELS = {
   0: "Normalizacja problemu", 1: "Niezależna analiza",
   2: "Cross-review", 3: "Poprawiona propozycja",
@@ -92,7 +97,7 @@ async function callAPI(provider, systemPrompt, userMessage, pdfBase64 = null, us
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ provider, systemPrompt, userMessage, pdfBase64, useWebSearch }),
+    body: JSON.stringify({ provider, systemPrompt, userMessage, pdfBase64, useWebSearch, aiModel: window.__aiModel || "claude-haiku-4-5-20251001" }),
   });
   const data = await res.json();
   if (!data.success) throw new Error(data.error);
@@ -569,9 +574,11 @@ export default function ConsensusEngine() {
   const [debates, setDebates] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [currentDebateId, setCurrentDebateId] = useState(null);
+  const [aiModel, setAiModel] = useState("claude-haiku-4-5-20251001");
   const logRef = useRef(null);
 
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [log]);
+  useEffect(() => { if (typeof window !== "undefined") window.__aiModel = aiModel; }, [aiModel]);
 
   useEffect(() => {
     loadDebates().then(setDebates).catch(console.error);
@@ -740,6 +747,17 @@ export default function ConsensusEngine() {
             {DETAIL_LEVELS.map(d => (
               <button key={d.id} onClick={() => setDetailLevel(d.id)} style={{ flex: 1, background: detailLevel === d.id ? `${accent}12` : t.modeBtnBg, border: `1px solid ${detailLevel === d.id ? `${accent}38` : t.border}`, borderRadius: 8, padding: "6px 4px", cursor: "pointer", fontFamily: "inherit" }}>
                 <div style={{ color: detailLevel === d.id ? accent : t.textSub, fontSize: 10, fontWeight: 700, textAlign: "center" }}>{d.label}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 10 }}>MODEL AI</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {AI_MODELS.map(m => (
+              <button key={m.id} onClick={() => setAiModel(m.id)} style={{ flex: 1, background: aiModel === m.id ? accent + "12" : t.modeBtnBg, border: "1px solid " + (aiModel === m.id ? accent + "38" : t.border), borderRadius: 8, padding: "6px 4px", cursor: "pointer", fontFamily: "inherit" }}>
+                <div style={{ color: aiModel === m.id ? accent : t.textSub, fontSize: 10, fontWeight: 700, textAlign: "center" }}>{m.label}</div>
+                <div style={{ color: t.textMuted, fontSize: 9, textAlign: "center", marginTop: 2 }}>{m.desc}</div>
               </button>
             ))}
           </div>

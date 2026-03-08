@@ -3,7 +3,8 @@ import Anthropic from "@anthropic-ai/sdk";
 export async function POST(request) {
   try {
     const body = await request.text();
-    const { provider, systemPrompt, userMessage, pdfBase64, useWebSearch } = JSON.parse(body);
+    const { provider, systemPrompt, userMessage, pdfBase64, useWebSearch, aiModel } = JSON.parse(body);
+    const model = aiModel || "claude-haiku-4-5-20251001";
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -22,7 +23,7 @@ export async function POST(request) {
 
     if (useWebSearch) {
       const response = await client.messages.create({
-        model: "claude-haiku-4-5-20251001",
+        model: model,
         max_tokens: 2000,
         system: systemPrompt,
         messages: [{ role: "user", content }],
@@ -31,7 +32,7 @@ export async function POST(request) {
       rawText = response.content.filter(b => b.type === "text").map(b => b.text || "").join("");
     } else {
       const response = await client.messages.create({
-        model: "claude-haiku-4-5-20251001",
+        model: model,
         max_tokens: 2000,
         system: systemPrompt,
         messages: [{ role: "user", content }],
