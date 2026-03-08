@@ -18,7 +18,7 @@ export async function POST(request) {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.OPENAI_API_KEY}` },
-        body: JSON.stringify({ model, messages, ...(model.startsWith("gpt-5") ? { max_completion_tokens: 2000 } : { max_tokens: 2000 }) })
+        body: JSON.stringify({ model, messages, ...(model.startsWith("gpt-5") ? { max_completion_tokens: 8000 } : { max_tokens: 2000 }) })
       });
       const data = await res.json();
       console.log("OPENAI FULL:", JSON.stringify(data).slice(0, 500));
