@@ -661,6 +661,13 @@ export default function ConsensusEngine() {
   function addLog(msg) { setLog(l => [...l, { time: new Date().toLocaleTimeString(), msg }]); }
   const detail = DETAIL_LEVELS.find(d => d.id === detailLevel)?.instruction || "";
 
+  async function handleDeleteDebate(id) {
+    if (!window.confirm("Usunac ta debate?")) return;
+    const { supabase } = await import("../lib/supabase");
+    await supabase.from("debates").delete().eq("id", id);
+    setDebates(prev => prev.filter(d => d.id !== id));
+  }
+
   function handleLoadDebate(d) {
     setProblem(d.problem);
     setMode(d.mode || "consensus");
