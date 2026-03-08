@@ -271,7 +271,7 @@ function ModelCard({ id, data, t }) {
       <div style={{ color: t.textMuted, fontSize: 12, marginTop: 6 }}>Oczekuje...</div>
     </div>
   );
-  const main = toStr(data.proposed_solution || data.revised_solution || data.final_recommendation || data.my_revised_position || data.raw || "");
+  const main = toStr(data.proposed_solution || data.revised_solution || data.final_recommendation || data.my_revised_position || data.weaknesses_found || data.agreed_with || data.raw || "");
   const confidence = data.confidence ?? data.confidence_score;
   const citations = data._citations || [];
   return (
