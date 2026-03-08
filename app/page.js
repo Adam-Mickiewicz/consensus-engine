@@ -715,30 +715,31 @@ export default function ConsensusEngine() {
       }
 
       addLog("⏳ Pauza 30s...");
-      await sleep(10000);
-      setCurrentRound(2);
-      addLog("Runda 2: Cross-review...");
-      const r2 = {};
-      await Promise.all(activeProviders.map(async (id) => {
-        const others = Object.entries(r1).filter(([k]) => k !== id).map(([k, v]) => `${PROVIDERS[k].name}: ${summarize(v)}`).join("\n\n");
-        r2[id] = await callAPI(id, `You are the ${PROVIDERS[id].role}.`, CROSS_REVIEW_PROMPT(PROVIDERS[id].role, others, detail), null, false);
-        addLog(`  ${PROVIDERS[id].emoji} cross-review gotowy`);
-      }));
-      setRounds(prev => ({ ...prev, 2: r2 }));
-      finalRounds = { ...finalRounds, 2: r2 };
+      let r2 = {}, r3 = {};
+      if (activeProviders.length > 1) {
+        await sleep(10000);
+        setCurrentRound(2);
+        addLog("Runda 2: Cross-review...");
+        await Promise.all(activeProviders.map(async (id) => {
+          const others = Object.entries(r1).filter(([k]) => k !== id).map(([k, v]) => `${PROVIDERS[k].name}: ${summarize(v)}`).join("\n\n");
+          r2[id] = await callAPI(id, `You are the ${PROVIDERS[id].role}.`, CROSS_REVIEW_PROMPT(PROVIDERS[id].role, others, detail), null, false);
+          addLog(`  ${PROVIDERS[id].emoji} cross-review gotowy`);
+        }));
+        setRounds(prev => ({ ...prev, 2: r2 }));
+        finalRounds = { ...finalRounds, 2: r2 };
 
-      addLog("⏳ Pauza 30s...");
-      await sleep(10000);
-      setCurrentRound(3);
-      addLog("Runda 3: Poprawione propozycje...");
-      const r3 = {};
-      await Promise.all(activeProviders.map(async (id) => {
-        const reviews = Object.entries(r2).filter(([k]) => k !== id).map(([k, v]) => `${PROVIDERS[k].name}: ${summarize(v)}`).join("\n\n");
-        r3[id] = await callAPI(id, `You are the ${PROVIDERS[id].role}.`, REVISED_PROMPT(PROVIDERS[id].role, reviews, detail), null, false);
-        addLog(`  ${PROVIDERS[id].emoji} propozycja poprawiona`);
-      }));
-      setRounds(prev => ({ ...prev, 3: r3 }));
-      finalRounds = { ...finalRounds, 3: r3 };
+        addLog("⏳ Pauza 30s...");
+        await sleep(10000);
+        setCurrentRound(3);
+        addLog("Runda 3: Poprawione propozycje...");
+        await Promise.all(activeProviders.map(async (id) => {
+          const reviews = Object.entries(r2).filter(([k]) => k !== id).map(([k, v]) => `${PROVIDERS[k].name}: ${summarize(v)}`).join("\n\n");
+          r3[id] = await callAPI(id, `You are the ${PROVIDERS[id].role}.`, REVISED_PROMPT(PROVIDERS[id].role, reviews, detail), null, false);
+          addLog(`  ${PROVIDERS[id].emoji} propozycja poprawiona`);
+        }));
+        setRounds(prev => ({ ...prev, 3: r3 }));
+        finalRounds = { ...finalRounds, 3: r3 };
+      }
       if (mode === "debate") {
         const saved = await saveDebate({ problem, mode, detailLevel, webSearch: useWebSearch, rounds: finalRounds, consensus: null, followupResponses: [] }).catch(console.error);
         if (saved?.id) setCurrentDebateId(saved.id);
