@@ -110,11 +110,26 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 function toStr(val) {
   if (val === null || val === undefined) return "";
   if (Array.isArray(val)) return val.join("\n");
-  if (typeof val === "object") return JSON.stringify(val);
-  return String(val)
+  if (typeof val === "object") return Object.values(val).filter(v => typeof v === "string").join("\n\n");
+  const s = String(val)
     .replace(/\\n/g, "\n")
     .replace(/\\t/g, "\t")
     .replace(/\\"/g, "\"");
+  // Jeśli to surowy JSON - sparsuj i wyciągnij wartości
+  if (s.trim().startsWith("{")) {
+    try {
+      const parsed = JSON.parse(s);
+      return Object.values(parsed).filter(v => typeof v === "string" || Array.isArray(v)).map(v => Array.isArray(v) ? v.join("\n") : v).join("\n\n");
+    } catch(e) {
+      // Wyciągnij wartości regexem
+      const vals = [];
+      const re = /"\w+"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+      let m;
+      while ((m = re.exec(s)) !== null) vals.push(m[1].replace(/\\n/g, "\n"));
+      if (vals.length > 0) return vals.join("\n\n");
+    }
+  }
+  return s;
 }
 
 async function callAPI(provider, systemPrompt, userMessage, pdfBase64 = null, useWebSearch = false) {
