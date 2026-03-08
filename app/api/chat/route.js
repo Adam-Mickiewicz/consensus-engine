@@ -54,18 +54,14 @@ export async function POST(request) {
         content = userMessage;
       }
 
-      const stream = await client.messages.stream({
+      const response = await client.messages.create({
         model: claudeModel,
         max_tokens: 1500,
         system: systemPrompt,
         messages: [{ role: "user", content }],
       });
-
-      for await (const chunk of stream) {
-        if (chunk.type === "content_block_delta" && chunk.delta?.type === "text_delta") {
-          rawText += chunk.delta.text;
-        }
-      }
+      rawText = response.content.filter(b => b.type === "text").map(b => b.text).join("");
+      console.log("CLAUDE RAW END:", rawText.slice(-300));
     }
 
     // Czyszczenie
