@@ -25,7 +25,7 @@ export async function POST(request) {
 
     // GEMINI
     } else if (provider === "gemini") {
-      const model = "gemini-2.0-flash-lite";
+      const model = "gemini-2.5-flash";
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
