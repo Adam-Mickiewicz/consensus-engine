@@ -805,15 +805,7 @@ export default function ConsensusEngine() {
             ))}
           </div>
         </div>
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 10 }}>MODELE</div>
-          {activeProviders.map(id => (
-            <div key={id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: `1px solid ${t.border}` }}>
-              <span>{PROVIDERS[id].emoji}</span>
-              <div><div style={{ color: PROVIDERS[id].color, fontSize: 12, fontWeight: 700 }}>{PROVIDERS[id].name}</div><div style={{ color: t.textMuted, fontSize: 10 }}>{PROVIDERS[id].role}</div></div>
-            </div>
-          ))}
-        </div>
+
         <div>
           <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 10 }}>RUNDY</div>
           {Array.from({ length: 6 }, (_, i) => <RoundBadge key={i} n={i} status={roundStatuses[i]} t={t} />)}
