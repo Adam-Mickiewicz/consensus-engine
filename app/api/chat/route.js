@@ -57,11 +57,12 @@ console.log("RAW RESPONSE:", clean.slice(0, 500));
 
     const jsonText = clean.slice(start, end + 1);
 
-    // Walidacja
+    // Walidacja - jesli nie parsuje, zwroc raw text jako fallback
     try {
       JSON.parse(jsonText);
     } catch (e) {
-      return Response.json({ success: false, error: "Invalid JSON: " + e.message }, { status: 500 });
+      console.log("JSON parse failed, returning raw:", e.message);
+      return Response.json({ success: true, text: JSON.stringify({ proposed_solution: jsonText, confidence: 50 }), citations });
     }
 
     return Response.json({ success: true, text: jsonText, citations });
