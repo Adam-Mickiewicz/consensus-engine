@@ -666,7 +666,7 @@ export default function ConsensusEngine() {
       }
 
       addLog("⏳ Pauza 30s...");
-      await sleep(30000);
+      await sleep(60000);
       setCurrentRound(4);
       addLog("Runda 4→5: Budowanie konsensusu...");
       const allRevised = Object.entries(r3).map(([k, v]) => `${PROVIDERS[k].name}: ${summarize(v)}`).join("\n\n");
