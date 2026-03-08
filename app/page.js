@@ -605,6 +605,14 @@ export default function ConsensusEngine() {
   const width = useWindowSize();
   const isMobile = width < 768;
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    import("../lib/supabase").then(({ supabase }) => {
+      supabase.auth.getUser().then(({ data }) => setUser(data?.user || null));
+      supabase.auth.onAuthStateChange((_, session) => setUser(session?.user || null));
+    });
+  }, []);
   const [problem, setProblem] = useState("");
   const [contextText, setContextText] = useState("");
   const [attachments, setAttachments] = useState([]);
