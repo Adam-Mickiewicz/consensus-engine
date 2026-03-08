@@ -781,7 +781,9 @@ export default function ConsensusEngine() {
         data = await callAPI(target, SYSTEM_PROMPTS[target](detail, webSearch), SINGLE_FOLLOWUP_PROMPT(p.role, consensusSummary, question, detail), null, webSearch);
       }
       addLog("✅ Odpowiedź gotowa!");
-      setFollowupResponses(prev => [...prev, { question, target, webSearch, data }]);
+      const newFollowups = [...followupResponses, { question, target, webSearch, data }];
+      setFollowupResponses(newFollowups);
+      if (currentDebateId) await updateDebate(currentDebateId, { rounds, consensus, followupResponses: newFollowups }).catch(console.error);
     } catch (e) {
       addLog("❌ Błąd: " + e.message);
     }
