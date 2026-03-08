@@ -689,7 +689,7 @@ export default function ConsensusEngine() {
     const targetLabel = FOLLOWUP_TARGETS.find(f => f.id === target)?.label;
     addLog(`❓ [${targetLabel}${webSearch ? " 🌐" : ""}]: ${question.slice(0, 50)}...`);
     try {
-      const consensusSummary = toStr(consensus?.final_recommendation || "");
+      const consensusSummary = toStr(consensus?.final_recommendation || "").slice(0, 800);
       let data;
       if (target === "all") {
         data = await callAPI("claude", "You are the Consensus Builder.", ALL_FOLLOWUP_PROMPT(consensusSummary, question, detail), null, webSearch);
