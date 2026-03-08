@@ -29,20 +29,11 @@ export async function POST(request) {
         tools: [{ type: "web_search_20250305", name: "web_search" }],
       });
       rawText = response.content.filter(b => b.type === "text").map(b => b.text || "").join("");
-      response.content.forEach(block => {
-        if (block.type === "text" && block.citations) {
-          block.citations.forEach(c => {
-            if (c.url && !citations.find(x => x.url === c.url))
-              citations.push({ url: c.url, title: c.title || c.url });
-          });
-        }
-      });
     } else {
-      // Wymuszamy JSON przez system prompt zamiast prefill
       const response = await client.messages.create({
         model: "claude-sonnet-4-5",
         max_tokens: 4000,
-        system: systemPrompt + "\n\nCRITICAL: Your response must start with { and end with }. Output ONLY raw JSON, no markdown, no backticks, no explanation.",
+        system: systemPrompt,
         messages: [{ role: "user", content }],
       });
       rawText = response.content.filter(b => b.type === "text").map(b => b.text || "").join("");
@@ -57,19 +48,17 @@ export async function POST(request) {
     // Znajdź pierwszy { i ostatni }
     const start = clean.indexOf("{");
     const end = clean.lastIndexOf("}");
-    
+
     if (start === -1 || end === -1) {
-      console.error("No JSON found in:", clean.slice(0, 200));
       return Response.json({ success: false, error: "Model did not return valid JSON" }, { status: 500 });
     }
 
     const jsonText = clean.slice(start, end + 1);
 
-    // Walidacja JSON
+    // Walidacja
     try {
       JSON.parse(jsonText);
     } catch (e) {
-      console.error("Invalid JSON:", jsonText.slice(0, 200));
       return Response.json({ success: false, error: "Invalid JSON: " + e.message }, { status: 500 });
     }
 
@@ -82,7 +71,3 @@ export async function POST(request) {
 }
 ```
 
-Zapisz. Teraz potrzebujemy też **unikalnych linków** — to wymaga stworzenia nowego pliku `app/debate/[id]/page.js`. W Terminalu:
-```
-mkdir -p app/debate/\[id\]
-touch "app/debate/[id]/page.js"
