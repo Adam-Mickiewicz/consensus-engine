@@ -77,7 +77,7 @@ export async function POST(request) {
       .replace(/`{1,3}\s*/gi, "")
       .trim();
 
-    console.log("PROVIDER:", provider, "RAW:", clean.slice(0, 300));
+    console.log("PROVIDER:", provider, "RAW START:", clean.slice(0, 200), "RAW END:", clean.slice(-200));
     const start = clean.indexOf("{");
     const end = clean.lastIndexOf("}");
 
