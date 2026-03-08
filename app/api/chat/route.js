@@ -77,19 +77,28 @@ export async function POST(request) {
     const start = clean.indexOf("{");
     const end = clean.lastIndexOf("}");
 
+    // Jesli brak JSON - zwroc jako plain text
     if (start === -1 || end === -1) {
-      return Response.json({ success: false, error: "Model did not return valid JSON" }, { status: 500 });
+      return Response.json({ success: true, text: JSON.stringify({ proposed_solution: clean, confidence: 50 }), citations: [] });
     }
 
     const jsonText = clean.slice(start, end + 1);
 
     try {
       JSON.parse(jsonText);
+      return Response.json({ success: true, text: jsonText, citations: [] });
     } catch (e) {
-      return Response.json({ success: true, text: JSON.stringify({ proposed_solution: jsonText, confidence: 50 }), citations: [] });
+      // Probuj naprawic JSON - usun trailing content
+      try {
+        // Znajdz ostatni kompletny klucz
+        const fixed = jsonText.replace(/,\s*"[^"]*"\s*:\s*"[^"]*$/, "").replace(/,\s*$/, "") + "}";
+        JSON.parse(fixed);
+        return Response.json({ success: true, text: fixed, citations: [] });
+      } catch(e2) {
+        // Ostateczny fallback
+        return Response.json({ success: true, text: JSON.stringify({ proposed_solution: clean.slice(0, 2000), confidence: 50 }), citations: [] });
+      }
     }
-
-    return Response.json({ success: true, text: jsonText, citations: [] });
 
   } catch (error) {
     console.error("API Error:", error);
