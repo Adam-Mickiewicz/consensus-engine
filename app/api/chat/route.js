@@ -41,8 +41,8 @@ export async function POST(request) {
 
     // Agresywne czyszczenie
     let clean = rawText
-      .replace(/```json\s*/gi, "")
-      .replace(/```\s*/gi, "")
+      .replace(/json\s*/gi, "")
+      .replace(/\s*/gi, "")
       .trim();
 
     // Znajdź pierwszy { i ostatni }
@@ -69,5 +69,5 @@ export async function POST(request) {
     return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 }
-```
+
 
