@@ -573,20 +573,25 @@ function ContextField({ value, onChange, t, accent }) {
   );
 }
 
-function HistoryPanel({ debates, onLoad, t, accent }) {
+function HistoryPanel({ debates, onLoad, onDelete, t, accent }) {
   if (debates.length === 0) return (
     <div style={{ color: t.textMuted, fontSize: 11, textAlign: "center", padding: "20px 0" }}>Brak historii debat</div>
   );
   return (
     <div>
       {debates.map((d) => (
-        <div key={d.id} onClick={() => onLoad(d)} style={{ padding: "10px 12px", borderRadius: 8, border: `1px solid ${t.border}`, marginBottom: 6, cursor: "pointer", background: t.modeBtnBg }} onMouseEnter={e => e.currentTarget.style.borderColor = accent} onMouseLeave={e => e.currentTarget.style.borderColor = t.border}>
-          <div style={{ color: t.text, fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 3 }}>{d.problem.slice(0, 60)}{d.problem.length > 60 ? "…" : ""}</div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ color: t.textMuted, fontSize: 10 }}>{new Date(d.created_at).toLocaleDateString("pl-PL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
-            <span style={{ background: `${accent}20`, color: accent, fontSize: 9, fontWeight: 700, borderRadius: 4, padding: "1px 5px" }}>{d.mode}</span>
-            {d.web_search && <span style={{ color: "#2563eb", fontSize: 10 }}>🌐</span>}
+        <div key={d.id} style={{ position: "relative", padding: "10px 12px", borderRadius: 8, border: `1px solid ${t.border}`, marginBottom: 6, background: t.modeBtnBg, cursor: "pointer" }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = accent}
+          onMouseLeave={e => e.currentTarget.style.borderColor = t.border}>
+          <div onClick={() => onLoad(d)}>
+            <div style={{ color: t.text, fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 3, paddingRight: 20 }}>{d.problem.slice(0, 60)}{d.problem.length > 60 ? "…" : ""}</div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <span style={{ color: t.textMuted, fontSize: 10 }}>{new Date(d.created_at).toLocaleDateString("pl-PL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+              <span style={{ background: `${accent}20`, color: accent, fontSize: 9, fontWeight: 700, borderRadius: 4, padding: "1px 5px" }}>{d.mode}</span>
+              {d.web_search && <span style={{ color: "#2563eb", fontSize: 10 }}>🌐</span>}
+            </div>
           </div>
+          <button onClick={e => { e.stopPropagation(); onDelete(d.id); }} style={{ position: "absolute", top: 8, right: 8, background: "none", border: "none", cursor: "pointer", color: t.textMuted, fontSize: 14, lineHeight: 1, padding: 2, fontFamily: "inherit" }} title="Usuń">✕</button>
         </div>
       ))}
     </div>
@@ -786,7 +791,7 @@ export default function ConsensusEngine() {
             <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2 }}>HISTORIA ({debates.length})</div>
             <button onClick={() => setShowHistory(h => !h)} style={{ background: "none", border: "none", cursor: "pointer", color: t.textSub, fontSize: 11, fontFamily: "inherit" }}>{showHistory ? "▴ ukryj" : "▾ pokaż"}</button>
           </div>
-          {showHistory && <HistoryPanel debates={debates} onLoad={handleLoadDebate} t={t} accent={accent} />}
+          {showHistory && <HistoryPanel debates={debates} onLoad={handleLoadDebate} onDelete={handleDeleteDebate} t={t} accent={accent} />}
         </div>
 
         <div style={{ marginBottom: 24 }}>
