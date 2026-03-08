@@ -3,6 +3,16 @@ import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { saveDebate, loadDebates } from "../lib/supabase";
 
+function useWindowSize() {
+  const [width, setWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
+  useEffect(() => {
+    const handler = () => setWidth(window.innerWidth);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+  return width;
+}
+
 const THEMES = {
   light: {
     bg: "#f5f4f0", bgPanel: "#eeecea", bgCenter: "#f5f4f0",
@@ -569,6 +579,9 @@ export default function ConsensusEngine() {
   const [dark, setDark] = useState(false);
   const t = THEMES[dark ? "dark" : "light"];
   const accent = "#b8763a";
+  const width = useWindowSize();
+  const isMobile = width < 768;
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [problem, setProblem] = useState("");
   const [contextText, setContextText] = useState("");
   const [attachments, setAttachments] = useState([]);
@@ -732,8 +745,11 @@ export default function ConsensusEngine() {
   const roundStatuses = Array.from({ length: 6 }, (_, i) => phase === "input" ? "pending" : i < currentRound ? "done" : i === currentRound ? "active" : "pending");
 
   return (
-    <div style={{ minHeight: "100vh", background: t.bg, color: t.text, fontFamily: "'IBM Plex Mono', 'Courier New', monospace", display: "grid", gridTemplateColumns: "260px 1fr 300px", transition: "background 0.3s" }}>
-      <div style={{ borderRight: `1px solid ${t.border}`, padding: 24, overflowY: "auto", background: t.bgPanel }}>
+    <div style={{ minHeight: "100vh", background: t.bg, color: t.text, fontFamily: "'IBM Plex Mono', 'Courier New', monospace", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "260px 1fr 300px", transition: "background 0.3s", position: "relative" }}>
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", zIndex: 998 }} />
+      )}
+      <div style={{ borderRight: `1px solid ${t.border}`, padding: 24, overflowY: "auto", background: t.bgPanel, ...(isMobile ? { position: "fixed", top: 0, left: sidebarOpen ? 0 : "-280px", width: 260, height: "100vh", zIndex: 999, transition: "left 0.3s", boxShadow: sidebarOpen ? "4px 0 20px rgba(0,0,0,0.2)" : "none" } : {}) }}>
         <div style={{ marginBottom: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div><div style={{ color: accent, fontWeight: 800, fontSize: 15, letterSpacing: 2 }}>CONSENSUS</div><div style={{ color: t.textMuted, fontSize: 11, letterSpacing: 1 }}>ENGINE v1.0</div></div>
           <ThemeToggle dark={dark} onToggle={() => setDark(d => !d)} t={t} />
@@ -798,6 +814,13 @@ export default function ConsensusEngine() {
       </div>
 
       <div style={{ padding: 36, overflowY: "auto", background: t.bgCenter }}>
+        {isMobile && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, paddingBottom: 16, borderBottom: `1px solid ${t.border}` }}>
+            <button onClick={() => setSidebarOpen(o => !o)} style={{ background: "none", border: `1px solid ${t.border}`, borderRadius: 8, padding: "8px 12px", cursor: "pointer", color: t.text, fontSize: 18, fontFamily: "inherit" }}>☰</button>
+            <div style={{ color: accent, fontWeight: 800, fontSize: 13, letterSpacing: 2 }}>CONSENSUS ENGINE</div>
+            <div style={{ width: 40 }} />
+          </div>
+        )}
         {phase === "input" && (
           <div>
             <div style={{ marginBottom: 32 }}>
@@ -933,7 +956,7 @@ export default function ConsensusEngine() {
         )}
       </div>
 
-      <div style={{ borderLeft: `1px solid ${t.border}`, padding: 24, overflowY: "auto", background: t.bgPanel }}>
+      {!isMobile && <div style={{ borderLeft: `1px solid ${t.border}`, padding: 24, overflowY: "auto", background: t.bgPanel }}>
         <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 14 }}>LOG PROCESU</div>
         <div ref={logRef} style={{ fontFamily: "monospace", fontSize: 11 }}>
           {log.length === 0 && <div style={{ color: t.textMuted }}>Uruchom debatę, aby zobaczyć log...</div>}
@@ -956,7 +979,7 @@ export default function ConsensusEngine() {
             ))}
           </div>
         )}
-      </div>
+      </div>}
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700;800&display=swap');
