@@ -818,6 +818,12 @@ export default function ConsensusEngine() {
             + Nowa debata
           </button>
           <button onClick={() => window.location.href = "/design-judge"} style={{ display: "block", width: "100%", background: "none", border: `1px solid ${t.border}`, color: t.textSub, borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, textAlign: "center" }}>
+          <button onClick={() => window.location.href = "/sock-designer"} style={{ display: "block", width: "100%", background: "none", border: `1px solid ${t.border}`, color: t.textSub, borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, textAlign: "center" }}>
+            🧦 Sock Designer
+          </button>
+          <button onClick={() => window.location.href = "/newsletter-builder"} style={{ display: "block", width: "100%", background: "none", border: `1px solid ${t.border}`, color: t.textSub, borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, textAlign: "center" }}>
+            📧 Newsletter Builder
+          </button>
             🎨 Design Judge
           </button>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
