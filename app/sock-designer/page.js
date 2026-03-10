@@ -242,9 +242,10 @@ export default function SockDesigner() {
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
 
-      let parsed;
-      try { parsed = JSON.parse(data.result); }
-      catch { const m = data.result.match(/\{[\s\S]*\}/); if (m) parsed = JSON.parse(m[0]); else throw new Error("Błąd parsowania JSON"); }
+      const parsed = data.result;
+
+
+
 
       setResult(parsed);
       setPrompts({
