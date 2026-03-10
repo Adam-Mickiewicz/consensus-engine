@@ -13,39 +13,51 @@ export async function GET(request) {
 
     const { data: files, error } = await supabase.storage
       .from("sock-references")
-      .list("", { limit: 100 });
+      .list("", { limit: 100, offset: 0, sortBy: { column: "name", order: "asc" } });
 
-    if (error) throw error;
-    if (!files || files.length === 0) {
-      return NextResponse.json({ success: true, pairs: [] });
+    if (error) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 
-    const imageFiles = files.filter(f => f.name.match(/\.(bmp|png|jpg|jpeg)$/i));
+    if (!files || files.length === 0) {
+      return NextResponse.json({ success: true, pairs: [], debug: "bucket empty" });
+    }
 
+    const imageFiles = files.filter(f => 
+      f.name && f.name.match(/\.(bmp|png|jpg|jpeg)$/i)
+    );
+
+    // Grupuj w pary
     const pairMap = {};
     for (const f of imageFiles) {
-      const name = f.name.toLowerCase();
+      const nameLower = f.name.toLowerCase();
       let side = null;
-      let base = null;
+      let base = nameLower;
 
-      if (name.includes("lewa")) {
+      if (nameLower.includes("lewa")) {
         side = "left";
-        base = name.replace(/[-_]?lewa[-_]?/g, "_").replace(/_{2,}/g, "_");
-      } else if (name.includes("prawa")) {
+        base = nameLower.replace(/lewa/g, "X").replace(/[-_\s]+/g, "_");
+      } else if (nameLower.includes("prawa")) {
         side = "right";
-        base = name.replace(/[-_]?prawa[-_]?/g, "_").replace(/_{2,}/g, "_");
+        base = nameLower.replace(/prawa/g, "X").replace(/[-_\s]+/g, "_");
       } else {
         continue;
       }
 
-      const collectionMatch = f.name.match(/^([^-_]+(?:[-_][^-_]+)?)/);
-      const collection = collectionMatch ? collectionMatch[0].replace(/[-_]/g, " ").trim() : f.name;
-
-      if (!pairMap[base]) pairMap[base] = { collection, left: null, right: null };
+      if (!pairMap[base]) pairMap[base] = { collection: f.name.split(/[-_]/)[0], left: null, right: null };
       pairMap[base][side] = f.name;
     }
 
     const completePairs = Object.values(pairMap).filter(p => p.left && p.right);
+
+    if (completePairs.length === 0) {
+      return NextResponse.json({ 
+        success: true, pairs: [], 
+        debug: `found ${imageFiles.length} images but 0 complete pairs`,
+        files: imageFiles.map(f => f.name)
+      });
+    }
+
     const shuffled = completePairs.sort(() => Math.random() - 0.5);
     const selected = shuffled.slice(0, Math.min(pairs, shuffled.length));
 
