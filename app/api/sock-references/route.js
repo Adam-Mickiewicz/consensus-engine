@@ -20,14 +20,14 @@ export async function GET(request) {
     }
 
     if (!files || files.length === 0) {
-      return NextResponse.json({ success: true, pairs: [], debug: "bucket empty" });
+      return NextResponse.json({ success: true, pairs: [], debug: "bucket empty", raw: files });
     }
 
-    const imageFiles = files.filter(f => 
-      f.name && f.name.match(/\.(bmp|png|jpg|jpeg)$/i)
-    );
+    // Loguj wszystkie pliki bez filtrowania
+    const allNames = files.map(f => f.name);
 
-    // Grupuj w pary
+    const imageFiles = files.filter(f => f.name && !f.name.startsWith("."));
+
     const pairMap = {};
     for (const f of imageFiles) {
       const nameLower = f.name.toLowerCase();
@@ -53,8 +53,8 @@ export async function GET(request) {
     if (completePairs.length === 0) {
       return NextResponse.json({ 
         success: true, pairs: [], 
-        debug: `found ${imageFiles.length} images but 0 complete pairs`,
-        files: imageFiles.map(f => f.name)
+        debug: `found ${imageFiles.length} files, 0 pairs`,
+        allNames
       });
     }
 
