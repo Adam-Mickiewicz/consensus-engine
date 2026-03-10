@@ -15,11 +15,6 @@ NADWYRAZ DESIGN DNA:
 - Motifs: Polish cities, winter sports, nature, animals, travel, culture, humor
 - Production format: bitmap, 168px wide × 480px tall (41-46) or 168px × 435px (36-40)
 
-STYLE REFERENCE:
-- "Białe Szaleństwo": left=panoramic ski slope (white bg), right=scattered icons on blue bg
-- "Warszawa": left=city skyline sunset (charcoal+orange+magenta), right=scattered logos on dark bg
-- "Maluch": Fiat 126p motifs, road forming heart shape, yellow cars on teal/navy/red
-
 DALLE PROMPT RULES — always follow these exactly:
 - Start with: "VERTICAL PORTRAIT sock textile pattern. Tall narrow format (1:3 ratio). Pure 2D flat illustration, side view only, NO isometric, NO 3D perspective, NO gradients."
 - Add: "Bold black outlines, solid color fills only. Pattern fills entire canvas edge to edge, no white margins, no borders."
@@ -55,10 +50,10 @@ Respond ONLY in valid JSON:
   "palette": [
     {"hex": "#HEX", "name": "Polish name", "usage": "where used"}
   ],
-  "dalle_prompt_left": "VERTICAL PORTRAIT sock textile pattern. Tall narrow format (1:3 ratio). Pure 2D flat illustration, side view only, NO isometric, NO 3D perspective, NO gradients. Bold black outlines, solid color fills only. Pattern fills entire canvas edge to edge, no white margins, no borders. [SCENE DESCRIPTION]. Max 5 colors. Background: [HEX].",
-  "dalle_prompt_right": "VERTICAL PORTRAIT sock textile pattern. Tall narrow format (1:3 ratio). Pure 2D flat illustration, side view only, NO isometric, NO 3D perspective, NO gradients. Bold black outlines, solid color fills only. Pattern fills entire canvas edge to edge, no white margins, no borders. [SCENE DESCRIPTION]. Max 5 colors. Background: [HEX].",
-  "gemini_prompt_left": "Flat 2D textile sock pattern, tall vertical 9:16 format, fills entire canvas edge to edge with no margins, bold black outlines, solid flat colors only, no gradients, no shading, no 3D. Background: [HEX]. [SCENE DESCRIPTION]. Max 6 colors, pixel-art bitmap aesthetic.",
-  "gemini_prompt_right": "Flat 2D textile sock pattern, tall vertical 9:16 format, fills entire canvas edge to edge with no margins, bold black outlines, solid flat colors only, no gradients, no shading, no 3D. Background: [HEX]. [SCENE DESCRIPTION]. Max 6 colors, pixel-art bitmap aesthetic.",
+  "dalle_prompt_left": "VERTICAL PORTRAIT sock textile pattern. Tall narrow format (1:3 ratio). Pure 2D flat illustration, side view only, NO isometric, NO 3D perspective, NO gradients. Bold black outlines, solid color fills only. Pattern fills entire canvas edge to edge, no white margins, no borders. [SCENE]. Max 5 colors. Background: [HEX].",
+  "dalle_prompt_right": "VERTICAL PORTRAIT sock textile pattern. Tall narrow format (1:3 ratio). Pure 2D flat illustration, side view only, NO isometric, NO 3D perspective, NO gradients. Bold black outlines, solid color fills only. Pattern fills entire canvas edge to edge, no white margins, no borders. [SCENE]. Max 5 colors. Background: [HEX].",
+  "gemini_prompt_left": "Flat 2D textile sock pattern, tall vertical 9:16 format, fills entire canvas edge to edge with no margins, bold black outlines, solid flat colors only, no gradients, no shading, no 3D. Background: [HEX]. [SCENE]. Max 6 colors, pixel-art bitmap aesthetic.",
+  "gemini_prompt_right": "Flat 2D textile sock pattern, tall vertical 9:16 format, fills entire canvas edge to edge with no margins, bold black outlines, solid flat colors only, no gradients, no shading, no 3D. Background: [HEX]. [SCENE]. Max 6 colors, pixel-art bitmap aesthetic.",
   "technical_spec": {"size_small": "168 × 435 px", "size_large": "168 × 480 px", "color_count": 5},
   "designer_notes": "practical notes in Polish"
 }`;
@@ -120,6 +115,34 @@ function PromptEditor({ label, engine, value, onChange, onGenerate, loading, ima
   );
 }
 
+function ReferenceBadge({ pairs, loading }) {
+  if (loading) return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", background: "#f5f3ef", borderRadius: 8, border: "1px solid #ede9e3" }}>
+      <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#f0a500", animation: "pulse 1s infinite" }} />
+      <span style={{ fontSize: 10, color: "#999" }}>Ładuję referencje...</span>
+    </div>
+  );
+  if (!pairs || pairs.length === 0) return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", background: "#fff8ee", borderRadius: 8, border: "1px solid #f5ddb0" }}>
+      <span style={{ fontSize: 10, color: "#b87a20" }}>⚠ Brak referencji w bazie</span>
+    </div>
+  );
+  return (
+    <div style={{ padding: "8px 10px", background: "#f0faf5", borderRadius: 8, border: "1px solid #b8e8d0" }}>
+      <div style={{ fontSize: 9, fontWeight: 700, color: "#0d9e6e", letterSpacing: 1, marginBottom: 6 }}>REFERENCJE NADWYRAZ ({pairs.length} pary)</div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {pairs.map((pair, i) => (
+          <div key={i} style={{ display: "flex", gap: 4, alignItems: "center" }}>
+            <img src={`data:image/bmp;base64,${pair.left.base64}`} style={{ height: 40, width: "auto", borderRadius: 3, border: "1px solid #ccc", imageRendering: "pixelated" }} />
+            <img src={`data:image/bmp;base64,${pair.right.base64}`} style={{ height: 40, width: "auto", borderRadius: 3, border: "1px solid #ccc", imageRendering: "pixelated" }} />
+            <span style={{ fontSize: 9, color: "#666", maxWidth: 60, lineHeight: 1.2 }}>{pair.collection}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function SockDesigner() {
   const [description, setDescription] = useState("");
   const [sockVariant, setSockVariant] = useState("ai_decide");
@@ -128,11 +151,37 @@ export default function SockDesigner() {
   const [briefLoading, setBriefLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [references, setReferences] = useState([]);
+  const [refLoading, setRefLoading] = useState(false);
   const fileRef = useRef(null);
 
   const [prompts, setPrompts] = useState({ dalleLeft: "", dalleRight: "", geminiLeft: "", geminiRight: "" });
   const [imgs, setImgs] = useState({ dalleLeft: null, dalleRight: null, geminiLeft: null, geminiRight: null });
   const [loadings, setLoadings] = useState({ dalleLeft: false, dalleRight: false, geminiLeft: false, geminiRight: false });
+
+  // Załaduj referencje przy starcie
+  useState(() => {
+    async function loadRefs() {
+      setRefLoading(true);
+      try {
+        const res = await fetch("/api/sock-references?pairs=2");
+        const data = await res.json();
+        if (data.success) setReferences(data.pairs || []);
+      } catch (e) { console.warn("Brak referencji:", e); }
+      setRefLoading(false);
+    }
+    loadRefs();
+  }, []);
+
+  async function refreshReferences() {
+    setRefLoading(true);
+    try {
+      const res = await fetch("/api/sock-references?pairs=2");
+      const data = await res.json();
+      if (data.success) setReferences(data.pairs || []);
+    } catch (e) { console.warn(e); }
+    setRefLoading(false);
+  }
 
   async function handleAttachment(e) {
     const files = Array.from(e.target.files);
@@ -140,7 +189,7 @@ export default function SockDesigner() {
     for (const file of files) {
       if (file.type.startsWith("image/")) {
         const base64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(file); });
-        results.push({ name: file.name, type: "image", base64, preview: URL.createObjectURL(file) });
+        results.push({ name: file.name, type: "image", base64, mediaType: file.type, preview: URL.createObjectURL(file) });
       } else {
         const text = await file.text().catch(() => "");
         results.push({ name: file.name, type: "text", content: text.slice(0, 4000) });
@@ -157,16 +206,52 @@ export default function SockDesigner() {
     setImgs({ dalleLeft: null, dalleRight: null, geminiLeft: null, geminiRight: null });
 
     try {
-      let prompt = `Zaprojektuj skarpetki: "${description}"\n`;
-      prompt += `Wariant: ${sockVariant === "different" ? "LEWA I PRAWA RÓŻNE" : sockVariant === "same" ? "IDENTYCZNE" : "AI decyduje"}\n`;
-      prompt += `Rozmiary: ${size === "both" ? "oba" : size}\n`;
-      for (const att of attachments.filter(a => a.type === "text")) prompt += `\n--- ${att.name} ---\n${att.content}`;
-      if (attachments.some(a => a.type === "image")) prompt += "\nZałączone obrazy to inspiracje wizualne — uwzględnij styl.";
+      // Buduj wiadomość multimodalną
+      const contentParts = [];
+
+      // 1. Referencje z bazy — jako obrazy z opisem
+      if (references.length > 0) {
+        contentParts.push({
+          type: "text",
+          text: `REFERENCJE PRODUKCYJNE NADWYRAZ (${references.length} par):\nPoniżej widzisz rzeczywiste gotowe skarpetki Nadwyraz w formacie produkcyjnym 168px. Zwróć uwagę na: skalę i gęstość elementów, liczbę kolorów, styl ilustracji, różnicę między lewą a prawą skarpetką.`
+        });
+        for (const pair of references) {
+          contentParts.push({ type: "text", text: `Kolekcja: ${pair.collection} — LEWA:` });
+          contentParts.push({ type: "image", source: { type: "base64", media_type: "image/bmp", data: pair.left.base64 } });
+          contentParts.push({ type: "text", text: `Kolekcja: ${pair.collection} — PRAWA:` });
+          contentParts.push({ type: "image", source: { type: "base64", media_type: "image/bmp", data: pair.right.base64 } });
+        }
+        contentParts.push({ type: "text", text: "---\nTeraz zaprojektuj nową kolekcję w tym samym stylu produkcyjnym:" });
+      }
+
+      // 2. Załączniki użytkownika (inspiracje)
+      if (attachments.length > 0) {
+        contentParts.push({ type: "text", text: "INSPIRACJE OD KLIENTA:" });
+        for (const att of attachments) {
+          if (att.type === "image") {
+            contentParts.push({ type: "text", text: `Załącznik: ${att.name}` });
+            contentParts.push({ type: "image", source: { type: "base64", media_type: att.mediaType || "image/jpeg", data: att.base64 } });
+          } else {
+            contentParts.push({ type: "text", text: `--- ${att.name} ---\n${att.content}` });
+          }
+        }
+      }
+
+      // 3. Główny brief
+      let briefText = `Zaprojektuj skarpetki: "${description}"\n`;
+      briefText += `Wariant: ${sockVariant === "different" ? "LEWA I PRAWA RÓŻNE" : sockVariant === "same" ? "IDENTYCZNE" : "AI decyduje"}\n`;
+      briefText += `Rozmiary: ${size === "both" ? "oba" : size}\n`;
+      contentParts.push({ type: "text", text: briefText });
 
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider: "claude", systemPrompt: SOCK_SYSTEM_PROMPT, userMessage: prompt, aiModel: "claude-sonnet-4-5" }),
+        body: JSON.stringify({
+          provider: "claude",
+          systemPrompt: SOCK_SYSTEM_PROMPT,
+          userMessage: contentParts,
+          aiModel: "claude-sonnet-4-5"
+        }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
@@ -243,7 +328,6 @@ export default function SockDesigner() {
         <div style={{ color: "#bbb", fontSize: 12 }}>Nadwyraz.com · 168px bitmap · DALL-E 3 + Nano Banana 🍌</div>
       </div>
 
-      {/* INPUT */}
       <div style={s.card}>
         <label style={s.label}>OPIS / TEMAT KOLEKCJI</label>
         <textarea value={description} onChange={e => setDescription(e.target.value)}
@@ -294,9 +378,21 @@ export default function SockDesigner() {
           )}
         </div>
 
+        {/* Referencje */}
+        <div style={{ marginTop: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+            <label style={{ ...s.label, marginBottom: 0 }}>REFERENCJE PRODUKCYJNE</label>
+            <button onClick={refreshReferences} disabled={refLoading}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: 10, fontFamily: "inherit" }}>
+              {refLoading ? "⏳" : "↺ losuj inne"}
+            </button>
+          </div>
+          <ReferenceBadge pairs={references} loading={refLoading} />
+        </div>
+
         <button onClick={generateBrief} disabled={!description.trim() || briefLoading}
           style={{ marginTop: 14, width: "100%", background: description.trim() && !briefLoading ? accent : "#ddd", color: description.trim() && !briefLoading ? "#fff" : "#aaa", border: "none", borderRadius: 10, padding: "13px", fontSize: 13, fontWeight: 800, cursor: description.trim() && !briefLoading ? "pointer" : "not-allowed", fontFamily: "inherit", boxShadow: description.trim() && !briefLoading ? `0 4px 16px ${accent}38` : "none" }}>
-          {briefLoading ? "🧦 Generuję brief..." : "▶ KROK 1 — GENERUJ BRIEF"}
+          {briefLoading ? "🧦 Generuję brief..." : `▶ KROK 1 — GENERUJ BRIEF${references.length > 0 ? ` (${references.length} referencje)` : ""}`}
         </button>
       </div>
 
@@ -304,7 +400,6 @@ export default function SockDesigner() {
 
       {result && (
         <div>
-          {/* Header */}
           <div style={{ ...s.card, background: accent, border: "none" }}>
             <div style={{ color: "#fff9", fontSize: 10, fontWeight: 700, letterSpacing: 1.5, marginBottom: 4 }}>KOLEKCJA</div>
             <div style={{ color: "#fff", fontWeight: 900, fontSize: 22, letterSpacing: 1, marginBottom: 6 }}>{result.collection_name}</div>
@@ -312,10 +407,10 @@ export default function SockDesigner() {
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <span style={{ background: "rgba(255,255,255,0.15)", borderRadius: 20, padding: "3px 10px", fontSize: 10, color: "#fff" }}>{result.are_socks_different ? "🔄 Lewa ≠ Prawa" : "= Identyczne"}</span>
               <span style={{ background: "rgba(255,255,255,0.15)", borderRadius: 20, padding: "3px 10px", fontSize: 10, color: "#fff" }}>🎨 {result.palette?.length} kolorów</span>
+              {references.length > 0 && <span style={{ background: "rgba(255,255,255,0.15)", borderRadius: 20, padding: "3px 10px", fontSize: 10, color: "#fff" }}>📎 {references.length} referencje Nadwyraz</span>}
             </div>
           </div>
 
-          {/* Socks info */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
             {[["🧦 LEWA", result.left_sock], ["🧦 PRAWA", result.right_sock]].map(([title, sock]) => sock && (
               <div key={title} style={{ ...s.card, marginBottom: 0 }}>
@@ -344,7 +439,6 @@ export default function SockDesigner() {
             ))}
           </div>
 
-          {/* Palette */}
           <div style={s.card}>
             <label style={s.label}>PALETA ({result.palette?.length} kolorów)</label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
@@ -352,7 +446,6 @@ export default function SockDesigner() {
             </div>
           </div>
 
-          {/* STEP 2 — Prompt editor */}
           <div style={s.card}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
               <div>
@@ -365,22 +458,20 @@ export default function SockDesigner() {
               </button>
             </div>
 
-            {/* Legend */}
             <div style={{ display: "flex", gap: 16, marginBottom: 16, padding: "8px 12px", background: "#f9f7f4", borderRadius: 8 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#1a1814" }} />
-                <span style={{ fontSize: 10, color: "#666" }}>DALL-E 3 — lepszy dla scen narracyjnych</span>
+                <span style={{ fontSize: 10, color: "#666" }}>DALL-E 3 — sceny narracyjne</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#0d9e6e" }} />
-                <span style={{ fontSize: 10, color: "#666" }}>Nano Banana 🍌 — lepszy dla scattered patterns</span>
+                <span style={{ fontSize: 10, color: "#666" }}>Nano Banana 🍌 — scattered patterns</span>
               </div>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-              {/* LEWA */}
               <div>
-                <div style={{ color: "#1a1814", fontWeight: 800, fontSize: 12, marginBottom: 12, paddingBottom: 8, borderBottom: "2px solid #ede9e3" }}>🧦 LEWA SKARPETKA</div>
+                <div style={{ color: "#1a1814", fontWeight: 800, fontSize: 12, marginBottom: 12, paddingBottom: 8, borderBottom: "2px solid #ede9e3" }}>🧦 LEWA</div>
                 <PromptEditor label="lewa" engine="dalle"
                   value={prompts.dalleLeft} onChange={v => setPrompts(p => ({ ...p, dalleLeft: v }))}
                   onGenerate={() => generateSingleImage("dalleLeft", "dalle", prompts.dalleLeft, result?.left_sock?.background_color)}
@@ -390,10 +481,8 @@ export default function SockDesigner() {
                   onGenerate={() => generateSingleImage("geminiLeft", "gemini", prompts.geminiLeft, result?.left_sock?.background_color)}
                   loading={loadings.geminiLeft} imageUrl={imgs.geminiLeft} bgColor={result?.left_sock?.background_color} />
               </div>
-
-              {/* PRAWA */}
               <div>
-                <div style={{ color: "#1a1814", fontWeight: 800, fontSize: 12, marginBottom: 12, paddingBottom: 8, borderBottom: "2px solid #ede9e3" }}>🧦 PRAWA SKARPETKA</div>
+                <div style={{ color: "#1a1814", fontWeight: 800, fontSize: 12, marginBottom: 12, paddingBottom: 8, borderBottom: "2px solid #ede9e3" }}>🧦 PRAWA</div>
                 <PromptEditor label="prawa" engine="dalle"
                   value={prompts.dalleRight} onChange={v => setPrompts(p => ({ ...p, dalleRight: v }))}
                   onGenerate={() => generateSingleImage("dalleRight", "dalle", prompts.dalleRight, result?.right_sock?.background_color)}
@@ -435,6 +524,7 @@ export default function SockDesigner() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700;800&display=swap');
         * { box-sizing: border-box; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
       `}</style>
     </div>
   );
