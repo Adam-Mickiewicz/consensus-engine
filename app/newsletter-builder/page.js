@@ -50,17 +50,20 @@ ${productsHTML}
 }
 
 function PreviewFrame({ html, title }) {
-  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:16px;background:#fff;font-family:sans-serif;}*{box-sizing:border-box;}</style></head><body>${html}</body></html>`;
+  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:#e8e4de;font-family:sans-serif;}*{box-sizing:border-box;}.wrapper{max-width:600px;margin:0 auto;background:#fff;padding:24px;}</style></head><body><div class="wrapper">${html}</div></body></html>`;
   return (
-    <div style={{ border: "1px solid #e8e4de", borderRadius: "10px", overflow: "hidden", background: "#fff" }}>
-      <div style={{ padding: "8px 14px", background: "#f5f2ee", borderBottom: "1px solid #e8e4de", fontSize: "11px", color: "#888", fontFamily: "sans-serif" }}>
-        📧 Podgląd — {title}
+    <div style={{ border: "1px solid #e8e4de", borderRadius: "10px", overflow: "hidden", background: "#e8e4de" }}>
+      <div style={{ padding: "8px 14px", background: "#f5f2ee", borderBottom: "1px solid #e8e4de", fontSize: "11px", color: "#888", fontFamily: "sans-serif", display: "flex", justifyContent: "space-between" }}>
+        <span>📧 Podgląd — {title}</span>
+        <span style={{ color: "#bbb" }}>600px</span>
       </div>
-      <iframe
-        srcDoc={fullHtml}
-        style={{ width: "100%", height: "320px", border: "none", display: "block" }}
-        title={title}
-      />
+      <div style={{ padding: "16px", background: "#e8e4de" }}>
+        <iframe
+          srcDoc={fullHtml}
+          style={{ width: "600px", maxWidth: "100%", height: "360px", border: "none", display: "block", margin: "0 auto", borderRadius: "4px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
+          title={title}
+        />
+      </div>
     </div>
   );
 }
