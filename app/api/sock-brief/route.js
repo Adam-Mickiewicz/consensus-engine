@@ -27,7 +27,7 @@ GEMINI PROMPT RULES:
 - Start: "Flat 2D textile sock pattern, tall vertical 9:16 format, fills entire canvas edge to edge, bold black outlines, solid flat colors only, no gradients, no 3D."
 - Describe scene, end with: "Max 6 colors, pixel-art bitmap aesthetic. Background: [HEX]."
 
-CRITICAL: The user's description is the PRIMARY brief. References show style only — never copy their theme.
+CRITICAL: The user's description is THE ONLY SOURCE OF TRUTH for the theme. If user says "Fiat 126p" — design is about Fiat 126p. If user says "cats" — design is about cats. NEVER invent a different theme. The user's description is the PRIMARY brief. References show style only — never copy their theme.
 
 Respond ONLY in valid JSON:
 {
@@ -54,7 +54,7 @@ export async function POST(request) {
     const contentParts = [];
 
     // 1. BRIEF UŻYTKOWNIKA — PIERWSZY, najważniejszy
-    contentParts.push({ type: "text", text: `TEMAT KOLEKCJI (to jest główny brief — zaprojektuj skarpetki NA TEN TEMAT):\n"${description}"\nWariant: ${sockVariant === "different" ? "LEWA I PRAWA RÓŻNE" : sockVariant === "same" ? "IDENTYCZNE" : "AI decyduje"}\nRozmiary: ${size === "both" ? "oba" : size}` });
+    contentParts.push({ type: "text", text: `ZAPROJEKTUJ SKARPETKI DOKŁADNIE NA TEN TEMAT (nie zmieniaj tematu, nie interpretuj kreatywnie, trzymaj się tego co napisał użytkownik):\n"${description}"\nWariant: ${sockVariant === "different" ? "LEWA I PRAWA RÓŻNE" : sockVariant === "same" ? "IDENTYCZNE" : "AI decyduje"}\nRozmiary: ${size === "both" ? "oba" : size}` });
 
     // 2. Załączniki użytkownika
     if (attachments?.length > 0) {
