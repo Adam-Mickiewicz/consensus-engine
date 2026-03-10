@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const accent = "#b8763a";
 
@@ -118,7 +118,7 @@ function PromptEditor({ label, engine, value, onChange, onGenerate, loading, ima
 function ReferenceBadge({ pairs, loading }) {
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", background: "#f5f3ef", borderRadius: 8, border: "1px solid #ede9e3" }}>
-      <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#f0a500", animation: "pulse 1s infinite" }} />
+      <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#f0a500" }} />
       <span style={{ fontSize: 10, color: "#999" }}>Ładuję referencje...</span>
     </div>
   );
@@ -130,12 +130,12 @@ function ReferenceBadge({ pairs, loading }) {
   return (
     <div style={{ padding: "8px 10px", background: "#f0faf5", borderRadius: 8, border: "1px solid #b8e8d0" }}>
       <div style={{ fontSize: 9, fontWeight: 700, color: "#0d9e6e", letterSpacing: 1, marginBottom: 6 }}>REFERENCJE NADWYRAZ ({pairs.length} pary)</div>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         {pairs.map((pair, i) => (
           <div key={i} style={{ display: "flex", gap: 4, alignItems: "center" }}>
-            <img src={`data:image/bmp;base64,${pair.left.base64}`} style={{ height: 40, width: "auto", borderRadius: 3, border: "1px solid #ccc", imageRendering: "pixelated" }} />
-            <img src={`data:image/bmp;base64,${pair.right.base64}`} style={{ height: 40, width: "auto", borderRadius: 3, border: "1px solid #ccc", imageRendering: "pixelated" }} />
-            <span style={{ fontSize: 9, color: "#666", maxWidth: 60, lineHeight: 1.2 }}>{pair.collection}</span>
+            <img src={pair.left.url} style={{ height: 48, width: "auto", borderRadius: 3, border: "1px solid #ccc", imageRendering: "pixelated" }} />
+            <img src={pair.right.url} style={{ height: 48, width: "auto", borderRadius: 3, border: "1px solid #ccc", imageRendering: "pixelated" }} />
+            <span style={{ fontSize: 9, color: "#666", maxWidth: 60, lineHeight: 1.3 }}>{pair.collection}</span>
           </div>
         ))}
       </div>
@@ -159,27 +159,17 @@ export default function SockDesigner() {
   const [imgs, setImgs] = useState({ dalleLeft: null, dalleRight: null, geminiLeft: null, geminiRight: null });
   const [loadings, setLoadings] = useState({ dalleLeft: false, dalleRight: false, geminiLeft: false, geminiRight: false });
 
-  // Załaduj referencje przy starcie
-  useState(() => {
-    async function loadRefs() {
-      setRefLoading(true);
-      try {
-        const res = await fetch("/api/sock-references?pairs=2");
-        const data = await res.json();
-        if (data.success) setReferences(data.pairs || []);
-      } catch (e) { console.warn("Brak referencji:", e); }
-      setRefLoading(false);
-    }
-    loadRefs();
+  useEffect(() => {
+    loadReferences();
   }, []);
 
-  async function refreshReferences() {
+  async function loadReferences() {
     setRefLoading(true);
     try {
       const res = await fetch("/api/sock-references?pairs=2");
       const data = await res.json();
       if (data.success) setReferences(data.pairs || []);
-    } catch (e) { console.warn(e); }
+    } catch (e) { console.warn("Brak referencji:", e); }
     setRefLoading(false);
   }
 
@@ -206,41 +196,37 @@ export default function SockDesigner() {
     setImgs({ dalleLeft: null, dalleRight: null, geminiLeft: null, geminiRight: null });
 
     try {
-      // Buduj wiadomość multimodalną
       const contentParts = [];
 
-      // 1. Referencje z bazy — jako obrazy z opisem
+      // Referencje jako URL-e (Claude obsługuje image URL)
       if (references.length > 0) {
         contentParts.push({
           type: "text",
-          text: `REFERENCJE PRODUKCYJNE NADWYRAZ (${references.length} par):\nPoniżej widzisz rzeczywiste gotowe skarpetki Nadwyraz w formacie produkcyjnym 168px. Zwróć uwagę na: skalę i gęstość elementów, liczbę kolorów, styl ilustracji, różnicę między lewą a prawą skarpetką.`
+          text: `REFERENCJE PRODUKCYJNE NADWYRAZ (${references.length} pary gotowych skarpetek 168px):\nZwróć uwagę na: skalę elementów, gęstość wzoru, liczbę kolorów, różnicę lewa/prawa.`
         });
         for (const pair of references) {
-          contentParts.push({ type: "text", text: `Kolekcja: ${pair.collection} — LEWA:` });
-          contentParts.push({ type: "image", source: { type: "base64", media_type: "image/bmp", data: pair.left.base64 } });
-          contentParts.push({ type: "text", text: `Kolekcja: ${pair.collection} — PRAWA:` });
-          contentParts.push({ type: "image", source: { type: "base64", media_type: "image/bmp", data: pair.right.base64 } });
+          contentParts.push({ type: "text", text: `${pair.collection} — LEWA:` });
+          contentParts.push({ type: "image", source: { type: "url", url: pair.left.url } });
+          contentParts.push({ type: "text", text: `${pair.collection} — PRAWA:` });
+          contentParts.push({ type: "image", source: { type: "url", url: pair.right.url } });
         }
-        contentParts.push({ type: "text", text: "---\nTeraz zaprojektuj nową kolekcję w tym samym stylu produkcyjnym:" });
+        contentParts.push({ type: "text", text: "---\nZaprojektuj nową kolekcję w tym stylu:" });
       }
 
-      // 2. Załączniki użytkownika (inspiracje)
-      if (attachments.length > 0) {
-        contentParts.push({ type: "text", text: "INSPIRACJE OD KLIENTA:" });
-        for (const att of attachments) {
-          if (att.type === "image") {
-            contentParts.push({ type: "text", text: `Załącznik: ${att.name}` });
-            contentParts.push({ type: "image", source: { type: "base64", media_type: att.mediaType || "image/jpeg", data: att.base64 } });
-          } else {
-            contentParts.push({ type: "text", text: `--- ${att.name} ---\n${att.content}` });
-          }
+      // Załączniki użytkownika
+      for (const att of attachments) {
+        if (att.type === "image") {
+          contentParts.push({ type: "text", text: `Inspiracja: ${att.name}` });
+          contentParts.push({ type: "image", source: { type: "base64", media_type: att.mediaType || "image/jpeg", data: att.base64 } });
+        } else {
+          contentParts.push({ type: "text", text: `--- ${att.name} ---\n${att.content}` });
         }
       }
 
-      // 3. Główny brief
+      // Brief
       let briefText = `Zaprojektuj skarpetki: "${description}"\n`;
       briefText += `Wariant: ${sockVariant === "different" ? "LEWA I PRAWA RÓŻNE" : sockVariant === "same" ? "IDENTYCZNE" : "AI decyduje"}\n`;
-      briefText += `Rozmiary: ${size === "both" ? "oba" : size}\n`;
+      briefText += `Rozmiary: ${size === "both" ? "oba" : size}`;
       contentParts.push({ type: "text", text: briefText });
 
       const res = await fetch("/api/chat", {
@@ -273,7 +259,7 @@ export default function SockDesigner() {
     setBriefLoading(false);
   }
 
-  async function generateSingleImage(key, engine, promptText, bgColor) {
+  async function generateSingleImage(key, engine, promptText) {
     setLoadings(l => ({ ...l, [key]: true }));
     setImgs(i => ({ ...i, [key]: null }));
     try {
@@ -304,10 +290,10 @@ export default function SockDesigner() {
 
   async function generateAllImages() {
     await Promise.all([
-      generateSingleImage("dalleLeft", "dalle", prompts.dalleLeft, result?.left_sock?.background_color),
-      generateSingleImage("dalleRight", "dalle", prompts.dalleRight, result?.right_sock?.background_color),
-      generateSingleImage("geminiLeft", "gemini", prompts.geminiLeft, result?.left_sock?.background_color),
-      generateSingleImage("geminiRight", "gemini", prompts.geminiRight, result?.right_sock?.background_color),
+      generateSingleImage("dalleLeft", "dalle", prompts.dalleLeft),
+      generateSingleImage("dalleRight", "dalle", prompts.dalleRight),
+      generateSingleImage("geminiLeft", "gemini", prompts.geminiLeft),
+      generateSingleImage("geminiRight", "gemini", prompts.geminiRight),
     ]);
   }
 
@@ -378,11 +364,10 @@ export default function SockDesigner() {
           )}
         </div>
 
-        {/* Referencje */}
         <div style={{ marginTop: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
             <label style={{ ...s.label, marginBottom: 0 }}>REFERENCJE PRODUKCYJNE</label>
-            <button onClick={refreshReferences} disabled={refLoading}
+            <button onClick={loadReferences} disabled={refLoading}
               style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: 10, fontFamily: "inherit" }}>
               {refLoading ? "⏳" : "↺ losuj inne"}
             </button>
@@ -392,7 +377,7 @@ export default function SockDesigner() {
 
         <button onClick={generateBrief} disabled={!description.trim() || briefLoading}
           style={{ marginTop: 14, width: "100%", background: description.trim() && !briefLoading ? accent : "#ddd", color: description.trim() && !briefLoading ? "#fff" : "#aaa", border: "none", borderRadius: 10, padding: "13px", fontSize: 13, fontWeight: 800, cursor: description.trim() && !briefLoading ? "pointer" : "not-allowed", fontFamily: "inherit", boxShadow: description.trim() && !briefLoading ? `0 4px 16px ${accent}38` : "none" }}>
-          {briefLoading ? "🧦 Generuję brief..." : `▶ KROK 1 — GENERUJ BRIEF${references.length > 0 ? ` (${references.length} referencje)` : ""}`}
+          {briefLoading ? "🧦 Generuję brief..." : `▶ KROK 1 — GENERUJ BRIEF${references.length > 0 ? ` (${references.length} ref.)` : ""}`}
         </button>
       </div>
 
@@ -407,7 +392,7 @@ export default function SockDesigner() {
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <span style={{ background: "rgba(255,255,255,0.15)", borderRadius: 20, padding: "3px 10px", fontSize: 10, color: "#fff" }}>{result.are_socks_different ? "🔄 Lewa ≠ Prawa" : "= Identyczne"}</span>
               <span style={{ background: "rgba(255,255,255,0.15)", borderRadius: 20, padding: "3px 10px", fontSize: 10, color: "#fff" }}>🎨 {result.palette?.length} kolorów</span>
-              {references.length > 0 && <span style={{ background: "rgba(255,255,255,0.15)", borderRadius: 20, padding: "3px 10px", fontSize: 10, color: "#fff" }}>📎 {references.length} referencje Nadwyraz</span>}
+              {references.length > 0 && <span style={{ background: "rgba(255,255,255,0.15)", borderRadius: 20, padding: "3px 10px", fontSize: 10, color: "#fff" }}>📎 {references.length} ref. Nadwyraz</span>}
             </div>
           </div>
 
@@ -474,23 +459,23 @@ export default function SockDesigner() {
                 <div style={{ color: "#1a1814", fontWeight: 800, fontSize: 12, marginBottom: 12, paddingBottom: 8, borderBottom: "2px solid #ede9e3" }}>🧦 LEWA</div>
                 <PromptEditor label="lewa" engine="dalle"
                   value={prompts.dalleLeft} onChange={v => setPrompts(p => ({ ...p, dalleLeft: v }))}
-                  onGenerate={() => generateSingleImage("dalleLeft", "dalle", prompts.dalleLeft, result?.left_sock?.background_color)}
-                  loading={loadings.dalleLeft} imageUrl={imgs.dalleLeft} bgColor={result?.left_sock?.background_color} />
+                  onGenerate={() => generateSingleImage("dalleLeft", "dalle", prompts.dalleLeft)}
+                  loading={loadings.dalleLeft} imageUrl={imgs.dalleLeft} />
                 <PromptEditor label="lewa" engine="gemini"
                   value={prompts.geminiLeft} onChange={v => setPrompts(p => ({ ...p, geminiLeft: v }))}
-                  onGenerate={() => generateSingleImage("geminiLeft", "gemini", prompts.geminiLeft, result?.left_sock?.background_color)}
-                  loading={loadings.geminiLeft} imageUrl={imgs.geminiLeft} bgColor={result?.left_sock?.background_color} />
+                  onGenerate={() => generateSingleImage("geminiLeft", "gemini", prompts.geminiLeft)}
+                  loading={loadings.geminiLeft} imageUrl={imgs.geminiLeft} />
               </div>
               <div>
                 <div style={{ color: "#1a1814", fontWeight: 800, fontSize: 12, marginBottom: 12, paddingBottom: 8, borderBottom: "2px solid #ede9e3" }}>🧦 PRAWA</div>
                 <PromptEditor label="prawa" engine="dalle"
                   value={prompts.dalleRight} onChange={v => setPrompts(p => ({ ...p, dalleRight: v }))}
-                  onGenerate={() => generateSingleImage("dalleRight", "dalle", prompts.dalleRight, result?.right_sock?.background_color)}
-                  loading={loadings.dalleRight} imageUrl={imgs.dalleRight} bgColor={result?.right_sock?.background_color} />
+                  onGenerate={() => generateSingleImage("dalleRight", "dalle", prompts.dalleRight)}
+                  loading={loadings.dalleRight} imageUrl={imgs.dalleRight} />
                 <PromptEditor label="prawa" engine="gemini"
                   value={prompts.geminiRight} onChange={v => setPrompts(p => ({ ...p, geminiRight: v }))}
-                  onGenerate={() => generateSingleImage("geminiRight", "gemini", prompts.geminiRight, result?.right_sock?.background_color)}
-                  loading={loadings.geminiRight} imageUrl={imgs.geminiRight} bgColor={result?.right_sock?.background_color} />
+                  onGenerate={() => generateSingleImage("geminiRight", "gemini", prompts.geminiRight)}
+                  loading={loadings.geminiRight} imageUrl={imgs.geminiRight} />
               </div>
             </div>
           </div>
@@ -524,7 +509,6 @@ export default function SockDesigner() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700;800&display=swap');
         * { box-sizing: border-box; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
       `}</style>
     </div>
   );

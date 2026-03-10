@@ -6,6 +6,8 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -15,16 +17,8 @@ export async function GET(request) {
       .from("sock-references")
       .list("", { limit: 100, offset: 0, sortBy: { column: "name", order: "asc" } });
 
-    if (error) {
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-    }
-
-    if (!files || files.length === 0) {
-      return NextResponse.json({ success: true, pairs: [], debug: "bucket empty", raw: files });
-    }
-
-    // Loguj wszystkie pliki bez filtrowania
-    const allNames = files.map(f => f.name);
+    if (error) return NextResponse.json({ success: false, error: error.message });
+    if (!files || files.length === 0) return NextResponse.json({ success: true, pairs: [] });
 
     const imageFiles = files.filter(f => f.name && !f.name.startsWith("."));
 
@@ -44,45 +38,28 @@ export async function GET(request) {
         continue;
       }
 
-      if (!pairMap[base]) pairMap[base] = { collection: f.name.split(/[-_]/)[0], left: null, right: null };
+      if (!pairMap[base]) pairMap[base] = { collection: f.name.split(/[-_ ]/)[0], left: null, right: null };
       pairMap[base][side] = f.name;
     }
 
     const completePairs = Object.values(pairMap).filter(p => p.left && p.right);
-
-    if (completePairs.length === 0) {
-      return NextResponse.json({ 
-        success: true, pairs: [], 
-        debug: `found ${imageFiles.length} files, 0 pairs`,
-        allNames
-      });
-    }
-
     const shuffled = completePairs.sort(() => Math.random() - 0.5);
     const selected = shuffled.slice(0, Math.min(pairs, shuffled.length));
 
-    const downloadFile = async (filename) => {
-      const { data, error } = await supabase.storage
-        .from("sock-references")
-        .download(filename);
-      if (error || !data) return null;
-      const buffer = await data.arrayBuffer();
-      const base64 = Buffer.from(buffer).toString("base64");
-      return { filename, base64, mediaType: "image/bmp" };
-    };
+    // Zwróć publiczne URL-e zamiast base64
+    const result = selected.map(pair => ({
+      collection: pair.collection,
+      left: {
+        filename: pair.left,
+        url: `${SUPABASE_URL}/storage/v1/object/public/sock-references/${encodeURIComponent(pair.left)}`
+      },
+      right: {
+        filename: pair.right,
+        url: `${SUPABASE_URL}/storage/v1/object/public/sock-references/${encodeURIComponent(pair.right)}`
+      }
+    }));
 
-    const result = await Promise.all(
-      selected.map(async (pair) => {
-        const [left, right] = await Promise.all([
-          downloadFile(pair.left),
-          downloadFile(pair.right),
-        ]);
-        return { collection: pair.collection, left, right };
-      })
-    );
-
-    const valid = result.filter(p => p.left && p.right);
-    return NextResponse.json({ success: true, pairs: valid, total: completePairs.length });
+    return NextResponse.json({ success: true, pairs: result, total: completePairs.length });
 
   } catch (e) {
     return NextResponse.json({ success: false, error: e.message }, { status: 500 });
