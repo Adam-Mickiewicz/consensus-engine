@@ -1,5 +1,6 @@
 "use client";
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
+
 
 function generateTextBlockHTML(text) {
   const bodyLines = text.body.split("\n").map(line =>
@@ -50,17 +51,24 @@ ${productsHTML}
 }
 
 function PreviewFrame({ html, title, width = 360 }) {
-  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:#e8e4de;font-family:sans-serif;}*{box-sizing:border-box;}.wrapper{max-width:600px;margin:0 auto;background:#fff;padding:24px;}</style></head><body><div class="wrapper">${html}</div></body></html>`;
+  const [mobile, setMobile] = React.useState(false);
+  const mobileWidth = 375;
+  const activeWidth = mobile ? mobileWidth : width;
+  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:#e8e4de;font-family:sans-serif;}*{box-sizing:border-box;}.wrapper{max-width:${activeWidth}px;margin:0 auto;background:#fff;padding:16px;}</style></head><body><div class="wrapper">${html}</div></body></html>`;
   return (
     <div style={{ border: "1px solid #e8e4de", borderRadius: "10px", overflow: "hidden", background: "#e8e4de" }}>
-      <div style={{ padding: "8px 14px", background: "#f5f2ee", borderBottom: "1px solid #e8e4de", fontSize: "11px", color: "#888", fontFamily: "sans-serif", display: "flex", justifyContent: "space-between" }}>
+      <div style={{ padding: "8px 14px", background: "#f5f2ee", borderBottom: "1px solid #e8e4de", fontSize: "11px", color: "#888", fontFamily: "sans-serif", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span>📧 Podgląd — {title}</span>
-        <span style={{ color: "#bbb" }}>600px</span>
+        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+          <span style={{ color: "#bbb", marginRight: 4 }}>{mobile ? `${mobileWidth}px` : `${width}px`}</span>
+          <button onClick={() => setMobile(false)} style={{ background: mobile ? "transparent" : "#1a1a1a", color: mobile ? "#aaa" : "#fff", border: "1px solid #ddd", borderRadius: "5px", padding: "3px 10px", fontSize: "11px", cursor: "pointer", fontFamily: "sans-serif" }}>🖥 Desktop</button>
+          <button onClick={() => setMobile(true)} style={{ background: mobile ? "#1a1a1a" : "transparent", color: mobile ? "#fff" : "#aaa", border: "1px solid #ddd", borderRadius: "5px", padding: "3px 10px", fontSize: "11px", cursor: "pointer", fontFamily: "sans-serif" }}>📱 Mobile</button>
+        </div>
       </div>
-      <div style={{ padding: "16px", background: "#e8e4de" }}>
+      <div style={{ padding: "16px", background: "#e8e4de", display: "flex", justifyContent: "center" }}>
         <iframe
           srcDoc={fullHtml}
-          style={{ width: `${width}px`, maxWidth: "100%", height: "360px", border: "none", display: "block", margin: "0 auto", borderRadius: "4px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
+          style={{ width: `${activeWidth}px`, maxWidth: "100%", height: "400px", border: "none", display: "block", borderRadius: "4px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
           title={title}
         />
       </div>
