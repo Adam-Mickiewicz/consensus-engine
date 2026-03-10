@@ -229,7 +229,7 @@ export default function SockDesigner() {
       briefText += `Rozmiary: ${size === "both" ? "oba" : size}`;
       contentParts.push({ type: "text", text: briefText });
 
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/sock-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -243,8 +243,8 @@ export default function SockDesigner() {
       if (!data.success) throw new Error(data.error);
 
       let parsed;
-      try { parsed = JSON.parse(data.text); }
-      catch { const m = data.text.match(/\{[\s\S]*\}/); if (m) parsed = JSON.parse(m[0]); else throw new Error("Błąd parsowania JSON"); }
+      try { parsed = JSON.parse(data.result); }
+      catch { const m = data.result.match(/\{[\s\S]*\}/); if (m) parsed = JSON.parse(m[0]); else throw new Error("Błąd parsowania JSON"); }
 
       setResult(parsed);
       setPrompts({
