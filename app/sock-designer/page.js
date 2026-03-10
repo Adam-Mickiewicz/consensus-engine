@@ -20,6 +20,17 @@ STYLE REFERENCE:
 - "Warszawa": left=city skyline sunset (charcoal+orange+magenta), right=scattered logos on dark bg
 - "Maluch": Fiat 126p motifs, road forming heart shape, yellow cars on teal/navy/red
 
+DALLE PROMPT RULES — always follow these exactly:
+- Start with: "VERTICAL PORTRAIT sock textile pattern. Tall narrow format (1:3 ratio). Pure 2D flat illustration, side view only, NO isometric, NO 3D perspective, NO gradients."
+- Add: "Bold black outlines, solid color fills only. Pattern fills entire canvas edge to edge, no white margins, no borders."
+- Then describe the scene/motifs
+- End with: "Max 5 colors. Background: [HEX COLOR]."
+
+GEMINI PROMPT RULES — always follow these exactly:
+- Start with: "Flat 2D textile sock pattern, tall vertical 9:16 format, fills entire canvas edge to edge with no margins, bold black outlines, solid flat colors only, no gradients, no shading, no 3D."
+- Then describe the scene/motifs with background color
+- End with: "Max 6 colors, pixel-art bitmap aesthetic."
+
 Respond ONLY in valid JSON:
 {
   "collection_name": "2-3 words max",
@@ -44,10 +55,10 @@ Respond ONLY in valid JSON:
   "palette": [
     {"hex": "#HEX", "name": "Polish name", "usage": "where used"}
   ],
-  "dalle_prompt_left": "Flat 2D sock textile pattern, TALL VERTICAL format like a sock unrolled flat (portrait, narrow and tall 1:3 ratio), bold outlines, solid color fills only, NO gradients, NO 3D, NO perspective, pattern fills entire canvas edge to edge. [DESCRIBE scene]. Max 5 colors.",
-  "dalle_prompt_right": "Same rules. [DESCRIBE scene].",
-  "gemini_prompt_left": "Flat 2D textile repeat pattern for a sock, tall vertical 9:16 format, fills entire canvas, bold black outlines, solid flat colors only, no gradients, no shading, pixel-art bitmap aesthetic, max 6 colors. Background: [HEX]. [DESCRIBE scene in detail].",
-  "gemini_prompt_right": "Same rules. Background: [HEX]. [DESCRIBE scene].",
+  "dalle_prompt_left": "VERTICAL PORTRAIT sock textile pattern. Tall narrow format (1:3 ratio). Pure 2D flat illustration, side view only, NO isometric, NO 3D perspective, NO gradients. Bold black outlines, solid color fills only. Pattern fills entire canvas edge to edge, no white margins, no borders. [SCENE DESCRIPTION]. Max 5 colors. Background: [HEX].",
+  "dalle_prompt_right": "VERTICAL PORTRAIT sock textile pattern. Tall narrow format (1:3 ratio). Pure 2D flat illustration, side view only, NO isometric, NO 3D perspective, NO gradients. Bold black outlines, solid color fills only. Pattern fills entire canvas edge to edge, no white margins, no borders. [SCENE DESCRIPTION]. Max 5 colors. Background: [HEX].",
+  "gemini_prompt_left": "Flat 2D textile sock pattern, tall vertical 9:16 format, fills entire canvas edge to edge with no margins, bold black outlines, solid flat colors only, no gradients, no shading, no 3D. Background: [HEX]. [SCENE DESCRIPTION]. Max 6 colors, pixel-art bitmap aesthetic.",
+  "gemini_prompt_right": "Flat 2D textile sock pattern, tall vertical 9:16 format, fills entire canvas edge to edge with no margins, bold black outlines, solid flat colors only, no gradients, no shading, no 3D. Background: [HEX]. [SCENE DESCRIPTION]. Max 6 colors, pixel-art bitmap aesthetic.",
   "technical_spec": {"size_small": "168 × 435 px", "size_large": "168 × 480 px", "color_count": 5},
   "designer_notes": "practical notes in Polish"
 }`;
@@ -79,7 +90,7 @@ function ColorSwatch({ color }) {
 }
 
 function PromptEditor({ label, engine, value, onChange, onGenerate, loading, imageUrl, bgColor }) {
-  const engineColor = engine === "dalle" ? "#555" : "#0d9e6e";
+  const engineColor = engine === "dalle" ? "#1a1814" : "#0d9e6e";
   const engineLabel = engine === "dalle" ? "DALL-E 3" : "Nano Banana 🍌";
   return (
     <div style={{ marginBottom: 12 }}>
@@ -97,11 +108,11 @@ function PromptEditor({ label, engine, value, onChange, onGenerate, loading, ima
         style={{ width: "100%", minHeight: 80, padding: "10px 12px", borderRadius: 8, border: `1px solid ${engineColor}44`, fontSize: 11, fontFamily: "inherit", lineHeight: 1.6, resize: "vertical", outline: "none", boxSizing: "border-box", background: "#fdfcfa", color: "#333" }} />
       {imageUrl && (
         <div style={{ marginTop: 8, borderRadius: 8, overflow: "hidden", background: bgColor || "#f0ede8", border: "1px solid #ede9e3" }}>
-          <img src={imageUrl} style={{ width: "100%", display: "block", maxHeight: 280, objectFit: "contain" }} />
+          <img src={imageUrl} style={{ width: "100%", display: "block", maxHeight: 320, objectFit: "contain" }} />
         </div>
       )}
       {loading && !imageUrl && (
-        <div style={{ marginTop: 8, padding: 16, background: bgColor || "#f0ede8", borderRadius: 8, textAlign: "center", color: "rgba(255,255,255,0.6)", fontSize: 11 }}>
+        <div style={{ marginTop: 8, padding: 20, background: (bgColor || "#333") + "22", borderRadius: 8, textAlign: "center", color: "#888", fontSize: 11 }}>
           {engine === "dalle" ? "⏳ DALL-E generuje..." : "🍌 Nano Banana generuje..."}
         </div>
       )}
@@ -119,9 +130,7 @@ export default function SockDesigner() {
   const [error, setError] = useState(null);
   const fileRef = useRef(null);
 
-  // Edytowalne prompty
   const [prompts, setPrompts] = useState({ dalleLeft: "", dalleRight: "", geminiLeft: "", geminiRight: "" });
-  // Obrazy i loading states
   const [imgs, setImgs] = useState({ dalleLeft: null, dalleRight: null, geminiLeft: null, geminiRight: null });
   const [loadings, setLoadings] = useState({ dalleLeft: false, dalleRight: false, geminiLeft: false, geminiRight: false });
 
@@ -181,12 +190,13 @@ export default function SockDesigner() {
 
   async function generateSingleImage(key, engine, promptText, bgColor) {
     setLoadings(l => ({ ...l, [key]: true }));
+    setImgs(i => ({ ...i, [key]: null }));
     try {
       if (engine === "dalle") {
         const res = await fetch("/api/image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ problem: "sock design for Nadwyraz.com", consensus: promptText }),
+          body: JSON.stringify({ problem: "sock design", consensus: promptText }),
         });
         const data = await res.json();
         if (!data.success) throw new Error(data.error);
@@ -202,7 +212,7 @@ export default function SockDesigner() {
         setImgs(i => ({ ...i, [key]: data.imageUrl }));
       }
     } catch (e) {
-      setError(`Błąd generowania (${key}): ${e.message}`);
+      setError(`Błąd (${key}): ${e.message}`);
     }
     setLoadings(l => ({ ...l, [key]: false }));
   }
@@ -292,7 +302,6 @@ export default function SockDesigner() {
 
       {error && <div style={{ padding: 12, background: "#fff0ee", borderRadius: 10, border: "1px solid #f5c5bc", color: "#b83020", fontSize: 12, marginBottom: 16 }}>❌ {error}</div>}
 
-      {/* RESULT */}
       {result && (
         <div>
           {/* Header */}
@@ -345,26 +354,38 @@ export default function SockDesigner() {
 
           {/* STEP 2 — Prompt editor */}
           <div style={s.card}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
               <div>
-                <label style={{ ...s.label, marginBottom: 2 }}>KROK 2 — EDYTUJ PROMPTY I GENERUJ OBRAZY</label>
-                <div style={{ color: "#bbb", fontSize: 10 }}>Możesz poprawić prompt przed wysłaniem do AI · każdy generujesz osobno lub wszystkie naraz</div>
+                <label style={{ ...s.label, marginBottom: 2 }}>KROK 2 — EDYTUJ PROMPTY I GENERUJ</label>
+                <div style={{ color: "#bbb", fontSize: 10, marginBottom: 14 }}>Podkręć prompt przed wysłaniem · generuj osobno lub wszystkie naraz</div>
               </div>
               <button onClick={generateAllImages} disabled={anyImageLoading}
-                style={{ background: anyImageLoading ? "#eee" : "#1a1814", color: anyImageLoading ? "#aaa" : "#fff", border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 11, fontWeight: 800, cursor: anyImageLoading ? "not-allowed" : "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                style={{ background: anyImageLoading ? "#eee" : "#1a1814", color: anyImageLoading ? "#aaa" : "#fff", border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 11, fontWeight: 800, cursor: anyImageLoading ? "not-allowed" : "pointer", fontFamily: "inherit", whiteSpace: "nowrap", flexShrink: 0 }}>
                 {anyImageLoading ? "⏳ Generuję..." : "▶▶ Wszystkie 4"}
               </button>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+            {/* Legend */}
+            <div style={{ display: "flex", gap: 16, marginBottom: 16, padding: "8px 12px", background: "#f9f7f4", borderRadius: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#1a1814" }} />
+                <span style={{ fontSize: 10, color: "#666" }}>DALL-E 3 — lepszy dla scen narracyjnych</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#0d9e6e" }} />
+                <span style={{ fontSize: 10, color: "#666" }}>Nano Banana 🍌 — lepszy dla scattered patterns</span>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
               {/* LEWA */}
               <div>
-                <div style={{ color: "#1a1814", fontWeight: 800, fontSize: 12, marginBottom: 12, paddingBottom: 8, borderBottom: "1px solid #ede9e3" }}>🧦 LEWA</div>
-                <PromptEditor label="lewa skarpetka" engine="dalle"
+                <div style={{ color: "#1a1814", fontWeight: 800, fontSize: 12, marginBottom: 12, paddingBottom: 8, borderBottom: "2px solid #ede9e3" }}>🧦 LEWA SKARPETKA</div>
+                <PromptEditor label="lewa" engine="dalle"
                   value={prompts.dalleLeft} onChange={v => setPrompts(p => ({ ...p, dalleLeft: v }))}
                   onGenerate={() => generateSingleImage("dalleLeft", "dalle", prompts.dalleLeft, result?.left_sock?.background_color)}
                   loading={loadings.dalleLeft} imageUrl={imgs.dalleLeft} bgColor={result?.left_sock?.background_color} />
-                <PromptEditor label="lewa skarpetka" engine="gemini"
+                <PromptEditor label="lewa" engine="gemini"
                   value={prompts.geminiLeft} onChange={v => setPrompts(p => ({ ...p, geminiLeft: v }))}
                   onGenerate={() => generateSingleImage("geminiLeft", "gemini", prompts.geminiLeft, result?.left_sock?.background_color)}
                   loading={loadings.geminiLeft} imageUrl={imgs.geminiLeft} bgColor={result?.left_sock?.background_color} />
@@ -372,12 +393,12 @@ export default function SockDesigner() {
 
               {/* PRAWA */}
               <div>
-                <div style={{ color: "#1a1814", fontWeight: 800, fontSize: 12, marginBottom: 12, paddingBottom: 8, borderBottom: "1px solid #ede9e3" }}>🧦 PRAWA</div>
-                <PromptEditor label="prawa skarpetka" engine="dalle"
+                <div style={{ color: "#1a1814", fontWeight: 800, fontSize: 12, marginBottom: 12, paddingBottom: 8, borderBottom: "2px solid #ede9e3" }}>🧦 PRAWA SKARPETKA</div>
+                <PromptEditor label="prawa" engine="dalle"
                   value={prompts.dalleRight} onChange={v => setPrompts(p => ({ ...p, dalleRight: v }))}
                   onGenerate={() => generateSingleImage("dalleRight", "dalle", prompts.dalleRight, result?.right_sock?.background_color)}
                   loading={loadings.dalleRight} imageUrl={imgs.dalleRight} bgColor={result?.right_sock?.background_color} />
-                <PromptEditor label="prawa skarpetka" engine="gemini"
+                <PromptEditor label="prawa" engine="gemini"
                   value={prompts.geminiRight} onChange={v => setPrompts(p => ({ ...p, geminiRight: v }))}
                   onGenerate={() => generateSingleImage("geminiRight", "gemini", prompts.geminiRight, result?.right_sock?.background_color)}
                   loading={loadings.geminiRight} imageUrl={imgs.geminiRight} bgColor={result?.right_sock?.background_color} />
