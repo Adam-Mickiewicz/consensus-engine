@@ -49,7 +49,7 @@ ${productsHTML}
 </table>`;
 }
 
-function PreviewFrame({ html, title }) {
+function PreviewFrame({ html, title, width = 360 }) {
   const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:#e8e4de;font-family:sans-serif;}*{box-sizing:border-box;}.wrapper{max-width:600px;margin:0 auto;background:#fff;padding:24px;}</style></head><body><div class="wrapper">${html}</div></body></html>`;
   return (
     <div style={{ border: "1px solid #e8e4de", borderRadius: "10px", overflow: "hidden", background: "#e8e4de" }}>
@@ -98,7 +98,7 @@ function CopyButton({ html }) {
   );
 }
 
-function Section({ title, number, html, previewTitle, children }) {
+function Section({ title, number, html, previewTitle, previewWidth, children }) {
   const [showCode, setShowCode] = useState(false);
   return (
     <div style={{ background: "#fff", border: "1px solid #e8e4de", borderRadius: "14px", overflow: "hidden" }}>
@@ -116,7 +116,7 @@ function Section({ title, number, html, previewTitle, children }) {
       </div>
       <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
         {children}
-        <PreviewFrame html={html} title={previewTitle} />
+        <PreviewFrame html={html} title={previewTitle} width={previewWidth || 360} />
         {showCode && (
           <div style={{ background: "#1a1a1a", borderRadius: "8px", overflow: "hidden" }}>
             <pre style={{ margin: 0, padding: "14px", color: "#a8d8a8", fontSize: "11px", lineHeight: 1.6, overflow: "auto", maxHeight: "200px", fontFamily: "monospace" }}>{html}</pre>
@@ -202,7 +202,7 @@ export default function NewsletterBuilder() {
           </div>
         </Section>
 
-        <Section title="Blok produktów" number="2" html={generateProductsHTML(products)} previewTitle="Blok produktów">
+        <Section title="Blok produktów" number="2" html={generateProductsHTML(products)} previewTitle="Blok produktów" previewWidth={720}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} onChange={updated => handleProductChange(i, updated)} />)}
           </div>
