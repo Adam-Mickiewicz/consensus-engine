@@ -27,6 +27,8 @@ GEMINI PROMPT RULES:
 - Start: "Flat 2D textile sock pattern, tall vertical 9:16 format, fills entire canvas edge to edge, bold black outlines, solid flat colors only, no gradients, no 3D."
 - Describe scene, end with: "Max 6 colors, pixel-art bitmap aesthetic. Background: [HEX]."
 
+CRITICAL: The user's description is the PRIMARY brief. References show style only — never copy their theme.
+
 Respond ONLY in valid JSON:
 {
   "collection_name": "2-3 words",
@@ -51,7 +53,23 @@ export async function POST(request) {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const contentParts = [];
 
-    // Referencje z Supabase — konwertuj BMP → PNG
+    // 1. BRIEF UŻYTKOWNIKA — PIERWSZY, najważniejszy
+    contentParts.push({ type: "text", text: `TEMAT KOLEKCJI (to jest główny brief — zaprojektuj skarpetki NA TEN TEMAT):\n"${description}"\nWariant: ${sockVariant === "different" ? "LEWA I PRAWA RÓŻNE" : sockVariant === "same" ? "IDENTYCZNE" : "AI decyduje"}\nRozmiary: ${size === "both" ? "oba" : size}` });
+
+    // 2. Załączniki użytkownika
+    if (attachments?.length > 0) {
+      contentParts.push({ type: "text", text: "INSPIRACJE OD KLIENTA:" });
+      for (const att of attachments) {
+        if (att.type === "image") {
+          contentParts.push({ type: "text", text: `Inspiracja wizualna: ${att.name}` });
+          contentParts.push({ type: "image", source: { type: "base64", media_type: att.mediaType || "image/jpeg", data: att.base64 } });
+        } else {
+          contentParts.push({ type: "text", text: `${att.name}:\n${att.content}` });
+        }
+      }
+    }
+
+    // 3. Referencje STYLISTYCZNE — na końcu, żeby nie zdominowały tematu
     try {
       const { data: files } = await supabase.storage
         .from("sock-references")
@@ -72,39 +90,22 @@ export async function POST(request) {
         const selected = pairs.sort(() => Math.random() - 0.5).slice(0, 2);
 
         if (selected.length > 0) {
-          contentParts.push({ type: "text", text: `REFERENCJE PRODUKCYJNE NADWYRAZ — ${selected.length} pary gotowych skarpetek 168px. Zwróć uwagę na skalę elementów, gęstość wzoru, liczbę kolorów, różnicę lewa/prawa.` });
-
+          contentParts.push({ type: "text", text: `REFERENCJE STYLISTYCZNE NADWYRAZ (${selected.length} pary) — użyj ich TYLKO jako wzorzec stylu, skali elementów i liczby kolorów. NIE kopiuj ich tematu:` });
           for (const pair of selected) {
             for (const [side, filename] of [["LEWA", pair.left], ["PRAWA", pair.right]]) {
               const { data } = await supabase.storage.from("sock-references").download(filename);
               if (!data) continue;
               const buf = Buffer.from(await data.arrayBuffer());
-              // Konwertuj BMP → PNG żeby Claude API to przyjął
               const png = await sharp(buf).png().toBuffer();
               contentParts.push({ type: "text", text: `${pair.collection} ${side}:` });
               contentParts.push({ type: "image", source: { type: "base64", media_type: "image/png", data: png.toString("base64") } });
             }
           }
-          contentParts.push({ type: "text", text: "---" });
         }
       }
     } catch(e) {
       console.warn("Referencje niedostępne:", e.message);
     }
-
-    // Załączniki użytkownika
-    if (attachments?.length > 0) {
-      for (const att of attachments) {
-        if (att.type === "image") {
-          contentParts.push({ type: "text", text: `Inspiracja: ${att.name}` });
-          contentParts.push({ type: "image", source: { type: "base64", media_type: att.mediaType || "image/jpeg", data: att.base64 } });
-        } else {
-          contentParts.push({ type: "text", text: `${att.name}:\n${att.content}` });
-        }
-      }
-    }
-
-    contentParts.push({ type: "text", text: `Zaprojektuj skarpetki: "${description}"\nWariant: ${sockVariant === "different" ? "LEWA I PRAWA RÓŻNE" : sockVariant === "same" ? "IDENTYCZNE" : "AI decyduje"}\nRozmiary: ${size === "both" ? "oba" : size}` });
 
     const response = await client.messages.create({
       model: "claude-sonnet-4-5",
