@@ -7,14 +7,11 @@ function generateTextBlockHTML(text) {
       ? `  <p style="margin: 0 0 10px 0;">&nbsp;</p>`
       : `  <p style="margin: 0 0 10px 0;">${line}</p>`
   ).join("\n");
-
   return `<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Open+Sans:wght@700&display=swap" rel="stylesheet">
-
 <div style="font-family: 'Playfair Display', serif; font-size: 14px; line-height: 1.5; color: #000; text-align: center;">
   <p style="font-weight: 700; font-size: 18px; line-height: 1.2; margin: 0 0 16px 0;">${text.headline}</p>
 ${bodyLines}
 </div>
-
 <div style="text-align: center; padding-bottom: 24px;">
   <a href="${text.buttonLink}" style="display: inline-block; background-color: #ffffff; color: #000000; font-family: 'Open Sans', sans-serif; font-weight: 700; font-size: 14px; padding: 12px 48px; border-radius: 12px; border: 1px solid #000000; text-decoration: none;">${text.buttonText}</a>
 </div>`;
@@ -29,7 +26,6 @@ function generateProductsHTML(products) {
       ? `\n            <p style="margin:0;"><span style="font-family:'Open Sans',sans-serif; font-size:11px; color:#666; text-decoration:line-through;">${p.oldPrice}</span> <span style="font-family:'Open Sans',sans-serif; font-size:11px; color:#cc0000; font-weight:700;">${p.discount}</span></p>`
       : "";
     const msoSep = isLast ? "" : `\n      <!--[if (gte mso 9)|(IE)]></td><td width="150" valign="top"><![endif]-->`;
-
     return `      <table class="prod" border="0" cellpadding="0" cellspacing="0" width="150" align="left" style="width:150px; max-width:150px; display:inline-block; vertical-align:top; ${marginRight}margin-bottom:8px;">
         <tr><td style="padding:0;">
           <a href="${p.link}"><img src="${p.imageUrl}" width="100%" style="display:block; max-width:100%; height:auto; border-radius:5px 5px 0 0;" alt=""></a>
@@ -40,26 +36,33 @@ function generateProductsHTML(products) {
         </td></tr>
       </table>${msoSep}`;
   }).join("\n");
-
   return `<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Playfair+Display:wght@400&display=swap" rel="stylesheet">
-
 <style>
-  @media screen and (max-width: 600px) {
-    .prod { width: 50% !important; max-width: 50% !important; }
-  }
+  @media screen and (max-width: 600px) { .prod { width: 50% !important; max-width: 50% !important; } }
 </style>
-
 <table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
-  <tr>
-    <td align="center" style="padding:0;">
-      <!--[if (gte mso 9)|(IE)]>
-      <table width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr>
-      <td width="150" valign="top"><![endif]-->
+  <tr><td align="center" style="padding:0;">
+      <!--[if (gte mso 9)|(IE)]><table width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td width="150" valign="top"><![endif]-->
 ${productsHTML}
       <!--[if (gte mso 9)|(IE)]></td></tr></table><![endif]-->
-    </td>
-  </tr>
+  </td></tr>
 </table>`;
+}
+
+function PreviewFrame({ html, title }) {
+  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:16px;background:#fff;font-family:sans-serif;}*{box-sizing:border-box;}</style></head><body>${html}</body></html>`;
+  return (
+    <div style={{ border: "1px solid #e8e4de", borderRadius: "10px", overflow: "hidden", background: "#fff" }}>
+      <div style={{ padding: "8px 14px", background: "#f5f2ee", borderBottom: "1px solid #e8e4de", fontSize: "11px", color: "#888", fontFamily: "sans-serif" }}>
+        📧 Podgląd — {title}
+      </div>
+      <iframe
+        srcDoc={fullHtml}
+        style={{ width: "100%", height: "320px", border: "none", display: "block" }}
+        title={title}
+      />
+    </div>
+  );
 }
 
 const defaultText = {
@@ -76,11 +79,7 @@ const defaultProducts = [
   { id: 4, name: "Nadwyraz", imageUrl: "https://nadwyraz.com/userdata/public/gfx/23712/koszulka_klonom-rece-opadly_nadwyrazcom_3.jpg", price: "165,00 zł", oldPrice: "", discount: "", isPromo: false, link: "#" },
 ];
 
-const inputStyle = {
-  width: "100%", padding: "8px 10px", border: "1px solid #e8e4de",
-  borderRadius: "7px", fontSize: "13px", fontFamily: "inherit",
-  boxSizing: "border-box", outline: "none", background: "#fafaf8",
-};
+const inputStyle = { width: "100%", padding: "8px 10px", border: "1px solid #e8e4de", borderRadius: "7px", fontSize: "13px", fontFamily: "inherit", boxSizing: "border-box", outline: "none", background: "#fafaf8" };
 
 function Label({ children, color }) {
   return <label style={{ fontSize: "11px", color: color || "#888", display: "block", marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{children}</label>;
@@ -89,17 +88,14 @@ function Label({ children, color }) {
 function CopyButton({ html }) {
   const [copied, setCopied] = useState(false);
   return (
-    <button onClick={() => { navigator.clipboard.writeText(html); setCopied(true); setTimeout(() => setCopied(false), 2000); }} style={{
-      background: copied ? "#2d7a4f" : "#cc0000", color: "#fff", border: "none",
-      borderRadius: "8px", padding: "8px 20px", fontSize: "12px",
-      fontFamily: "sans-serif", fontWeight: 600, cursor: "pointer",
-    }}>
+    <button onClick={() => { navigator.clipboard.writeText(html); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+      style={{ background: copied ? "#2d7a4f" : "#cc0000", color: "#fff", border: "none", borderRadius: "8px", padding: "8px 20px", fontSize: "12px", fontFamily: "sans-serif", fontWeight: 600, cursor: "pointer" }}>
       {copied ? "✓ Skopiowano!" : "Kopiuj HTML"}
     </button>
   );
 }
 
-function Section({ title, number, html, children }) {
+function Section({ title, number, html, previewTitle, children }) {
   const [showCode, setShowCode] = useState(false);
   return (
     <div style={{ background: "#fff", border: "1px solid #e8e4de", borderRadius: "14px", overflow: "hidden" }}>
@@ -115,10 +111,11 @@ function Section({ title, number, html, children }) {
           <CopyButton html={html} />
         </div>
       </div>
-      <div style={{ padding: "20px" }}>
+      <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
         {children}
+        <PreviewFrame html={html} title={previewTitle} />
         {showCode && (
-          <div style={{ marginTop: "16px", background: "#1a1a1a", borderRadius: "8px", overflow: "hidden" }}>
+          <div style={{ background: "#1a1a1a", borderRadius: "8px", overflow: "hidden" }}>
             <pre style={{ margin: 0, padding: "14px", color: "#a8d8a8", fontSize: "11px", lineHeight: 1.6, overflow: "auto", maxHeight: "200px", fontFamily: "monospace" }}>{html}</pre>
           </div>
         )}
@@ -184,60 +181,30 @@ export default function NewsletterBuilder() {
       </div>
 
       <div style={{ maxWidth: "960px", margin: "0 auto", padding: "28px 24px", display: "flex", flexDirection: "column", gap: "20px" }}>
-        <Section title="Blok tekstowy + przycisk" number="1" html={generateTextBlockHTML(text)}>
-          <div style={{ display: "flex", gap: "20px" }}>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "12px" }}>
-              <div>
-                <Label>Nagłówek</Label>
-                <input value={text.headline} onChange={e => setText({ ...text, headline: e.target.value })} style={inputStyle} />
-              </div>
-              <div>
-                <Label>Treść (pusta linia = odstęp)</Label>
-                <textarea value={text.body} onChange={e => setText({ ...text, body: e.target.value })} rows={7} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} />
-              </div>
-              <div style={{ display: "flex", gap: "10px" }}>
-                <div style={{ flex: 1 }}><Label>Tekst przycisku</Label><input value={text.buttonText} onChange={e => setText({ ...text, buttonText: e.target.value })} style={inputStyle} /></div>
-                <div style={{ flex: 1 }}><Label>Link przycisku</Label><input value={text.buttonLink} onChange={e => setText({ ...text, buttonLink: e.target.value })} style={inputStyle} /></div>
-              </div>
+
+        <Section title="Blok tekstowy + przycisk" number="1" html={generateTextBlockHTML(text)} previewTitle="Blok tekstowy">
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div>
+              <Label>Nagłówek</Label>
+              <input value={text.headline} onChange={e => setText({ ...text, headline: e.target.value })} style={inputStyle} />
             </div>
-            <div style={{ flex: "0 0 240px", background: "#f5f2ee", borderRadius: "10px", padding: "16px", textAlign: "center", border: "1px solid #e8e4de" }}>
-              <p style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: "14px", lineHeight: 1.3, margin: "0 0 12px 0" }}>{text.headline}</p>
-              {text.body.split("\n").map((line, i) =>
-                line.trim() === "" ? <div key={i} style={{ height: "8px" }} /> : <p key={i} style={{ fontFamily: "Georgia, serif", fontSize: "12px", margin: "0 0 4px 0", lineHeight: 1.5 }}>{line}</p>
-              )}
-              <div style={{ marginTop: "14px" }}>
-                <span style={{ display: "inline-block", background: "#fff", color: "#000", fontFamily: "sans-serif", fontWeight: 700, fontSize: "11px", padding: "7px 20px", borderRadius: "8px", border: "1px solid #000" }}>{text.buttonText}</span>
-              </div>
+            <div>
+              <Label>Treść (pusta linia = odstęp)</Label>
+              <textarea value={text.body} onChange={e => setText({ ...text, body: e.target.value })} rows={5} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} />
+            </div>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <div style={{ flex: 1 }}><Label>Tekst przycisku</Label><input value={text.buttonText} onChange={e => setText({ ...text, buttonText: e.target.value })} style={inputStyle} /></div>
+              <div style={{ flex: 1 }}><Label>Link przycisku</Label><input value={text.buttonLink} onChange={e => setText({ ...text, buttonLink: e.target.value })} style={inputStyle} /></div>
             </div>
           </div>
         </Section>
 
-        <Section title="Blok produktów" number="2" html={generateProductsHTML(products)}>
-          <div style={{ display: "flex", gap: "20px" }}>
-            <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-              {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} onChange={updated => handleProductChange(i, updated)} />)}
-            </div>
-            <div style={{ flex: "0 0 240px", background: "#f5f2ee", borderRadius: "10px", padding: "12px", border: "1px solid #e8e4de" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
-                {products.map((p, i) => (
-                  <div key={i}>
-                    {p.imageUrl && <img src={p.imageUrl} alt="" style={{ width: "100%", aspectRatio: "3/4", objectFit: "cover", borderRadius: "4px 4px 0 0", display: "block" }} />}
-                    <div style={{ background: "#fff", borderRadius: "0 0 4px 4px", padding: "5px" }}>
-                      <p style={{ fontFamily: "Georgia, serif", fontSize: "10px", margin: "0 0 2px 0" }}>{p.name}</p>
-                      <p style={{ fontFamily: "sans-serif", fontSize: "11px", fontWeight: 700, color: p.isPromo ? "#cc0000" : "#000", margin: "0 0 1px 0" }}>{p.price}</p>
-                      {p.isPromo && p.oldPrice && (
-                        <p style={{ margin: 0 }}>
-                          <span style={{ fontSize: "9px", color: "#999", textDecoration: "line-through" }}>{p.oldPrice}</span>
-                          <span style={{ fontSize: "9px", color: "#cc0000", fontWeight: 700, marginLeft: "2px" }}>{p.discount}</span>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+        <Section title="Blok produktów" number="2" html={generateProductsHTML(products)} previewTitle="Blok produktów">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} onChange={updated => handleProductChange(i, updated)} />)}
           </div>
         </Section>
+
       </div>
     </div>
   );
