@@ -87,7 +87,7 @@ export async function POST(request) {
           pairMap[base][side] = f.name;
         }
         const pairs = Object.values(pairMap).filter(p => p.left && p.right);
-        const selected = pairs.sort(() => Math.random() - 0.5).slice(0, 2);
+        const selected = [];// DISABLED
 
         if (selected.length > 0) {
           contentParts.push({ type: "text", text: `REFERENCJE STYLISTYCZNE NADWYRAZ (${selected.length} pary) — użyj ich TYLKO jako wzorzec stylu, skali elementów i liczby kolorów. NIE kopiuj ich tematu:` });
