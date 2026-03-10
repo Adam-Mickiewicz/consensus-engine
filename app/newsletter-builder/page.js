@@ -60,7 +60,7 @@ function PreviewFrame({ html, title, width = 360 }) {
       <div style={{ padding: "16px", background: "#e8e4de" }}>
         <iframe
           srcDoc={fullHtml}
-          style={{ width: "600px", maxWidth: "100%", height: "360px", border: "none", display: "block", margin: "0 auto", borderRadius: "4px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
+          style={{ width: `${width}px`, maxWidth: "100%", height: "360px", border: "none", display: "block", margin: "0 auto", borderRadius: "4px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
           title={title}
         />
       </div>
