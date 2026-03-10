@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+import sharp from "sharp";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -26,7 +27,7 @@ GEMINI PROMPT RULES:
 - Start: "Flat 2D textile sock pattern, tall vertical 9:16 format, fills entire canvas edge to edge, bold black outlines, solid flat colors only, no gradients, no 3D."
 - Describe scene, end with: "Max 6 colors, pixel-art bitmap aesthetic. Background: [HEX]."
 
-Respond ONLY in valid JSON with these exact fields:
+Respond ONLY in valid JSON:
 {
   "collection_name": "2-3 words",
   "concept": "1-2 sentences in Polish",
@@ -47,12 +48,10 @@ export const maxDuration = 60;
 export async function POST(request) {
   try {
     const { description, sockVariant, size, attachments } = await request.json();
-
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
     const contentParts = [];
 
-    // Pobierz referencje bezpośrednio tu na serwerze
+    // Referencje z Supabase — konwertuj BMP → PNG
     try {
       const { data: files } = await supabase.storage
         .from("sock-references")
@@ -63,7 +62,7 @@ export async function POST(request) {
         const pairMap = {};
         for (const f of imageFiles) {
           const nl = f.name.toLowerCase();
-          let side = nl.includes("lewa") ? "left" : nl.includes("prawa") ? "right" : null;
+          const side = nl.includes("lewa") ? "left" : nl.includes("prawa") ? "right" : null;
           if (!side) continue;
           const base = nl.replace(/lewa|prawa/g, "X").replace(/[-_\s]+/g, "_");
           if (!pairMap[base]) pairMap[base] = { collection: f.name.split(/[-_ ]/)[0], left: null, right: null };
@@ -73,21 +72,17 @@ export async function POST(request) {
         const selected = pairs.sort(() => Math.random() - 0.5).slice(0, 2);
 
         if (selected.length > 0) {
-          contentParts.push({ type: "text", text: `REFERENCJE PRODUKCYJNE NADWYRAZ — ${selected.length} pary gotowych skarpetek 168px. Zwróć uwagę na skalę elementów, gęstość wzoru, liczbę kolorów.` });
+          contentParts.push({ type: "text", text: `REFERENCJE PRODUKCYJNE NADWYRAZ — ${selected.length} pary gotowych skarpetek 168px. Zwróć uwagę na skalę elementów, gęstość wzoru, liczbę kolorów, różnicę lewa/prawa.` });
+
           for (const pair of selected) {
-            const [leftData, rightData] = await Promise.all([
-              supabase.storage.from("sock-references").download(pair.left),
-              supabase.storage.from("sock-references").download(pair.right),
-            ]);
-            if (leftData.data) {
-              const buf = await leftData.data.arrayBuffer();
-              contentParts.push({ type: "text", text: `${pair.collection} LEWA:` });
-              contentParts.push({ type: "image", source: { type: "base64", media_type: "image/bmp", data: Buffer.from(buf).toString("base64") } });
-            }
-            if (rightData.data) {
-              const buf = await rightData.data.arrayBuffer();
-              contentParts.push({ type: "text", text: `${pair.collection} PRAWA:` });
-              contentParts.push({ type: "image", source: { type: "base64", media_type: "image/bmp", data: Buffer.from(buf).toString("base64") } });
+            for (const [side, filename] of [["LEWA", pair.left], ["PRAWA", pair.right]]) {
+              const { data } = await supabase.storage.from("sock-references").download(filename);
+              if (!data) continue;
+              const buf = Buffer.from(await data.arrayBuffer());
+              // Konwertuj BMP → PNG żeby Claude API to przyjął
+              const png = await sharp(buf).png().toBuffer();
+              contentParts.push({ type: "text", text: `${pair.collection} ${side}:` });
+              contentParts.push({ type: "image", source: { type: "base64", media_type: "image/png", data: png.toString("base64") } });
             }
           }
           contentParts.push({ type: "text", text: "---" });
@@ -109,7 +104,6 @@ export async function POST(request) {
       }
     }
 
-    // Brief
     contentParts.push({ type: "text", text: `Zaprojektuj skarpetki: "${description}"\nWariant: ${sockVariant === "different" ? "LEWA I PRAWA RÓŻNE" : sockVariant === "same" ? "IDENTYCZNE" : "AI decyduje"}\nRozmiary: ${size === "both" ? "oba" : size}` });
 
     const response = await client.messages.create({
@@ -120,20 +114,13 @@ export async function POST(request) {
     });
 
     let rawText = response.content.filter(b => b.type === "text").map(b => b.text).join("");
-
-    // Wyczyść i sparsuj JSON
     let clean = rawText.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
     const start = clean.indexOf("{");
     if (start > 0) clean = clean.slice(start);
 
     let parsed;
-    try {
-      parsed = JSON.parse(clean);
-    } catch {
-      const m = clean.match(/\{[\s\S]*\}/);
-      if (m) parsed = JSON.parse(m[0]);
-      else throw new Error("Nie udało się sparsować JSON");
-    }
+    try { parsed = JSON.parse(clean); }
+    catch { const m = clean.match(/\{[\s\S]*\}/); if (m) parsed = JSON.parse(m[0]); else throw new Error("Nie udało się sparsować JSON"); }
 
     return Response.json({ success: true, result: parsed });
 
