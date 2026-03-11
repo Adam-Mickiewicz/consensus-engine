@@ -56,7 +56,7 @@ function generateProductsHTML(products) {
     const promoLine = p.isPromo && p.oldPrice
       ? `<p style="margin:0;"><span style="font-family:'Open Sans',sans-serif;font-size:11px;color:#666;text-decoration:line-through;">${p.oldPrice}</span> <span style="font-family:'Open Sans',sans-serif;font-size:11px;color:#cc0000;font-weight:700;">${p.discount}</span></p>`
       : "";
-    const name = p.name.length > 55 ? p.name.substring(0, 55) + '...' : p.name;
+    const name = p.name.length > 40 ? p.name.substring(0, 40) + '...' : p.name;
     const formatPrice = (pr) => pr ? pr.replace('.', ',') : pr;
     return `<table class="prod" border="0" cellpadding="0" cellspacing="0" width="150" align="left" style="width:150px; max-width:150px; display:inline-block; vertical-align:top; ${isLast ? '' : 'margin-right:13px;'}margin-bottom:8px;">
         <tr><td style="padding:0;">
