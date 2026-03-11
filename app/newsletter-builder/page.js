@@ -683,7 +683,7 @@ export default function NewsletterBuilder() {
           </div>
         </Section>}
 
-        {activeBlock === "feed" && <Block4FeedBrowser onAddToNewsletter={handleAddFromFeed} />
+        {activeBlock === "feed" && <Block4FeedBrowser onAddToNewsletter={handleAddFromFeed} />}
 
         {activeBlock === "2" && <div id="blok2">
           <Section title="Blok produktów (ręczny)" number="2" html={generateProductsHTML(products)} previewTitle="Blok produktów" previewWidth={720}>
