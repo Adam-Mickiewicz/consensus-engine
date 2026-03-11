@@ -572,6 +572,7 @@ export default function NewsletterBuilder() {
   const [text, setText] = useState(defaultText);
   const [products, setProducts] = useState(defaultProducts);
 
+  const setH = useCallback((key, value) => setHeading(prev => ({ ...prev, [key]: value })), []);
   const handleProductChange = useCallback((i, updated) => setProducts(prev => prev.map((p, idx) => idx === i ? updated : p)), []);
 
   const handleAddFromFeed = useCallback((feedProducts) => {
