@@ -133,7 +133,7 @@ GEMINI PROMPT RULES — always start with:
 
 CRITICAL: User's description is the ONLY source for the theme. Never invent a different theme.
 
-Respond ONLY in valid JSON:
+Respond ONLY in valid JSON, no markdown fences, no explanation, no text before or after the JSON object:
 {
   "collection_name": "2-3 Polish words",
   "concept": "1-2 sentences in Polish",
@@ -198,16 +198,22 @@ Zaprojektuj DOKŁADNIE na ten temat. Nie zmieniaj tematu.`
       messages: [{ role: "user", content: contentParts }],
     });
 
-    let raw = response.content.filter(b => b.type === "text").map(b => b.text).join("");
+    const raw = response.content.filter(b => b.type === "text").map(b => b.text).join("");
+    
+    // Loguj surową odpowiedź żeby zobaczyć co wraca
+    console.log("RAW RESPONSE:", raw.slice(0, 500));
+
     let clean = raw.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
     const start = clean.indexOf("{");
-    if (start > 0) clean = clean.slice(start);
+    const end = clean.lastIndexOf("}");
+    if (start === -1 || end === -1) {
+      throw new Error(`Brak JSON w odpowiedzi. Otrzymano: ${raw.slice(0, 200)}`);
+    }
+    clean = clean.slice(start, end + 1);
 
-    let parsed;
-    try { parsed = JSON.parse(clean); }
-    catch { const m = clean.match(/\{[\s\S]*\}/); if (m) parsed = JSON.parse(m[0]); else throw new Error("Błąd parsowania JSON"); }
-
+    const parsed = JSON.parse(clean);
     return Response.json({ success: true, result: parsed });
+
   } catch (e) {
     console.error("sock-brief error:", e.message);
     return Response.json({ success: false, error: e.message }, { status: 500 });
