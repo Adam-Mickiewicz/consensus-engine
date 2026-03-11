@@ -670,7 +670,7 @@ export default function NewsletterBuilder() {
               <StyleField label="Padding boki" flex={2}><SliderInput value={heading.paddingH} onChange={v => setH("paddingH", v)} min={0} max={60} /></StyleField>
             </StyleRow>
           </div>
-        </Section>
+        </Section>}
 
         {activeBlock === "1" && <Section title="Blok tekstowy + przycisk" number="1" html={generateTextBlockHTML(text)} previewTitle="Blok tekstowy">
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
