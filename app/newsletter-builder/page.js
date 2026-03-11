@@ -61,7 +61,7 @@ function generateProductsHTML(products) {
         ? `<p style="margin:0;"><span style="font-family:'Open Sans',sans-serif;font-size:11px;color:#999;text-decoration:line-through;">${p.oldPrice}</span> <span style="font-family:'Open Sans',sans-serif;font-size:11px;color:#cc0000;font-weight:700;">${p.discount}</span></p>`
         : "";
       const name = p.name.length > 55 ? p.name.substring(0, 55) + '...' : p.name;
-      return `<td width="50%" valign="top" style="width:50%;padding:4px;">
+      return `<td width="160" valign="top" style="width:160px;padding:4px;">
         <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-radius:5px;overflow:hidden;">
           <tr><td style="padding:0;">
             <a href="${p.link}"><img src="${p.imageUrl}" width="100%" style="display:block;max-width:100%;height:auto;border-radius:5px 5px 0 0;" alt=""></a>
