@@ -113,11 +113,13 @@ export async function POST(request) {
       system: SOCK_SYSTEM_PROMPT,
       messages: [
         { role: "user", content: contentParts },
-        { role: "assistant", content: `Rozumiem. Projektuję skarpetki na temat: "${description}". Wszystkie 4 prompty będą dotyczyć wyłącznie tego tematu. Oto JSON:` },
+        { role: "assistant", content: `Rozumiem. Projektuję skarpetki na temat: "${description}". Wszystkie 4 prompty będą dotyczyć wyłącznie tego tematu. Oto JSON:
+{` },
       ],
     });
 
-    let rawText = response.content.filter(b => b.type === "text").map(b => b.text).join("");
+    const prefill = `Rozumiem. Projektuję skarpetki na temat: "${description}". Wszystkie 4 prompty będą dotyczyć wyłącznie tego tematu. Oto JSON:\n{`;
+    let rawText = prefill + response.content.filter(b => b.type === "text").map(b => b.text).join("");
     let clean = rawText.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
     const start = clean.indexOf("{");
     if (start > 0) clean = clean.slice(start);
