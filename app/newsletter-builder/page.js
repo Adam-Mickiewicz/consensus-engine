@@ -57,12 +57,13 @@ function generateProductsHTML(products) {
       ? `<p style="margin:0;"><span style="font-family:'Open Sans',sans-serif;font-size:11px;color:#666;text-decoration:line-through;">${p.oldPrice}</span> <span style="font-family:'Open Sans',sans-serif;font-size:11px;color:#cc0000;font-weight:700;">${p.discount}</span></p>`
       : "";
     const name = p.name.length > 55 ? p.name.substring(0, 55) + '...' : p.name;
+    const formatPrice = (pr) => pr ? pr.replace('.', ',') : pr;
     return `<table class="prod" border="0" cellpadding="0" cellspacing="0" width="150" align="left" style="width:150px; max-width:150px; display:inline-block; vertical-align:top; ${isLast ? '' : 'margin-right:13px;'}margin-bottom:8px;">
         <tr><td style="padding:0;">
           <a href="${p.link}"><img src="${p.imageUrl}" width="100%" style="display:block; max-width:100%; height:auto; border-radius:5px 5px 0 0;" alt=""></a>
           <div style="background:#ffffff; border-radius:0 0 5px 5px; padding:6px 6px 8px 6px;">
             <p style="font-family:'Playfair Display',serif; font-size:12px; color:#000; margin:0 0 4px 0; line-height:1.4;">${name}</p>
-            <p style="font-family:'Open Sans',sans-serif; font-size:11px; font-weight:${p.isPromo ? '700' : '400'}; color:${priceColor}; margin:0 0 2px 0;">${p.price}</p>${promoLine}
+            <p style="font-family:'Open Sans',sans-serif; font-size:11px; font-weight:${p.isPromo ? '700' : '400'}; color:${priceColor}; margin:0 0 2px 0;">${formatPrice(p.price)}</p>${promoLine}
           </div>
         </td></tr>
       </table>`;
