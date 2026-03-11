@@ -681,7 +681,7 @@ export default function NewsletterBuilder() {
               <div style={{ flex: 1 }}><Label>Link przycisku</Label><input value={text.buttonLink} onChange={e => setText({ ...text, buttonLink: e.target.value })} style={inputStyle} /></div>
             </div>
           </div>
-        </Section>
+        </Section>}
 
         {activeBlock === "feed" && <Block4FeedBrowser onAddToNewsletter={handleAddFromFeed} />
 
