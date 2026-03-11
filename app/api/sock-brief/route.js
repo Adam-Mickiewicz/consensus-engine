@@ -111,7 +111,10 @@ export async function POST(request) {
       model: "claude-sonnet-4-5",
       max_tokens: 8000,
       system: SOCK_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: contentParts }],
+      messages: [
+        { role: "user", content: contentParts },
+        { role: "assistant", content: `Rozumiem. Projektuję skarpetki na temat: "${description}". Wszystkie 4 prompty będą dotyczyć wyłącznie tego tematu. Oto JSON:` },
+      ],
     });
 
     let rawText = response.content.filter(b => b.type === "text").map(b => b.text).join("");
