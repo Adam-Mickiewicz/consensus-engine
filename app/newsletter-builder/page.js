@@ -9,14 +9,14 @@ function generateHeadingHTML(h) {
     : h.fontFamily.includes("Open Sans")
     ? `<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">`
     : "";
+  const subtextHTML = h.subtext ? `\n<p style="font-family: ${h.fontFamily}; font-size: ${h.fontSize - 6}px; font-weight: 400; color: ${h.color}; text-align: ${h.textAlign}; line-height: 1.5; letter-spacing: 0px; padding: 0 ${h.paddingH}px ${h.paddingBottom}px ${h.paddingH}px; margin: 0;">${h.subtext}</p>` : "";
   return `${fontImport}
-<div style="font-family: ${h.fontFamily}; font-size: ${h.fontSize}px; font-weight: ${h.fontWeight}; color: ${h.color}; text-align: ${h.textAlign}; line-height: ${h.lineHeight}; letter-spacing: ${h.letterSpacing}px; padding: ${h.paddingTop}px ${h.paddingH}px ${h.paddingBottom}px ${h.paddingH}px; background-color: ${h.bgColor};">
-  ${h.text}
-</div>`;
+<p style="font-family: ${h.fontFamily}; font-size: ${h.fontSize}px; font-weight: ${h.fontWeight}; color: ${h.color}; text-align: ${h.textAlign}; line-height: ${h.lineHeight}; letter-spacing: ${h.letterSpacing}px; padding: ${h.paddingTop}px ${h.paddingH}px ${h.subtext ? 8 : h.paddingBottom}px ${h.paddingH}px; margin: 0;">${h.text}</p>${subtextHTML}`;
 }
 
 const defaultHeading = {
   text: "Nowa kolekcja – Nadwyraz.com x Wydawnictwo Literackie 📚",
+  subtext: "",
   fontFamily: "'Playfair Display', serif",
   fontSize: 28,
   fontWeight: "700",
@@ -27,7 +27,6 @@ const defaultHeading = {
   paddingTop: 16,
   paddingBottom: 16,
   paddingH: 24,
-  bgColor: "#ffffff",
 };
 
 function generateTextBlockHTML(text) {
@@ -609,6 +608,7 @@ export default function NewsletterBuilder() {
         <Section title="Nagłówek" number="0" html={generateHeadingHTML(heading)} previewTitle="Nagłówek" previewWidth={720}>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <div><Label>Tekst nagłówka</Label><input value={heading.text} onChange={e => setH("text", e.target.value)} style={inputStyle} /></div>
+            <div><Label>Copy pod nagłówkiem (opcjonalne)</Label><input value={heading.subtext} onChange={e => setH("subtext", e.target.value)} style={inputStyle} placeholder="np. Odkryj wyjątkowe produkty..." /></div>
             <StyleRow>
               <StyleField label="Font" flex={3}>
                 <Select value={heading.fontFamily} onChange={v => setH("fontFamily", v)} options={[
@@ -626,7 +626,6 @@ export default function NewsletterBuilder() {
             </StyleRow>
             <StyleRow>
               <StyleField label="Kolor" flex={2}><ColorInput value={heading.color} onChange={v => setH("color", v)} /></StyleField>
-              <StyleField label="Tło" flex={2}><ColorInput value={heading.bgColor} onChange={v => setH("bgColor", v)} /></StyleField>
               <StyleField label="Wyrównanie" flex={2}>
                 <Select value={heading.textAlign} onChange={v => setH("textAlign", v)} options={[{ value: "left", label: "Lewo" }, { value: "center", label: "Środek" }, { value: "right", label: "Prawo" }]} />
               </StyleField>
