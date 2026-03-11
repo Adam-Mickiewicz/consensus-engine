@@ -576,6 +576,7 @@ export default function NewsletterBuilder() {
   const [text, setText] = useState(defaultText);
   const [products, setProducts] = useState(defaultProducts);
 
+  const [activeBlock, setActiveBlock] = useState("0");
   const setH = useCallback((key, value) => setHeading(prev => ({ ...prev, [key]: value })), []);
   const handleProductChange = useCallback((i, updated) => setProducts(prev => prev.map((p, idx) => idx === i ? updated : p)), []);
 
@@ -606,11 +607,19 @@ export default function NewsletterBuilder() {
         <div style={{ color: "#555", fontSize: "10px", fontWeight: 700, letterSpacing: 1.2, fontFamily: "monospace", marginBottom: "4px" }}>NAWIGACJA</div>
         {[
           { href: "/", label: "⚡ Consensus Engine" },
-          { href: "/newsletter-builder", label: "📧 Newsletter Builder", active: true },
           { href: "/sock-designer", label: "🧦 Sock Designer" },
           { href: "/design-judge", label: "🎨 Design Judge" },
         ].map(item => (
-          <a key={item.href} href={item.href} style={{ display: "block", padding: "9px 12px", borderRadius: "8px", fontSize: "11px", fontFamily: "monospace", fontWeight: item.active ? 700 : 400, background: item.active ? "#b8763a20" : "none", border: item.active ? "1px solid #b8763a40" : "1px solid transparent", color: item.active ? "#b8763a" : "#666", textDecoration: "none", cursor: "pointer" }}>{item.label}</a>
+          <a key={item.href} href={item.href} style={{ display: "block", padding: "9px 12px", borderRadius: "8px", fontSize: "11px", fontFamily: "monospace", background: "none", border: "1px solid transparent", color: "#666", textDecoration: "none" }}>{item.label}</a>
+        ))}
+        <div style={{ color: "#555", fontSize: "10px", fontWeight: 700, letterSpacing: 1.2, fontFamily: "monospace", margin: "12px 0 4px" }}>📧 NEWSLETTER</div>
+        {[
+          { id: "0", label: "Nagłówek" },
+          { id: "1", label: "Blok tekstowy" },
+          { id: "feed", label: "Przeglądarka feedu" },
+          { id: "2", label: "Blok produktów" },
+        ].map(item => (
+          <button key={item.id} onClick={() => setActiveBlock(item.id)} style={{ display: "block", width: "100%", textAlign: "left", padding: "9px 12px", borderRadius: "8px", fontSize: "11px", fontFamily: "monospace", fontWeight: activeBlock === item.id ? 700 : 400, background: activeBlock === item.id ? "#b8763a20" : "none", border: activeBlock === item.id ? "1px solid #b8763a40" : "1px solid transparent", color: activeBlock === item.id ? "#b8763a" : "#666", cursor: "pointer" }}>{item.label}</button>
         ))}
         <div style={{ marginTop: "auto", paddingTop: "16px", borderTop: "1px solid #1a1a1a", color: "#333", fontSize: "10px", fontFamily: "monospace", lineHeight: 1.6 }}>
           Każdy blok = osobny HTML → wklej do ESP
@@ -620,8 +629,7 @@ export default function NewsletterBuilder() {
       {/* MAIN CONTENT */}
       <div style={{ flex: 1, padding: "28px 24px", display: "flex", flexDirection: "column", gap: "20px", overflowY: "auto" }}>
 
-        {/* BLOK 0 — Nagłówek */}
-        <Section title="Nagłówek" number="0" html={generateHeadingHTML(heading)} previewTitle="Nagłówek" previewWidth={720}>
+        {activeBlock === "0" && <Section title="Nagłówek" number="0" html={generateHeadingHTML(heading)} previewTitle="Nagłówek" previewWidth={720}>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <div><Label>Tekst nagłówka</Label><input value={heading.text} onChange={e => setH("text", e.target.value)} style={inputStyle} /></div>
             <div><Label>Copy pod nagłówkiem (opcjonalne)</Label><input value={heading.subtext} onChange={e => setH("subtext", e.target.value)} style={inputStyle} placeholder="np. Odkryj wyjątkowe produkty..." /></div>
@@ -664,8 +672,7 @@ export default function NewsletterBuilder() {
           </div>
         </Section>
 
-        {/* BLOK 1 */}
-        <Section title="Blok tekstowy + przycisk" number="1" html={generateTextBlockHTML(text)} previewTitle="Blok tekstowy">
+        {activeBlock === "1" && <Section title="Blok tekstowy + przycisk" number="1" html={generateTextBlockHTML(text)} previewTitle="Blok tekstowy">
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <div><Label>Nagłówek</Label><input value={text.headline} onChange={e => setText({ ...text, headline: e.target.value })} style={inputStyle} /></div>
             <div><Label>Treść (pusta linia = odstęp)</Label><textarea value={text.body} onChange={e => setText({ ...text, body: e.target.value })} rows={5} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} /></div>
@@ -676,11 +683,9 @@ export default function NewsletterBuilder() {
           </div>
         </Section>
 
-        {/* BLOK 4 — Feed browser */}
-        <Block4FeedBrowser onAddToNewsletter={handleAddFromFeed} />
+        {activeBlock === "feed" && <Block4FeedBrowser onAddToNewsletter={handleAddFromFeed} />
 
-        {/* BLOK 2 */}
-        <div id="blok2">
+        {activeBlock === "2" && <div id="blok2">
           <Section title="Blok produktów (ręczny)" number="2" html={generateProductsHTML(products)} previewTitle="Blok produktów" previewWidth={720}>
             <div style={{ background: "#f0f7ff", border: "1px solid #c8e0f8", borderRadius: "8px", padding: "10px 14px", fontSize: "12px", color: "#555", fontFamily: "sans-serif", lineHeight: 1.6 }}>
               💡 Wybierz produkty w Bloku 4 powyżej — trafią tutaj automatycznie. Możesz też edytować ręcznie.
