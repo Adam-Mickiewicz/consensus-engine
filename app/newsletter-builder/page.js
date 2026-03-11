@@ -77,8 +77,7 @@ function generateProductsHTML(products) {
   }
   return `<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Playfair+Display:wght@400&display=swap" rel="stylesheet">
 <table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
-  ${rows.join('
-  ')}
+  ${rows.join('\n  ')}
 </table>`;
 }
 
