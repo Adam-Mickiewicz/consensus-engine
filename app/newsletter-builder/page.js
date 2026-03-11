@@ -1,11 +1,40 @@
 "use client";
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 
+function generateHeadingHTML(h) {
+  const fontImport = h.fontFamily.includes("Playfair")
+    ? `<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">`
+    : h.fontFamily.includes("DM Serif")
+    ? `<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">`
+    : h.fontFamily.includes("Open Sans")
+    ? `<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">`
+    : "";
+  return `${fontImport}
+<div style="font-family: ${h.fontFamily}; font-size: ${h.fontSize}px; font-weight: ${h.fontWeight}; color: ${h.color}; text-align: ${h.textAlign}; line-height: ${h.lineHeight}; letter-spacing: ${h.letterSpacing}px; padding: ${h.paddingTop}px ${h.paddingH}px ${h.paddingBottom}px ${h.paddingH}px; background-color: ${h.bgColor};">
+  ${h.text}
+</div>`;
+}
+
+const defaultHeading = {
+  text: "Nowa kolekcja – Nadwyraz.com x Wydawnictwo Literackie 📚",
+  fontFamily: "'Playfair Display', serif",
+  fontSize: 28,
+  fontWeight: "700",
+  color: "#000000",
+  textAlign: "center",
+  lineHeight: 1.3,
+  letterSpacing: 0,
+  paddingTop: 16,
+  paddingBottom: 16,
+  paddingH: 24,
+  bgColor: "#ffffff",
+};
+
 function generateTextBlockHTML(text) {
   const bodyLines = text.body.split("\n").map(line =>
     line.trim() === ""
-      ? `  <p style="margin: 0 0 10px 0;">&nbsp;</p>`
-      : `  <p style="margin: 0 0 10px 0;">${line}</p>`
+      ? `  <p style="margin: 0 0 4px 0;">&nbsp;</p>`
+      : `  <p style="margin: 0 0 2px 0;">${line}</p>`
   ).join("\n");
   return `<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Open+Sans:wght@700&display=swap" rel="stylesheet">
 <div style="font-family: 'Playfair Display', serif; font-size: 14px; line-height: 1.5; color: #000; text-align: center;">
@@ -539,6 +568,7 @@ function Block4FeedBrowser({ onAddToNewsletter }) {
 // ─── MAIN ────────────────────────────────────────────────────────────────────
 
 export default function NewsletterBuilder() {
+  const [heading, setHeading] = useState(defaultHeading);
   const [text, setText] = useState(defaultText);
   const [products, setProducts] = useState(defaultProducts);
 
@@ -573,6 +603,42 @@ export default function NewsletterBuilder() {
       </div>
 
       <div style={{ maxWidth: "960px", margin: "0 auto", padding: "28px 24px", display: "flex", flexDirection: "column", gap: "20px" }}>
+
+        {/* BLOK 0 — Nagłówek */}
+        <Section title="Nagłówek" number="0" html={generateHeadingHTML(heading)} previewTitle="Nagłówek" previewWidth={720}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div><Label>Tekst nagłówka</Label><input value={heading.text} onChange={e => setH("text", e.target.value)} style={inputStyle} /></div>
+            <StyleRow>
+              <StyleField label="Font" flex={3}>
+                <Select value={heading.fontFamily} onChange={v => setH("fontFamily", v)} options={[
+                  { value: "'Playfair Display', serif", label: "Playfair Display" },
+                  { value: "'DM Serif Display', serif", label: "DM Serif Display" },
+                  { value: "'Open Sans', sans-serif", label: "Open Sans" },
+                  { value: "Georgia, serif", label: "Georgia" },
+                  { value: "arial, helvetica, sans-serif", label: "Arial" },
+                ]} />
+              </StyleField>
+              <StyleField label="Rozmiar" flex={2}><SliderInput value={heading.fontSize} onChange={v => setH("fontSize", v)} min={14} max={60} /></StyleField>
+              <StyleField label="Grubość" flex={2}>
+                <Select value={heading.fontWeight} onChange={v => setH("fontWeight", v)} options={[{ value: "300", label: "Light" }, { value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} />
+              </StyleField>
+            </StyleRow>
+            <StyleRow>
+              <StyleField label="Kolor" flex={2}><ColorInput value={heading.color} onChange={v => setH("color", v)} /></StyleField>
+              <StyleField label="Tło" flex={2}><ColorInput value={heading.bgColor} onChange={v => setH("bgColor", v)} /></StyleField>
+              <StyleField label="Wyrównanie" flex={2}>
+                <Select value={heading.textAlign} onChange={v => setH("textAlign", v)} options={[{ value: "left", label: "Lewo" }, { value: "center", label: "Środek" }, { value: "right", label: "Prawo" }]} />
+              </StyleField>
+              <StyleField label="Letter spacing" flex={2}><SliderInput value={heading.letterSpacing} onChange={v => setH("letterSpacing", v)} min={-2} max={10} step={0.5} /></StyleField>
+              <StyleField label="Line height" flex={2}><SliderInput value={heading.lineHeight} onChange={v => setH("lineHeight", v)} min={1} max={3} step={0.1} unit="" /></StyleField>
+            </StyleRow>
+            <StyleRow>
+              <StyleField label="Padding góra" flex={2}><SliderInput value={heading.paddingTop} onChange={v => setH("paddingTop", v)} min={0} max={60} /></StyleField>
+              <StyleField label="Padding dół" flex={2}><SliderInput value={heading.paddingBottom} onChange={v => setH("paddingBottom", v)} min={0} max={60} /></StyleField>
+              <StyleField label="Padding boki" flex={2}><SliderInput value={heading.paddingH} onChange={v => setH("paddingH", v)} min={0} max={60} /></StyleField>
+            </StyleRow>
+          </div>
+        </Section>
 
         {/* BLOK 1 */}
         <Section title="Blok tekstowy + przycisk" number="1" html={generateTextBlockHTML(text)} previewTitle="Blok tekstowy">
