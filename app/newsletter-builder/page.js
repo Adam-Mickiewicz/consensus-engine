@@ -69,7 +69,7 @@ function generateProductsHTML(products) {
 <style>
   @media screen and (max-width: 600px) { .prod { width: 50% !important; max-width: 50% !important; } }
 </style>
-<table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
+<table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" align="center" style="text-align:center;">
   <tr><td align="center" style="padding:0;text-align:center;">
       <!--[if (gte mso 9)|(IE)]><table width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td width="150" valign="top"><![endif]-->
 ${productsHTML}
