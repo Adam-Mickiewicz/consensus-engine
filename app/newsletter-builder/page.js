@@ -102,7 +102,7 @@ function generateEdronePreviewHTML(s) {
 function PreviewFrame({ html, title, width = 360 }) {
   const [mobile, setMobile] = React.useState(false);
   const activeWidth = mobile ? 375 : width;
-  const mobileStyle = mobile ? `<style>table.prod { display: block !important; width: 100% !important; max-width: 100% !important; margin-right: 0 !important; } </style>` : "";
+  const mobileStyle = mobile ? `<style>table.prod { width: 46% !important; max-width: 46% !important; margin-right: 2% !important; margin-bottom: 8px !important; } </style>` : "";
   const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:#e8e4de;}*{box-sizing:border-box;}.wrapper{max-width:${activeWidth}px;margin:0 auto;background:#fff;padding:16px;}@media only screen and (max-width:400px){.prod{width:50% !important;max-width:50% !important;}}@media only screen and (max-width:400px){.prod{width:50% !important;max-width:50% !important;}}</style>${mobileStyle}</head><body><div class="wrapper">${html}</div></body></html>`;
   return (
     <div style={{ border: "1px solid #e8e4de", borderRadius: "10px", overflow: "hidden" }}>
