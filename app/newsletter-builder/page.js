@@ -72,7 +72,7 @@ function generateProductsHTML(products) {
 <table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" align="center" style="text-align:center;">
   <tr><td align="center" style="padding:0;text-align:center;">
       <!--[if (gte mso 9)|(IE)]><table width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td width="150" valign="top"><![endif]-->
-${productsHTML}
+<center>${productsHTML}</center>
       <!--[if (gte mso 9)|(IE)]></td></tr></table><![endif]-->
   </td></tr>
 </table>`;
