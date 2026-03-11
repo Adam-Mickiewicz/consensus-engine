@@ -595,19 +595,30 @@ export default function NewsletterBuilder() {
 
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f5f2ee", fontFamily: "Georgia, serif" }}>
-      <div style={{ background: "#1a1a1a", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ color: "#fff", fontSize: "18px", fontFamily: "Georgia, serif", fontWeight: 700 }}>Nadwyraz</div>
-          <div style={{ color: "#666", fontSize: "11px", fontFamily: "sans-serif" }}>Newsletter Builder</div>
+    <div style={{ minHeight: "100vh", background: "#f5f2ee", fontFamily: "Georgia, serif", display: "flex" }}>
+
+      {/* SIDEBAR */}
+      <div style={{ width: "220px", minWidth: "220px", background: "#0a0a0a", borderRight: "1px solid #1a1a1a", padding: "24px 16px", display: "flex", flexDirection: "column", gap: "8px", position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
+        <div style={{ marginBottom: "20px" }}>
+          <div style={{ color: "#b8763a", fontWeight: 800, fontSize: "13px", letterSpacing: 2, fontFamily: "monospace" }}>CONSENSUS</div>
+          <div style={{ color: "#444", fontSize: "10px", letterSpacing: 1, fontFamily: "monospace" }}>ENGINE v1.0</div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <a href="/" style={{ color: "#666", fontSize: "11px", fontFamily: "sans-serif", textDecoration: "none" }}>← Consensus Engine</a>
-          <div style={{ fontSize: "12px", color: "#555", fontFamily: "sans-serif" }}>Każdy blok = osobny HTML → wklej do ESP</div>
+        <div style={{ color: "#555", fontSize: "10px", fontWeight: 700, letterSpacing: 1.2, fontFamily: "monospace", marginBottom: "4px" }}>NAWIGACJA</div>
+        {[
+          { href: "/", label: "⚡ Consensus Engine" },
+          { href: "/newsletter-builder", label: "📧 Newsletter Builder", active: true },
+          { href: "/sock-designer", label: "🧦 Sock Designer" },
+          { href: "/design-judge", label: "🎨 Design Judge" },
+        ].map(item => (
+          <a key={item.href} href={item.href} style={{ display: "block", padding: "9px 12px", borderRadius: "8px", fontSize: "11px", fontFamily: "monospace", fontWeight: item.active ? 700 : 400, background: item.active ? "#b8763a20" : "none", border: item.active ? "1px solid #b8763a40" : "1px solid transparent", color: item.active ? "#b8763a" : "#666", textDecoration: "none", cursor: "pointer" }}>{item.label}</a>
+        ))}
+        <div style={{ marginTop: "auto", paddingTop: "16px", borderTop: "1px solid #1a1a1a", color: "#333", fontSize: "10px", fontFamily: "monospace", lineHeight: 1.6 }}>
+          Każdy blok = osobny HTML → wklej do ESP
         </div>
       </div>
 
-      <div style={{ maxWidth: "960px", margin: "0 auto", padding: "28px 24px", display: "flex", flexDirection: "column", gap: "20px" }}>
+      {/* MAIN CONTENT */}
+      <div style={{ flex: 1, padding: "28px 24px", display: "flex", flexDirection: "column", gap: "20px", overflowY: "auto" }}>
 
         {/* BLOK 0 — Nagłówek */}
         <Section title="Nagłówek" number="0" html={generateHeadingHTML(heading)} previewTitle="Nagłówek" previewWidth={720}>
