@@ -56,25 +56,30 @@ function generateEdroneCSSOverride(s) {
     ? `<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">`
     : "";
 
+  // Use ID selector if provided — beats edrone's own #id rules
+  const id = s.blockId ? `#${s.blockId.trim()}` : "";
+  const sel = id ? `${id}` : "";
+  const eSel = sel ? `${sel} ` : "";
+
   return `${fontImport}
 <style>
   /* ── Nadwyraz edrone override ── */
 
-  .e-row.e-stack, .edrone-box {
+  ${eSel}.e-row.e-stack, ${eSel}.edrone-box {
     background-color: ${s.bgColor} !important;
   }
 
-  .e-col, .edrone-col {
+  ${eSel}.e-col, ${eSel}.edrone-col {
     padding: ${s.colPadding}px !important;
     vertical-align: top !important;
   }
 
-  .product-image {
+  ${eSel}.product-image {
     border-radius: ${s.imgRadius}px !important;
     padding-bottom: ${s.imgPaddingBottom}px !important;
   }
 
-  .product-title {
+  ${eSel}.product-title {
     height: auto !important;
     overflow: visible !important;
     background-color: ${s.cardBg} !important;
@@ -82,7 +87,10 @@ function generateEdroneCSSOverride(s) {
     padding: ${s.titlePadding}px !important;
   }
 
-  .product-title p, .product-title p a {
+  ${eSel}.product-title p,
+  ${eSel}.product-title p a,
+  ${eSel}.e-stack .e-col .product-title p,
+  ${eSel}.e-stack .e-col .product-title p a {
     font-family: ${s.fontFamily} !important;
     font-size: ${s.fontSize}px !important;
     color: ${s.titleColor} !important;
@@ -93,13 +101,13 @@ function generateEdroneCSSOverride(s) {
     text-decoration: ${s.linkDecoration} !important;
   }
 
-  .e-col + .e-col {
+  ${eSel}.e-col + .e-col {
     border-left: ${s.colBorder}px solid ${s.colBorderColor} !important;
   }
 
   @media only screen and (max-width: 620px) {
-    .e-col { display: block !important; width: 100% !important; max-width: 100% !important; }
-    .e-col + .e-col { border-left: none !important; border-top: ${s.colBorder}px solid ${s.colBorderColor} !important; }
+    ${eSel}.e-col { display: block !important; width: 100% !important; max-width: 100% !important; }
+    ${eSel}.e-col + .e-col { border-left: none !important; border-top: ${s.colBorder}px solid ${s.colBorderColor} !important; }
   }
 </style>`;
 }
@@ -172,6 +180,7 @@ const defaultProducts = [
 ];
 
 const defaultEdroneStyle = {
+  blockId: "u_content_custom_bestsellers_4",
   colCount: "3",
   bgColor: "#ffffff",
   cardBg: "#ffffff",
@@ -393,6 +402,22 @@ export default function NewsletterBuilder() {
             </div>
 
             {/* Kontrolki */}
+            <StyleGroup title="ID bloku edrone">
+              <div style={{ fontSize: "12px", color: "#666", fontFamily: "sans-serif", marginBottom: "8px", lineHeight: 1.6 }}>
+                Otwórz źródło HTML w edrone, znajdź <code style={{ background: "#f0f0f0", padding: "1px 5px", borderRadius: "3px" }}>id="u_content_custom_bestsellers_X"</code> przy bloku dynamicznym i wklej tutaj. Dzięki temu nasz CSS będzie miał wyższy priorytet niż style edrone.
+              </div>
+              <StyleRow>
+                <StyleField label="ID bloku (np. u_content_custom_bestsellers_4)" flex={1}>
+                  <input
+                    value={es.blockId}
+                    onChange={e => setStyle("blockId", e.target.value)}
+                    placeholder="u_content_custom_bestsellers_4"
+                    style={{ ...inputStyle, fontFamily: "monospace", fontSize: "12px" }}
+                  />
+                </StyleField>
+              </StyleRow>
+            </StyleGroup>
+
             <StyleGroup title="Układ">
               <StyleRow>
                 <StyleField label="Liczba kolumn" flex={1}>
