@@ -50,35 +50,27 @@ ${bodyLines}
 }
 
 function generateProductsHTML(products) {
-  const rows = [];
-  for (let i = 0; i < products.length; i += 2) {
-    const left = products[i];
-    const right = products[i + 1] || null;
-    const renderCell = (p) => {
-      if (!p) return `<td width="50%" valign="top" style="width:50%;padding:4px;"></td>`;
-      const priceColor = p.isPromo ? "#cc0000" : "#000000";
-      const promoLine = p.isPromo && p.oldPrice
-        ? `<p style="margin:0;"><span style="font-family:'Open Sans',sans-serif;font-size:11px;color:#999;text-decoration:line-through;">${p.oldPrice}</span> <span style="font-family:'Open Sans',sans-serif;font-size:11px;color:#cc0000;font-weight:700;">${p.discount}</span></p>`
-        : "";
-      const name = p.name.length > 55 ? p.name.substring(0, 55) + '...' : p.name;
-      return `<td width="160" valign="top" style="width:160px;padding:4px;">
-        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-radius:5px;overflow:hidden;">
-          <tr><td style="padding:0;">
-            <a href="${p.link}"><img src="${p.imageUrl}" width="100%" style="display:block;max-width:100%;height:auto;border-radius:5px 5px 0 0;" alt=""></a>
-          </td></tr>
-          <tr><td style="background:#ffffff;border-radius:0 0 5px 5px;padding:6px 6px 8px 6px;">
-            <p style="font-family:'Playfair Display',serif;font-size:12px;color:#000;margin:0 0 4px 0;line-height:1.4;">${name}</p>
-            <p style="font-family:'Open Sans',sans-serif;font-size:11px;font-weight:${p.isPromo ? '700' : '400'};color:${priceColor};margin:0 0 2px 0;">${p.price}</p>${promoLine}
-          </td></tr>
-        </table>
-      </td>`;
-    };
-    rows.push(`<tr>${renderCell(left)}${renderCell(right)}</tr>`);
-  }
+  const productsHTML = products.map((p, i) => {
+    const isLast = i === products.length - 1;
+    const priceColor = p.isPromo ? "#cc0000" : "#000000";
+    const promoLine = p.isPromo && p.oldPrice
+      ? `<p style="margin:0;"><span style="font-family:'Open Sans',sans-serif;font-size:11px;color:#999;text-decoration:line-through;">${p.oldPrice}</span> <span style="font-family:'Open Sans',sans-serif;font-size:11px;color:#cc0000;font-weight:700;">${p.discount}</span></p>`
+      : "";
+    const name = p.name.length > 55 ? p.name.substring(0, 55) + '...' : p.name;
+    return `<table class="prod" border="0" cellpadding="0" cellspacing="0" width="160" style="width:160px;max-width:160px;display:inline-block;vertical-align:top;${isLast ? '' : 'margin-right:10px;'}margin-bottom:10px;">
+      <tr><td style="padding:0;">
+        <a href="${p.link}"><img src="${p.imageUrl}" width="160" style="display:block;width:160px;height:auto;border-radius:5px 5px 0 0;" alt=""></a>
+        <div style="background:#ffffff;border-radius:0 0 5px 5px;padding:6px;height:52px;overflow:hidden;">
+          <p style="font-family:'Playfair Display',serif;font-size:12px;color:#000;margin:0 0 4px 0;line-height:1.4;">${name}</p>
+          <p style="font-family:'Open Sans',sans-serif;font-size:11px;font-weight:${p.isPromo ? '700' : '400'};color:${priceColor};margin:0;">${p.price}</p>${promoLine}
+        </div>
+      </td></tr>
+    </table>`;
+  }).join('\n');
   return `<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Playfair+Display:wght@400&display=swap" rel="stylesheet">
-<table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
-  ${rows.join('\n  ')}
-</table>`;
+<div style="text-align:center;font-size:0;">
+${productsHTML}
+</div>`;
 }
 
 
