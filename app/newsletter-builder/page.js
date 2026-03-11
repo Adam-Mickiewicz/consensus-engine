@@ -9,7 +9,7 @@ function generateHeadingHTML(h) {
     : h.fontFamily.includes("Open Sans")
     ? `<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">`
     : "";
-  const subtextHTML = h.subtext ? `\n<p style="font-family: ${h.fontFamily}; font-size: ${h.fontSize - 6}px; font-weight: 400; color: ${h.color}; text-align: ${h.textAlign}; line-height: 1.5; letter-spacing: 0px; padding: 0 ${h.paddingH}px ${h.paddingBottom}px ${h.paddingH}px; margin: 0;">${h.subtext}</p>` : "";
+  const subtextHTML = h.subtext ? `\n<p style="font-family: ${h.fontFamily}; font-size: ${h.subtextFontSize}px; font-weight: ${h.subtextFontWeight}; color: ${h.subtextColor}; text-align: ${h.textAlign}; line-height: 1.5; padding: ${h.subtextMarginTop}px ${h.paddingH}px ${h.paddingBottom}px ${h.paddingH}px; margin: 0;">${h.subtext}</p>` : "";
   return `${fontImport}
 <p style="font-family: ${h.fontFamily}; font-size: ${h.fontSize}px; font-weight: ${h.fontWeight}; color: ${h.color}; text-align: ${h.textAlign}; line-height: ${h.lineHeight}; letter-spacing: ${h.letterSpacing}px; padding: ${h.paddingTop}px ${h.paddingH}px ${h.subtext ? 8 : h.paddingBottom}px ${h.paddingH}px; margin: 0;">${h.text}</p>${subtextHTML}`;
 }
@@ -17,6 +17,10 @@ function generateHeadingHTML(h) {
 const defaultHeading = {
   text: "Nowa kolekcja – Nadwyraz.com x Wydawnictwo Literackie 📚",
   subtext: "",
+  subtextFontSize: 16,
+  subtextFontWeight: "400",
+  subtextColor: "#000000",
+  subtextMarginTop: 8,
   fontFamily: "'Playfair Display', serif",
   fontSize: 28,
   fontWeight: "700",
@@ -609,6 +613,14 @@ export default function NewsletterBuilder() {
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <div><Label>Tekst nagłówka</Label><input value={heading.text} onChange={e => setH("text", e.target.value)} style={inputStyle} /></div>
             <div><Label>Copy pod nagłówkiem (opcjonalne)</Label><input value={heading.subtext} onChange={e => setH("subtext", e.target.value)} style={inputStyle} placeholder="np. Odkryj wyjątkowe produkty..." /></div>
+            {heading.subtext && <StyleRow>
+              <StyleField label="Rozmiar copy" flex={2}><SliderInput value={heading.subtextFontSize} onChange={v => setH("subtextFontSize", v)} min={10} max={30} /></StyleField>
+              <StyleField label="Grubość copy" flex={2}>
+                <Select value={heading.subtextFontWeight} onChange={v => setH("subtextFontWeight", v)} options={[{ value: "300", label: "Light" }, { value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} />
+              </StyleField>
+              <StyleField label="Kolor copy" flex={2}><ColorInput value={heading.subtextColor} onChange={v => setH("subtextColor", v)} /></StyleField>
+              <StyleField label="Odstęp od nagłówka" flex={2}><SliderInput value={heading.subtextMarginTop} onChange={v => setH("subtextMarginTop", v)} min={0} max={40} /></StyleField>
+            </StyleRow>}
             <StyleRow>
               <StyleField label="Font" flex={3}>
                 <Select value={heading.fontFamily} onChange={v => setH("fontFamily", v)} options={[
