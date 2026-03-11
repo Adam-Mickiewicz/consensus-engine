@@ -616,7 +616,6 @@ export default function NewsletterBuilder() {
         {[
           { id: "0", label: "Nagłówek" },
           { id: "1", label: "Blok tekstowy" },
-          { id: "feed", label: "Przeglądarka feedu" },
           { id: "2", label: "Blok produktów" },
         ].map(item => (
           <button key={item.id} onClick={() => setActiveBlock(item.id)} style={{ display: "block", width: "100%", textAlign: "left", padding: "9px 12px", borderRadius: "8px", fontSize: "11px", fontFamily: "monospace", fontWeight: activeBlock === item.id ? 700 : 400, background: activeBlock === item.id ? "#b8763a20" : "none", border: activeBlock === item.id ? "1px solid #b8763a40" : "1px solid transparent", color: activeBlock === item.id ? "#b8763a" : "#666", cursor: "pointer" }}>{item.label}</button>
@@ -683,9 +682,7 @@ export default function NewsletterBuilder() {
           </div>
         </Section>}
 
-        {activeBlock === "feed" && <Block4FeedBrowser onAddToNewsletter={handleAddFromFeed} />}
-
-        {activeBlock === "2" && <div id="blok2">
+        {activeBlock === "2" && <><Block4FeedBrowser onAddToNewsletter={handleAddFromFeed} /><div id="blok2">
           <Section title="Blok produktów (ręczny)" number="2" html={generateProductsHTML(products)} previewTitle="Blok produktów" previewWidth={720}>
             <div style={{ background: "#f0f7ff", border: "1px solid #c8e0f8", borderRadius: "8px", padding: "10px 14px", fontSize: "12px", color: "#555", fontFamily: "sans-serif", lineHeight: 1.6 }}>
               💡 Wybierz produkty w Bloku 4 powyżej — trafią tutaj automatycznie. Możesz też edytować ręcznie.
