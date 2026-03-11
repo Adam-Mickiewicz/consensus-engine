@@ -541,11 +541,8 @@ function Block4FeedBrowser({ onAddToNewsletter }) {
 export default function NewsletterBuilder() {
   const [text, setText] = useState(defaultText);
   const [products, setProducts] = useState(defaultProducts);
-  const [es, setEs] = useState(defaultEdroneStyle);
-  const [showEdroneCode, setShowEdroneCode] = useState(false);
 
   const handleProductChange = useCallback((i, updated) => setProducts(prev => prev.map((p, idx) => idx === i ? updated : p)), []);
-  const setStyle = useCallback((key, value) => setEs(prev => ({ ...prev, [key]: value })), []);
 
   const handleAddFromFeed = useCallback((feedProducts) => {
     setProducts(feedProducts.map((fp, i) => ({
@@ -561,8 +558,6 @@ export default function NewsletterBuilder() {
     setTimeout(() => document.getElementById("blok2")?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
   }, []);
 
-  const cssHtml = generateEdroneCSSOverride(es);
-  const previewHtml = generateEdronePreviewHTML(es);
 
   return (
     <div style={{ minHeight: "100vh", background: "#f5f2ee", fontFamily: "Georgia, serif" }}>
@@ -606,99 +601,7 @@ export default function NewsletterBuilder() {
           </Section>
         </div>
 
-        {/* BLOK 3 — edrone CSS override */}
-        <div style={{ background: "#fff", border: "1px solid #e8e4de", borderRadius: "14px", overflow: "hidden" }}>
-          <div style={{ padding: "14px 20px", borderBottom: "1px solid #f0ece6", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fafaf8" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: "#1a1a1a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700 }}>3</div>
-              <span style={{ fontFamily: "Georgia, serif", fontSize: "15px", fontWeight: 600 }}>Dynamiczne produkty edrone — styl</span>
-              <span style={{ background: "#e8f4fd", color: "#0066cc", fontSize: "10px", fontFamily: "sans-serif", fontWeight: 700, padding: "2px 8px", borderRadius: "20px", border: "1px solid #b8d4f0" }}>CSS override</span>
-            </div>
-            <div style={{ display: "flex", gap: "8px" }}>
-              <button onClick={() => setShowEdroneCode(s => !s)} style={{ background: "transparent", border: "1px solid #ddd", color: "#888", borderRadius: "7px", padding: "6px 14px", fontSize: "11px", cursor: "pointer" }}>
-                {showEdroneCode ? "Ukryj kod" : "Pokaż kod"}
-              </button>
-              <CopyButton html={cssHtml} />
-            </div>
-          </div>
-          <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div style={{ background: "#f0f7ff", border: "1px solid #c8e0f8", borderRadius: "8px", padding: "12px 16px", fontSize: "12px", color: "#444", fontFamily: "sans-serif", lineHeight: 1.6 }}>
-              <strong style={{ color: "#0066cc" }}>Jak używać:</strong> Kliknij <strong>Kopiuj HTML</strong> i wklej jako blok HTML <strong>przed</strong> blokiem dynamicznym w edrone.
-            </div>
-            <StyleGroup title="Układ">
-              <StyleRow>
-                <StyleField label="Liczba kolumn" flex={1}>
-                  <Select value={es.colCount} onChange={v => setStyle("colCount", v)} options={[{ value: "2", label: "2 kolumny" }, { value: "3", label: "3 kolumny" }, { value: "4", label: "4 kolumny" }]} />
-                </StyleField>
-                <StyleField label="Padding kolumny" flex={2}><SliderInput value={es.colPadding} onChange={v => setStyle("colPadding", v)} min={0} max={32} /></StyleField>
-                <StyleField label="Separator" flex={2}><SliderInput value={es.colBorder} onChange={v => setStyle("colBorder", v)} min={0} max={4} /></StyleField>
-                <StyleField label="Kolor separatora" flex={2}><ColorInput value={es.colBorderColor} onChange={v => setStyle("colBorderColor", v)} /></StyleField>
-              </StyleRow>
-            </StyleGroup>
-            <StyleGroup title="Tło i karta">
-              <StyleRow>
-                <StyleField label="Tło bloku" flex={2}><ColorInput value={es.bgColor} onChange={v => setStyle("bgColor", v)} /></StyleField>
-                <StyleField label="Tło pod tytułem" flex={2}><ColorInput value={es.cardBg} onChange={v => setStyle("cardBg", v)} /></StyleField>
-                <StyleField label="Zaokrąglenie karty" flex={2}><SliderInput value={es.cardRadius} onChange={v => setStyle("cardRadius", v)} min={0} max={20} /></StyleField>
-              </StyleRow>
-            </StyleGroup>
-            <StyleGroup title="Zdjęcie">
-              <StyleRow>
-                <StyleField label="Zaokrąglenie" flex={2}><SliderInput value={es.imgRadius} onChange={v => setStyle("imgRadius", v)} min={0} max={20} /></StyleField>
-                <StyleField label="Odstęp pod zdjęciem" flex={2}><SliderInput value={es.imgPaddingBottom} onChange={v => setStyle("imgPaddingBottom", v)} min={0} max={24} /></StyleField>
-              </StyleRow>
-            </StyleGroup>
-            <StyleGroup title="Typografia tytułu">
-              <StyleRow>
-                <StyleField label="Font" flex={3}>
-                  <Select value={es.fontFamily} onChange={v => setStyle("fontFamily", v)} options={[
-                    { value: "'Playfair Display', serif", label: "Playfair Display" },
-                    { value: "'Open Sans', sans-serif", label: "Open Sans" },
-                    { value: "Georgia, serif", label: "Georgia" },
-                    { value: "arial, helvetica, sans-serif", label: "Arial" },
-                    { value: "'Times New Roman', serif", label: "Times New Roman" },
-                  ]} />
-                </StyleField>
-                <StyleField label="Rozmiar" flex={2}><SliderInput value={es.fontSize} onChange={v => setStyle("fontSize", v)} min={10} max={20} /></StyleField>
-                <StyleField label="Grubość" flex={2}>
-                  <Select value={es.fontWeight} onChange={v => setStyle("fontWeight", v)} options={[{ value: "300", label: "Light" }, { value: "400", label: "Regular" }, { value: "600", label: "SemiBold" }, { value: "700", label: "Bold" }]} />
-                </StyleField>
-              </StyleRow>
-              <StyleRow>
-                <StyleField label="Kolor" flex={3}><ColorInput value={es.titleColor} onChange={v => setStyle("titleColor", v)} /></StyleField>
-                <StyleField label="Wyrównanie" flex={2}>
-                  <Select value={es.textAlign} onChange={v => setStyle("textAlign", v)} options={[{ value: "left", label: "Lewo" }, { value: "center", label: "Środek" }, { value: "right", label: "Prawo" }]} />
-                </StyleField>
-                <StyleField label="Letter spacing" flex={2}><SliderInput value={es.letterSpacing} onChange={v => setStyle("letterSpacing", v)} min={-1} max={5} step={0.5} /></StyleField>
-                <StyleField label="Line height" flex={2}><SliderInput value={es.lineHeight} onChange={v => setStyle("lineHeight", v)} min={1} max={2.5} step={0.1} unit="" /></StyleField>
-              </StyleRow>
-              <StyleRow>
-                <StyleField label="Padding tytułu" flex={2}><SliderInput value={es.titlePadding} onChange={v => setStyle("titlePadding", v)} min={0} max={24} /></StyleField>
-                <StyleField label="Podkreślenie linku" flex={2}>
-                  <Select value={es.linkDecoration} onChange={v => setStyle("linkDecoration", v)} options={[{ value: "none", label: "Brak" }, { value: "underline", label: "Podkreślony" }]} />
-                </StyleField>
-              </StyleRow>
-            </StyleGroup>
-            <div style={{ border: "1px solid #e8e4de", borderRadius: "10px", overflow: "hidden" }}>
-              <div style={{ padding: "8px 14px", background: "#f5f2ee", borderBottom: "1px solid #e8e4de", fontSize: "11px", color: "#888", fontFamily: "sans-serif", display: "flex", justifyContent: "space-between" }}>
-                <span>📧 Podgląd — symulacja edrone dynamic block</span>
-                <span style={{ color: "#bbb" }}>720px</span>
-              </div>
-              <div style={{ padding: "16px", background: "#e8e4de", display: "flex", justifyContent: "center" }}>
-                <iframe
-                  srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:16px;background:#fff;">${previewHtml}</body></html>`}
-                  style={{ width: "720px", maxWidth: "100%", height: "340px", border: "none", display: "block", borderRadius: "4px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
-                  title="edrone preview"
-                />
-              </div>
-            </div>
-            {showEdroneCode && (
-              <div style={{ background: "#1a1a1a", borderRadius: "8px", overflow: "hidden" }}>
-                <pre style={{ margin: 0, padding: "14px", color: "#a8d8a8", fontSize: "11px", lineHeight: 1.6, overflow: "auto", maxHeight: "300px", fontFamily: "monospace" }}>{cssHtml}</pre>
-              </div>
-            )}
-          </div>
-        </div>
+
 
       </div>
     </div>
