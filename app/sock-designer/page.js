@@ -89,6 +89,7 @@ async function sbFetch(path, opts = {}) {
 
 function renderMarkdown(text) {
   if (!text) return null;
+  text = text.replace(/<<<BRIEF_START>>>[\s\S]*?<<<BRIEF_END>>>/g, "").trim();
   const lines = text.split("\n");
   const elements = [];
   const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
