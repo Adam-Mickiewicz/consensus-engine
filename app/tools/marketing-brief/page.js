@@ -291,6 +291,7 @@ export default function MarketingBrief() {
   const [chatOpen, setChatOpen] = useState(true);
   const [synthesis, setSynthesis] = useState(null);
   const [synthesizing, setSynthesizing] = useState(false);
+  const [fillingBrief, setFillingBrief] = useState(false);
   const [copyFromModal, setCopyFromModal] = useState(null); // id kanału docelowego
   const [exportingXlsx, setExportingXlsx] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
@@ -465,6 +466,53 @@ Bądź konkretny. Wyciągaj dosłowne propozycje copy z rozmowy, nie parafrazuj.
 
   const copySynthesis = () => {
     if (synthesis) { navigator.clipboard.writeText(synthesis); }
+  };
+
+  const fillBriefFromSynthesis = async () => {
+    if (!synthesis) return;
+    setFillingBrief(true);
+    try {
+      const prompt = `Na podstawie poniższej syntezy rozmowy, wypełnij pola briefu marketingowego.
+Zwróć TYLKO czysty JSON (bez markdown, bez \`\`\`, bez komentarzy) z następującymi polami (pomiń pola których nie możesz wypełnić):
+{
+  "name": "nazwa akcji",
+  "goal": "cel kampanii",
+  "headline": "główne hasło",
+  "discount": "zniżka/promocja",
+  "dateStart": "YYYY-MM-DD HH:MM lub pusty string",
+  "dateEnd": "YYYY-MM-DD HH:MM lub pusty string",
+  "targetAudience": "grupy docelowe",
+  "brandNotes": "dodatkowe uwagi"
+}
+
+SYNTEZA:
+${synthesis}`;
+
+      const res = await fetch("/api/ai-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: chatModel,
+          messages: [{ role: "user", content: prompt }],
+          briefContext: null,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      // Wyczyść odpowiedź z markdown
+      let raw = data.content.trim();
+      raw = raw.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
+      const parsed = JSON.parse(raw);
+
+      // Wypełnij pola briefu - tylko te które AI zwróciło
+      setBrief(prev => ({ ...prev, ...Object.fromEntries(Object.entries(parsed).filter(([k, v]) => v && v !== "")) }));
+      setSynthesis(null);
+      alert("✅ Brief wypełniony! Sprawdź i popraw co chcesz.");
+    } catch(e) {
+      alert("❌ Błąd: " + e.message + "\nSpróbuj ponownie.");
+    }
+    setFillingBrief(false);
   };
 
   const CHANNELS_LABELS = {
@@ -953,6 +1001,9 @@ Bądź konkretny. Wyciągaj dosłowne propozycje copy z rozmowy, nie parafrazuj.
                     <div style={{ display: "flex", gap: 6 }}>
                       {synthesis && (
                         <button onClick={copySynthesis} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 4, border: `1px solid ${ACCENT}40`, background: "none", color: ACCENT, cursor: "pointer", fontFamily: "monospace" }}>Kopiuj</button>
+                        <button onClick={fillBriefFromSynthesis} disabled={fillingBrief} style={{ fontSize: 10, padding: "2px 10px", borderRadius: 4, border: `1px solid ${ACCENT}`, background: ACCENT, color: "#fff", cursor: "pointer", fontFamily: "monospace", fontWeight: 700 }}>
+                          {fillingBrief ? "⏳ Wypełniam..." : "📋 Wypełnij brief"}
+                        </button>
                       )}
                       <button onClick={() => setSynthesis(null)} style={{ fontSize: 14, background: "none", border: "none", color: "#ccc", cursor: "pointer", lineHeight: 1 }}>×</button>
                     </div>
