@@ -409,7 +409,7 @@ export default function MarketingBrief() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: chatModel,
-          messages: newHistory.map(m => ({ role: m.role, content: m.content })),
+          messages: newHistory.map(m => ({ role: m.role, content: m.content, model: m.model || null })),
           briefContext: { name: brief.name, goal: brief.goal, headline: brief.headline, headlinePriority: brief.headlinePriority, discount: brief.discount, dateStart: brief.dateStart, dateEnd: brief.dateEnd, targetAudience: brief.targetAudience, channels: Object.fromEntries(Object.entries(brief.channels).filter(([,v]) => v.active).map(([k,v]) => [CHANNELS_LABELS[k], { formats: v.selectedFormats, types: v.selectedTypes, hierarchy: v.hierarchy, cta: v.ctaText }])) },
         }),
       });
