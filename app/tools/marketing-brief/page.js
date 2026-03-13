@@ -1044,6 +1044,7 @@ ${textToUse}`;
                   const modelColors = { [msg.model]: modelColor };
                   const modelLabels = { [msg.model]: msg.model };
                   const isUser = msg.role === "user";
+                  const msgTime = msg.ts ? new Date(msg.ts).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }) : "";
                   return (
                     <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isUser ? "flex-end" : "flex-start" }}>
                       {!isUser && <div style={{ fontSize: 9, color: modelColors[msg.model] || "#aaa", marginBottom: 3, fontFamily: "monospace", fontWeight: 700 }}>{msg.model}</div>}
