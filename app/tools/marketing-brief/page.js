@@ -95,6 +95,7 @@ const defaultBrief = () => ({
   targetAudience: "",
   brandNotes: "",
   references: { links: [], files: [] },
+  chatHistory: [],
   channels: Object.fromEntries(CHANNELS.map(c => [c.id, defaultChannel()])),
 });
 
@@ -213,6 +214,10 @@ export default function MarketingBrief() {
   const [loading, setLoading] = useState(true);
   const [exportingDocx, setExportingDocx] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [chatModel, setChatModel] = useState("claude");
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatOpen, setChatOpen] = useState(true);
   const [copyFromModal, setCopyFromModal] = useState(null); // id kanału docelowego
   const [exportingXlsx, setExportingXlsx] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
@@ -307,6 +312,41 @@ export default function MarketingBrief() {
     await fetch(`/api/marketing-briefs?id=${id}`, { method: "DELETE" });
     loadBriefs();
   };
+
+  const sendMessage = async () => {
+    if (!chatInput.trim() || chatLoading) return;
+    const userMsg = { role: "user", content: chatInput.trim(), model: chatModel, ts: Date.now() };
+    const newHistory = [...(brief.chatHistory || []), userMsg];
+    setBrief(b => ({ ...b, chatHistory: newHistory }));
+    setChatInput("");
+    setChatLoading(true);
+    try {
+      const res = await fetch("/api/ai-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: chatModel,
+          messages: newHistory.map(m => ({ role: m.role, content: m.content })),
+          briefContext: { name: brief.name, goal: brief.goal, headline: brief.headline, headlinePriority: brief.headlinePriority, discount: brief.discount, dateStart: brief.dateStart, dateEnd: brief.dateEnd, targetAudience: brief.targetAudience, channels: Object.fromEntries(Object.entries(brief.channels).filter(([,v]) => v.active).map(([k,v]) => [CHANNELS_LABELS[k], { formats: v.selectedFormats, types: v.selectedTypes, hierarchy: v.hierarchy, cta: v.ctaText }])) },
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      const aiMsg = { role: "assistant", content: data.content, model: chatModel, ts: Date.now() };
+      const finalHistory = [...newHistory, aiMsg];
+      setBrief(b => ({ ...b, chatHistory: finalHistory }));
+      // Autozapis czatu jeśli brief już zapisany
+      if (editId) {
+        await fetch("/api/marketing-briefs", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editId, title: brief.name, data: { ...brief, chatHistory: finalHistory } }) });
+      }
+    } catch(e) {
+      const errMsg = { role: "assistant", content: "❌ Błąd: " + e.message, model: chatModel, ts: Date.now() };
+      setBrief(b => ({ ...b, chatHistory: [...newHistory, errMsg] }));
+    }
+    setChatLoading(false);
+  };
+
+  const clearChat = () => { if (confirm("Wyczyścić historię czatu?")) setBrief(b => ({ ...b, chatHistory: [] })); };
 
   const CHANNELS_LABELS = {
     organic_social: "Kanały własne (organic)", meta_ads: "Meta Ads", google_ads: "Google Ads",
@@ -496,7 +536,8 @@ export default function MarketingBrief() {
 
         {/* ─── FORMULARZ BRIEFU ─── */}
         {view === "form" && (
-          <div style={{ padding: 32, maxWidth: 860 }}>
+          <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
+          <div style={{ flex: 1, padding: 32, maxWidth: 860, overflowY: "auto" }}>
             {/* Nagłówek */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
               <div>
@@ -696,7 +737,7 @@ export default function MarketingBrief() {
             )}
 
             {/* DOLNY PASEK ZAPISU */}
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, paddingTop: 8 }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, paddingTop: 8, paddingBottom: 32 }}>
               {saveMsg && <span style={{ fontSize: 12, color: saveMsg.startsWith("✅") ? "#2d7a4f" : "#cc0000", alignSelf: "center" }}>{saveMsg}</span>}
               <button onClick={exportDocx} disabled={exportingDocx} style={{ background: "#1a5ca8", color: "#fff", border: "none", borderRadius: 6, padding: "10px 16px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
                 {exportingDocx ? "Generuję..." : "⬇ Pobierz DOCX"}
@@ -708,6 +749,82 @@ export default function MarketingBrief() {
                 {saving ? "Zapisuję..." : "💾 Zapisz brief"}
               </button>
             </div>
+          </div>
+
+          {/* ─── PANEL CZATU AI ─── */}
+          <div style={{ width: chatOpen ? 380 : 48, minWidth: chatOpen ? 380 : 48, borderLeft: "1px solid #e0dbd4", background: "#fff", display: "flex", flexDirection: "column", height: "100vh", position: "sticky", top: 0, transition: "width 0.2s, min-width 0.2s", overflow: "hidden" }}>
+            {/* Toggle button */}
+            <button onClick={() => setChatOpen(o => !o)}
+              style={{ position: "absolute", top: 16, left: chatOpen ? 12 : 8, background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#aaa", zIndex: 10, padding: 4 }}>
+              {chatOpen ? "→" : "←"}
+            </button>
+
+            {chatOpen && (<>
+              {/* Header */}
+              <div style={{ padding: "14px 16px 14px 40px", borderBottom: "1px solid #e0dbd4", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", fontFamily: "monospace" }}>🤖 Doradca AI</div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {[
+                    { id: "claude", label: "Claude", color: "#b8763a" },
+                    { id: "chatgpt", label: "GPT-4o", color: "#10a37f" },
+                    { id: "gemini", label: "Gemini", color: "#4285f4" },
+                  ].map(m => (
+                    <button key={m.id} onClick={() => setChatModel(m.id)}
+                      style={{ padding: "3px 8px", borderRadius: 20, border: `1px solid ${chatModel === m.id ? m.color : "#ddd"}`, background: chatModel === m.id ? m.color + "15" : "#f9f9f9", color: chatModel === m.id ? m.color : "#aaa", fontSize: 10, cursor: "pointer", fontWeight: chatModel === m.id ? 700 : 400, fontFamily: "monospace" }}>
+                      {m.label}
+                    </button>
+                  ))}
+                  <button onClick={clearChat} style={{ padding: "3px 8px", borderRadius: 20, border: "1px solid #eee", background: "none", color: "#ccc", fontSize: 10, cursor: "pointer", fontFamily: "monospace" }}>Wyczyść</button>
+                </div>
+              </div>
+
+              {/* Wiadomości */}
+              <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}
+                ref={el => { if (el) el.scrollTop = el.scrollHeight; }}>
+                {(brief.chatHistory || []).length === 0 && (
+                  <div style={{ textAlign: "center", color: "#ccc", fontSize: 12, marginTop: 40 }}>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>💬</div>
+                    <div>Zapytaj AI o nazwę akcji,<br/>strategię, copy lub ocenę briefu</div>
+                  </div>
+                )}
+                {(brief.chatHistory || []).map((msg, i) => {
+                  const modelColors = { claude: "#b8763a", chatgpt: "#10a37f", gemini: "#4285f4" };
+                  const modelLabels = { claude: "Claude", chatgpt: "GPT-4o", gemini: "Gemini" };
+                  const isUser = msg.role === "user";
+                  return (
+                    <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isUser ? "flex-end" : "flex-start" }}>
+                      {!isUser && <div style={{ fontSize: 9, color: modelColors[msg.model] || "#aaa", marginBottom: 3, fontFamily: "monospace", fontWeight: 700 }}>{modelLabels[msg.model] || msg.model}</div>}
+                      <div style={{ maxWidth: "85%", padding: "8px 12px", borderRadius: isUser ? "12px 12px 4px 12px" : "12px 12px 12px 4px", background: isUser ? ACCENT : "#f5f2ee", color: isUser ? "#fff" : "#1a1a1a", fontSize: 12, lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                        {msg.content}
+                      </div>
+                    </div>
+                  );
+                })}
+                {chatLoading && (
+                  <div style={{ display: "flex", alignItems: "flex-start" }}>
+                    <div style={{ padding: "8px 12px", borderRadius: "12px 12px 12px 4px", background: "#f5f2ee", fontSize: 12, color: "#aaa" }}>⏳ Myślę...</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Input */}
+              <div style={{ padding: 12, borderTop: "1px solid #e0dbd4", flexShrink: 0 }}>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <textarea value={chatInput} onChange={e => setChatInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                    placeholder={`Napisz do ${chatModel === "claude" ? "Claude" : chatModel === "chatgpt" ? "GPT-4o" : "Gemini"}... (Enter = wyślij)`}
+                    rows={2}
+                    style={{ flex: 1, background: "#f9f7f5", border: "1px solid #ddd", borderRadius: 8, padding: "8px 10px", fontSize: 12, fontFamily: "inherit", resize: "none", outline: "none" }} />
+                  <button onClick={sendMessage} disabled={chatLoading || !chatInput.trim()}
+                    style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "0 14px", fontSize: 16, cursor: chatLoading ? "not-allowed" : "pointer", opacity: chatLoading || !chatInput.trim() ? 0.5 : 1 }}>
+                    ↑
+                  </button>
+                </div>
+                <div style={{ fontSize: 10, color: "#ccc", marginTop: 6, textAlign: "center" }}>Shift+Enter = nowa linia • czat zapisywany z briefem</div>
+              </div>
+            </>)}
+          </div>
+
           </div>
         )}
       </div>
