@@ -1,0 +1,577 @@
+"use client";
+import { useState, useEffect, useCallback } from "react";
+
+// ─── STAŁE ───────────────────────────────────────────────────────────────────
+
+const ACCENT = "#b8763a";
+const NAV = [
+  { href: "/", label: "⚡ Consensus Engine" },
+  { href: "/newsletter-builder", label: "📧 Newsletter Builder" },
+  { href: "/sock-designer", label: "🧦 Sock Designer" },
+  { href: "/design-judge", label: "🎨 Design Judge" },
+  { href: "/tools/countdown", label: "⏱ Generator odliczania" },
+  { href: "/tools/marketing-brief", label: "📋 Akcje marketingowe", active: true },
+];
+
+const CHANNELS = [
+  {
+    id: "organic_social", label: "📱 Kanały własne (organic)",
+    formats: ["Post kwadrat 1080×1080", "Post pionowy 1080×1350", "Stories 1080×1920", "Reels cover 1080×1920"],
+    types: ["Grafika", "Zdjęcie", "Wideo", "Animacja"],
+  },
+  {
+    id: "meta_ads", label: "🎯 Meta Ads",
+    formats: ["Kwadrat 1080×1080", "Pionowy 1080×1920", "Poziomy 1200×628", "Pionowy 1080×1350", "Collection Ad"],
+    types: ["Grafika statyczna", "Zdjęcie", "Wideo", "Animacja", "Karuzela"],
+  },
+  {
+    id: "google_ads", label: "🔍 Google Ads",
+    formats: ["Leaderboard 728×90", "Medium Rectangle 300×250", "Large Rectangle 336×280", "Billboard 970×250", "Half Page 300×600", "Responsive Display"],
+    types: ["Grafika statyczna", "Animacja HTML5", "Responsive (tekst+grafika)"],
+  },
+  {
+    id: "email", label: "📧 Email / Newsletter",
+    formats: ["Nagłówek 600×200", "Baner produktowy 600×300", "Full-width 600px"],
+    types: ["Grafika statyczna", "Animacja GIF"],
+  },
+  {
+    id: "slider_main", label: "🖥️ Slider strona główna",
+    formats: ["1920×600", "1440×500", "Mobile 768×400"],
+    types: ["Grafika statyczna", "Animacja"],
+  },
+  {
+    id: "slider_category", label: "🗂️ Slider mini kategoria",
+    formats: ["800×300", "600×250"],
+    types: ["Grafika statyczna"],
+  },
+  {
+    id: "popup", label: "💬 Pop-up grafika",
+    formats: ["Kwadrat 600×600", "Pionowy 600×800", "Poziomy 800×500"],
+    types: ["Grafika statyczna", "Animacja GIF"],
+  },
+  {
+    id: "listing_banner", label: "🏷️ Baner na listingu",
+    formats: ["1200×200", "1000×200", "800×150"],
+    types: ["Grafika statyczna"],
+  },
+];
+
+const CTA_OPTIONS = ["Kup teraz", "Sprawdź", "Dowiedz się więcej", "Zobacz ofertę", "Skorzystaj", "Zamów", "Odkryj", "Inne"];
+const PRIORITY_OPTIONS = ["PROMOCJA", "PRODUKT", "BENEFIT", "CENA", "NOWOŚĆ", "KOLEKCJA", "WYDARZENIE"];
+const VISIBLE_OPTIONS = ["Produkt", "Cena", "Rabat", "Kod rabatowy", "Data promocji", "Logo", "Packshot", "Twarz twórcy", "Claim/hasło", "Timer odliczania"];
+
+const defaultChannel = () => ({
+  active: false,
+  selectedFormats: [],
+  selectedTypes: [],
+  slides: "1",
+  cta: false,
+  ctaText: "Kup teraz",
+  ctaCustom: "",
+  visible: [],
+  hierarchy: ["", "", ""],
+  notes: "",
+});
+
+const defaultBrief = () => ({
+  name: "",
+  dateStart: "",
+  dateEnd: "",
+  deadlineCreative: "",
+  goal: "",
+  headline: "",
+  headlinePriority: "",
+  discount: "",
+  promoCode: "",
+  budget: "",
+  targetAudience: "",
+  brandNotes: "",
+  channels: Object.fromEntries(CHANNELS.map(c => [c.id, defaultChannel()])),
+});
+
+// ─── UI KOMPONENTY ─────────────────────────────────────────────────────────
+
+function Label({ children }) {
+  return <div style={{ fontSize: "10px", fontWeight: 700, color: "#888", letterSpacing: 1.2, marginBottom: 5, textTransform: "uppercase", fontFamily: "monospace" }}>{children}</div>;
+}
+
+function Input({ value, onChange, placeholder, type = "text", style }) {
+  return <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+    style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 13, color: "#1a1a1a", fontFamily: "inherit", boxSizing: "border-box", ...style }} />;
+}
+
+function Textarea({ value, onChange, placeholder, rows = 3 }) {
+  return <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
+    style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 13, color: "#1a1a1a", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />;
+}
+
+function Field({ label, children, style }) {
+  return <div style={{ display: "flex", flexDirection: "column", gap: 4, ...style }}><Label>{label}</Label>{children}</div>;
+}
+
+function Section({ title, children, accent }) {
+  return (
+    <div style={{ background: "#fff", border: "1px solid #e0dbd4", borderRadius: 10, overflow: "hidden", marginBottom: 16 }}>
+      <div style={{ padding: "10px 16px", background: accent ? ACCENT : "#f9f7f5", borderBottom: "1px solid #e0dbd4" }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: accent ? "#fff" : "#555", fontFamily: "monospace", letterSpacing: 0.5 }}>{title}</div>
+      </div>
+      <div style={{ padding: 16 }}>{children}</div>
+    </div>
+  );
+}
+
+function CheckPill({ label, checked, onChange }) {
+  return (
+    <button onClick={() => onChange(!checked)}
+      style={{ padding: "5px 10px", borderRadius: 20, border: `1px solid ${checked ? ACCENT : "#ddd"}`, background: checked ? ACCENT + "15" : "#f9f9f9", color: checked ? ACCENT : "#888", fontSize: 11, cursor: "pointer", fontFamily: "monospace", fontWeight: checked ? 700 : 400 }}>
+      {label}
+    </button>
+  );
+}
+
+function ChannelPanel({ channel, cfg, onChange }) {
+  const toggle = (key, val, arr) => {
+    const cur = cfg[arr] || [];
+    onChange({ ...cfg, [arr]: cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val] });
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <Field label="Formaty">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {channel.formats.map(f => <CheckPill key={f} label={f} checked={(cfg.selectedFormats || []).includes(f)} onChange={() => toggle("selectedFormats", f, "selectedFormats")} />)}
+        </div>
+      </Field>
+      <Field label="Typ materiału">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {channel.types.map(t => <CheckPill key={t} label={t} checked={(cfg.selectedTypes || []).includes(t)} onChange={() => toggle("selectedTypes", t, "selectedTypes")} />)}
+        </div>
+      </Field>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <Field label="Liczba slajdów / ekranów">
+          <select value={cfg.slides || "1"} onChange={e => onChange({ ...cfg, slides: e.target.value })}
+            style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 13, color: "#1a1a1a", fontFamily: "inherit" }}>
+            {["1","2","3","4","5","6+"].map(n => <option key={n}>{n}</option>)}
+          </select>
+        </Field>
+        <Field label="CTA">
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <input type="checkbox" checked={cfg.cta || false} onChange={e => onChange({ ...cfg, cta: e.target.checked })}
+              style={{ accentColor: ACCENT, width: 16, height: 16 }} />
+            {cfg.cta && (
+              <select value={cfg.ctaText || "Kup teraz"} onChange={e => onChange({ ...cfg, ctaText: e.target.value })}
+                style={{ flex: 1, background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "7px 8px", fontSize: 12, fontFamily: "inherit" }}>
+                {CTA_OPTIONS.map(o => <option key={o}>{o}</option>)}
+              </select>
+            )}
+          </div>
+          {cfg.cta && cfg.ctaText === "Inne" && (
+            <Input value={cfg.ctaCustom || ""} onChange={v => onChange({ ...cfg, ctaCustom: v })} placeholder="Wpisz własny CTA..." style={{ marginTop: 6 }} />
+          )}
+        </Field>
+      </div>
+      <Field label="Co ma być widoczne na grafice">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {VISIBLE_OPTIONS.map(v => <CheckPill key={v} label={v} checked={(cfg.visible || []).includes(v)} onChange={() => toggle("visible", v, "visible")} />)}
+        </div>
+      </Field>
+      <Field label="Hierarchia informacji (od najważniejszego)">
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {[0, 1, 2].map(i => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 11, color: "#aaa", width: 20, textAlign: "center" }}>{i + 1}.</span>
+              <Input value={(cfg.hierarchy || ["", "", ""])[i] || ""} onChange={v => { const h = [...(cfg.hierarchy || ["", "", ""])]; h[i] = v; onChange({ ...cfg, hierarchy: h }); }} placeholder={["Najważniejsze", "Drugie", "Trzecie"][i]} />
+            </div>
+          ))}
+        </div>
+      </Field>
+      <Field label="Uwagi dodatkowe">
+        <Textarea value={cfg.notes || ""} onChange={v => onChange({ ...cfg, notes: v })} placeholder="Specyficzne wymagania dla tego kanału..." rows={2} />
+      </Field>
+    </div>
+  );
+}
+
+// ─── MAIN ───────────────────────────────────────────────────────────────────
+
+export default function MarketingBrief() {
+  const [briefs, setBriefs] = useState([]);
+  const [view, setView] = useState("list"); // list | form
+  const [editId, setEditId] = useState(null);
+  const [brief, setBrief] = useState(defaultBrief());
+  const [activeChannel, setActiveChannel] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [exportingDocx, setExportingDocx] = useState(false);
+  const [exportingXlsx, setExportingXlsx] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
+
+  const set = (key, val) => setBrief(prev => ({ ...prev, [key]: val }));
+  const setChannel = (id, val) => setBrief(prev => ({ ...prev, channels: { ...prev.channels, [id]: val } }));
+  const toggleChannel = (id) => setChannel(id, { ...brief.channels[id], active: !brief.channels[id].active });
+
+  const loadBriefs = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch("/api/marketing-briefs");
+    const data = await res.json();
+    setBriefs(Array.isArray(data) ? data : []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadBriefs(); }, [loadBriefs]);
+
+  const save = async () => {
+    if (!brief.name.trim()) { setSaveMsg("Wpisz nazwę akcji!"); return; }
+    setSaving(true);
+    const payload = { title: brief.name, data: brief };
+    const res = editId
+      ? await fetch("/api/marketing-briefs", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editId, ...payload }) })
+      : await fetch("/api/marketing-briefs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const row = await res.json();
+    setSaving(false);
+    if (row.id) {
+      setSaveMsg("✅ Zapisano!");
+      setEditId(row.id);
+      loadBriefs();
+      setTimeout(() => setSaveMsg(""), 3000);
+    } else {
+      setSaveMsg("❌ Błąd zapisu");
+    }
+  };
+
+  const openNew = () => { setBrief(defaultBrief()); setEditId(null); setActiveChannel(null); setView("form"); };
+  const openEdit = (b) => { setBrief(b.data); setEditId(b.id); setActiveChannel(null); setView("form"); };
+
+  const deleteBrief = async (id) => {
+    if (!confirm("Usunąć brief?")) return;
+    await fetch(`/api/marketing-briefs?id=${id}`, { method: "DELETE" });
+    loadBriefs();
+  };
+
+  const CHANNELS_LABELS = {
+    organic_social: "Kanały własne (organic)", meta_ads: "Meta Ads", google_ads: "Google Ads",
+    email: "Email / Newsletter", slider_main: "Slider strona główna", slider_category: "Slider mini kategoria",
+    popup: "Pop-up grafika", listing_banner: "Baner na listingu",
+  };
+
+  const exportDocx = async () => {
+    setExportingDocx(true);
+    try {
+      const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+              HeadingLevel, AlignmentType, WidthType, BorderStyle, ShadingType } = await import("docx");
+
+      const border = { style: BorderStyle.SINGLE, size: 1, color: "DDDDDD" };
+      const borders = { top: border, bottom: border, left: border, right: border };
+      const noBorder = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
+      const noBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder };
+
+      const h1 = (text) => new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text, bold: true, size: 28, font: "Arial", color: "B8763A" })] });
+      const h2 = (text) => new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text, bold: true, size: 22, font: "Arial", color: "333333" })] });
+      const p = (text, opts = {}) => new Paragraph({ spacing: { after: 100 }, children: [new TextRun({ text, font: "Arial", size: 20, ...opts })] });
+      const kv = (key, val) => new Paragraph({ spacing: { after: 80 }, children: [new TextRun({ text: key + ": ", bold: true, font: "Arial", size: 20 }), new TextRun({ text: val || "—", font: "Arial", size: 20 })] });
+      const spacer = () => new Paragraph({ spacing: { after: 160 }, children: [] });
+
+      const children = [
+        new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: "BRIEF MARKETINGOWY", bold: true, size: 36, font: "Arial", color: "B8763A" })] }),
+        new Paragraph({ spacing: { after: 300 }, children: [new TextRun({ text: brief.name || "Bez nazwy", size: 28, font: "Arial", color: "555555" })] }),
+        h1("CZĘŚĆ OGÓLNA"),
+        kv("Data startu", brief.dateStart), kv("Data końca", brief.dateEnd),
+        kv("Deadline kreatywny", brief.deadlineCreative),
+        kv("Cel kampanii", brief.goal), kv("Hasło główne", brief.headline),
+        kv("Priorytet hasła", brief.headlinePriority), kv("Rabat", brief.discount),
+        kv("Kod rabatowy", brief.promoCode), kv("Budżet mediowy", brief.budget),
+        kv("Grupa docelowa", brief.targetAudience), kv("Uwagi brandowe", brief.brandNotes),
+        spacer(),
+      ];
+
+      const activeChannels = Object.entries(brief.channels || {}).filter(([, v]) => v.active);
+      if (activeChannels.length > 0) {
+        children.push(h1(`KANAŁY KOMUNIKACJI (${activeChannels.length})`));
+        for (const [id, cfg] of activeChannels) {
+          children.push(h2(CHANNELS_LABELS[id] || id));
+          if (cfg.selectedFormats?.length) children.push(kv("Formaty", cfg.selectedFormats.join(", ")));
+          if (cfg.selectedTypes?.length) children.push(kv("Typ materiału", cfg.selectedTypes.join(", ")));
+          children.push(kv("Liczba slajdów", cfg.slides || "1"));
+          children.push(kv("CTA", cfg.cta ? (cfg.ctaText === "Inne" ? cfg.ctaCustom : cfg.ctaText) : "Nie"));
+          if (cfg.visible?.length) children.push(kv("Co widoczne na grafice", cfg.visible.join(", ")));
+          const hier = (cfg.hierarchy || []).filter(h => h);
+          if (hier.length) children.push(kv("Hierarchia", hier.map((h, i) => `${i+1}. ${h}`).join(" | ")));
+          if (cfg.notes) children.push(kv("Uwagi", cfg.notes));
+          children.push(spacer());
+        }
+      }
+
+      const doc = new Document({
+        styles: { default: { document: { run: { font: "Arial", size: 20 } } } },
+        sections: [{ properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } }, children }],
+      });
+
+      const buffer = await Packer.toBuffer(doc);
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = `brief-${brief.name || "export"}.docx`; a.click();
+    } catch (e) { console.error(e); alert("Błąd eksportu DOCX: " + e.message); }
+    setExportingDocx(false);
+  };
+
+  const exportXlsx = async () => {
+    setExportingXlsx(true);
+    try {
+      const XLSX = await import("xlsx");
+      const wb = XLSX.utils.book_new();
+
+      // Arkusz 1: Ogólne
+      const general = [
+        ["BRIEF MARKETINGOWY", ""],
+        ["Nazwa akcji", brief.name || ""],
+        ["Data startu", brief.dateStart || ""],
+        ["Data końca", brief.dateEnd || ""],
+        ["Deadline kreatywny", brief.deadlineCreative || ""],
+        ["Cel kampanii", brief.goal || ""],
+        ["Hasło główne", brief.headline || ""],
+        ["Priorytet hasła", brief.headlinePriority || ""],
+        ["Rabat", brief.discount || ""],
+        ["Kod rabatowy", brief.promoCode || ""],
+        ["Budżet mediowy", brief.budget || ""],
+        ["Grupa docelowa", brief.targetAudience || ""],
+        ["Uwagi brandowe", brief.brandNotes || ""],
+      ];
+      const ws1 = XLSX.utils.aoa_to_sheet(general);
+      ws1["!cols"] = [{ wch: 25 }, { wch: 60 }];
+      XLSX.utils.book_append_sheet(wb, ws1, "Ogólne");
+
+      // Arkusz 2: Kanały
+      const headers = ["Kanał", "Aktywny", "Formaty", "Typ materiału", "Liczba slajdów", "CTA", "Co widoczne", "Hierarchia 1", "Hierarchia 2", "Hierarchia 3", "Uwagi"];
+      const rows = [headers, ...Object.entries(brief.channels || {}).map(([id, cfg]) => [
+        CHANNELS_LABELS[id] || id,
+        cfg.active ? "TAK" : "NIE",
+        (cfg.selectedFormats || []).join(", "),
+        (cfg.selectedTypes || []).join(", "),
+        cfg.slides || "1",
+        cfg.cta ? (cfg.ctaText === "Inne" ? cfg.ctaCustom : cfg.ctaText) : "NIE",
+        (cfg.visible || []).join(", "),
+        cfg.hierarchy?.[0] || "",
+        cfg.hierarchy?.[1] || "",
+        cfg.hierarchy?.[2] || "",
+        cfg.notes || "",
+      ])];
+      const ws2 = XLSX.utils.aoa_to_sheet(rows);
+      ws2["!cols"] = [{ wch: 28 }, { wch: 8 }, { wch: 35 }, { wch: 25 }, { wch: 16 }, { wch: 20 }, { wch: 40 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 40 }];
+      XLSX.utils.book_append_sheet(wb, ws2, "Kanały");
+
+      const xlsxBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([xlsxBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = `brief-${brief.name || "export"}.xlsx`; a.click();
+    } catch (e) { console.error(e); alert("Błąd eksportu XLSX: " + e.message); }
+    setExportingXlsx(false);
+  };
+
+  const activeChannels = CHANNELS.filter(c => brief.channels[c.id]?.active);
+
+  const panelStyle = { background: "#fff", border: "1px solid #e0dbd4", borderRadius: 10, overflow: "hidden", marginBottom: 16 };
+  const panelHead = { padding: "10px 16px", background: "#f9f7f5", borderBottom: "1px solid #e0dbd4", fontSize: 11, color: "#555", fontFamily: "monospace", fontWeight: 700, display: "flex", justifyContent: "space-between", alignItems: "center" };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#f5f2ee", fontFamily: "'IBM Plex Mono', monospace", display: "flex" }}>
+
+      {/* SIDEBAR */}
+      <div style={{ width: 220, minWidth: 220, background: "#0f0f0f", borderRight: "1px solid #1a1a1a", padding: "24px 16px", display: "flex", flexDirection: "column", gap: 8, position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ color: ACCENT, fontWeight: 800, fontSize: 13, letterSpacing: 2 }}>CONSENSUS</div>
+          <div style={{ color: "#444", fontSize: 10, letterSpacing: 1 }}>ENGINE v1.0</div>
+        </div>
+        <div style={{ color: "#444", fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 4 }}>NAWIGACJA</div>
+        {NAV.map(item => (
+          <a key={item.href} href={item.href} style={{ display: "block", padding: "9px 12px", borderRadius: 8, fontSize: 11, fontWeight: item.active ? 700 : 400, background: item.active ? ACCENT + "20" : "none", border: item.active ? `1px solid ${ACCENT}40` : "1px solid transparent", color: item.active ? ACCENT : "#666", textDecoration: "none" }}>{item.label}</a>
+        ))}
+      </div>
+
+      {/* MAIN */}
+      <div style={{ flex: 1, overflowY: "auto" }}>
+
+        {/* ─── LISTA BRIEFÓW ─── */}
+        {view === "list" && (
+          <div style={{ padding: 32, maxWidth: 900 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28 }}>
+              <div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "#1a1a1a", marginBottom: 4 }}>📋 Akcje marketingowe</div>
+                <div style={{ fontSize: 12, color: "#888" }}>Historia briefów dla zespołu kreatywnego</div>
+              </div>
+              <button onClick={openNew} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                + Nowy brief
+              </button>
+            </div>
+
+            {loading && <div style={{ color: "#aaa", fontSize: 13 }}>Ładowanie...</div>}
+            {!loading && briefs.length === 0 && (
+              <div style={{ background: "#fff", border: "1px solid #e0dbd4", borderRadius: 10, padding: 40, textAlign: "center", color: "#aaa" }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
+                <div style={{ fontSize: 14, marginBottom: 8 }}>Brak briefów</div>
+                <div style={{ fontSize: 12 }}>Kliknij "+ Nowy brief" aby zacząć</div>
+              </div>
+            )}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {briefs.map(b => (
+                <div key={b.id} style={{ background: "#fff", border: "1px solid #e0dbd4", borderRadius: 10, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a", marginBottom: 4 }}>{b.title}</div>
+                    <div style={{ fontSize: 11, color: "#aaa" }}>
+                      {b.data?.dateStart && b.data?.dateEnd ? `${b.data.dateStart} → ${b.data.dateEnd}` : "Brak dat"}
+                      {" · "}
+                      {CHANNELS.filter(c => b.data?.channels?.[c.id]?.active).length} kanałów
+                      {" · "}
+                      {new Date(b.updated_at).toLocaleDateString("pl-PL")}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => openEdit(b)} style={{ background: ACCENT + "15", color: ACCENT, border: `1px solid ${ACCENT}40`, borderRadius: 6, padding: "6px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>Edytuj</button>
+                    <button onClick={() => deleteBrief(b.id)} style={{ background: "none", color: "#ccc", border: "1px solid #eee", borderRadius: 6, padding: "6px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>Usuń</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ─── FORMULARZ BRIEFU ─── */}
+        {view === "form" && (
+          <div style={{ padding: 32, maxWidth: 860 }}>
+            {/* Nagłówek */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+              <div>
+                <button onClick={() => setView("list")} style={{ background: "none", border: "none", color: "#aaa", fontSize: 12, cursor: "pointer", fontFamily: "inherit", marginBottom: 8, padding: 0 }}>← Lista briefów</button>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#1a1a1a" }}>{editId ? "Edytuj brief" : "Nowy brief"}</div>
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                {saveMsg && <span style={{ fontSize: 12, color: saveMsg.startsWith("✅") ? "#2d7a4f" : "#cc0000" }}>{saveMsg}</span>}
+                <button onClick={exportDocx} disabled={exportingDocx} style={{ background: "#1a5ca8", color: "#fff", border: "none", borderRadius: 6, padding: "8px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
+                  {exportingDocx ? "..." : "⬇ DOCX"}
+                </button>
+                <button onClick={exportXlsx} disabled={exportingXlsx} style={{ background: "#1a7a3a", color: "#fff", border: "none", borderRadius: 6, padding: "8px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
+                  {exportingXlsx ? "..." : "⬇ XLSX"}
+                </button>
+                <button onClick={save} disabled={saving} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                  {saving ? "Zapisuję..." : "💾 Zapisz"}
+                </button>
+              </div>
+            </div>
+
+            {/* CZĘŚĆ OGÓLNA */}
+            <Section title="CZĘŚĆ OGÓLNA">
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <Field label="Nazwa akcji / kampanii">
+                  <Input value={brief.name} onChange={v => set("name", v)} placeholder="np. Wyprzedaż wiosenna 2026" />
+                </Field>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                  <Field label="Data startu akcji"><Input type="date" value={brief.dateStart} onChange={v => set("dateStart", v)} /></Field>
+                  <Field label="Data końca akcji"><Input type="date" value={brief.dateEnd} onChange={v => set("dateEnd", v)} /></Field>
+                  <Field label="Deadline kreatywny"><Input type="date" value={brief.deadlineCreative} onChange={v => set("deadlineCreative", v)} /></Field>
+                </div>
+                <Field label="Cel kampanii">
+                  <Textarea value={brief.goal} onChange={v => set("goal", v)} placeholder="Co chcemy osiągnąć? Sprzedaż, świadomość, zapis na newsletter..." rows={2} />
+                </Field>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <Field label="Hasło główne / claim">
+                    <Input value={brief.headline} onChange={v => set("headline", v)} placeholder='np. "Wiosna zaczyna się od skarpet"' />
+                  </Field>
+                  <Field label="Priorytet hasła">
+                    <select value={brief.headlinePriority} onChange={e => set("headlinePriority", e.target.value)}
+                      style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 13, color: "#1a1a1a", fontFamily: "inherit" }}>
+                      <option value="">— wybierz —</option>
+                      {PRIORITY_OPTIONS.map(o => <option key={o}>{o}</option>)}
+                    </select>
+                  </Field>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                  <Field label="Rabat / wartość promocji"><Input value={brief.discount} onChange={v => set("discount", v)} placeholder="np. -30% lub darmowa dostawa" /></Field>
+                  <Field label="Kod rabatowy"><Input value={brief.promoCode} onChange={v => set("promoCode", v)} placeholder="np. WIOSNA30" /></Field>
+                  <Field label="Budżet mediowy (opcjonalnie)"><Input value={brief.budget} onChange={v => set("budget", v)} placeholder="np. 5 000 PLN" /></Field>
+                </div>
+                <Field label="Grupa docelowa">
+                  <Textarea value={brief.targetAudience} onChange={v => set("targetAudience", v)} placeholder="Kto jest odbiorcą? Wiek, zainteresowania, zachowania..." rows={2} />
+                </Field>
+                <Field label="Uwagi brandowe / wytyczne">
+                  <Textarea value={brief.brandNotes} onChange={v => set("brandNotes", v)} placeholder="Fonty, kolory, elementy obowiązkowe, czego unikać..." rows={2} />
+                </Field>
+              </div>
+            </Section>
+
+            {/* WYBÓR KANAŁÓW */}
+            <Section title="KANAŁY KOMUNIKACJI — wybierz aktywne">
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {CHANNELS.map(c => (
+                  <div key={c.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 8, border: `1px solid ${brief.channels[c.id]?.active ? ACCENT : "#e0dbd4"}`, background: brief.channels[c.id]?.active ? ACCENT + "08" : "#fafafa", cursor: "pointer" }}
+                    onClick={() => toggleChannel(c.id)}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <input type="checkbox" checked={brief.channels[c.id]?.active || false} onChange={() => {}} style={{ accentColor: ACCENT, width: 16, height: 16, pointerEvents: "none" }} />
+                      <span style={{ fontSize: 13, fontWeight: brief.channels[c.id]?.active ? 700 : 400, color: brief.channels[c.id]?.active ? "#1a1a1a" : "#888" }}>{c.label}</span>
+                    </div>
+                    {brief.channels[c.id]?.active && (
+                      <button onClick={e => { e.stopPropagation(); setActiveChannel(activeChannel === c.id ? null : c.id); }}
+                        style={{ background: activeChannel === c.id ? ACCENT : "none", color: activeChannel === c.id ? "#fff" : ACCENT, border: `1px solid ${ACCENT}`, borderRadius: 6, padding: "4px 12px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
+                        {activeChannel === c.id ? "Zwiń ▲" : "Konfiguruj ▼"}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Section>
+
+            {/* KONFIGURACJA AKTYWNYCH KANAŁÓW */}
+            {activeChannels.map(c => (
+              <div key={c.id} style={{ display: activeChannel === c.id ? "block" : "none" }}>
+                <Section title={`KONFIGURACJA: ${c.label}`} accent>
+                  <ChannelPanel channel={c} cfg={brief.channels[c.id]} onChange={val => setChannel(c.id, val)} />
+                </Section>
+              </div>
+            ))}
+
+            {/* PODGLĄD AKTYWNYCH KANAŁÓW */}
+            {activeChannels.length > 0 && (
+              <Section title={`PODSUMOWANIE KANAŁÓW (${activeChannels.length})`}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {activeChannels.map(c => {
+                    const cfg = brief.channels[c.id];
+                    return (
+                      <div key={c.id} style={{ padding: "10px 14px", borderRadius: 8, background: "#f9f7f5", border: "1px solid #e0dbd4" }}>
+                        <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 6 }}>{c.label}</div>
+                        <div style={{ fontSize: 11, color: "#666", display: "flex", flexWrap: "wrap", gap: 8 }}>
+                          {cfg.selectedFormats?.length > 0 && <span>📐 {cfg.selectedFormats.join(", ")}</span>}
+                          {cfg.selectedTypes?.length > 0 && <span>🎨 {cfg.selectedTypes.join(", ")}</span>}
+                          {cfg.slides && <span>📄 {cfg.slides} slajd(ów)</span>}
+                          {cfg.cta && <span>👆 CTA: {cfg.ctaText === "Inne" ? cfg.ctaCustom : cfg.ctaText}</span>}
+                          {cfg.visible?.length > 0 && <span>👁 {cfg.visible.join(", ")}</span>}
+                        </div>
+                        {cfg.hierarchy?.some(h => h) && (
+                          <div style={{ marginTop: 6, fontSize: 11, color: "#888" }}>
+                            Hierarchia: {cfg.hierarchy.filter(h => h).map((h, i) => `${i + 1}. ${h}`).join(" → ")}
+                          </div>
+                        )}
+                        {cfg.notes && <div style={{ marginTop: 6, fontSize: 11, color: "#aaa", fontStyle: "italic" }}>{cfg.notes}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </Section>
+            )}
+
+            {/* DOLNY PASEK ZAPISU */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, paddingTop: 8 }}>
+              {saveMsg && <span style={{ fontSize: 12, color: saveMsg.startsWith("✅") ? "#2d7a4f" : "#cc0000", alignSelf: "center" }}>{saveMsg}</span>}
+              <button onClick={exportDocx} disabled={exportingDocx} style={{ background: "#1a5ca8", color: "#fff", border: "none", borderRadius: 6, padding: "10px 16px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
+                {exportingDocx ? "Generuję..." : "⬇ Pobierz DOCX"}
+              </button>
+              <button onClick={exportXlsx} disabled={exportingXlsx} style={{ background: "#1a7a3a", color: "#fff", border: "none", borderRadius: 6, padding: "10px 16px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
+                {exportingXlsx ? "Generuję..." : "⬇ Pobierz XLSX"}
+              </button>
+              <button onClick={save} disabled={saving} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "10px 24px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                {saving ? "Zapisuję..." : "💾 Zapisz brief"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
