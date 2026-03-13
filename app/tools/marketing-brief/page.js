@@ -238,7 +238,7 @@ export default function MarketingBrief() {
   const addLink = (url) => {
     if (!url.trim()) return;
     const prev = brief.references || { links: [], files: [] };
-    setBrief(b => ({ ...b, references: { ...prev, links: [...(prev.links || []), url.trim()] } }));
+    setBrief(b => ({ ...b, references: { ...prev, links: [...(prev.links || []), { url: url.trim(), note: "" }] } }));
   };
 
   const removeRef = (type, idx) => {
@@ -563,9 +563,14 @@ export default function MarketingBrief() {
                 {(brief.references?.links || []).length > 0 && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {brief.references.links.map((link, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, background: "#f9f7f5", border: "1px solid #e0dbd4", borderRadius: 6, padding: "6px 10px" }}>
-                        <a href={link} target="_blank" rel="noopener noreferrer" style={{ flex: 1, fontSize: 12, color: "#1a5ca8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{link}</a>
-                        <button onClick={() => removeRef("links", i)} style={{ background: "none", border: "none", color: "#ccc", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+                      <div key={i} style={{ background: "#f9f7f5", border: "1px solid #e0dbd4", borderRadius: 6, padding: "8px 10px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                          <a href={typeof link === "object" ? link.url : link} target="_blank" rel="noopener noreferrer" style={{ flex: 1, fontSize: 12, color: "#1a5ca8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{typeof link === "object" ? link.url : link}</a>
+                          <button onClick={() => removeRef("links", i)} style={{ background: "none", border: "none", color: "#ccc", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+                        </div>
+                        <input type="text" placeholder="Notatka (opcjonalnie)..." value={typeof link === "object" ? (link.note || "") : ""}
+                          onChange={e => { const refs = [...brief.references.links]; refs[i] = { url: typeof link === "object" ? link.url : link, note: e.target.value }; setBrief(b => ({ ...b, references: { ...b.references, links: refs } })); }}
+                          style={{ width: "100%", background: "#fff", border: "1px solid #eee", borderRadius: 4, padding: "4px 8px", fontSize: 11, color: "#555", fontFamily: "inherit", boxSizing: "border-box" }} />
                       </div>
                     ))}
                   </div>
@@ -579,9 +584,14 @@ export default function MarketingBrief() {
                 {(brief.references?.files || []).length > 0 && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {brief.references.files.map((f, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, background: "#f0f7ff", border: "1px solid #c8e0f8", borderRadius: 6, padding: "5px 10px" }}>
-                        <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "#1a5ca8" }}>📄 {f.name}</a>
-                        <button onClick={() => removeRef("files", i)} style={{ background: "none", border: "none", color: "#ccc", cursor: "pointer", fontSize: 14, lineHeight: 1 }}>×</button>
+                      <div key={i} style={{ background: "#f0f7ff", border: "1px solid #c8e0f8", borderRadius: 6, padding: "8px 10px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                          <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ flex: 1, fontSize: 11, color: "#1a5ca8" }}>📄 {f.name}</a>
+                          <button onClick={() => removeRef("files", i)} style={{ background: "none", border: "none", color: "#ccc", cursor: "pointer", fontSize: 14, lineHeight: 1 }}>×</button>
+                        </div>
+                        <input type="text" placeholder="Notatka (opcjonalnie)..." value={f.note || ""}
+                          onChange={e => { const files = [...brief.references.files]; files[i] = { ...f, note: e.target.value }; setBrief(b => ({ ...b, references: { ...b.references, files } })); }}
+                          style={{ width: "100%", background: "#fff", border: "1px solid #c8e0f8", borderRadius: 4, padding: "4px 8px", fontSize: 11, color: "#555", fontFamily: "inherit", boxSizing: "border-box" }} />
                       </div>
                     ))}
                   </div>
