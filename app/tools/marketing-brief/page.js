@@ -86,6 +86,7 @@ const defaultBrief = () => ({
   budget: "",
   targetAudience: "",
   brandNotes: "",
+  references: { links: [], files: [] },
   channels: Object.fromEntries(CHANNELS.map(c => [c.id, defaultChannel()])),
 });
 
@@ -203,12 +204,63 @@ export default function MarketingBrief() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [exportingDocx, setExportingDocx] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [copyFromModal, setCopyFromModal] = useState(null); // id kanału docelowego
   const [exportingXlsx, setExportingXlsx] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
 
   const set = (key, val) => setBrief(prev => ({ ...prev, [key]: val }));
   const setChannel = (id, val) => setBrief(prev => ({ ...prev, channels: { ...prev.channels, [id]: val } }));
   const toggleChannel = (id) => setChannel(id, { ...brief.channels[id], active: !brief.channels[id].active });
+
+  const uploadFile = async (file) => {
+    setUploadingFile(true);
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://dayrmhsdpcgakbsfjkyp.supabase.co";
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const fileName = `${Date.now()}-${file.name}`;
+      const res = await fetch(`${supabaseUrl}/storage/v1/object/brief-references/${fileName}`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${supabaseKey}`, "Content-Type": file.type },
+        body: file,
+      });
+      if (res.ok) {
+        const publicUrl = `${supabaseUrl}/storage/v1/object/public/brief-references/${fileName}`;
+        const prev = brief.references || { links: [], files: [] };
+        setBrief(b => ({ ...b, references: { ...prev, files: [...(prev.files || []), { name: file.name, url: publicUrl }] } }));
+      } else {
+        alert("Błąd uploadu pliku");
+      }
+    } catch(e) { alert("Błąd: " + e.message); }
+    setUploadingFile(false);
+  };
+
+  const addLink = (url) => {
+    if (!url.trim()) return;
+    const prev = brief.references || { links: [], files: [] };
+    setBrief(b => ({ ...b, references: { ...prev, links: [...(prev.links || []), url.trim()] } }));
+  };
+
+  const removeRef = (type, idx) => {
+    const prev = brief.references || { links: [], files: [] };
+    setBrief(b => ({ ...b, references: { ...prev, [type]: prev[type].filter((_, i) => i !== idx) } }));
+  };
+
+  const copyFromChannel = (sourceId, targetId) => {
+    const src = brief.channels[sourceId];
+    const tgt = brief.channels[targetId];
+    setChannel(targetId, {
+      ...tgt,
+      selectedTypes: src.selectedTypes,
+      cta: src.cta,
+      ctaText: src.ctaText,
+      ctaCustom: src.ctaCustom,
+      visible: src.visible,
+      hierarchy: src.hierarchy,
+      notes: src.notes,
+    });
+    setCopyFromModal(null);
+  };
 
   const loadBriefs = useCallback(async () => {
     setLoading(true);
@@ -497,6 +549,46 @@ export default function MarketingBrief() {
               </div>
             </Section>
 
+            {/* REFERENCJE GRAFICZNE */}
+            <Section title="REFERENCJE GRAFICZNE">
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <Field label="Dodaj link (np. Dropbox, Drive, Pinterest)">
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input id="ref-link-input" type="url" placeholder="https://..." onKeyDown={e => { if(e.key==="Enter"){ addLink(e.target.value); e.target.value=""; }}}
+                      style={{ flex: 1, background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 13, fontFamily: "inherit" }} />
+                    <button onClick={() => { const el = document.getElementById("ref-link-input"); addLink(el.value); el.value=""; }}
+                      style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 6, padding: "8px 14px", fontSize: 12, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>+ Dodaj</button>
+                  </div>
+                </Field>
+                {(brief.references?.links || []).length > 0 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {brief.references.links.map((link, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, background: "#f9f7f5", border: "1px solid #e0dbd4", borderRadius: 6, padding: "6px 10px" }}>
+                        <a href={link} target="_blank" rel="noopener noreferrer" style={{ flex: 1, fontSize: 12, color: "#1a5ca8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{link}</a>
+                        <button onClick={() => removeRef("links", i)} style={{ background: "none", border: "none", color: "#ccc", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <Field label="Upload grafik referencyjnych">
+                  <label style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#f9f7f5", border: "2px dashed #ddd", borderRadius: 8, padding: "12px 20px", cursor: "pointer", fontSize: 12, color: "#888" }}>
+                    <input type="file" multiple accept="image/*,.pdf" onChange={e => Array.from(e.target.files).forEach(uploadFile)} style={{ display: "none" }} />
+                    {uploadingFile ? "⏳ Uploading..." : "📎 Kliknij lub przeciągnij pliki (JPG, PNG, PDF)"}
+                  </label>
+                </Field>
+                {(brief.references?.files || []).length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {brief.references.files.map((f, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, background: "#f0f7ff", border: "1px solid #c8e0f8", borderRadius: 6, padding: "5px 10px" }}>
+                        <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "#1a5ca8" }}>📄 {f.name}</a>
+                        <button onClick={() => removeRef("files", i)} style={{ background: "none", border: "none", color: "#ccc", cursor: "pointer", fontSize: 14, lineHeight: 1 }}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Section>
+
             {/* WYBÓR KANAŁÓW */}
             <Section title="KANAŁY KOMUNIKACJI — wybierz aktywne">
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -519,11 +611,40 @@ export default function MarketingBrief() {
             </Section>
 
             {/* KONFIGURACJA AKTYWNYCH KANAŁÓW */}
+            {/* MODAL kopiowania */}
+            {copyFromModal && (
+              <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }}
+                onClick={() => setCopyFromModal(null)}>
+                <div style={{ background: "#fff", borderRadius: 12, padding: 24, minWidth: 320, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 16, color: "#1a1a1a" }}>Kopiuj ustawienia z kanału:</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {CHANNELS.filter(c => c.id !== copyFromModal && brief.channels[c.id]?.active).map(c => (
+                      <button key={c.id} onClick={() => copyFromChannel(c.id, copyFromModal)}
+                        style={{ textAlign: "left", padding: "10px 14px", borderRadius: 8, border: "1px solid #e0dbd4", background: "#f9f7f5", cursor: "pointer", fontSize: 12, fontFamily: "inherit", color: "#333" }}>
+                        {c.label}
+                      </button>
+                    ))}
+                    {CHANNELS.filter(c => c.id !== copyFromModal && brief.channels[c.id]?.active).length === 0 && (
+                      <div style={{ color: "#aaa", fontSize: 12 }}>Brak innych aktywnych kanałów</div>
+                    )}
+                  </div>
+                  <button onClick={() => setCopyFromModal(null)} style={{ marginTop: 16, width: "100%", background: "none", border: "1px solid #ddd", borderRadius: 6, padding: "8px", fontSize: 12, cursor: "pointer", fontFamily: "inherit", color: "#888" }}>Anuluj</button>
+                </div>
+              </div>
+            )}
+
             {activeChannels.map(c => (
               <div key={c.id} style={{ display: activeChannel === c.id ? "block" : "none" }}>
-                <Section title={`KONFIGURACJA: ${c.label}`} accent>
+                <div style={{ background: ACCENT, borderRadius: "10px 10px 0 0", padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", fontFamily: "monospace" }}>KONFIGURACJA: {c.label}</div>
+                  <button onClick={() => setCopyFromModal(c.id)}
+                    style={{ background: "rgba(255,255,255,0.2)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 6, padding: "4px 12px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
+                    📋 Kopiuj z innego kanału
+                  </button>
+                </div>
+                <div style={{ background: "#fff", border: "1px solid #e0dbd4", borderRadius: "0 0 10px 10px", padding: 16, marginBottom: 16 }}>
                   <ChannelPanel channel={c} cfg={brief.channels[c.id]} onChange={val => setChannel(c.id, val)} />
-                </Section>
+                </div>
               </div>
             ))}
 
