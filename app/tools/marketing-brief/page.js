@@ -671,16 +671,16 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
         {/* ─── LISTA BRIEFÓW ─── */}
         {view === "list" && (
           <div style={{ padding: 32, maxWidth: 900 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28 }}>
-              <div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: "#1a1a1a", marginBottom: 4 }}>📋 Akcje marketingowe</div>
-                <div style={{ fontSize: 12, color: "#888" }}>Historia briefów dla zespołu kreatywnego</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <button onClick={openNew} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                  + Nowy brief
+                </button>
+                <div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: "#1a1a1a", marginBottom: 2 }}>📋 Akcje marketingowe</div>
+                  <div style={{ fontSize: 12, color: "#888" }}>Historia briefów dla zespołu kreatywnego</div>
+                </div>
               </div>
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <button onClick={openNew} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-                + Nowy brief
-              </button>
             </div>
 
             {loading && <div style={{ color: "#aaa", fontSize: 13 }}>Ładowanie...</div>}
@@ -1094,26 +1094,26 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
                 )}
                 {/* Toolbar: górny rząd - Synteza */}
                 <div style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
-                  <div style={{ display: "flex", borderRadius: 7, overflow: "hidden", border: `1px solid ${ACCENT}`, opacity: !(brief.chatHistory?.length) ? 0.4 : 1, flex: 1 }}>
+                  <div style={{ display: "flex", borderRadius: 7, overflow: "hidden", border: `1px solid ${ACCENT}`, opacity: !(brief.chatHistory?.length) ? 0.5 : 1, flex: 1 }}>
                     <button onClick={generateSynthesis} disabled={synthesizing || !(brief.chatHistory?.length)}
-                      style={{ flex: 1, fontSize: 12, padding: "6px 12px", background: ACCENT + "18", color: ACCENT, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, border: "none", borderRight: `1px solid ${ACCENT}40` }}>
+                      style={{ flex: 1, fontSize: 12, padding: "7px 12px", background: ACCENT, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontWeight: 700, border: "none", borderRight: `1px solid ${ACCENT}` }}>
                       {synthesizing ? "⏳ Generuję..." : "✨ Synteza rozmowy"}
                     </button>
                     <select value={synthLength} onChange={e => setSynthLength(e.target.value)}
-                      style={{ fontSize: 11, background: ACCENT + "10", color: ACCENT, border: "none", cursor: "pointer", fontFamily: "inherit", padding: "0 8px", fontWeight: 600 }}>
+                      style={{ fontSize: 11, background: "#fff", color: "#333", border: "none", borderLeft: `1px solid ${ACCENT}50`, cursor: "pointer", fontFamily: "inherit", padding: "0 8px", fontWeight: 600 }}>
                       <option value="short">Krótka</option>
                       <option value="medium">Średnia</option>
                       <option value="long">Rozwinięta</option>
                     </select>
                   </div>
                   <button onClick={() => setChatExpanded(e => !e)}
-                    style={{ fontSize: 12, padding: "6px 10px", borderRadius: 7, border: "1px solid #e0dbd4", background: "#fafafa", color: "#888", cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>
-                    {chatExpanded ? "⟩" : "⟨"}
+                    style={{ fontSize: 12, padding: "7px 12px", borderRadius: 7, border: "1px solid #ccc", background: "#f0f0f0", color: "#444", cursor: "pointer", fontFamily: "inherit", flexShrink: 0, fontWeight: 600 }}>
+                    {chatExpanded ? "⟩ Zwiń" : "⟨ Rozszerz"}
                   </button>
                 </div>
                 {/* Toolbar: dolny rząd - Załącz + Deep Research */}
                 <div style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
-                  <label style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#888", padding: "4px 10px", border: "1px solid #e0dbd4", borderRadius: 6, background: "#fafafa", flexShrink: 0 }}>
+                  <label style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#444", padding: "4px 10px", border: "1px solid #bbb", borderRadius: 6, background: "#f0f0f0", flexShrink: 0 }}>
                     <input type="file" multiple accept="image/*,.pdf,.txt,.md" onChange={async e => {
                       const files = Array.from(e.target.files);
                       const loaded = await Promise.all(files.map(f => new Promise(resolve => {
@@ -1133,7 +1133,7 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
                   </label>
                   {(chatModel.startsWith("gemini") || chatModel.startsWith("gpt")) && (
                     <button onClick={() => setDeepResearch(d => !d)}
-                      style={{ fontSize: 11, padding: "4px 10px", borderRadius: 6, border: `1px solid ${deepResearch ? "#4285f4" : "#e0dbd4"}`, background: deepResearch ? "#e8f0fe" : "#fafafa", color: deepResearch ? "#4285f4" : "#888", cursor: "pointer", fontFamily: "inherit", fontWeight: deepResearch ? 700 : 400, flexShrink: 0 }}>
+                      style={{ fontSize: 11, padding: "4px 10px", borderRadius: 6, border: `1px solid ${deepResearch ? "#4285f4" : "#bbb"}`, background: deepResearch ? "#4285f4" : "#f0f0f0", color: deepResearch ? "#fff" : "#444", cursor: "pointer", fontFamily: "inherit", fontWeight: 700, flexShrink: 0 }}>
                       🔬 Deep Research {deepResearch ? "ON" : "OFF"}
                     </button>
                   )}
