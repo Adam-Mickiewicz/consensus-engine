@@ -84,7 +84,7 @@ async function sbFetch(path, opts = {}) {
 
 function renderMarkdown(text) {
   if (!text) return null;
-  text = text.replace(/<<<BRIEF_START>>>[\s\S]*?<<<BRIEF_END>>>/g, "").trim();
+  text = text.replace(/<<<BRIEF_START>>>[\s\S]*?<<<BRIEF_END>>>/g, "").replace(/<<<BRIEF_START>>>[\s\S]*/g, "").trim();
   if (!text) return null;
   const lines = text.split("\n");
   const elements = [];
