@@ -1,14 +1,32 @@
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 export async function POST(req) {
   const { model, messages, briefContext } = await req.json();
 
-  const systemPrompt = `Jesteś ekspertem od marketingu e-commerce i strategii kampanii. Pomagasz zespołowi Nadwyraz.com — polskiej marki produkującej skarpety z wzorami flat-design, dziane z przędzy LEGS.
+  // Załaduj kontekst marki z Supabase
+  const { data: brand } = await supabase.from("brand_settings").select("*").limit(1).single();
 
-Kontekst bieżącego briefu marketingowego:
+  const brandContext = brand ? `
+=== KONTEKST MARKI (stały) ===
+Opis marki: ${brand.brand_description || "—"}
+Tone of voice: ${brand.tone_of_voice || "—"}
+Grupy docelowe: ${(brand.target_audiences || []).join(" | ") || "—"}
+Przykłady dobrych kampanii: ${(brand.campaign_examples || []).map(e => `${e.title}: ${e.description}`).join(" | ") || "—"}
+Linki do materiałów: ${(brand.reference_links || []).map(l => `${l.note || l.url}: ${l.url}`).join(" | ") || "—"}
+` : "";
+
+  const systemPrompt = `Jesteś ekspertem od marketingu e-commerce i strategii kampanii. Pomagasz zespołowi marketingowemu w budowaniu skutecznych akcji promocyjnych.
+${brandContext}
+=== KONTEKST BIEŻĄCEGO BRIEFU ===
 ${briefContext ? JSON.stringify(briefContext, null, 2) : "Brak briefu — rozmawiaj ogólnie o marketingu."}
 
-Odpowiadaj po polsku. Bądź konkretny, praktyczny i kreatywny. Gdy oceniasz pomysły innych AI, zaznacz wyraźnie że to Twoja perspektywa.`;
+Odpowiadaj po polsku. Bądź konkretny, praktyczny i kreatywny. Gdy oceniasz pomysły innych AI, zaznacz wyraźnie że to Twoja perspektywa. Bazuj na kontekście marki przy każdej odpowiedzi.`;
 
   try {
     const isClause = model.startsWith("claude");
@@ -18,17 +36,8 @@ Odpowiadaj po polsku. Bądź konkretny, praktyczny i kreatywny. Gdy oceniasz pom
     if (isClause) {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 1024,
-          system: systemPrompt,
-          messages: messages.map(m => ({ role: m.role, content: m.content })),
-        }),
+        headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+        body: JSON.stringify({ model, max_tokens: 1024, system: systemPrompt, messages: messages.map(m => ({ role: m.role, content: m.content })) }),
       });
       const data = await res.json();
       if (data.error) return NextResponse.json({ error: data.error.message }, { status: 500 });
@@ -39,10 +48,7 @@ Odpowiadaj po polsku. Bądź konkretny, praktyczny i kreatywny. Gdy oceniasz pom
       const isO1 = model.startsWith("o1") || model.startsWith("o3");
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.OPENAI_API_KEY}` },
         body: JSON.stringify({
           model,
           messages: isO1

@@ -11,6 +11,7 @@ const NAV = [
   { href: "/design-judge", label: "🎨 Design Judge" },
   { href: "/tools/countdown", label: "⏱ Generator odliczania" },
   { href: "/tools/marketing-brief", label: "📋 Akcje marketingowe", active: true },
+  { href: "/tools/brand-settings", label: "🏷️ Ustawienia marki" },
 ];
 
 const CHANNELS = [
