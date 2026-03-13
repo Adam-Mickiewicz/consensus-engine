@@ -18,41 +18,49 @@ const CHANNELS = [
     id: "organic_social", label: "📱 Kanały własne (organic)",
     formats: ["Post kwadrat 1080×1080", "Post pionowy 1080×1350", "Stories 1080×1920", "Reels cover 1080×1920"],
     types: ["Grafika", "Zdjęcie", "Wideo", "Animacja"],
+    slidesLabel: "Liczba kart w karuzeli", slidesNote: "dotyczy tylko karuzeli",
   },
   {
     id: "meta_ads", label: "🎯 Meta Ads",
     formats: ["Kwadrat 1080×1080", "Pionowy 1080×1920", "Poziomy 1200×628", "Pionowy 1080×1350", "Collection Ad"],
     types: ["Grafika statyczna", "Zdjęcie", "Wideo", "Animacja", "Karuzela"],
+    slidesLabel: "Liczba ekranów / kart",
   },
   {
     id: "google_ads", label: "🔍 Google Ads",
     formats: ["Leaderboard 728×90", "Medium Rectangle 300×250", "Large Rectangle 336×280", "Billboard 970×250", "Half Page 300×600", "Responsive Display"],
     types: ["Grafika statyczna", "Animacja HTML5", "Responsive (tekst+grafika)"],
+    slidesLabel: "Liczba wariantów kreacji",
   },
   {
     id: "email", label: "📧 Email / Newsletter",
     formats: ["Nagłówek 600×200", "Baner produktowy 600×300", "Full-width 600px"],
     types: ["Grafika statyczna", "Animacja GIF"],
+    slidesLabel: "Liczba banerów w mailu",
   },
   {
     id: "slider_main", label: "🖥️ Slider strona główna",
     formats: ["1920×600", "1440×500", "Mobile 768×400"],
     types: ["Grafika statyczna", "Animacja"],
+    slidesLabel: "Liczba slajdów",
   },
   {
     id: "slider_category", label: "🗂️ Slider mini kategoria",
     formats: ["800×300", "600×250"],
     types: ["Grafika statyczna"],
+    slidesLabel: "Liczba slajdów",
   },
   {
     id: "popup", label: "💬 Pop-up grafika",
     formats: ["Kwadrat 600×600", "Pionowy 600×800", "Poziomy 800×500"],
     types: ["Grafika statyczna", "Animacja GIF"],
+    slidesLabel: "Liczba wariantów",
   },
   {
     id: "listing_banner", label: "🏷️ Baner na listingu",
     formats: ["1200×200", "1000×200", "800×150"],
     types: ["Grafika statyczna"],
+    slidesLabel: "Liczba wariantów",
   },
 ];
 
@@ -149,7 +157,7 @@ function ChannelPanel({ channel, cfg, onChange }) {
         </div>
       </Field>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="Liczba slajdów / ekranów">
+        <Field label={channel.slidesLabel || "Liczba slajdów / ekranów"}>
           <select value={cfg.slides || "1"} onChange={e => onChange({ ...cfg, slides: e.target.value })}
             style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 13, color: "#1a1a1a", fontFamily: "inherit" }}>
             {["1","2","3","4","5","6+"].map(n => <option key={n}>{n}</option>)}
