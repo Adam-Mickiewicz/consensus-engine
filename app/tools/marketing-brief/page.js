@@ -1092,28 +1092,23 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
                     ))}
                   </div>
                 )}
-                {/* Toolbar: górny rząd - Synteza */}
-                <div style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
-                  <div style={{ display: "flex", borderRadius: 7, overflow: "hidden", border: `1px solid ${ACCENT}`, opacity: !(brief.chatHistory?.length) ? 0.5 : 1, flex: 1 }}>
+                {/* Toolbar */}
+                <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  {/* Synteza + długość */}
+                  <div style={{ display: "flex", borderRadius: 8, overflow: "hidden", border: `2px solid ${ACCENT}`, opacity: !(brief.chatHistory?.length) ? 0.45 : 1 }}>
                     <button onClick={generateSynthesis} disabled={synthesizing || !(brief.chatHistory?.length)}
-                      style={{ flex: 1, fontSize: 12, padding: "7px 12px", background: ACCENT, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontWeight: 700, border: "none", borderRight: `1px solid ${ACCENT}` }}>
-                      {synthesizing ? "⏳ Generuję..." : "✨ Synteza rozmowy"}
+                      style={{ fontSize: 12, padding: "7px 14px", background: ACCENT, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontWeight: 700, border: "none", whiteSpace: "nowrap" }}>
+                      {synthesizing ? "⏳ Generuję..." : "✨ Synteza"}
                     </button>
                     <select value={synthLength} onChange={e => setSynthLength(e.target.value)}
-                      style={{ fontSize: 11, background: "#fff", color: "#333", border: "none", borderLeft: `1px solid ${ACCENT}50`, cursor: "pointer", fontFamily: "inherit", padding: "0 8px", fontWeight: 600 }}>
+                      style={{ fontSize: 11, background: "#fff7f0", color: ACCENT, border: "none", borderLeft: `1px solid ${ACCENT}`, cursor: "pointer", fontFamily: "inherit", padding: "0 8px", fontWeight: 700, outline: "none" }}>
                       <option value="short">Krótka</option>
                       <option value="medium">Średnia</option>
                       <option value="long">Rozwinięta</option>
                     </select>
                   </div>
-                  <button onClick={() => setChatExpanded(e => !e)}
-                    style={{ fontSize: 12, padding: "7px 12px", borderRadius: 7, border: "1px solid #ccc", background: "#f0f0f0", color: "#444", cursor: "pointer", fontFamily: "inherit", flexShrink: 0, fontWeight: 600 }}>
-                    {chatExpanded ? "⟩ Zwiń" : "⟨ Rozszerz"}
-                  </button>
-                </div>
-                {/* Toolbar: dolny rząd - Załącz + Deep Research */}
-                <div style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
-                  <label style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#444", padding: "4px 10px", border: "1px solid #bbb", borderRadius: 6, background: "#f0f0f0", flexShrink: 0 }}>
+                  {/* Załącz */}
+                  <label style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#333", padding: "6px 12px", border: "1px solid #bbb", borderRadius: 8, background: "#fff", whiteSpace: "nowrap" }}>
                     <input type="file" multiple accept="image/*,.pdf,.txt,.md" onChange={async e => {
                       const files = Array.from(e.target.files);
                       const loaded = await Promise.all(files.map(f => new Promise(resolve => {
@@ -1129,14 +1124,20 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
                       setAttachments(prev => [...prev, ...loaded]);
                       e.target.value = "";
                     }} style={{ display: "none" }} />
-                    📎 Załącz plik
+                    📎 Plik
                   </label>
+                  {/* Deep Research */}
                   {(chatModel.startsWith("gemini") || chatModel.startsWith("gpt")) && (
                     <button onClick={() => setDeepResearch(d => !d)}
-                      style={{ fontSize: 11, padding: "4px 10px", borderRadius: 6, border: `1px solid ${deepResearch ? "#4285f4" : "#bbb"}`, background: deepResearch ? "#4285f4" : "#f0f0f0", color: deepResearch ? "#fff" : "#444", cursor: "pointer", fontFamily: "inherit", fontWeight: 700, flexShrink: 0 }}>
-                      🔬 Deep Research {deepResearch ? "ON" : "OFF"}
+                      style={{ fontSize: 12, padding: "6px 12px", borderRadius: 8, border: `1px solid ${deepResearch ? "#1a6fd4" : "#bbb"}`, background: deepResearch ? "#1a6fd4" : "#fff", color: deepResearch ? "#fff" : "#333", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, whiteSpace: "nowrap" }}>
+                      {deepResearch ? "🔬 Deep ON" : "🔬 Deep"}
                     </button>
                   )}
+                  {/* Rozszerz */}
+                  <button onClick={() => setChatExpanded(e => !e)}
+                    style={{ marginLeft: "auto", fontSize: 12, padding: "6px 12px", borderRadius: 8, border: "1px solid #bbb", background: chatExpanded ? "#333" : "#fff", color: chatExpanded ? "#fff" : "#333", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, whiteSpace: "nowrap" }}>
+                    {chatExpanded ? "↙ Zwiń" : "↗ Rozszerz"}
+                  </button>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <textarea value={chatInput} onChange={e => setChatInput(e.target.value)}
