@@ -1001,7 +1001,7 @@ ${synthesis}`;
                     <div style={{ display: "flex", gap: 6 }}>
                       {synthesis && (
                         <button onClick={copySynthesis} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 4, border: `1px solid ${ACCENT}40`, background: "none", color: ACCENT, cursor: "pointer", fontFamily: "monospace" }}>Kopiuj</button>
-                        <button onClick={fillBriefFromSynthesis} disabled={fillingBrief} style={{ fontSize: 10, padding: "2px 10px", borderRadius: 4, border: `1px solid ${ACCENT}`, background: ACCENT, color: "#fff", cursor: "pointer", fontFamily: "monospace", fontWeight: 700 }}>
+                        <button onClick={fillBriefFromSynthesis} style={{ fontSize: 10, padding: "2px 10px", borderRadius: 4, border: "1px solid " + ACCENT, background: fillingBrief ? "#ccc" : ACCENT, color: "#fff", cursor: fillingBrief ? "default" : "pointer", fontFamily: "monospace", fontWeight: 700 }}>
                           {fillingBrief ? "⏳ Wypełniam..." : "📋 Wypełnij brief"}
                         </button>
                       )}
