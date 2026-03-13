@@ -102,16 +102,35 @@ export default function SockDesigner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description, sockVariant, size, attachments }),
       });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error);
-      const r = data.result;
-      setResult(r);
-      setPrompts({
-        dalleLeft: r.dalle_prompt_left || "",
-        dalleRight: r.dalle_prompt_right || r.dalle_prompt_left || "",
-        geminiLeft: r.gemini_prompt_left || "",
-        geminiRight: r.gemini_prompt_right || r.gemini_prompt_left || "",
-      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const msg = JSON.parse(line.slice(6));
+          if (msg.type === "error") throw new Error(msg.error);
+          if (msg.type === "result") {
+            const r = msg.result;
+            setResult(r);
+            setPrompts({
+              dalleLeft: r.dalle_prompt_left || "",
+              dalleRight: r.dalle_prompt_right || r.dalle_prompt_left || "",
+              geminiLeft: r.gemini_prompt_left || "",
+              geminiRight: r.gemini_prompt_right || r.gemini_prompt_left || "",
+            });
+          }
+        }
+      }
     } catch (e) {
       setError(e.message);
     }

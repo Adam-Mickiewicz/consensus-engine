@@ -133,7 +133,7 @@ GEMINI PROMPT RULES — always start with:
 
 CRITICAL: User's description is the ONLY source for the theme. Never invent a different theme.
 
-Respond ONLY in valid JSON, no markdown fences, no explanation, no text before or after the JSON object:
+Respond ONLY in valid JSON, no markdown fences, no explanation, no text before or after:
 {
   "collection_name": "2-3 Polish words",
   "concept": "1-2 sentences in Polish",
@@ -166,56 +166,75 @@ Respond ONLY in valid JSON, no markdown fences, no explanation, no text before o
 export const maxDuration = 60;
 
 export async function POST(request) {
-  try {
-    const { description, sockVariant, size, attachments } = await request.json();
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const { description, sockVariant, size, attachments } = await request.json();
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    const contentParts = [];
-    contentParts.push({
+  const contentParts = [
+    {
       type: "text",
       text: `Zaprojektuj skarpetki na temat: "${description}"
 Wariant: ${sockVariant === "different" ? "LEWA I PRAWA RÓŻNE" : sockVariant === "same" ? "IDENTYCZNE" : "AI decyduje"}
-Rozmiary: ${size === "both" ? "oba (435px i 480px)" : size === "small" ? "36-40 (435px)" : "41-46 (480px)"}
+Rozmiary: ${size === "both" ? "oba" : size === "small" ? "36-40 (435px)" : "41-46 (480px)"}
 Zaprojektuj DOKŁADNIE na ten temat. Nie zmieniaj tematu.`
-    });
+    }
+  ];
 
-    if (attachments?.length > 0) {
-      contentParts.push({ type: "text", text: "INSPIRACJE OD KLIENTA:" });
-      for (const att of attachments) {
-        if (att.type === "image") {
-          contentParts.push({ type: "text", text: `Inspiracja: ${att.name}` });
-          contentParts.push({ type: "image", source: { type: "base64", media_type: att.mediaType || "image/jpeg", data: att.base64 } });
-        } else {
-          contentParts.push({ type: "text", text: `${att.name}:\n${att.content}` });
-        }
+  if (attachments?.length > 0) {
+    contentParts.push({ type: "text", text: "INSPIRACJE OD KLIENTA:" });
+    for (const att of attachments) {
+      if (att.type === "image") {
+        contentParts.push({ type: "text", text: `Inspiracja: ${att.name}` });
+        contentParts.push({ type: "image", source: { type: "base64", media_type: att.mediaType || "image/jpeg", data: att.base64 } });
+      } else {
+        contentParts.push({ type: "text", text: `${att.name}:\n${att.content}` });
       }
     }
-
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 4000,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: contentParts }],
-    });
-
-    const raw = response.content.filter(b => b.type === "text").map(b => b.text).join("");
-    
-    // Loguj surową odpowiedź żeby zobaczyć co wraca
-    console.log("RAW RESPONSE:", raw.slice(0, 500));
-
-    let clean = raw.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
-    const start = clean.indexOf("{");
-    const end = clean.lastIndexOf("}");
-    if (start === -1 || end === -1) {
-      throw new Error(`Brak JSON w odpowiedzi. Otrzymano: ${raw.slice(0, 200)}`);
-    }
-    clean = clean.slice(start, end + 1);
-
-    const parsed = JSON.parse(clean);
-    return Response.json({ success: true, result: parsed });
-
-  } catch (e) {
-    console.error("sock-brief error:", e.message);
-    return Response.json({ success: false, error: e.message }, { status: 500 });
   }
+
+  // Streaming response
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        let fullText = "";
+
+        const anthropicStream = await client.messages.stream({
+          model: "claude-sonnet-4-6",
+          max_tokens: 4000,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: "user", content: contentParts }],
+        });
+
+        for await (const chunk of anthropicStream) {
+          if (chunk.type === "content_block_delta" && chunk.delta?.type === "text_delta") {
+            fullText += chunk.delta.text;
+            // Wysyłaj progress co jakiś czas
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "progress", chars: fullText.length })}\n\n`));
+          }
+        }
+
+        // Parsuj JSON po zakończeniu
+        let clean = fullText.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
+        const start = clean.indexOf("{");
+        const end = clean.lastIndexOf("}");
+        if (start === -1 || end === -1) throw new Error("Brak JSON w odpowiedzi");
+        clean = clean.slice(start, end + 1);
+        const parsed = JSON.parse(clean);
+
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "result", result: parsed })}\n\n`));
+      } catch (e) {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", error: e.message })}\n\n`));
+      } finally {
+        controller.close();
+      }
+    }
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+    },
+  });
 }
