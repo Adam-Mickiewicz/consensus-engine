@@ -214,7 +214,7 @@ export default function MarketingBrief() {
   const [loading, setLoading] = useState(true);
   const [exportingDocx, setExportingDocx] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
-  const [chatModel, setChatModel] = useState("claude");
+  const [chatModel, setChatModel] = useState("claude-sonnet-4-20250514");
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [chatOpen, setChatOpen] = useState(true);
@@ -764,16 +764,24 @@ export default function MarketingBrief() {
               <div style={{ padding: "14px 16px 14px 40px", borderBottom: "1px solid #e0dbd4", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", fontFamily: "monospace" }}>🤖 Doradca AI</div>
                 <div style={{ display: "flex", gap: 6 }}>
-                  {[
-                    { id: "claude", label: "Claude", color: "#b8763a" },
-                    { id: "chatgpt", label: "GPT-4o", color: "#10a37f" },
-                    { id: "gemini", label: "Gemini", color: "#4285f4" },
-                  ].map(m => (
-                    <button key={m.id} onClick={() => setChatModel(m.id)}
-                      style={{ padding: "3px 8px", borderRadius: 20, border: `1px solid ${chatModel === m.id ? m.color : "#ddd"}`, background: chatModel === m.id ? m.color + "15" : "#f9f9f9", color: chatModel === m.id ? m.color : "#aaa", fontSize: 10, cursor: "pointer", fontWeight: chatModel === m.id ? 700 : 400, fontFamily: "monospace" }}>
-                      {m.label}
-                    </button>
-                  ))}
+                  <select value={chatModel} onChange={e => setChatModel(e.target.value)}
+                    style={{ fontSize: 11, border: "1px solid #ddd", borderRadius: 6, padding: "3px 6px", background: "#fff", color: "#333", fontFamily: "monospace", cursor: "pointer" }}>
+                    <optgroup label="Claude">
+                      <option value="claude-opus-4-5">Claude Opus</option>
+                      <option value="claude-sonnet-4-20250514">Claude Sonnet</option>
+                      <option value="claude-haiku-4-5-20251001">Claude Haiku</option>
+                    </optgroup>
+                    <optgroup label="OpenAI">
+                      <option value="gpt-4o">GPT-4o</option>
+                      <option value="gpt-4o-mini">GPT-4o mini</option>
+                      <option value="o1-mini">o1 mini</option>
+                    </optgroup>
+                    <optgroup label="Google">
+                      <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                      <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                      <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                    </optgroup>
+                  </select>
                   <button onClick={clearChat} style={{ padding: "3px 8px", borderRadius: 20, border: "1px solid #eee", background: "none", color: "#ccc", fontSize: 10, cursor: "pointer", fontFamily: "monospace" }}>Wyczyść</button>
                 </div>
               </div>
@@ -788,8 +796,9 @@ export default function MarketingBrief() {
                   </div>
                 )}
                 {(brief.chatHistory || []).map((msg, i) => {
-                  const modelColors = { claude: "#b8763a", chatgpt: "#10a37f", gemini: "#4285f4" };
-                  const modelLabels = { claude: "Claude", chatgpt: "GPT-4o", gemini: "Gemini" };
+                  const modelColor = msg.model?.startsWith("claude") ? "#b8763a" : msg.model?.startsWith("gemini") ? "#4285f4" : "#10a37f";
+                  const modelColors = { [msg.model]: modelColor };
+                  const modelLabels = { [msg.model]: msg.model };
                   const isUser = msg.role === "user";
                   return (
                     <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isUser ? "flex-end" : "flex-start" }}>
