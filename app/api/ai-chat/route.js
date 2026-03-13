@@ -7,7 +7,7 @@ const supabase = createClient(
 );
 
 export async function POST(req) {
-  const { model, messages, briefContext } = await req.json();
+  const { model, messages, briefContext, deepResearch } = await req.json();
 
   // Załaduj kontekst marki z Supabase
   const { data: brand } = await supabase.from("brand_settings").select("*").limit(1).single();
@@ -55,6 +55,7 @@ Odpowiadaj po polsku. Bądź konkretny, praktyczny i kreatywny. Gdy oceniasz pom
             ? messages.map(m => ({ role: m.role, content: m.content }))
             : [{ role: "system", content: systemPrompt }, ...messages.map(m => ({ role: m.role, content: m.content }))],
           max_completion_tokens: 1024,
+          ...(deepResearch ? { tools: [{ type: "web_search_preview" }] } : {}),
         }),
       });
       const data = await res.json();
@@ -63,13 +64,22 @@ Odpowiadaj po polsku. Bądź konkretny, praktyczny i kreatywny. Gdy oceniasz pom
     }
 
     if (isGemini) {
+      const geminiBody = {
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: messages.map(m => {
+          const parts = Array.isArray(m.content)
+            ? m.content.map(p => p.type === "image" ? { inline_data: { mime_type: p.source.media_type, data: p.source.data } } : { text: p.text })
+            : [{ text: m.content }];
+          return { role: m.role === "assistant" ? "model" : "user", parts };
+        }),
+      };
+      if (deepResearch) {
+        geminiBody.tools = [{ google_search: {} }];
+      }
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: messages.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
-        }),
+        body: JSON.stringify(geminiBody),
       });
       const data = await res.json();
       if (data.error) return NextResponse.json({ error: data.error.message }, { status: 500 });

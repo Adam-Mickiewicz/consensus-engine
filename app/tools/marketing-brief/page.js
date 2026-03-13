@@ -205,6 +205,53 @@ function ChannelPanel({ channel, cfg, onChange }) {
 
 // ─── MAIN ───────────────────────────────────────────────────────────────────
 
+// ─── MARKDOWN RENDERER ───────────────────────────────────────────────────────
+function renderMarkdown(text) {
+  if (!text) return null;
+  const lines = text.split("\n");
+  const elements = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (line.startsWith("### ")) {
+      elements.push(<div key={i} style={{ fontSize: 11, fontWeight: 800, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginTop: 14, marginBottom: 4, fontFamily: "monospace" }}>{line.slice(4)}</div>);
+    } else if (line.startsWith("## ")) {
+      elements.push(<div key={i} style={{ fontSize: 13, fontWeight: 800, color: "#b8763a", marginTop: 16, marginBottom: 6, paddingBottom: 4, borderBottom: "1px solid #f0e8df" }}>{line.slice(3)}</div>);
+    } else if (line.startsWith("# ")) {
+      elements.push(<div key={i} style={{ fontSize: 15, fontWeight: 800, color: "#1a1a1a", marginTop: 16, marginBottom: 8 }}>{line.slice(2)}</div>);
+    } else if (line.startsWith("- ") || line.startsWith("• ") || line.startsWith("* ")) {
+      const txt = line.replace(/^[-•*] /, "");
+      elements.push(<div key={i} style={{ display: "flex", gap: 8, marginBottom: 3, paddingLeft: 4 }}><span style={{ color: "#b8763a", fontWeight: 700, flexShrink: 0 }}>▸</span><span>{parseBold(txt)}</span></div>);
+    } else if (/^\d+\. /.test(line)) {
+      const num = line.match(/^(\d+)\. /)[1];
+      const txt = line.replace(/^\d+\. /, "");
+      elements.push(<div key={i} style={{ display: "flex", gap: 8, marginBottom: 3, paddingLeft: 4 }}><span style={{ color: "#b8763a", fontWeight: 700, flexShrink: 0, minWidth: 16 }}>{num}.</span><span>{parseBold(txt)}</span></div>);
+    } else if (line.startsWith("---") || line.startsWith("===")) {
+      elements.push(<hr key={i} style={{ border: "none", borderTop: "1px solid #e8e0d8", margin: "10px 0" }} />);
+    } else if (line.startsWith("> ")) {
+      elements.push(<div key={i} style={{ borderLeft: "3px solid #b8763a", paddingLeft: 10, color: "#666", fontStyle: "italic", margin: "6px 0", background: "#fdf8f3", borderRadius: "0 4px 4px 0", padding: "4px 10px" }}>{parseBold(line.slice(2))}</div>);
+    } else if (line.startsWith("**") && line.endsWith("**") && line.length > 4) {
+      elements.push(<div key={i} style={{ fontWeight: 700, color: "#1a1a1a", marginTop: 8, marginBottom: 2 }}>{line.slice(2, -2)}</div>);
+    } else if (line.trim() === "") {
+      elements.push(<div key={i} style={{ height: 6 }} />);
+    } else {
+      elements.push(<div key={i} style={{ marginBottom: 2, lineHeight: 1.6 }}>{parseBold(line)}</div>);
+    }
+    i++;
+  }
+  return elements;
+}
+
+function parseBold(text) {
+  if (!text.includes("**") && !text.includes("`")) return text;
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) return <strong key={i} style={{ color: "#1a1a1a" }}>{part.slice(2, -2)}</strong>;
+    if (part.startsWith("`") && part.endsWith("`")) return <code key={i} style={{ background: "#f0ece6", borderRadius: 3, padding: "1px 5px", fontSize: "0.9em", fontFamily: "monospace" }}>{part.slice(1, -1)}</code>;
+    return part;
+  });
+}
+
 export default function MarketingBrief() {
   const [briefs, setBriefs] = useState([]);
   const [view, setView] = useState("list"); // list | form
@@ -217,6 +264,9 @@ export default function MarketingBrief() {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [chatModel, setChatModel] = useState("claude-sonnet-4-20250514");
   const [chatInput, setChatInput] = useState("");
+  const [chatExpanded, setChatExpanded] = useState(false);
+  const [attachments, setAttachments] = useState([]);
+  const [deepResearch, setDeepResearch] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatOpen, setChatOpen] = useState(true);
   const [synthesis, setSynthesis] = useState(null);
@@ -801,7 +851,7 @@ Bądź konkretny. Wyciągaj dosłowne propozycje copy z rozmowy, nie parafrazuj.
           </div>
 
           {/* ─── PANEL CZATU AI ─── */}
-          <div style={{ width: chatOpen ? 380 : 48, minWidth: chatOpen ? 380 : 48, borderLeft: "1px solid #e0dbd4", background: "#fff", display: "flex", flexDirection: "column", height: "100vh", position: "sticky", top: 0, transition: "width 0.2s, min-width 0.2s", overflow: "hidden" }}>
+          <div style={{ width: chatExpanded ? "100vw" : chatOpen ? 380 : 48, minWidth: chatExpanded ? "100vw" : chatOpen ? 380 : 48, borderLeft: "1px solid #e0dbd4", background: "#fff", display: "flex", flexDirection: "column", height: "100vh", position: chatExpanded ? "fixed" : "sticky", top: 0, right: chatExpanded ? 0 : "auto", zIndex: chatExpanded ? 100 : "auto", transition: "width 0.2s, min-width 0.2s", overflow: "hidden" }}>
             {/* Toggle button */}
             <button onClick={() => setChatOpen(o => !o)}
               style={{ position: "absolute", top: 16, left: chatOpen ? 12 : 8, background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#aaa", zIndex: 10, padding: 4 }}>
@@ -919,9 +969,22 @@ Bądź konkretny. Wyciągaj dosłowne propozycje copy z rozmowy, nie parafrazuj.
                   const isUser = msg.role === "user";
                   return (
                     <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isUser ? "flex-end" : "flex-start" }}>
-                      {!isUser && <div style={{ fontSize: 9, color: modelColors[msg.model] || "#aaa", marginBottom: 3, fontFamily: "monospace", fontWeight: 700 }}>{modelLabels[msg.model] || msg.model}</div>}
-                      <div style={{ maxWidth: "85%", padding: "8px 12px", borderRadius: isUser ? "12px 12px 4px 12px" : "12px 12px 12px 4px", background: isUser ? ACCENT : "#f5f2ee", color: isUser ? "#fff" : "#1a1a1a", fontSize: 12, lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                        {msg.content}
+                      {!isUser && <div style={{ fontSize: 9, color: modelColors[msg.model] || "#aaa", marginBottom: 3, fontFamily: "monospace", fontWeight: 700 }}>{msg.model}</div>}
+                      <div style={{ maxWidth: "90%", padding: isUser ? "8px 12px" : "12px 16px", borderRadius: isUser ? "12px 12px 4px 12px" : "12px 12px 12px 4px", background: isUser ? ACCENT : "#fff", color: isUser ? "#fff" : "#1a1a1a", fontSize: 12, lineHeight: 1.6, wordBreak: "break-word", border: isUser ? "none" : "1px solid #e8e0d8", boxShadow: isUser ? "none" : "0 1px 4px rgba(0,0,0,0.06)" }}>
+                        {isUser ? (
+                          <div style={{ whiteSpace: "pre-wrap" }}>
+                            {msg.content}
+                            {msg.attachments?.length > 0 && (
+                              <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 4 }}>
+                                {msg.attachments.map((a, ai) => (
+                                  <span key={ai} style={{ background: "rgba(255,255,255,0.2)", borderRadius: 4, padding: "2px 6px", fontSize: 10 }}>📎 {a.name}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div>{renderMarkdown(msg.content)}</div>
+                        )}
                       </div>
                     </div>
                   );
@@ -935,10 +998,50 @@ Bądź konkretny. Wyciągaj dosłowne propozycje copy z rozmowy, nie parafrazuj.
 
               {/* Input */}
               <div style={{ padding: 12, borderTop: "1px solid #e0dbd4", flexShrink: 0 }}>
+                {/* Załączniki preview */}
+                {attachments.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                    {attachments.map((a, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, background: "#f0ece6", border: "1px solid #ddd", borderRadius: 6, padding: "3px 8px", fontSize: 11 }}>
+                        <span>{a.type.startsWith("image/") ? "🖼️" : "📄"} {a.name}</span>
+                        <button onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {/* Toolbar: załącznik + deep research */}
+                <div style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
+                  <label style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#888", padding: "3px 8px", border: "1px solid #e0dbd4", borderRadius: 6, background: "#fafafa" }}>
+                    <input type="file" multiple accept="image/*,.pdf,.txt,.md" onChange={async e => {
+                      const files = Array.from(e.target.files);
+                      const loaded = await Promise.all(files.map(f => new Promise(resolve => {
+                        const reader = new FileReader();
+                        if (f.type.startsWith("image/")) {
+                          reader.onload = ev => resolve({ name: f.name, type: f.type, data: ev.target.result.split(",")[1] });
+                          reader.readAsDataURL(f);
+                        } else {
+                          reader.onload = ev => resolve({ name: f.name, type: f.type, textContent: ev.target.result });
+                          reader.readAsText(f);
+                        }
+                      })));
+                      setAttachments(prev => [...prev, ...loaded]);
+                      e.target.value = "";
+                    }} style={{ display: "none" }} />
+                    📎 Załącz
+                  </label>
+                  {(chatModel.startsWith("gemini") || chatModel.startsWith("gpt")) && (
+                    <button onClick={() => setDeepResearch(d => !d)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, border: `1px solid ${deepResearch ? "#4285f4" : "#e0dbd4"}`, background: deepResearch ? "#e8f0fe" : "#fafafa", color: deepResearch ? "#4285f4" : "#888", cursor: "pointer", fontFamily: "inherit", fontWeight: deepResearch ? 700 : 400 }}>
+                      🔬 Deep Research {deepResearch ? "ON" : "OFF"}
+                    </button>
+                  )}
+                  <button onClick={() => setChatExpanded(e => !e)} style={{ marginLeft: "auto", fontSize: 11, padding: "3px 10px", borderRadius: 6, border: "1px solid #e0dbd4", background: "#fafafa", color: "#888", cursor: "pointer", fontFamily: "inherit" }}>
+                    {chatExpanded ? "⟩ Zwiń" : "⟨ Rozszerz"}
+                  </button>
+                </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <textarea value={chatInput} onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                    placeholder={`Napisz do ${chatModel === "claude" ? "Claude" : chatModel === "chatgpt" ? "GPT-4o" : "Gemini"}... (Enter = wyślij)`}
+                    placeholder="Napisz wiadomość... (Enter = wyślij, Shift+Enter = nowa linia)"
                     rows={2}
                     style={{ flex: 1, background: "#f9f7f5", border: "1px solid #ddd", borderRadius: 8, padding: "8px 10px", fontSize: 12, fontFamily: "inherit", resize: "none", outline: "none" }} />
                   <button onClick={sendMessage} disabled={chatLoading || !chatInput.trim()}
