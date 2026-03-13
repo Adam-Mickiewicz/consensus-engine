@@ -160,7 +160,6 @@ export default function SockDesigner() {
 
   async function loadSession(id) {
     try {
-      const data = await sbFetch("/sock_chats?id=eq." + id + "&select=*");
       const s = data[0];
       setCurrentSessionId(id);
       setChatHistory(s.messages || []);
