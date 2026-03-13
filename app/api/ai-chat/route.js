@@ -9,7 +9,6 @@ const supabase = createClient(
 export async function POST(req) {
   const { model, messages, briefContext, deepResearch } = await req.json();
 
-  // Załaduj kontekst marki z Supabase
   const { data: brand } = await supabase.from("brand_settings").select("*").limit(1).single();
 
   const brandContext = brand ? `
@@ -45,22 +44,47 @@ Odpowiadaj po polsku. Bądź konkretny, praktyczny i kreatywny. Gdy oceniasz pom
     }
 
     if (isOpenAI) {
-      const isO1 = false; // o1/o3 wycofane, gpt-5.x nie wymaga osobnego traktowania
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.OPENAI_API_KEY}` },
-        body: JSON.stringify({
+      // GPT-5.x używa Responses API
+      const isGPT5 = model.startsWith("gpt-5");
+      
+      if (isGPT5) {
+        const inputMessages = [
+          { role: "system", content: systemPrompt },
+          ...messages.map(m => ({ role: m.role === "synthesis" ? "assistant" : m.role, content: Array.isArray(m.content) ? m.content : m.content }))
+        ];
+        const body = {
           model,
-          messages: isO1
-            ? messages.map(m => ({ role: m.role, content: m.content }))
-            : [{ role: "system", content: systemPrompt }, ...messages.map(m => ({ role: m.role, content: m.content }))],
-          max_completion_tokens: 1024,
-          ...(deepResearch ? { tools: [{ type: "web_search_preview" }] } : {}),
-        }),
-      });
-      const data = await res.json();
-      if (data.error) return NextResponse.json({ error: data.error.message }, { status: 500 });
-      return NextResponse.json({ content: data.choices[0].message.content, model });
+          input: inputMessages,
+          max_output_tokens: 1024,
+        };
+        if (deepResearch) body.tools = [{ type: "web_search_preview" }];
+
+        const res = await fetch("https://api.openai.com/v1/responses", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.OPENAI_API_KEY}` },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (data.error) return NextResponse.json({ error: data.error.message }, { status: 500 });
+        // Responses API zwraca output[] z blokami
+        const textBlock = data.output?.find(b => b.type === "message")?.content?.find(c => c.type === "output_text");
+        const text = textBlock?.text || data.output_text || "";
+        return NextResponse.json({ content: text, model });
+      } else {
+        // Stare modele GPT-4o etc - Chat Completions
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.OPENAI_API_KEY}` },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: "system", content: systemPrompt }, ...messages.map(m => ({ role: m.role, content: m.content }))],
+            max_completion_tokens: 1024,
+          }),
+        });
+        const data = await res.json();
+        if (data.error) return NextResponse.json({ error: data.error.message }, { status: 500 });
+        return NextResponse.json({ content: data.choices[0].message.content, model });
+      }
     }
 
     if (isGemini) {
@@ -69,13 +93,12 @@ Odpowiadaj po polsku. Bądź konkretny, praktyczny i kreatywny. Gdy oceniasz pom
         contents: messages.map(m => {
           const parts = Array.isArray(m.content)
             ? m.content.map(p => p.type === "image" ? { inline_data: { mime_type: p.source.media_type, data: p.source.data } } : { text: p.text })
-            : [{ text: m.content }];
-          return { role: m.role === "assistant" ? "model" : "user", parts };
+            : [{ text: m.content || " " }];
+          return { role: m.role === "assistant" || m.role === "synthesis" ? "model" : "user", parts };
         }),
       };
-      if (deepResearch) {
-        geminiBody.tools = [{ google_search: {} }];
-      }
+      if (deepResearch) geminiBody.tools = [{ google_search: {} }];
+
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
