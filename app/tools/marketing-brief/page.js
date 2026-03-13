@@ -889,8 +889,7 @@ Bądź konkretny. Wyciągaj dosłowne propozycje copy z rozmowy, nie parafrazuj.
                     {synthesizing && <div style={{ color: "#aaa", fontSize: 12 }}>⏳ Generuję syntezę...</div>}
                     {synthesis && (
                       <div style={{ fontSize: 12, color: "#333", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
-                        {synthesis.split('
-').map((line, i) => {
+                        {synthesis.split("\n").map((line, i) => {
                           if (line.startsWith('## ')) return <div key={i} style={{ fontWeight: 700, color: ACCENT, marginTop: i > 0 ? 12 : 0, marginBottom: 4, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>{line.replace('## ', '')}</div>;
                           if (line.startsWith('- ') || line.startsWith('• ')) return <div key={i} style={{ paddingLeft: 12, marginBottom: 2 }}>• {line.replace(/^[-•] /, '')}</div>;
                           if (line.trim() === '') return <div key={i} style={{ height: 4 }} />;
