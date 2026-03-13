@@ -1007,8 +1007,7 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
                 })()}
               </div>
 
-              {/* SYNTEZA */}
-              {{/* Wiadomości */}
+              {/* Wiadomości */}
               <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}
                 ref={el => { if (el) el.scrollTop = el.scrollHeight; }}>
                 {(brief.chatHistory || []).length === 0 && brandSettings && (
