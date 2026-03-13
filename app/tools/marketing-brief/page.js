@@ -764,24 +764,42 @@ export default function MarketingBrief() {
               <div style={{ padding: "14px 16px 14px 40px", borderBottom: "1px solid #e0dbd4", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", fontFamily: "monospace" }}>🤖 Doradca AI</div>
                 <div style={{ display: "flex", gap: 6 }}>
-                  <select value={chatModel} onChange={e => setChatModel(e.target.value)}
-                    style={{ fontSize: 11, border: "1px solid #ddd", borderRadius: 6, padding: "3px 6px", background: "#fff", color: "#333", fontFamily: "monospace", cursor: "pointer" }}>
-                    <optgroup label="Claude">
-                      <option value="claude-opus-4-5">Claude Opus</option>
-                      <option value="claude-sonnet-4-20250514">Claude Sonnet</option>
-                      <option value="claude-haiku-4-5-20251001">Claude Haiku</option>
-                    </optgroup>
-                    <optgroup label="OpenAI">
-                      <option value="gpt-4o">GPT-4o</option>
-                      <option value="gpt-4o-mini">GPT-4o mini</option>
-                      <option value="o1-mini">o1 mini</option>
-                    </optgroup>
-                    <optgroup label="Google">
-                      <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                      <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                      <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                    </optgroup>
-                  </select>
+                  <div style={{ position: "relative" }}>
+                    <select value={chatModel} onChange={e => setChatModel(e.target.value)}
+                      style={{ fontSize: 11, border: "1px solid #ddd", borderRadius: 6, padding: "3px 6px", background: "#fff", color: "#333", fontFamily: "monospace", cursor: "pointer" }}>
+                      <optgroup label="── Claude (Anthropic) ──">
+                        <option value="claude-opus-4-5">Claude Opus — najlepszy, drogi</option>
+                        <option value="claude-sonnet-4-20250514">Claude Sonnet — balans jakość/cena ✓</option>
+                        <option value="claude-haiku-4-5-20251001">Claude Haiku — szybki, tani</option>
+                      </optgroup>
+                      <optgroup label="── OpenAI ──">
+                        <option value="gpt-4o">GPT-4o — flagowy, wszechstronny</option>
+                        <option value="gpt-4o-mini">GPT-4o mini — szybki, tani</option>
+                        <option value="o1-mini">o1 mini — logika, wolniejszy</option>
+                      </optgroup>
+                      <optgroup label="── Google ──">
+                        <option value="gemini-1.5-pro">Gemini 1.5 Pro — długi kontekst</option>
+                        <option value="gemini-1.5-flash">Gemini 1.5 Flash — szybki, tani</option>
+                        <option value="gemini-2.0-flash">Gemini 2.0 Flash — najnowszy Google</option>
+                      </optgroup>
+                    </select>
+                  </div>
+                  {/* Info o wybranym modelu */}
+                  {{
+                    "claude-opus-4-5": { tip: "Najlepszy do złożonych analiz i kreatywnego copywritingu. ~$15/1M tokenów.", color: "#b8763a" },
+                    "claude-sonnet-4-20250514": { tip: "Najlepszy wybór do codziennej pracy. Szybki i dokładny. ~$3/1M tokenów.", color: "#b8763a" },
+                    "claude-haiku-4-5-20251001": { tip: "Błyskawiczny do prostych pytań i burzy mózgów. ~$0.25/1M tokenów.", color: "#b8763a" },
+                    "gpt-4o": { tip: "Flagowy OpenAI. Świetny do strukturyzowania i analizy danych. ~$5/1M tokenów.", color: "#10a37f" },
+                    "gpt-4o-mini": { tip: "Szybki i tani wariant GPT-4o. Dobry do prostych zadań. ~$0.15/1M tokenów.", color: "#10a37f" },
+                    "o1-mini": { tip: "Model do rozumowania krok po kroku. Wolniejszy, ale precyzyjny. ~$3/1M tokenów.", color: "#10a37f" },
+                    "gemini-1.5-pro": { tip: "Obsługuje bardzo długi kontekst (1M tokenów). Dobry do analizy dokumentów. ~$3.5/1M tokenów.", color: "#4285f4" },
+                    "gemini-1.5-flash": { tip: "Najszybszy Gemini. Dobry do szybkich odpowiedzi i podsumowań. ~$0.075/1M tokenów.", color: "#4285f4" },
+                    "gemini-2.0-flash": { tip: "Najnowszy model Google. Dobry balans szybkości i jakości. ~$0.10/1M tokenów.", color: "#4285f4" },
+                  }[chatModel] && (
+                    <div style={{ fontSize: 10, color: {"claude-opus-4-5":"#b8763a","claude-sonnet-4-20250514":"#b8763a","claude-haiku-4-5-20251001":"#b8763a","gpt-4o":"#10a37f","gpt-4o-mini":"#10a37f","o1-mini":"#10a37f","gemini-1.5-pro":"#4285f4","gemini-1.5-flash":"#4285f4","gemini-2.0-flash":"#4285f4"}[chatModel], padding: "4px 8px", background: {"claude-opus-4-5":"#b8763a","claude-sonnet-4-20250514":"#b8763a","claude-haiku-4-5-20251001":"#b8763a","gpt-4o":"#10a37f","gpt-4o-mini":"#10a37f","o1-mini":"#10a37f","gemini-1.5-pro":"#4285f4","gemini-1.5-flash":"#4285f4","gemini-2.0-flash":"#4285f4"}[chatModel] + "12", borderRadius: 4, lineHeight: 1.4, marginTop: 4 }}>
+                      ℹ️ {{"claude-opus-4-5":"Najlepszy do złożonych analiz i kreatywnego copywritingu. ~$15/1M tokenów.","claude-sonnet-4-20250514":"Najlepszy wybór do codziennej pracy. Szybki i dokładny. ~$3/1M tokenów.","claude-haiku-4-5-20251001":"Błyskawiczny do prostych pytań i burzy mózgów. ~$0.25/1M tokenów.","gpt-4o":"Flagowy OpenAI. Świetny do strukturyzowania i analizy danych. ~$5/1M tokenów.","gpt-4o-mini":"Szybki i tani wariant GPT-4o. Dobry do prostych zadań. ~$0.15/1M tokenów.","o1-mini":"Model do rozumowania krok po kroku. Wolniejszy, ale precyzyjny. ~$3/1M tokenów.","gemini-1.5-pro":"Obsługuje bardzo długi kontekst (1M tokenów). Dobry do analizy dokumentów. ~$3.5/1M tokenów.","gemini-1.5-flash":"Najszybszy Gemini. Dobry do szybkich odpowiedzi i podsumowań. ~$0.075/1M tokenów.","gemini-2.0-flash":"Najnowszy model Google. Dobry balans szybkości i jakości. ~$0.10/1M tokenów."}[chatModel]}
+                    </div>
+                  )}
                   <button onClick={clearChat} style={{ padding: "3px 8px", borderRadius: 20, border: "1px solid #eee", background: "none", color: "#ccc", fontSize: 10, cursor: "pointer", fontFamily: "monospace" }}>Wyczyść</button>
                 </div>
               </div>
