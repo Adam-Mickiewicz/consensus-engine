@@ -457,9 +457,12 @@ Bądź konkretny. Wyciągaj dosłowne propozycje copy z rozmowy, nie parafrazuj.
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+      const synthesisMsg = { role: "synthesis", content: data.content, model: chatModel, ts: Date.now() };
+      setBrief(b => ({ ...b, chatHistory: [...(b.chatHistory || []), synthesisMsg] }));
       setSynthesis(data.content);
     } catch(e) {
-      setSynthesis("❌ Błąd generowania syntezy: " + e.message);
+      const errMsg = { role: "synthesis", content: "❌ Błąd syntezy: " + e.message, model: chatModel, ts: Date.now() };
+      setBrief(b => ({ ...b, chatHistory: [...(b.chatHistory || []), errMsg] }));
     }
     setSynthesizing(false);
   };
