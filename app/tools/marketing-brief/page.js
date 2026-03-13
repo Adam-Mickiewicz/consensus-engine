@@ -471,8 +471,9 @@ Bądź konkretny. Wyciągaj dosłowne propozycje copy z rozmowy, nie parafrazuj.
     if (synthesis) { navigator.clipboard.writeText(synthesis); }
   };
 
-  const fillBriefFromSynthesis = async () => {
-    if (!synthesis) return;
+  const fillBriefFromSynthesis = async (synthesisText) => {
+    const textToUse = synthesisText || synthesis;
+    if (!textToUse) return;
     setFillingBrief(true);
     try {
       const prompt = `Na podstawie poniższej syntezy rozmowy, wypełnij pola briefu marketingowego.
@@ -489,7 +490,7 @@ Zwróć TYLKO czysty JSON (bez markdown, bez \`\`\`, bez komentarzy) z następuj
 }
 
 SYNTEZA:
-${synthesis}`;
+${textToUse}`;
 
       const res = await fetch("/api/ai-chat", {
         method: "POST",
@@ -1062,6 +1063,7 @@ ${synthesis}`;
                           <div>{renderMarkdown(msg.content)}</div>
                         )}
                       </div>
+                      {msgTime && <div style={{ fontSize: 9, color: "#bbb", marginTop: 3, fontFamily: "monospace" }}>{msgTime}</div>}
                     </div>
                   );
                 })}
