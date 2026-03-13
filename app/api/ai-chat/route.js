@@ -45,7 +45,7 @@ Odpowiadaj po polsku. Bądź konkretny, praktyczny i kreatywny. Gdy oceniasz pom
     }
 
     if (isOpenAI) {
-      const isO1 = model.startsWith("o1") || model.startsWith("o3");
+      const isO1 = false; // o1/o3 wycofane, gpt-5.x nie wymaga osobnego traktowania
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.OPENAI_API_KEY}` },

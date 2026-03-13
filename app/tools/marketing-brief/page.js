@@ -819,19 +819,21 @@ Bądź konkretny. Wyciągaj dosłowne propozycje copy z rozmowy, nie parafrazuj.
                 {(() => {
                   const MODELS = {
                     claude: [
-                      { id: "claude-sonnet-4-20250514", short: "Sonnet", tip: "Balans jakość/cena. Do codziennej pracy.", price: "$3/1M" },
-                      { id: "claude-opus-4-5", short: "Opus", tip: "Najlepszy do złożonych analiz.", price: "$15/1M" },
-                      { id: "claude-haiku-4-5-20251001", short: "Haiku", tip: "Błyskawiczny do prostych pytań.", price: "$0.25/1M" },
+                      { id: "claude-sonnet-4-6", short: "Sonnet 4.6", tip: "Nowy domyślny. Prawie poziom Opus, szybszy.", price: "$3/1M" },
+                      { id: "claude-opus-4-6", short: "Opus 4.6", tip: "Najlepszy Claude. 1M kontekst, top kodowanie.", price: "$15/1M" },
+                      { id: "claude-haiku-4-5-20251001", short: "Haiku 4.5", tip: "Błyskawiczny do prostych pytań.", price: "$0.25/1M" },
                     ],
                     openai: [
-                      { id: "gpt-4o", short: "GPT-4o", tip: "Flagowy OpenAI, wszechstronny.", price: "$5/1M" },
-                      { id: "gpt-4o-mini", short: "4o-mini", tip: "Szybki i tani wariant GPT-4o.", price: "$0.15/1M" },
-                      { id: "o1-mini", short: "o1-mini", tip: "Rozumowanie krok po kroku.", price: "$3/1M" },
+                      { id: "gpt-5.4", short: "GPT-5.4", tip: "Flagowy OpenAI. Kodowanie + agenty.", price: "$15/1M" },
+                      { id: "gpt-5.3", short: "GPT-5.3", tip: "Szybki i mocny do codziennej pracy.", price: "$5/1M" },
+                      { id: "gpt-5-mini", short: "GPT-5 mini", tip: "Tani wariant z rozumowaniem.", price: "$1.1/1M" },
                     ],
                     gemini: [
-                      { id: "gemini-2.0-flash", short: "2.0 Flash", tip: "Najnowszy Google, szybki.", price: "$0.10/1M" },
-                      { id: "gemini-1.5-pro", short: "1.5 Pro", tip: "Długi kontekst, analiza dok.", price: "$3.5/1M" },
-                      { id: "gemini-1.5-flash", short: "1.5 Flash", tip: "Najszybszy Gemini.", price: "$0.075/1M" },
+                      { id: "gemini-3-pro-preview", short: "3 Pro", tip: "Najnowszy Google. Multimodal + agenty.", price: "$2/1M" },
+                      { id: "gemini-3-flash-preview", short: "3 Flash", tip: "Szybki Gemini 3 z myśleniem.", price: "$0.50/1M" },
+                      { id: "gemini-2.5-pro", short: "2.5 Pro", tip: "Stabilny, świetny do kodowania.", price: "$1.25/1M" },
+                      { id: "gemini-2.5-flash", short: "2.5 Flash", tip: "Hybrid reasoning, 1M kontekst.", price: "$0.30/1M" },
+                      { id: "gemini-2.0-flash", short: "2.0 Flash", tip: "Sprawdzony i tani.", price: "$0.10/1M" },
                     ],
                   };
                   const PROVIDERS = [
