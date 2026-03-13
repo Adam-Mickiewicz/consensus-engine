@@ -38,7 +38,13 @@ Odpowiadaj po polsku. Bądź konkretny, praktyczny i kreatywny. Gdy oceniasz pom
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
-        body: JSON.stringify({ model, max_tokens: 1024, system: systemPrompt, messages: messages.map(m => ({ role: m.role, content: m.content })) }),
+        body: JSON.stringify({ model, max_tokens: 1024, system: systemPrompt, messages: messages.map(m => ({
+          role: m.role === "synthesis" ? "assistant" : m.role,
+          content: (m.role === "assistant" && m.model && m.model !== model)
+            ? `[Odpowiedź wygenerowana przez ${m.model}]:
+${m.content}`
+            : m.content
+        })) }),
       });
       const data = await res.json();
       if (data.error) return NextResponse.json({ error: data.error.message }, { status: 500 });
@@ -52,7 +58,13 @@ Odpowiadaj po polsku. Bądź konkretny, praktyczny i kreatywny. Gdy oceniasz pom
       if (isGPT5) {
         const inputMessages = [
           { role: "system", content: systemPrompt },
-          ...messages.map(m => ({ role: m.role === "synthesis" ? "assistant" : m.role, content: Array.isArray(m.content) ? m.content : m.content }))
+          ...messages.map(m => ({
+            role: m.role === "synthesis" ? "assistant" : m.role,
+            content: (m.role === "assistant" && m.model && m.model !== model)
+              ? `[Odpowiedź wygenerowana przez ${m.model}]:
+${Array.isArray(m.content) ? m.content.map(c=>c.text||"").join("") : m.content}`
+              : (Array.isArray(m.content) ? m.content : m.content)
+          }))
         ];
         const body = {
           model,
@@ -93,9 +105,12 @@ Odpowiadaj po polsku. Bądź konkretny, praktyczny i kreatywny. Gdy oceniasz pom
       const geminiBody = {
         system_instruction: { parts: [{ text: systemPrompt }] },
         contents: messages.map(m => {
+          const isOtherModel = m.role === "assistant" && m.model && m.model !== model;
+          const prefix = isOtherModel ? `[Odpowiedź wygenerowana przez ${m.model}]:
+` : "";
           const parts = Array.isArray(m.content)
-            ? m.content.map(p => p.type === "image" ? { inline_data: { mime_type: p.source.media_type, data: p.source.data } } : { text: p.text })
-            : [{ text: m.content || " " }];
+            ? m.content.map(p => p.type === "image" ? { inline_data: { mime_type: p.source.media_type, data: p.source.data } } : { text: (prefix || "") + (p.text||"") })
+            : [{ text: prefix + (m.content || " ") }];
           return { role: m.role === "assistant" || m.role === "synthesis" ? "model" : "user", parts };
         }),
       };
