@@ -22,9 +22,9 @@ const MODELS = {
     { id: "claude-haiku-4-5-20251001", short: "Haiku 4.5", tip: "Błyskawiczny.", price: "$0.25/1M" },
   ],
   openai: [
-    { id: "gpt-5.4", short: "GPT-5.4", tip: "Flagowy OpenAI.", price: "$15/1M" },
-    { id: "gpt-5.3", short: "GPT-5.3", tip: "Szybki i mocny.", price: "$5/1M" },
-    { id: "gpt-5-mini", short: "GPT-5 mini", tip: "Tani z rozumowaniem.", price: "$1.1/1M" },
+    { id: "gpt-5.4", short: "GPT-5.4", tip: "Flagowy OpenAI. Kodowanie + agenty.", price: "$15/1M" },
+    { id: "gpt-5.2", short: "GPT-5.2", tip: "Poprzedni flagship, szybszy i tańszy.", price: "$3/1M" },
+    { id: "gpt-5-mini", short: "GPT-5 mini", tip: "Tani wariant z rozumowaniem.", price: "$1.1/1M" },
   ],
   gemini: [
     { id: "gemini-2.5-pro", short: "2.5 Pro", tip: "Stabilny, świetny.", price: "$1.25/1M" },
