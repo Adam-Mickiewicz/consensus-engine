@@ -210,32 +210,52 @@ function renderMarkdown(text) {
   if (!text) return null;
   const lines = text.split("\n");
   const elements = [];
+  const FONT = "-apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif";
   let i = 0;
   while (i < lines.length) {
     const line = lines[i];
+
+    // Blok kodu ```
+    if (line.startsWith("```")) {
+      const lang = line.slice(3).trim();
+      const codeLines = [];
+      i++;
+      while (i < lines.length && !lines[i].startsWith("```")) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      const codeText = codeLines.join("\n");
+      elements.push(
+        <div key={i} style={{ margin: "10px 0", borderRadius: 8, overflow: "hidden", border: "1px solid #e0dbd4" }}>
+          {lang && <div style={{ background: "#f0ece6", padding: "3px 10px", fontSize: 10, color: "#888", fontFamily: "monospace", borderBottom: "1px solid #e0dbd4" }}>{lang}</div>}
+          <pre style={{ margin: 0, padding: "10px 12px", background: "#fafaf8", fontSize: 11.5, fontFamily: "'SF Mono', 'Fira Code', monospace", overflowX: "auto", lineHeight: 1.6, color: "#1a1a1a", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{codeText}</pre>
+        </div>
+      );
+      i++;
+      continue;
+    }
+
     if (line.startsWith("### ")) {
-      elements.push(<div key={i} style={{ fontSize: 11, fontWeight: 800, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginTop: 14, marginBottom: 4, fontFamily: "monospace" }}>{line.slice(4)}</div>);
+      elements.push(<div key={i} style={{ fontSize: 11, fontWeight: 700, color: "#666", textTransform: "uppercase", letterSpacing: 0.8, marginTop: 16, marginBottom: 4, fontFamily: FONT }}>{line.slice(4)}</div>);
     } else if (line.startsWith("## ")) {
-      elements.push(<div key={i} style={{ fontSize: 13, fontWeight: 800, color: "#b8763a", marginTop: 16, marginBottom: 6, paddingBottom: 4, borderBottom: "1px solid #f0e8df" }}>{line.slice(3)}</div>);
+      elements.push(<div key={i} style={{ fontSize: 14, fontWeight: 700, color: "#b8763a", marginTop: 18, marginBottom: 6, paddingBottom: 5, borderBottom: "1px solid #f0e8df", fontFamily: FONT }}>{line.slice(3)}</div>);
     } else if (line.startsWith("# ")) {
-      elements.push(<div key={i} style={{ fontSize: 15, fontWeight: 800, color: "#1a1a1a", marginTop: 16, marginBottom: 8 }}>{line.slice(2)}</div>);
+      elements.push(<div key={i} style={{ fontSize: 16, fontWeight: 700, color: "#1a1a1a", marginTop: 18, marginBottom: 8, fontFamily: FONT }}>{line.slice(2)}</div>);
     } else if (line.startsWith("- ") || line.startsWith("• ") || line.startsWith("* ")) {
       const txt = line.replace(/^[-•*] /, "");
-      elements.push(<div key={i} style={{ display: "flex", gap: 8, marginBottom: 3, paddingLeft: 4 }}><span style={{ color: "#b8763a", fontWeight: 700, flexShrink: 0 }}>▸</span><span>{parseBold(txt)}</span></div>);
+      elements.push(<div key={i} style={{ display: "flex", gap: 8, marginBottom: 4, paddingLeft: 4, fontFamily: FONT, fontSize: 13, lineHeight: 1.6 }}><span style={{ color: "#b8763a", flexShrink: 0, marginTop: 1 }}>•</span><span>{parseBold(txt)}</span></div>);
     } else if (/^\d+\. /.test(line)) {
       const num = line.match(/^(\d+)\. /)[1];
       const txt = line.replace(/^\d+\. /, "");
-      elements.push(<div key={i} style={{ display: "flex", gap: 8, marginBottom: 3, paddingLeft: 4 }}><span style={{ color: "#b8763a", fontWeight: 700, flexShrink: 0, minWidth: 16 }}>{num}.</span><span>{parseBold(txt)}</span></div>);
+      elements.push(<div key={i} style={{ display: "flex", gap: 8, marginBottom: 4, paddingLeft: 4, fontFamily: FONT, fontSize: 13, lineHeight: 1.6 }}><span style={{ color: "#b8763a", fontWeight: 600, flexShrink: 0, minWidth: 18 }}>{num}.</span><span>{parseBold(txt)}</span></div>);
     } else if (line.startsWith("---") || line.startsWith("===")) {
-      elements.push(<hr key={i} style={{ border: "none", borderTop: "1px solid #e8e0d8", margin: "10px 0" }} />);
+      elements.push(<hr key={i} style={{ border: "none", borderTop: "1px solid #e8e0d8", margin: "12px 0" }} />);
     } else if (line.startsWith("> ")) {
-      elements.push(<div key={i} style={{ borderLeft: "3px solid #b8763a", paddingLeft: 10, color: "#666", fontStyle: "italic", margin: "6px 0", background: "#fdf8f3", borderRadius: "0 4px 4px 0", padding: "4px 10px" }}>{parseBold(line.slice(2))}</div>);
-    } else if (line.startsWith("**") && line.endsWith("**") && line.length > 4) {
-      elements.push(<div key={i} style={{ fontWeight: 700, color: "#1a1a1a", marginTop: 8, marginBottom: 2 }}>{line.slice(2, -2)}</div>);
+      elements.push(<div key={i} style={{ borderLeft: "3px solid #b8763a", color: "#555", fontStyle: "italic", margin: "8px 0", background: "#fdf8f3", borderRadius: "0 6px 6px 0", padding: "6px 12px", fontFamily: FONT, fontSize: 13 }}>{parseBold(line.slice(2))}</div>);
     } else if (line.trim() === "") {
-      elements.push(<div key={i} style={{ height: 6 }} />);
+      elements.push(<div key={i} style={{ height: 8 }} />);
     } else {
-      elements.push(<div key={i} style={{ marginBottom: 2, lineHeight: 1.6 }}>{parseBold(line)}</div>);
+      elements.push(<div key={i} style={{ marginBottom: 3, lineHeight: 1.7, fontFamily: FONT, fontSize: 13, color: "#1a1a1a" }}>{parseBold(line)}</div>);
     }
     i++;
   }
