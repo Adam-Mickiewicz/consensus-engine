@@ -1054,6 +1054,9 @@ Bądź konkretny. Wyciągaj dosłowne propozycje copy z rozmowy, nie parafrazuj.
                       🔬 Deep Research {deepResearch ? "ON" : "OFF"}
                     </button>
                   )}
+                  <button onClick={generateSynthesis} disabled={synthesizing || !(brief.chatHistory?.length)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, border: `1px solid ${ACCENT}`, background: ACCENT + "15", color: ACCENT, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, opacity: !(brief.chatHistory?.length) ? 0.4 : 1 }}>
+                    {synthesizing ? "⏳" : "✨ Synteza"}
+                  </button>
                   <button onClick={() => setChatExpanded(e => !e)} style={{ marginLeft: "auto", fontSize: 11, padding: "3px 10px", borderRadius: 6, border: "1px solid #e0dbd4", background: "#fafafa", color: "#888", cursor: "pointer", fontFamily: "inherit" }}>
                     {chatExpanded ? "⟩ Zwiń" : "⟨ Rozszerz"}
                   </button>
