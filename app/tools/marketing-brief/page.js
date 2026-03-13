@@ -287,6 +287,15 @@ export default function MarketingBrief() {
   const [chatExpanded, setChatExpanded] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [deepResearch, setDeepResearch] = useState(false);
+  const [brandSettings, setBrandSettings] = useState(null);
+  const [brandContext, setBrandContextState] = useState({
+    brand_description: true,
+    tone_of_voice: true,
+    target_audiences: true,
+    campaign_examples: true,
+    reference_links: true,
+    uploaded_files: true,
+  });
   const [chatLoading, setChatLoading] = useState(false);
   const [chatOpen, setChatOpen] = useState(true);
   const [synthesis, setSynthesis] = useState(null);
@@ -1033,6 +1042,31 @@ ${textToUse}`;
               {/* Wiadomości */}
               <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}
                 ref={el => { if (el) el.scrollTop = el.scrollHeight; }}>
+                {(brief.chatHistory || []).length === 0 && brandSettings && (
+                  <div style={{ background: "#fffbf5", border: "1px solid " + ACCENT + "40", borderRadius: 12, padding: 16, marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, fontFamily: "monospace", marginBottom: 12 }}>🏷️ KONTEKST MARKI DLA TEJ ROZMOWY</div>
+                    <div style={{ fontSize: 11, color: "#888", marginBottom: 12 }}>Wybierz co AI ma brać pod uwagę:</div>
+                    {[
+                      { key: "brand_description", label: "Opis marki", icon: "🏢", hasData: !!brandSettings.brand_description },
+                      { key: "tone_of_voice", label: "Tone of voice", icon: "🗣️", hasData: !!brandSettings.tone_of_voice },
+                      { key: "target_audiences", label: "Grupy docelowe", icon: "👥", hasData: (brandSettings.target_audiences || []).length > 0 },
+                      { key: "campaign_examples", label: "Przykłady kampanii", icon: "📣", hasData: (brandSettings.campaign_examples || []).length > 0 },
+                      { key: "reference_links", label: "Linki do materiałów", icon: "🔗", hasData: (brandSettings.reference_links || []).length > 0 },
+                      { key: "uploaded_files", label: "Pliki (PDF, grafiki)", icon: "📄", hasData: (brandSettings.uploaded_files || []).length > 0 },
+                    ].map(item => (
+                      <div key={item.key} onClick={() => item.hasData && setBrandContextState(prev => ({ ...prev, [item.key]: !prev[item.key] }))}
+                        style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: 6, marginBottom: 4, cursor: item.hasData ? "pointer" : "default", background: brandContext[item.key] && item.hasData ? ACCENT + "10" : "transparent", opacity: item.hasData ? 1 : 0.35 }}>
+                        <div style={{ width: 16, height: 16, borderRadius: 4, border: "1.5px solid " + (brandContext[item.key] && item.hasData ? ACCENT : "#ccc"), background: brandContext[item.key] && item.hasData ? ACCENT : "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          {brandContext[item.key] && item.hasData && <span style={{ color: "#fff", fontSize: 10, lineHeight: 1 }}>✓</span>}
+                        </div>
+                        <span style={{ fontSize: 11 }}>{item.icon} {item.label}</span>
+                        {!item.hasData && <span style={{ fontSize: 10, color: "#bbb", marginLeft: "auto" }}>brak danych</span>}
+                      </div>
+                    ))}
+                    <div style={{ fontSize: 10, color: "#bbb", marginTop: 10, fontStyle: "italic" }}>Panel zniknie po wysłaniu pierwszej wiadomości</div>
+                  </div>
+                )}
+
                 {(brief.chatHistory || []).length === 0 && (
                   <div style={{ textAlign: "center", color: "#ccc", fontSize: 12, marginTop: 40 }}>
                     <div style={{ fontSize: 32, marginBottom: 8 }}>💬</div>

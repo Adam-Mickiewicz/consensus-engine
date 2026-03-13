@@ -7,18 +7,20 @@ const supabase = createClient(
 );
 
 export async function POST(req) {
-  const { model, messages, briefContext, deepResearch } = await req.json();
+  const { model, messages, briefContext, deepResearch, brandContextFilter } = await req.json();
 
   const { data: brand } = await supabase.from("brand_settings").select("*").limit(1).single();
 
-  const brandContext = brand ? `
-=== KONTEKST MARKI (stały) ===
-Opis marki: ${brand.brand_description || "—"}
-Tone of voice: ${brand.tone_of_voice || "—"}
-Grupy docelowe: ${(brand.target_audiences || []).join(" | ") || "—"}
-Przykłady dobrych kampanii: ${(brand.campaign_examples || []).map(e => `${e.title}: ${e.description}`).join(" | ") || "—"}
-Linki do materiałów: ${(brand.reference_links || []).map(l => `${l.note || l.url}: ${l.url}`).join(" | ") || "—"}
-` : "";
+  const f = brandContextFilter || {};
+  const brandContext = brand ? [
+    "=== KONTEKST MARKI (stały) ===",
+    f.brand_description !== false && brand.brand_description ? `Opis marki: ${brand.brand_description}` : null,
+    f.tone_of_voice !== false && brand.tone_of_voice ? `Tone of voice: ${brand.tone_of_voice}` : null,
+    f.target_audiences !== false && (brand.target_audiences || []).length > 0 ? `Grupy docelowe: ${brand.target_audiences.join(" | ")}` : null,
+    f.campaign_examples !== false && (brand.campaign_examples || []).length > 0 ? `Przykłady kampanii: ${brand.campaign_examples.map(e => `${e.title}: ${e.description}`).join(" | ")}` : null,
+    f.reference_links !== false && (brand.reference_links || []).length > 0 ? `Linki do materiałów: ${brand.reference_links.map(l => `${l.note || l.url}: ${l.url}`).join(" | ")}` : null,
+    f.uploaded_files !== false && (brand.uploaded_files || []).length > 0 ? `Pliki w repozytorium (tylko nazwy): ${brand.uploaded_files.map(u => u.name).join(", ")}` : null,
+  ].filter(Boolean).join("\n") : "";
 
   const systemPrompt = `Jesteś ekspertem od marketingu e-commerce i strategii kampanii. Pomagasz zespołowi marketingowemu w budowaniu skutecznych akcji promocyjnych.
 ${brandContext}
