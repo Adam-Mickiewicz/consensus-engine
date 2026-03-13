@@ -79,10 +79,32 @@ ${Array.isArray(m.content) ? m.content.map(c=>c.text||"").join("") : m.content}`
           body: JSON.stringify(body),
         });
         const data = await res.json();
-        if (data.error) return NextResponse.json({ error: data.error.message }, { status: 500 });
-        // Responses API zwraca output[] z blokami
-        const textBlock = data.output?.find(b => b.type === "message")?.content?.find(c => c.type === "output_text");
-        const text = textBlock?.text || data.output_text || "";
+        if (data.error) return NextResponse.json({ error: data.error.message || JSON.stringify(data.error) }, { status: 500 });
+
+        // Responses API - próbuj różne struktury
+        let text = "";
+        if (data.output_text) {
+          text = data.output_text;
+        } else if (Array.isArray(data.output)) {
+          for (const block of data.output) {
+            if (block.type === "message" && Array.isArray(block.content)) {
+              for (const c of block.content) {
+                if (c.type === "output_text" && c.text) { text = c.text; break; }
+                if (c.type === "text" && c.text) { text = c.text; break; }
+              }
+            }
+            if (block.type === "text" && block.text) { text = block.text; break; }
+            if (text) break;
+          }
+        } else if (data.choices?.[0]?.message?.content) {
+          // fallback - może zwrócić Chat Completions format
+          text = data.choices[0].message.content;
+        }
+
+        if (!text) {
+          console.error("GPT-5 unexpected response:", JSON.stringify(data).slice(0, 500));
+          return NextResponse.json({ error: "Pusta odpowiedź GPT-5. Struktura: " + JSON.stringify(Object.keys(data)) }, { status: 500 });
+        }
         return NextResponse.json({ content: text, model });
       } else {
         // Stare modele GPT-4o etc - Chat Completions
