@@ -219,6 +219,8 @@ export default function MarketingBrief() {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [chatOpen, setChatOpen] = useState(true);
+  const [synthesis, setSynthesis] = useState(null);
+  const [synthesizing, setSynthesizing] = useState(false);
   const [copyFromModal, setCopyFromModal] = useState(null); // id kanału docelowego
   const [exportingXlsx, setExportingXlsx] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
@@ -348,6 +350,52 @@ export default function MarketingBrief() {
   };
 
   const clearChat = () => { if (confirm("Wyczyścić historię czatu?")) setBrief(b => ({ ...b, chatHistory: [] })); };
+
+  const generateSynthesis = async () => {
+    if (!brief.chatHistory?.length) return;
+    setSynthesizing(true);
+    setSynthesis(null);
+    try {
+      const summaryPrompt = `Na podstawie poniższej rozmowy przygotuj zwięzłą syntezę w formacie:
+
+## PODSUMOWANIE ROZMOWY
+[2-3 zdania o czym była rozmowa]
+
+## KLUCZOWE USTALENIA
+[lista najważniejszych wniosków i decyzji]
+
+## PROPOZYCJE COPY I NAGŁÓWKÓW
+[wszystkie propozycje haseł, nagłówków, copy które padły w rozmowie — zebrać w jednym miejscu]
+
+## REKOMENDACJE
+[konkretne kolejne kroki lub rekomendacje które wynikają z rozmowy]
+
+Bądź konkretny. Wyciągaj dosłowne propozycje copy z rozmowy, nie parafrazuj.`;
+
+      const res = await fetch("/api/ai-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: chatModel,
+          messages: [
+            ...brief.chatHistory.map(m => ({ role: m.role, content: m.content })),
+            { role: "user", content: summaryPrompt }
+          ],
+          briefContext: { name: brief.name, goal: brief.goal, headline: brief.headline },
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setSynthesis(data.content);
+    } catch(e) {
+      setSynthesis("❌ Błąd generowania syntezy: " + e.message);
+    }
+    setSynthesizing(false);
+  };
+
+  const copySynthesis = () => {
+    if (synthesis) { navigator.clipboard.writeText(synthesis); }
+  };
 
   const CHANNELS_LABELS = {
     organic_social: "Kanały własne (organic)", meta_ads: "Meta Ads", google_ads: "Google Ads",
@@ -824,6 +872,35 @@ export default function MarketingBrief() {
                   );
                 })()}
               </div>
+
+              {/* SYNTEZA */}
+              {(synthesis || synthesizing) && (
+                <div style={{ margin: "0 12px 0", background: "#fffbf5", border: `1px solid ${ACCENT}40`, borderRadius: 10, overflow: "hidden", flexShrink: 0 }}>
+                  <div style={{ padding: "8px 12px", background: ACCENT + "15", borderBottom: `1px solid ${ACCENT}30`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: ACCENT, fontFamily: "monospace" }}>✨ Synteza rozmowy</span>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {synthesis && (
+                        <button onClick={copySynthesis} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 4, border: `1px solid ${ACCENT}40`, background: "none", color: ACCENT, cursor: "pointer", fontFamily: "monospace" }}>Kopiuj</button>
+                      )}
+                      <button onClick={() => setSynthesis(null)} style={{ fontSize: 14, background: "none", border: "none", color: "#ccc", cursor: "pointer", lineHeight: 1 }}>×</button>
+                    </div>
+                  </div>
+                  <div style={{ padding: 12, maxHeight: 300, overflowY: "auto" }}>
+                    {synthesizing && <div style={{ color: "#aaa", fontSize: 12 }}>⏳ Generuję syntezę...</div>}
+                    {synthesis && (
+                      <div style={{ fontSize: 12, color: "#333", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+                        {synthesis.split('
+').map((line, i) => {
+                          if (line.startsWith('## ')) return <div key={i} style={{ fontWeight: 700, color: ACCENT, marginTop: i > 0 ? 12 : 0, marginBottom: 4, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>{line.replace('## ', '')}</div>;
+                          if (line.startsWith('- ') || line.startsWith('• ')) return <div key={i} style={{ paddingLeft: 12, marginBottom: 2 }}>• {line.replace(/^[-•] /, '')}</div>;
+                          if (line.trim() === '') return <div key={i} style={{ height: 4 }} />;
+                          return <div key={i} style={{ marginBottom: 2 }}>{line}</div>;
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Wiadomości */}
               <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}
