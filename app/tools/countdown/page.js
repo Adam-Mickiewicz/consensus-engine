@@ -1,54 +1,217 @@
 "use client";
 import { useState } from "react";
 
-const DEFAULT_JS = `(function () {
-  const container = document.getElementById("promo-countdown");
-  if (!container) return;
-  const deadlineValue = container.dataset.deadline || "";
-  const bg = container.dataset.bg || "#b63b2f";
-  const text = container.dataset.text || "#ffffff";
-  const labelBg = container.dataset.labelBg || "#efe7de";
-  const labelText = container.dataset.labelText || "#5b5b5b";
-  const separator = container.dataset.separator || "#ffffff";
-  const style = document.createElement("style");
-  style.innerHTML = `
-#promo-countdown .nwz-countdown{display:flex;align-items:center;justify-content:center;gap:8px;font-family:Arial,sans-serif;width:100%;}
-#promo-countdown .nwz-item{display:flex;flex-direction:column;max-width:90px;flex:1;}
-#promo-countdown .nwz-digits{background:${bg};color:${text};text-align:center;padding:10px 6px;font-size:clamp(28px,5vw,54px);line-height:1;}
-#promo-countdown .nwz-label{background:transparent;color:${labelText};text-align:center;font-size:15px;padding:6px 4px;text-transform:uppercase;}
-#promo-countdown .nwz-sep{display:flex;align-items:center;font-size:clamp(22px,4vw,42px);font-weight:700;color:${bg};margin-top:-16px;}
-  `;
-  document.head.appendChild(style);
-  container.innerHTML = `
-    <div class="nwz-countdown">
-      <div class="nwz-item"><div class="nwz-digits" data-unit="days">00</div><div class="nwz-label">DNI</div></div>
-      <div class="nwz-sep">:</div>
-      <div class="nwz-item"><div class="nwz-digits" data-unit="hours">00</div><div class="nwz-label">GODZIN</div></div>
-      <div class="nwz-sep">:</div>
-      <div class="nwz-item"><div class="nwz-digits" data-unit="minutes">00</div><div class="nwz-label">MINUT</div></div>
-      <div class="nwz-sep">:</div>
-      <div class="nwz-item"><div class="nwz-digits" data-unit="seconds">00</div><div class="nwz-label">SEKUND</div></div>
-    </div>
-  `;
-  const deadline = new Date(deadlineValue).getTime();
-  if (isNaN(deadline)) return;
-  const daysEl = container.querySelector('[data-unit="days"]');
-  const hoursEl = container.querySelector('[data-unit="hours"]');
-  const minutesEl = container.querySelector('[data-unit="minutes"]');
-  const secondsEl = container.querySelector('[data-unit="seconds"]');
-  function pad(n) { return String(n).padStart(2, "0"); }
-  function update() {
-    const now = new Date().getTime();
-    const diff = deadline - now;
-    if (diff <= 0) { daysEl.textContent = hoursEl.textContent = minutesEl.textContent = secondsEl.textContent = "00"; return; }
-    daysEl.textContent = pad(Math.floor(diff / (1000*60*60*24)));
-    hoursEl.textContent = pad(Math.floor((diff / (1000*60*60)) % 24));
-    minutesEl.textContent = pad(Math.floor((diff / (1000*60)) % 60));
-    secondsEl.textContent = pad(Math.floor((diff / 1000) % 60));
+// ─── SZABLONY TIMERÓW ────────────────────────────────────────────────────────
+
+const TEMPLATES = {
+  classic: {
+    name: "Klasyczny",
+    desc: "Kwadratowe bloki, mocny kolor",
+    digitStyle: (cfg) => ({
+      background: cfg.bg,
+      color: cfg.text,
+      textAlign: "center",
+      padding: "10px 6px",
+      fontSize: "clamp(28px,5vw,54px)",
+      lineHeight: 1,
+      borderRadius: cfg.radius + "px",
+      border: cfg.border ? `2px solid ${cfg.borderColor}` : "none",
+      minWidth: "52px",
+    }),
+    labelStyle: (cfg) => ({
+      color: cfg.labelText,
+      textAlign: "center",
+      fontSize: "13px",
+      padding: "5px 4px",
+      textTransform: "uppercase",
+      letterSpacing: "1px",
+    }),
+    sepStyle: (cfg) => ({
+      fontSize: "42px",
+      fontWeight: 700,
+      color: cfg.bg,
+      marginTop: "-16px",
+      padding: "0 2px",
+    }),
+    wrapEach: false,
+  },
+  split: {
+    name: "Split (każda cyfra osobno)",
+    desc: "Każda cyfra w osobnym boksie",
+    digitStyle: (cfg) => ({
+      background: cfg.bg,
+      color: cfg.text,
+      textAlign: "center",
+      padding: "8px 10px",
+      fontSize: "clamp(24px,4vw,48px)",
+      lineHeight: 1,
+      borderRadius: cfg.radius + "px",
+      border: cfg.border ? `2px solid ${cfg.borderColor}` : "none",
+      minWidth: "36px",
+      display: "inline-block",
+      margin: "0 2px",
+    }),
+    labelStyle: (cfg) => ({
+      color: cfg.labelText,
+      textAlign: "center",
+      fontSize: "11px",
+      padding: "4px 0",
+      textTransform: "uppercase",
+      letterSpacing: "1px",
+    }),
+    sepStyle: (cfg) => ({
+      fontSize: "36px",
+      fontWeight: 700,
+      color: cfg.bg,
+      marginTop: "-14px",
+      padding: "0 2px",
+    }),
+    wrapEach: true,
+  },
+  minimal: {
+    name: "Minimalny",
+    desc: "Bez tła, tylko cyfry",
+    digitStyle: (cfg) => ({
+      background: "transparent",
+      color: cfg.bg,
+      textAlign: "center",
+      padding: "4px 2px",
+      fontSize: "clamp(32px,6vw,60px)",
+      lineHeight: 1,
+      fontWeight: 700,
+      borderBottom: `3px solid ${cfg.bg}`,
+      minWidth: "52px",
+    }),
+    labelStyle: (cfg) => ({
+      color: cfg.labelText,
+      textAlign: "center",
+      fontSize: "11px",
+      padding: "4px 0",
+      textTransform: "uppercase",
+      letterSpacing: "2px",
+    }),
+    sepStyle: (cfg) => ({
+      fontSize: "42px",
+      fontWeight: 300,
+      color: cfg.bg,
+      marginTop: "-20px",
+      padding: "0 4px",
+      opacity: 0.5,
+    }),
+    wrapEach: false,
+  },
+  pill: {
+    name: "Pill / zaokrąglony",
+    desc: "Duże zaokrąglenia, nowoczesny wygląd",
+    digitStyle: (cfg) => ({
+      background: cfg.bg,
+      color: cfg.text,
+      textAlign: "center",
+      padding: "12px 8px",
+      fontSize: "clamp(26px,4vw,50px)",
+      lineHeight: 1,
+      borderRadius: "999px",
+      border: cfg.border ? `2px solid ${cfg.borderColor}` : "none",
+      minWidth: "56px",
+    }),
+    labelStyle: (cfg) => ({
+      color: cfg.labelText,
+      textAlign: "center",
+      fontSize: "11px",
+      padding: "6px 0",
+      textTransform: "uppercase",
+      letterSpacing: "1px",
+    }),
+    sepStyle: (cfg) => ({
+      fontSize: "38px",
+      fontWeight: 700,
+      color: cfg.bg,
+      marginTop: "-16px",
+      padding: "0 2px",
+    }),
+    wrapEach: false,
+  },
+};
+
+// ─── GENEROWANIE HTML ────────────────────────────────────────────────────────
+
+function buildHTML(deadline, cfg, tpl) {
+  const r = cfg.radius;
+  const borderCSS = cfg.border ? `border:2px solid ${cfg.borderColor};` : "";
+
+  const digitCSS = tpl === "split"
+    ? `background:${cfg.bg};color:${cfg.text};text-align:center;padding:8px 10px;font-size:clamp(24px,4vw,48px);line-height:1;border-radius:${r}px;${borderCSS}min-width:36px;display:inline-block;margin:0 2px;`
+    : tpl === "minimal"
+    ? `background:transparent;color:${cfg.bg};text-align:center;padding:4px 2px;font-size:clamp(32px,6vw,60px);line-height:1;font-weight:700;border-bottom:3px solid ${cfg.bg};min-width:52px;`
+    : tpl === "pill"
+    ? `background:${cfg.bg};color:${cfg.text};text-align:center;padding:12px 8px;font-size:clamp(26px,4vw,50px);line-height:1;border-radius:999px;${borderCSS}min-width:56px;`
+    : `background:${cfg.bg};color:${cfg.text};text-align:center;padding:10px 6px;font-size:clamp(28px,5vw,54px);line-height:1;border-radius:${r}px;${borderCSS}min-width:52px;`;
+
+  const labelCSS = `color:${cfg.labelText};text-align:center;font-size:13px;padding:5px 4px;text-transform:uppercase;letter-spacing:1px;`;
+  const sepColor = tpl === "minimal" ? cfg.bg : cfg.bg;
+  const sepCSS = `display:flex;align-items:center;font-size:clamp(22px,4vw,42px);font-weight:700;color:${sepColor};margin-top:-16px;padding:0 2px;`;
+
+  const digitItem = (unit, label) => tpl === "split"
+    ? `<div style="display:flex;flex-direction:column;align-items:center;max-width:90px;flex:1">
+        <div style="display:flex;justify-content:center">
+          <div class="nwz-digits" data-unit="${unit}-d1" style="${digitCSS}">0</div>
+          <div class="nwz-digits" data-unit="${unit}-d2" style="${digitCSS}">0</div>
+        </div>
+        <div style="${labelCSS}">${label}</div>
+      </div>`
+    : `<div style="display:flex;flex-direction:column;max-width:90px;flex:1">
+        <div class="nwz-digits" data-unit="${unit}" style="${digitCSS}">00</div>
+        <div style="${labelCSS}">${label}</div>
+      </div>`;
+
+  return `<div id="promo-countdown" data-deadline="${deadline}" data-template="${tpl}" data-bg="${cfg.bg}" data-text="${cfg.text}" data-label-text="${cfg.labelText}" data-separator="${cfg.separator}">
+  <div style="display:flex;align-items:center;justify-content:center;gap:8px;font-family:Arial,sans-serif;width:100%;">
+    ${digitItem("days","DNI")}
+    <div style="${sepCSS}">:</div>
+    ${digitItem("hours","GODZIN")}
+    <div style="${sepCSS}">:</div>
+    ${digitItem("minutes","MINUT")}
+    <div style="${sepCSS}">:</div>
+    ${digitItem("seconds","SEKUND")}
+  </div>
+</div>`;
+}
+
+function buildJS(tpl) {
+  const isSplit = tpl === "split";
+  return `(function(){
+  var c=document.getElementById("promo-countdown");
+  if(!c)return;
+  var deadline=new Date(c.dataset.deadline).getTime();
+  if(isNaN(deadline))return;
+  function pad(n){return String(n).padStart(2,"0");}
+  function update(){
+    var diff=deadline-Date.now();
+    if(diff<0)diff=0;
+    var d=Math.floor(diff/86400000);
+    var h=Math.floor(diff/3600000)%24;
+    var m=Math.floor(diff/60000)%60;
+    var s=Math.floor(diff/1000)%60;
+    ${isSplit ? `
+    var vals={days:pad(d),hours:pad(h),minutes:pad(m),seconds:pad(s)};
+    ["days","hours","minutes","seconds"].forEach(function(u){
+      var el1=c.querySelector('[data-unit="'+u+'-d1"]');
+      var el2=c.querySelector('[data-unit="'+u+'-d2"]');
+      if(el1)el1.textContent=vals[u][0];
+      if(el2)el2.textContent=vals[u][1];
+    });` : `
+    var els={days:c.querySelector('[data-unit="days"]'),hours:c.querySelector('[data-unit="hours"]'),minutes:c.querySelector('[data-unit="minutes"]'),seconds:c.querySelector('[data-unit="seconds"]')};
+    if(els.days)els.days.textContent=pad(d);
+    if(els.hours)els.hours.textContent=pad(h);
+    if(els.minutes)els.minutes.textContent=pad(m);
+    if(els.seconds)els.seconds.textContent=pad(s);`}
   }
   update();
-  setInterval(update, 1000);
+  setInterval(update,1000);
 })();`;
+}
+
+// ─── UI KOMPONENTY ────────────────────────────────────────────────────────────
 
 function ColorInput({ value, onChange }) {
   return (
@@ -65,58 +228,106 @@ function Label({ children }) {
   return <div style={{ fontSize: "10px", fontWeight: 700, color: "#555", letterSpacing: 1.2, fontFamily: "monospace", marginBottom: "6px", textTransform: "uppercase" }}>{children}</div>;
 }
 
-function Field({ label, children }) {
+function Field({ label, children, style }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
+    <div style={style}>
       <Label>{label}</Label>
       {children}
     </div>
   );
 }
 
-export default function CountdownGenerator() {
-  const [deadline, setDeadline] = useState("2026-04-01T23:59:59");
-  const [bg, setBg] = useState("#b63b2f");
-  const [text, setText] = useState("#ffffff");
-  const [labelBg, setLabelBg] = useState("#efe7de");
-  const [labelText, setLabelText] = useState("#5b5b5b");
-  const [separator, setSeparator] = useState("#ffffff");
+function CopyBtn({ text, label }) {
   const [copied, setCopied] = useState(false);
-  const [js, setJs] = useState(DEFAULT_JS);
-  const [jsModified, setJsModified] = useState(false);
-  const [jsCopied, setJsCopied] = useState(false);
-
-  const handleJsChange = (val) => {
-    setJs(val);
-    setJsModified(val !== DEFAULT_JS);
-  };
-
-  const copyJs = () => {
-    navigator.clipboard.writeText(js);
-    setJsCopied(true);
-    setTimeout(() => setJsCopied(false), 2000);
-  };
-
-  const resetJs = () => {
-    setJs(DEFAULT_JS);
-    setJsModified(false);
-  };
-
-  const html = `<div 
-  id="promo-countdown"
-  data-deadline="${deadline}"
-  data-bg="${bg}"
-  data-text="${text}"
-  data-label-bg="${labelBg}"
-  data-label-text="${labelText}"
-  data-separator="${separator}">
-</div>`;
-
   const copy = () => {
-    navigator.clipboard.writeText(html);
+    navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+  return (
+    <button onClick={copy} style={{ background: copied ? "#2d7a4f" : "#b8763a", color: "#fff", border: "none", borderRadius: "6px", padding: "5px 14px", fontSize: "11px", cursor: "pointer", fontFamily: "monospace" }}>
+      {copied ? "✓ Skopiowano" : label}
+    </button>
+  );
+}
+
+// ─── PODGLĄD LIVE ─────────────────────────────────────────────────────────────
+
+function CountdownPreview({ cfg, tplKey, deadline }) {
+  const [time, setTime] = useState({ d: "05", h: "12", m: "34", s: "56" });
+  const tpl = TEMPLATES[tplKey];
+
+  useState(() => {
+    function update() {
+      const diff = new Date(deadline).getTime() - Date.now();
+      if (diff <= 0) return;
+      const p = n => String(n).padStart(2, "0");
+      setTime({
+        d: p(Math.floor(diff / 86400000)),
+        h: p(Math.floor(diff / 3600000) % 24),
+        m: p(Math.floor(diff / 60000) % 60),
+        s: p(Math.floor(diff / 1000) % 60),
+      });
+    }
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  });
+
+  const ds = tpl.digitStyle(cfg);
+  const ls = tpl.labelStyle(cfg);
+  const ss = tpl.sepStyle(cfg);
+
+  const unit = (val, label) => {
+    if (tplKey === "split") {
+      return (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", maxWidth: "90px", flex: 1 }}>
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <div style={ds}>{val[0]}</div>
+            <div style={ds}>{val[1]}</div>
+          </div>
+          <div style={ls}>{label}</div>
+        </div>
+      );
+    }
+    return (
+      <div style={{ display: "flex", flexDirection: "column", maxWidth: "90px", flex: 1 }}>
+        <div style={ds}>{val}</div>
+        <div style={ls}>{label}</div>
+      </div>
+    );
+  };
+
+  const sep = <div style={ss}>:</div>;
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontFamily: "Arial,sans-serif", width: "100%" }}>
+      {unit(time.d, "DNI")}{sep}{unit(time.h, "GODZIN")}{sep}{unit(time.m, "MINUT")}{sep}{unit(time.s, "SEKUND")}
+    </div>
+  );
+}
+
+// ─── MAIN ─────────────────────────────────────────────────────────────────────
+
+export default function CountdownGenerator() {
+  const [deadline, setDeadline] = useState("2026-04-01T23:59:59");
+  const [tplKey, setTplKey] = useState("classic");
+  const [cfg, setCfg] = useState({
+    bg: "#b63b2f",
+    text: "#ffffff",
+    labelText: "#5b5b5b",
+    separator: "#ffffff",
+    radius: 4,
+    border: false,
+    borderColor: "#ffffff",
+  });
+  const [jsModified, setJsModified] = useState(false);
+  const [customJs, setCustomJs] = useState("");
+
+  const set = (key, val) => setCfg(prev => ({ ...prev, [key]: val }));
+  const defaultJs = buildJS(tplKey);
+  const jsCode = customJs || defaultJs;
+  const html = buildHTML(deadline, cfg, tplKey);
 
   const navItems = [
     { href: "/", label: "⚡ Consensus Engine" },
@@ -125,6 +336,9 @@ export default function CountdownGenerator() {
     { href: "/design-judge", label: "🎨 Design Judge" },
     { href: "/tools/countdown", label: "⏱ Generator odliczania", active: true },
   ];
+
+  const panelStyle = { background: "#111", border: "1px solid #1a1a1a", borderRadius: "12px", overflow: "hidden", marginBottom: "20px" };
+  const panelHead = { padding: "10px 16px", borderBottom: "1px solid #1a1a1a", fontSize: "11px", color: "#555", display: "flex", justifyContent: "space-between", alignItems: "center" };
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#ccc", fontFamily: "monospace", display: "flex" }}>
@@ -143,110 +357,98 @@ export default function CountdownGenerator() {
 
       {/* MAIN */}
       <div style={{ flex: 1, padding: "32px", overflowY: "auto" }}>
-        <div style={{ maxWidth: "800px" }}>
+        <div style={{ maxWidth: "820px" }}>
           <div style={{ marginBottom: "28px" }}>
             <div style={{ fontSize: "18px", fontWeight: 700, color: "#fff", marginBottom: "4px" }}>⏱ Generator odliczania</div>
-            <div style={{ fontSize: "12px", color: "#555" }}>Skonfiguruj timer i skopiuj gotowy HTML do slidera</div>
+            <div style={{ fontSize: "12px", color: "#555" }}>Wybierz szablon, skonfiguruj kolory i skopiuj gotowy HTML + JS</div>
           </div>
 
-          {/* FORMULARZ */}
-          <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "12px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", marginBottom: "24px" }}>
+          {/* WYBÓR SZABLONU */}
+          <div style={panelStyle}>
+            <div style={panelHead}><span>Wybierz szablon</span></div>
+            <div style={{ padding: "16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              {Object.entries(TEMPLATES).map(([key, t]) => (
+                <button key={key} onClick={() => { setTplKey(key); setCustomJs(""); setJsModified(false); }}
+                  style={{ textAlign: "left", padding: "12px", borderRadius: "8px", border: tplKey === key ? "1px solid #b8763a" : "1px solid #222", background: tplKey === key ? "#b8763a10" : "#0a0a0a", cursor: "pointer", color: tplKey === key ? "#b8763a" : "#666" }}>
+                  <div style={{ fontWeight: 700, fontSize: "12px", marginBottom: "2px" }}>{t.name}</div>
+                  <div style={{ fontSize: "10px", opacity: 0.7 }}>{t.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
 
-            <Field label="Data i godzina końca promocji">
-              <input type="datetime-local" value={deadline.slice(0, 16)} onChange={e => setDeadline(e.target.value + ":59")}
-                style={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: "6px", padding: "8px 10px", color: "#ccc", fontSize: "13px", fontFamily: "monospace" }} />
-            </Field>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-              <Field label="Kolor tła cyfr"><ColorInput value={bg} onChange={setBg} /></Field>
-              <Field label="Kolor cyfr"><ColorInput value={text} onChange={setText} /></Field>
-              <Field label="Kolor tła etykiet"><ColorInput value={labelBg} onChange={setLabelBg} /></Field>
-              <Field label="Kolor etykiet"><ColorInput value={labelText} onChange={setLabelText} /></Field>
-              <Field label="Kolor separatora"><ColorInput value={separator} onChange={setSeparator} /></Field>
+          {/* KONFIGURACJA */}
+          <div style={panelStyle}>
+            <div style={panelHead}><span>Konfiguracja</span></div>
+            <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
+              <Field label="Data i godzina końca promocji">
+                <input type="datetime-local" value={deadline.slice(0, 16)} onChange={e => setDeadline(e.target.value + ":59")}
+                  style={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: "6px", padding: "8px 10px", color: "#ccc", fontSize: "13px", fontFamily: "monospace" }} />
+              </Field>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                <Field label="Kolor tła cyfr"><ColorInput value={cfg.bg} onChange={v => set("bg", v)} /></Field>
+                <Field label="Kolor cyfr"><ColorInput value={cfg.text} onChange={v => set("text", v)} /></Field>
+                <Field label="Kolor etykiet"><ColorInput value={cfg.labelText} onChange={v => set("labelText", v)} /></Field>
+              </div>
+              {tplKey !== "minimal" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                  <Field label={`Zaokrąglenie narożników: ${cfg.radius}px`}>
+                    <input type="range" min="0" max="50" value={cfg.radius} onChange={e => set("radius", Number(e.target.value))}
+                      style={{ width: "100%", accentColor: "#b8763a" }} />
+                  </Field>
+                  <Field label="Obramowanie">
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <input type="checkbox" checked={cfg.border} onChange={e => set("border", e.target.checked)} style={{ accentColor: "#b8763a", width: "16px", height: "16px" }} />
+                      {cfg.border && <ColorInput value={cfg.borderColor} onChange={v => set("borderColor", v)} />}
+                    </div>
+                  </Field>
+                </div>
+              )}
             </div>
           </div>
 
           {/* PODGLĄD */}
-          <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "12px", overflow: "hidden", marginBottom: "24px" }}>
-            <div style={{ padding: "10px 16px", borderBottom: "1px solid #1a1a1a", fontSize: "11px", color: "#555" }}>Podgląd</div>
-            <div style={{ padding: "24px", background: "#f5f2ee", display: "flex", justifyContent: "center" }}>
-              <CountdownPreview bg={bg} text={text} labelText={labelText} separator={separator} deadline={deadline} />
+          <div style={panelStyle}>
+            <div style={panelHead}><span>Podgląd live</span></div>
+            <div style={{ padding: "32px", background: "#f5f2ee", display: "flex", justifyContent: "center" }}>
+              <CountdownPreview cfg={cfg} tplKey={tplKey} deadline={deadline} />
             </div>
           </div>
 
           {/* KOD HTML */}
-          <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "12px", overflow: "hidden" }}>
-            <div style={{ padding: "10px 16px", borderBottom: "1px solid #1a1a1a", fontSize: "11px", color: "#555", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={panelStyle}>
+            <div style={panelHead}>
               <span>Kod HTML — wklej do slidera</span>
-              <button onClick={copy} style={{ background: copied ? "#2d7a4f" : "#b8763a", color: "#fff", border: "none", borderRadius: "6px", padding: "5px 14px", fontSize: "11px", cursor: "pointer", fontFamily: "monospace" }}>
-                {copied ? "✓ Skopiowano" : "Kopiuj HTML"}
-              </button>
+              <CopyBtn text={html} label="Kopiuj HTML" />
             </div>
-            <pre style={{ margin: 0, padding: "16px", color: "#a8d8a8", fontSize: "12px", lineHeight: 1.6, overflowX: "auto" }}>{html}</pre>
+            <pre style={{ margin: 0, padding: "16px", color: "#a8d8a8", fontSize: "11px", lineHeight: 1.6, overflowX: "auto" }}>{html}</pre>
+          </div>
+
+          {/* KOD JS */}
+          <div style={{ ...panelStyle, border: jsModified ? "1px solid #cc4400" : "1px solid #1a1a1a" }}>
+            <div style={{ ...panelHead, borderBottom: jsModified ? "1px solid #cc4400" : "1px solid #1a1a1a", color: jsModified ? "#ff6633" : "#555" }}>
+              <span>{jsModified ? "⚠️ Kod JS — ZMIENIONY — zaktualizuj w Shoperze!" : "Kod JS — bez zmian"}</span>
+              <div style={{ display: "flex", gap: "8px" }}>
+                {jsModified && (
+                  <button onClick={() => { setCustomJs(""); setJsModified(false); }}
+                    style={{ background: "none", color: "#666", border: "1px solid #333", borderRadius: "6px", padding: "5px 12px", fontSize: "11px", cursor: "pointer", fontFamily: "monospace" }}>
+                    Przywróć oryginał
+                  </button>
+                )}
+                <CopyBtn text={jsCode} label="Kopiuj JS" />
+              </div>
+            </div>
+            <textarea value={jsCode} onChange={e => { setCustomJs(e.target.value); setJsModified(e.target.value !== defaultJs); }}
+              style={{ width: "100%", minHeight: "180px", background: "#0a0a0a", color: jsModified ? "#ffaa66" : "#a8d8a8", border: "none", padding: "16px", fontSize: "11px", fontFamily: "monospace", lineHeight: 1.6, resize: "vertical", boxSizing: "border-box", outline: "none" }} />
           </div>
 
           {jsModified && (
-            <div style={{ marginTop: "16px", background: "#3a1a0a", border: "1px solid #cc4400", borderRadius: "8px", padding: "12px 16px", fontSize: "12px", color: "#ff6633", lineHeight: 1.6, fontWeight: 700 }}>
-              ⚠️ Kod JS został zmieniony — pamiętaj zaktualizować plik JS w Shoperze!
+            <div style={{ background: "#3a1a0a", border: "1px solid #cc4400", borderRadius: "8px", padding: "14px 16px", fontSize: "12px", color: "#ff6633", lineHeight: 1.6, fontWeight: 700, marginBottom: "20px" }}>
+              ⚠️ Kod JS został zmieniony — pamiętaj zaktualizować plik JS w Shoperze przed użyciem nowego HTML!
             </div>
           )}
-          {!jsModified && (
-            <div style={{ marginTop: "16px", background: "#111", border: "1px solid #1a1a1a", borderRadius: "8px", padding: "12px 16px", fontSize: "11px", color: "#555", lineHeight: 1.6 }}>
-              ✅ Kod JS nie był zmieniany — możesz wkleić tylko HTML powyżej.
-            </div>
-          )}
-
-          {/* EDYTOR JS */}
-          <div style={{ background: "#111", border: `1px solid ${jsModified ? "#cc4400" : "#1a1a1a"}`, borderRadius: "12px", overflow: "hidden", marginTop: "24px" }}>
-            <div style={{ padding: "10px 16px", borderBottom: `1px solid ${jsModified ? "#cc4400" : "#1a1a1a"}`, fontSize: "11px", color: jsModified ? "#ff6633" : "#555", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span>{jsModified ? "⚠️ Kod JS — ZMIENIONY" : "Kod JS — bez zmian"}</span>
-              <div style={{ display: "flex", gap: "8px" }}>
-                {jsModified && <button onClick={resetJs} style={{ background: "none", color: "#666", border: "1px solid #333", borderRadius: "6px", padding: "5px 12px", fontSize: "11px", cursor: "pointer", fontFamily: "monospace" }}>Przywróć oryginał</button>}
-                <button onClick={copyJs} style={{ background: jsCopied ? "#2d7a4f" : jsModified ? "#cc4400" : "#333", color: "#fff", border: "none", borderRadius: "6px", padding: "5px 14px", fontSize: "11px", cursor: "pointer", fontFamily: "monospace" }}>
-                  {jsCopied ? "✓ Skopiowano" : "Kopiuj JS"}
-                </button>
-              </div>
-            </div>
-            <textarea value={js} onChange={e => handleJsChange(e.target.value)}
-              style={{ width: "100%", minHeight: "200px", background: "#0a0a0a", color: "#a8d8a8", border: "none", padding: "16px", fontSize: "11px", fontFamily: "monospace", lineHeight: 1.6, resize: "vertical", boxSizing: "border-box", outline: "none" }} />
-          </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function CountdownPreview({ bg, text, labelText, separator, deadline }) {
-  const [time, setTime] = useState({ d: "00", h: "00", m: "00", s: "00" });
-
-  useState(() => {
-    function update() {
-      const diff = new Date(deadline).getTime() - Date.now();
-      if (diff <= 0) return;
-      const d = Math.floor(diff / 86400000);
-      const h = Math.floor((diff / 3600000) % 24);
-      const m = Math.floor((diff / 60000) % 60);
-      const s = Math.floor((diff / 1000) % 60);
-      const p = n => String(n).padStart(2, "0");
-      setTime({ d: p(d), h: p(h), m: p(m), s: p(s) });
-    }
-    update();
-    const id = setInterval(update, 1000);
-    return () => clearInterval(id);
-  });
-
-  const unit = (val, label) => (
-    <div style={{ display: "flex", flexDirection: "column", maxWidth: "90px", flex: 1 }}>
-      <div style={{ background: bg, color: text, textAlign: "center", padding: "10px 6px", fontSize: "clamp(28px,5vw,54px)", lineHeight: 1 }}>{val}</div>
-      <div style={{ color: labelText, textAlign: "center", fontSize: "15px", padding: "6px 4px", textTransform: "uppercase" }}>{label}</div>
-    </div>
-  );
-
-  const sep = <div style={{ display: "flex", alignItems: "center", fontSize: "42px", fontWeight: 700, color: bg, marginTop: "-16px" }}>:</div>;
-
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontFamily: "Arial,sans-serif", width: "100%" }}>
-      {unit(time.d, "DNI")}{sep}{unit(time.h, "GODZIN")}{sep}{unit(time.m, "MINUT")}{sep}{unit(time.s, "SEKUND")}
     </div>
   );
 }
