@@ -732,6 +732,9 @@ ${textToUse}`;
                 <button onClick={exportXlsx} disabled={exportingXlsx} style={{ background: "#1a7a3a", color: "#fff", border: "none", borderRadius: 6, padding: "8px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
                   {exportingXlsx ? "..." : "⬇ XLSX"}
                 </button>
+                <button onClick={openNew} style={{ background: "none", color: "#888", border: "1px solid #ddd", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                  + Nowy brief
+                </button>
                 <button onClick={save} disabled={saving} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                   {saving ? "Zapisuję..." : "💾 Zapisz"}
                 </button>
