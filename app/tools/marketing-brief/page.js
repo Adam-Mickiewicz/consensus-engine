@@ -301,6 +301,7 @@ export default function MarketingBrief() {
   const [synthesis, setSynthesis] = useState(null);
   const [synthesizing, setSynthesizing] = useState(false);
   const [fillingBrief, setFillingBrief] = useState(false);
+  const [synthLength, setSynthLength] = useState("medium");
   const [copyFromModal, setCopyFromModal] = useState(null); // id kanału docelowego
   const [exportingXlsx, setExportingXlsx] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
@@ -436,19 +437,19 @@ export default function MarketingBrief() {
     setSynthesizing(true);
     setSynthesis(null);
     try {
-      const summaryPrompt = `Na podstawie poniższej rozmowy przygotuj zwięzłą syntezę w formacie:
+      const lengthInstructions = {
+        short: "Synteza ma być KRÓTKA i KOMPAKTOWA — max 5-7 punktów, tylko najważniejsze ustalenia i decyzje. Bez rozwijania.",
+        medium: "Synteza ma być ŚREDNIEJ DŁUGOŚCI — kluczowe wnioski, propozycje copy i rekomendacje. Balans między kompletnością a zwięzłością.",
+        long: "Synteza ma być ROZWINIĘTA i SZCZEGÓŁOWA — pełne omówienie wszystkich wątków, wszystkie propozycje copy, szczegółowe rekomendacje z uzasadnieniem.",
+      };
+      const summaryPrompt = `Na podstawie poniższej rozmowy przygotuj syntezę w formacie markdown.
+${lengthInstructions[synthLength]}
 
+Użyj struktury:
 ## PODSUMOWANIE ROZMOWY
-[2-3 zdania o czym była rozmowa]
-
 ## KLUCZOWE USTALENIA
-[lista najważniejszych wniosków i decyzji]
-
 ## PROPOZYCJE COPY I NAGŁÓWKÓW
-[wszystkie propozycje haseł, nagłówków, copy które padły w rozmowie — zebrać w jednym miejscu]
-
 ## REKOMENDACJE
-[konkretne kolejne kroki lub rekomendacje które wynikają z rozmowy]
 
 Bądź konkretny. Wyciągaj dosłowne propozycje copy z rozmowy, nie parafrazuj.`;
 
@@ -485,21 +486,15 @@ Bądź konkretny. Wyciągaj dosłowne propozycje copy z rozmowy, nie parafrazuj.
     if (!textToUse) return;
     setFillingBrief(true);
     try {
-      const prompt = `Na podstawie poniższej syntezy rozmowy, wypełnij pola briefu marketingowego.
-Zwróć TYLKO czysty JSON (bez markdown, bez \`\`\`, bez komentarzy) z następującymi polami (pomiń pola których nie możesz wypełnić):
-{
-  "name": "nazwa akcji",
-  "goal": "cel kampanii",
-  "headline": "główne hasło",
-  "discount": "zniżka/promocja",
-  "dateStart": "YYYY-MM-DD HH:MM lub pusty string",
-  "dateEnd": "YYYY-MM-DD HH:MM lub pusty string",
-  "targetAudience": "grupy docelowe",
-  "brandNotes": "dodatkowe uwagi"
-}
+      const prompt = `Jesteś asystentem który wypełnia formularze. Na podstawie poniższej syntezy rozmowy marketingowej, wyciągnij kluczowe informacje i zwróć JEDYNiE obiekt JSON - zero innych słów, zero wyjaśnień, zero markdown.
 
-SYNTEZA:
-${textToUse}`;
+Format odpowiedzi (zwróć dokładnie taki JSON, pomiń pola których nie ma w syntezie):
+{"name":"nazwa akcji","goal":"cel kampanii","headline":"główne hasło/slogan","discount":"zniżka lub kod rabatowy","dateStart":"YYYY-MM-DD 08:00","dateEnd":"YYYY-MM-DD 23:59","targetAudience":"opis grup docelowych","brandNotes":"dodatkowe uwagi i rekomendacje"}
+
+SYNTEZA DO ANALIZY:
+${textToUse}
+
+Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
 
       const res = await fetch("/api/ai-chat", {
         method: "POST",
@@ -513,10 +508,13 @@ ${textToUse}`;
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
-      // Wyczyść odpowiedź z markdown
+      // Wyczyść odpowiedź z markdown i wyciągnij JSON
       let raw = data.content.trim();
       raw = raw.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
-      const parsed = JSON.parse(raw);
+      // Znajdź JSON nawet jeśli jest poprzedzony tekstem
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("AI nie zwróciło JSON. Odpowiedź: " + raw.slice(0, 100));
+      const parsed = JSON.parse(jsonMatch[0]);
 
       // Wypełnij pola briefu - tylko te które AI zwróciło
       setBrief(prev => ({ ...prev, ...Object.fromEntries(Object.entries(parsed).filter(([k, v]) => v && v !== "")) }));
@@ -1150,9 +1148,16 @@ ${textToUse}`;
                       🔬 Deep Research {deepResearch ? "ON" : "OFF"}
                     </button>
                   )}
-                  <button onClick={generateSynthesis} disabled={synthesizing || !(brief.chatHistory?.length)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, border: `1px solid ${ACCENT}`, background: ACCENT + "15", color: ACCENT, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, opacity: !(brief.chatHistory?.length) ? 0.4 : 1 }}>
-                    {synthesizing ? "⏳" : "✨ Synteza"}
-                  </button>
+                  <div style={{ display: "flex", gap: 0, borderRadius: 6, overflow: "hidden", border: `1px solid ${ACCENT}`, opacity: !(brief.chatHistory?.length) ? 0.4 : 1 }}>
+                    <button onClick={generateSynthesis} disabled={synthesizing || !(brief.chatHistory?.length)} style={{ fontSize: 11, padding: "3px 10px", background: ACCENT + "15", color: ACCENT, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, border: "none", borderRight: `1px solid ${ACCENT}40` }}>
+                      {synthesizing ? "⏳" : "✨ Synteza"}
+                    </button>
+                    <select value={synthLength} onChange={e => setSynthLength(e.target.value)} style={{ fontSize: 10, background: ACCENT + "10", color: ACCENT, border: "none", cursor: "pointer", fontFamily: "inherit", padding: "0 4px" }}>
+                      <option value="short">Krótka</option>
+                      <option value="medium">Średnia</option>
+                      <option value="long">Rozwinięta</option>
+                    </select>
+                  </div>
                   <button onClick={() => setChatExpanded(e => !e)} style={{ marginLeft: "auto", fontSize: 11, padding: "3px 10px", borderRadius: 6, border: "1px solid #e0dbd4", background: "#fafafa", color: "#888", cursor: "pointer", fontFamily: "inherit" }}>
                     {chatExpanded ? "⟩ Zwiń" : "⟨ Rozszerz"}
                   </button>
