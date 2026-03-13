@@ -935,7 +935,7 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
           </div>
 
           {/* ─── PANEL CZATU AI ─── */}
-          <div style={{ width: chatExpanded ? "100vw" : chatOpen ? 460 : 48, minWidth: chatExpanded ? "100vw" : chatOpen ? 460 : 48, borderLeft: "1px solid #e0dbd4", background: "#fff", display: "flex", flexDirection: "column", height: "100vh", position: chatExpanded ? "fixed" : "sticky", top: 0, right: chatExpanded ? 0 : "auto", zIndex: chatExpanded ? 100 : "auto", transition: "width 0.2s, min-width 0.2s", overflow: "hidden" }}>
+          <div style={{ width: chatExpanded ? "100vw" : chatOpen ? "clamp(360px, 35vw, 600px)" : 48, minWidth: chatExpanded ? "100vw" : chatOpen ? "clamp(360px, 35vw, 600px)" : 48, borderLeft: "1px solid #e0dbd4", background: "#fff", display: "flex", flexDirection: "column", height: "100vh", position: chatExpanded ? "fixed" : "sticky", top: 0, right: chatExpanded ? 0 : "auto", zIndex: chatExpanded ? 100 : "auto", transition: "width 0.2s, min-width 0.2s", overflow: "hidden" }}>
             {/* Toggle button */}
             <button onClick={() => setChatOpen(o => !o)}
               style={{ position: "absolute", top: 16, left: chatOpen ? 12 : 8, background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#aaa", zIndex: 10, padding: 4 }}>
