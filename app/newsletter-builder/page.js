@@ -691,7 +691,7 @@ export default function NewsletterBuilder() {
               {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} onChange={updated => handleProductChange(i, updated)} />)}
             </div>
           </Section>
-        </div></>
+        </div>}</>
 
       </div>
     </div>
