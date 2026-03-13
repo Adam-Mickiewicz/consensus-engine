@@ -225,7 +225,7 @@ function ColorInput({ value, onChange }) {
 }
 
 function Label({ children }) {
-  return <div style={{ fontSize: "10px", fontWeight: 700, color: "#555", letterSpacing: 1.2, fontFamily: "monospace", marginBottom: "6px", textTransform: "uppercase" }}>{children}</div>;
+  return <div style={{ fontSize: "10px", fontWeight: 700, color: "#888", letterSpacing: 1.2, fontFamily: "monospace", marginBottom: "6px", textTransform: "uppercase" }}>{children}</div>;
 }
 
 function Field({ label, children, style }) {
@@ -321,10 +321,29 @@ export default function CountdownGenerator() {
     border: false,
     borderColor: "#ffffff",
   });
+  const [dark, setDark] = useState(false);
   const [jsModified, setJsModified] = useState(false);
   const [customJs, setCustomJs] = useState("");
 
   const set = (key, val) => setCfg(prev => ({ ...prev, [key]: val }));
+  const t = {
+    bg: dark ? "#0a0a0a" : "#f5f2ee",
+    bgPanel: dark ? "#111" : "#ffffff",
+    bgPanel2: dark ? "#0a0a0a" : "#f9f7f5",
+    border: dark ? "#1a1a1a" : "#e0dbd4",
+    text: dark ? "#ccc" : "#1a1a1a",
+    textSub: dark ? "#555" : "#888",
+    textMuted: dark ? "#444" : "#aaa",
+    accent: "#b8763a",
+    sidebar: dark ? "#0a0a0a" : "#1a1a1a",
+    sidebarBorder: dark ? "#1a1a1a" : "#2a2a2a",
+    sidebarText: dark ? "#666" : "#888",
+    sidebarActive: "#b8763a",
+    input: dark ? "#1a1a1a" : "#ffffff",
+    inputBorder: dark ? "#2a2a2a" : "#ddd",
+    code: dark ? "#a8d8a8" : "#2d6a2d",
+    codeBg: dark ? "#0a0a0a" : "#f0f7f0",
+  };
   const defaultJs = buildJS(tplKey);
   const jsCode = customJs || defaultJs;
   const html = buildHTML(deadline, cfg, tplKey);
@@ -337,14 +356,14 @@ export default function CountdownGenerator() {
     { href: "/tools/countdown", label: "⏱ Generator odliczania", active: true },
   ];
 
-  const panelStyle = { background: "#111", border: "1px solid #1a1a1a", borderRadius: "12px", overflow: "hidden", marginBottom: "20px" };
-  const panelHead = { padding: "10px 16px", borderBottom: "1px solid #1a1a1a", fontSize: "11px", color: "#555", display: "flex", justifyContent: "space-between", alignItems: "center" };
+  const panelStyle = { background: t.bgPanel, border: `1px solid ${t.border}`, borderRadius: "12px", overflow: "hidden", marginBottom: "20px" };
+  const panelHead = { padding: "10px 16px", borderBottom: `1px solid ${t.border}`, fontSize: "11px", color: t.textSub, display: "flex", justifyContent: "space-between", alignItems: "center" };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#ccc", fontFamily: "monospace", display: "flex" }}>
+    <div style={{ minHeight: "100vh", background: t.bg, color: t.text, fontFamily: "monospace", display: "flex", transition: "background 0.2s" }}>
 
       {/* SIDEBAR */}
-      <div style={{ width: "220px", minWidth: "220px", background: "#0a0a0a", borderRight: "1px solid #1a1a1a", padding: "24px 16px", display: "flex", flexDirection: "column", gap: "8px", position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
+      <div style={{ width: "220px", minWidth: "220px", background: t.sidebar, borderRight: `1px solid ${t.sidebarBorder}`, padding: "24px 16px", display: "flex", flexDirection: "column", gap: "8px", position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
         <div style={{ marginBottom: "20px" }}>
           <div style={{ color: "#b8763a", fontWeight: 800, fontSize: "13px", letterSpacing: 2 }}>CONSENSUS</div>
           <div style={{ color: "#444", fontSize: "10px", letterSpacing: 1 }}>ENGINE v1.0</div>
@@ -359,8 +378,8 @@ export default function CountdownGenerator() {
       <div style={{ flex: 1, padding: "32px", overflowY: "auto" }}>
         <div style={{ maxWidth: "820px" }}>
           <div style={{ marginBottom: "28px" }}>
-            <div style={{ fontSize: "18px", fontWeight: 700, color: "#fff", marginBottom: "4px" }}>⏱ Generator odliczania</div>
-            <div style={{ fontSize: "12px", color: "#555" }}>Wybierz szablon, skonfiguruj kolory i skopiuj gotowy HTML + JS</div>
+            <div style={{ fontSize: "18px", fontWeight: 700, color: t.text, marginBottom: "4px" }}>⏱ Generator odliczania</div>
+            <div style={{ fontSize: "12px", color: t.textSub }}>Wybierz szablon, skonfiguruj kolory i skopiuj gotowy HTML + JS</div>
           </div>
 
           {/* WYBÓR SZABLONU */}
@@ -369,7 +388,7 @@ export default function CountdownGenerator() {
             <div style={{ padding: "16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
               {Object.entries(TEMPLATES).map(([key, t]) => (
                 <button key={key} onClick={() => { setTplKey(key); setCustomJs(""); setJsModified(false); }}
-                  style={{ textAlign: "left", padding: "12px", borderRadius: "8px", border: tplKey === key ? "1px solid #b8763a" : "1px solid #222", background: tplKey === key ? "#b8763a10" : "#0a0a0a", cursor: "pointer", color: tplKey === key ? "#b8763a" : "#666" }}>
+                  style={{ textAlign: "left", padding: "12px", borderRadius: "8px", border: tplKey === key ? "1px solid #b8763a" : `1px solid ${t.border}`, background: tplKey === key ? "#b8763a10" : t.bgPanel2, cursor: "pointer", color: tplKey === key ? "#b8763a" : t.textSub }}>
                   <div style={{ fontWeight: 700, fontSize: "12px", marginBottom: "2px" }}>{t.name}</div>
                   <div style={{ fontSize: "10px", opacity: 0.7 }}>{t.desc}</div>
                 </button>
@@ -383,7 +402,7 @@ export default function CountdownGenerator() {
             <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
               <Field label="Data i godzina końca promocji">
                 <input type="datetime-local" value={deadline.slice(0, 16)} onChange={e => setDeadline(e.target.value + ":59")}
-                  style={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: "6px", padding: "8px 10px", color: "#ccc", fontSize: "13px", fontFamily: "monospace" }} />
+                  style={{ background: t.input, border: `1px solid ${t.inputBorder}`, borderRadius: "6px", padding: "8px 10px", color: t.text, fontSize: "13px", fontFamily: "monospace" }} />
               </Field>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
                 <Field label="Kolor tła cyfr"><ColorInput value={cfg.bg} onChange={v => set("bg", v)} /></Field>
@@ -410,7 +429,7 @@ export default function CountdownGenerator() {
           {/* PODGLĄD */}
           <div style={panelStyle}>
             <div style={panelHead}><span>Podgląd live</span></div>
-            <div style={{ padding: "32px", background: "#f5f2ee", display: "flex", justifyContent: "center" }}>
+            <div style={{ padding: "32px", background: dark ? "#1a1a1a" : "#f5f2ee", display: "flex", justifyContent: "center" }}>
               <CountdownPreview cfg={cfg} tplKey={tplKey} deadline={deadline} />
             </div>
           </div>
@@ -421,12 +440,12 @@ export default function CountdownGenerator() {
               <span>Kod HTML — wklej do slidera</span>
               <CopyBtn text={html} label="Kopiuj HTML" />
             </div>
-            <pre style={{ margin: 0, padding: "16px", color: "#a8d8a8", fontSize: "11px", lineHeight: 1.6, overflowX: "auto" }}>{html}</pre>
+            <pre style={{ margin: 0, padding: "16px", background: t.codeBg, color: t.code, fontSize: "11px", lineHeight: 1.6, overflowX: "auto" }}>{html}</pre>
           </div>
 
           {/* KOD JS */}
-          <div style={{ ...panelStyle, border: jsModified ? "1px solid #cc4400" : "1px solid #1a1a1a" }}>
-            <div style={{ ...panelHead, borderBottom: jsModified ? "1px solid #cc4400" : "1px solid #1a1a1a", color: jsModified ? "#ff6633" : "#555" }}>
+          <div style={{ ...panelStyle, border: jsModified ? "1px solid #cc4400" : `1px solid ${t.border}` }}>
+            <div style={{ ...panelHead, borderBottom: jsModified ? "1px solid #cc4400" : `1px solid ${t.border}`, color: jsModified ? "#ff6633" : t.textSub }}>
               <span>{jsModified ? "⚠️ Kod JS — ZMIENIONY — zaktualizuj w Shoperze!" : "Kod JS — bez zmian"}</span>
               <div style={{ display: "flex", gap: "8px" }}>
                 {jsModified && (
@@ -439,7 +458,7 @@ export default function CountdownGenerator() {
               </div>
             </div>
             <textarea value={jsCode} onChange={e => { setCustomJs(e.target.value); setJsModified(e.target.value !== defaultJs); }}
-              style={{ width: "100%", minHeight: "180px", background: "#0a0a0a", color: jsModified ? "#ffaa66" : "#a8d8a8", border: "none", padding: "16px", fontSize: "11px", fontFamily: "monospace", lineHeight: 1.6, resize: "vertical", boxSizing: "border-box", outline: "none" }} />
+              style={{ width: "100%", minHeight: "180px", background: t.codeBg, color: jsModified ? "#cc4400" : t.code, border: "none", padding: "16px", fontSize: "11px", fontFamily: "monospace", lineHeight: 1.6, resize: "vertical", boxSizing: "border-box", outline: "none" }} />
           </div>
 
           {jsModified && (
