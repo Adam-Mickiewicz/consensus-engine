@@ -23,7 +23,7 @@ export async function POST(req) {
     .insert({ title, data })
     .select()
     .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: error.message, details: error.details, hint: error.hint, code: error.code }, { status: 500 });
   return NextResponse.json(row);
 }
 
