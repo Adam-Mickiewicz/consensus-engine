@@ -726,14 +726,15 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
                 {saveMsg && <span style={{ fontSize: 12, color: saveMsg.startsWith("✅") ? "#2d7a4f" : "#cc0000" }}>{saveMsg}</span>}
+                <button onClick={openNew} style={{ background: "none", color: "#555", border: "1px solid #ccc", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                  + Nowy brief
+                </button>
+                <div style={{ width: 1, height: 20, background: "#ddd" }} />
                 <button onClick={exportDocx} disabled={exportingDocx} style={{ background: "#1a5ca8", color: "#fff", border: "none", borderRadius: 6, padding: "8px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
                   {exportingDocx ? "..." : "⬇ DOCX"}
                 </button>
                 <button onClick={exportXlsx} disabled={exportingXlsx} style={{ background: "#1a7a3a", color: "#fff", border: "none", borderRadius: 6, padding: "8px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
                   {exportingXlsx ? "..." : "⬇ XLSX"}
-                </button>
-                <button onClick={openNew} style={{ background: "none", color: "#888", border: "1px solid #ddd", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-                  + Nowy brief
                 </button>
                 <button onClick={save} disabled={saving} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                   {saving ? "Zapisuję..." : "💾 Zapisz"}
@@ -1046,9 +1047,32 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
                 {(brief.chatHistory || []).map((msg, i) => {
                   const modelColor = msg.model?.startsWith("claude") ? "#b8763a" : msg.model?.startsWith("gemini") ? "#4285f4" : "#10a37f";
                   const modelColors = { [msg.model]: modelColor };
-                  const modelLabels = { [msg.model]: msg.model };
                   const isUser = msg.role === "user";
                   const msgTime = msg.ts ? new Date(msg.ts).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }) : "";
+
+                  // Dymek syntezy
+                  if (msg.role === "synthesis") {
+                    return (
+                      <div key={i} style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+                        <div style={{ fontSize: 9, color: ACCENT, marginBottom: 4, fontFamily: "monospace", fontWeight: 700 }}>✨ SYNTEZA ROZMOWY · {msgTime}</div>
+                        <div style={{ width: "100%", background: "#fffdf7", border: "2px solid " + ACCENT, borderRadius: 12, overflow: "hidden", boxShadow: "0 4px 20px rgba(184,118,58,0.15)" }}>
+                          <div style={{ padding: "10px 14px", borderBottom: "2px solid " + ACCENT + "40", display: "flex", justifyContent: "space-between", alignItems: "center", background: ACCENT + "18" }}>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: ACCENT, fontFamily: "monospace" }}>✨ Synteza rozmowy</span>
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <button onClick={() => navigator.clipboard.writeText(msg.content)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, border: "1px solid " + ACCENT + "60", background: "#fff", color: ACCENT, cursor: "pointer", fontFamily: "monospace", fontWeight: 700 }}>Kopiuj</button>
+                              <button onClick={() => fillBriefFromSynthesis(msg.content)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, border: "none", background: ACCENT, color: "#fff", cursor: "pointer", fontFamily: "monospace", fontWeight: 700 }}>
+                                {fillingBrief ? "⏳..." : "📋 Wypełnij brief"}
+                              </button>
+                            </div>
+                          </div>
+                          <div style={{ padding: "14px 16px" }}>
+                            {renderMarkdown(msg.content)}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isUser ? "flex-end" : "flex-start" }}>
                       {!isUser && <div style={{ fontSize: 9, color: modelColors[msg.model] || "#aaa", marginBottom: 3, fontFamily: "monospace", fontWeight: 700 }}>{msg.model}</div>}
