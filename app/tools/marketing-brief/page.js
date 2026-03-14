@@ -128,14 +128,6 @@ function Section({ title, children, accent }) {
       </div>
       <div style={{ padding: 16 }}>{children}</div>
     {/* IMAGE EDITOR MODAL */}
-    {imageEditor && (
-      <ImageEditor
-        src={imageEditor.src}
-        name={imageEditor.name}
-        onSave={handleEditorSave}
-        onClose={() => setImageEditor(null)}
-      />
-    )}
     </div>
   );
 }
