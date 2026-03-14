@@ -329,7 +329,7 @@ export default function SockDesigner() {
         const res = await fetch("/api/ai-chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ model: chatModel, messages: [{ role: "system", content: SOCK_SYSTEM_PROMPT }, ...newHistory.map(({ role, content }) => ({ role, content }))], briefContext: null }),
+          body: JSON.stringify({ model: chatModel, messages: newHistory.map(({ role, content }) => ({ role, content })), briefContext: null, systemOverride: SOCK_SYSTEM_PROMPT }),
         });
         const data = await res.json();
         if (data.error) throw new Error(data.error);

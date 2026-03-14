@@ -7,7 +7,7 @@ const supabase = createClient(
 );
 
 export async function POST(req) {
-  const { model, messages, briefContext, deepResearch, brandContextFilter } = await req.json();
+  const { model, messages, briefContext, deepResearch, brandContextFilter, systemOverride } = await req.json();
 
   const { data: brand } = await supabase.from("brand_settings").select("*").limit(1).single();
 
@@ -22,7 +22,7 @@ export async function POST(req) {
     f.uploaded_files !== false && (brand.uploaded_files || []).length > 0 ? `Pliki w repozytorium (tylko nazwy): ${brand.uploaded_files.map(u => u.name).join(", ")}` : null,
   ].filter(Boolean).join("\n") : "";
 
-  const systemPrompt = `Jesteś ekspertem od marketingu e-commerce i strategii kampanii. Pomagasz zespołowi marketingowemu w budowaniu skutecznych akcji promocyjnych.
+  const systemPrompt = systemOverride || `Jesteś ekspertem od marketingu e-commerce i strategii kampanii. Pomagasz zespołowi marketingowemu w budowaniu skutecznych akcji promocyjnych.
 ${brandContext}
 === KONTEKST BIEŻĄCEGO BRIEFU ===
 ${briefContext ? JSON.stringify(briefContext, null, 2) : "Brak briefu — rozmawiaj ogólnie o marketingu."}
