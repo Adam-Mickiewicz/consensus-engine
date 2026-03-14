@@ -673,13 +673,13 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
           <div style={{ padding: 32, maxWidth: 900 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <button onClick={openNew} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-                  + Nowy brief
-                </button>
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 700, color: "#1a1a1a", marginBottom: 2 }}>📋 Akcje marketingowe</div>
                   <div style={{ fontSize: 12, color: "#888" }}>Historia briefów dla zespołu kreatywnego</div>
                 </div>
+                <button onClick={openNew} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                  + Nowy brief
+                </button>
               </div>
             </div>
 
