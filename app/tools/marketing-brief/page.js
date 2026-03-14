@@ -1430,6 +1430,14 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
           </div>
         )}
       </div>
+    {imageEditor && (
+      <ImageEditor
+        src={imageEditor.src}
+        name={imageEditor.name}
+        onSave={handleEditorSave}
+        onClose={() => setImageEditor(null)}
+      />
+    )}
     </div>
   );
 }
