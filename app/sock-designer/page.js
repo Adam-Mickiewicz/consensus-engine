@@ -163,17 +163,21 @@ export default function SockDesigner() {
     try {
       const data = await sbFetch("/sock_chats?id=eq." + id + "&select=*");
       const s = data[0]; setCurrentSessionId(id); setChatHistory(s.messages || []);
-      if (s.last_brief) { setBrief(s.last_brief); setPrompts({ dalleLeft: s.last_brief.dalle_prompt_left || "", dalleRight: s.last_brief.dalle_prompt_right || "", geminiLeft: s.last_brief.gemini_prompt_left || "", geminiRight: s.last_brief.gemini_prompt_right || "" }); }
+      if (s.last_brief) {
+        setBrief(s.last_brief);
+        setPrompts({ dalleLeft: s.last_brief.dalle_prompt_left || "", dalleRight: s.last_brief.dalle_prompt_right || "", geminiLeft: s.last_brief.gemini_prompt_left || "", geminiRight: s.last_brief.gemini_prompt_right || "" });
+      }
+      if (s.generated_images) setImgs(s.generated_images);
     } catch (e) { console.error(e); }
   }
 
-  async function saveSession(msgs, lastBrief, title) {
+  async function saveSession(msgs, lastBrief, title, currentImgs) {
     try {
       if (!currentSessionId) {
-        const data = await sbFetch("/sock_chats", { method: "POST", body: JSON.stringify({ title: title || "Projekt", messages: msgs, last_brief: lastBrief || null }) });
+        const data = await sbFetch("/sock_chats", { method: "POST", body: JSON.stringify({ title: title || "Projekt", messages: msgs, last_brief: lastBrief || null, generated_images: currentImgs || {} }) });
         const s = Array.isArray(data) ? data[0] : data; setCurrentSessionId(s.id); setSessions(prev => [s, ...prev.filter(x => x.id !== s.id)]);
       } else {
-        await sbFetch("/sock_chats?id=eq." + currentSessionId, { method: "PATCH", body: JSON.stringify({ messages: msgs, last_brief: lastBrief || null, title: title || "Projekt", updated_at: new Date().toISOString() }), prefer: "return=minimal" });
+        await sbFetch("/sock_chats?id=eq." + currentSessionId, { method: "PATCH", body: JSON.stringify({ messages: msgs, last_brief: lastBrief || null, title: title || "Projekt", updated_at: new Date().toISOString(), generated_images: currentImgs || {} }), prefer: "return=minimal" });
         loadSessions();
       }
     } catch (e) { console.error(e); }
@@ -236,12 +240,22 @@ export default function SockDesigner() {
   async function generateImage(key, engine, promptText) {
     setLoadings(l => ({ ...l, [key]: true })); setImgs(i => ({ ...i, [key]: null }));
     try {
+      let imageUrl = null;
       if (engine === "dalle") {
         const res = await fetch("/api/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ problem: "sock design", consensus: promptText }) });
-        const data = await res.json(); if (!data.success) throw new Error(data.error); setImgs(i => ({ ...i, [key]: data.imageUrl }));
+        const data = await res.json(); if (!data.success) throw new Error(data.error); imageUrl = data.imageUrl;
       } else {
         const res = await fetch("/api/image-gemini", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: promptText }) });
-        const data = await res.json(); if (!data.success) throw new Error(data.error); setImgs(i => ({ ...i, [key]: data.imageUrl }));
+        const data = await res.json(); if (!data.success) throw new Error(data.error); imageUrl = data.imageUrl;
+      }
+      if (imageUrl) {
+        setImgs(prev => {
+          const updated = { ...prev, [key]: imageUrl };
+          if (currentSessionId) {
+            sbFetch("/sock_chats?id=eq." + currentSessionId, { method: "PATCH", body: JSON.stringify({ generated_images: updated, updated_at: new Date().toISOString() }), prefer: "return=minimal" }).catch(console.error);
+          }
+          return updated;
+        });
       }
     } catch (e) { console.error(e); }
     setLoadings(l => ({ ...l, [key]: false }));

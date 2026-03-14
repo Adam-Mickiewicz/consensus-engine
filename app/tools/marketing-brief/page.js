@@ -1051,17 +1051,21 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
                 </Field>
                 {(brief.references?.files || []).length > 0 && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {brief.references.files.map((f, i) => (
+                    {brief.references.files.map((f, i) => {
+                      const isImg = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f.name) || f.url?.startsWith("data:image");
+                      return (
                       <div key={i} style={{ background: "#f0f7ff", border: "1px solid #c8e0f8", borderRadius: 6, padding: "8px 10px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
                           <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ flex: 1, fontSize: 11, color: "#1a5ca8" }}>📄 {f.name}</a>
+                          {isImg && <button onClick={() => setImageEditor({ src: f.url, name: f.name })} style={{ background: "#e8f0fe", border: "1px solid #c8e0f8", borderRadius: 4, color: "#1a5ca8", cursor: "pointer", fontSize: 10, padding: "2px 7px", fontFamily: "inherit" }}>🖊️ Edytuj</button>}
                           <button onClick={() => removeRef("files", i)} style={{ background: "none", border: "none", color: "#ccc", cursor: "pointer", fontSize: 14, lineHeight: 1 }}>×</button>
                         </div>
                         <input type="text" placeholder="Notatka (opcjonalnie)..." value={f.note || ""}
                           onChange={e => { const files = [...brief.references.files]; files[i] = { ...f, note: e.target.value }; setBrief(b => ({ ...b, references: { ...b.references, files } })); }}
                           style={{ width: "100%", background: "#fff", border: "1px solid #c8e0f8", borderRadius: 4, padding: "4px 8px", fontSize: 11, color: "#555", fontFamily: "inherit", boxSizing: "border-box" }} />
                       </div>
-                    ))}
+                          );
+                    })}
                   </div>
                 )}
               </div>
