@@ -308,7 +308,7 @@ export default function SockDesigner() {
             const msg = JSON.parse(line.slice(6));
             if (msg.type === "delta") {
               fullText += msg.text;
-              const display = fullText.replace(/<<<BRIEF_START>>>[\s\S]*?<<<BRIEF_END>>>/g, "").trim();
+              const display = fullText.replace(/<<<BRIEF_START>>>[\s\S]*?<<<BRIEF_END>>>/g, "").replace(/<<<BRIEF_START>>>[\s\S]*/g, "").trim();
               setChatHistory(prev => { const u = [...prev]; u[u.length - 1] = { ...streamingMsg, content: display }; return u; });
             }
             if (msg.type === "brief") {
