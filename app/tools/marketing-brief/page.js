@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 // ─── STAŁE ───────────────────────────────────────────────────────────────────
 
@@ -127,6 +127,15 @@ function Section({ title, children, accent }) {
         <div style={{ fontSize: 12, fontWeight: 700, color: accent ? "#fff" : "#555", fontFamily: "monospace", letterSpacing: 0.5 }}>{title}</div>
       </div>
       <div style={{ padding: 16 }}>{children}</div>
+    {/* IMAGE EDITOR MODAL */}
+    {imageEditor && (
+      <ImageEditor
+        src={imageEditor.src}
+        name={imageEditor.name}
+        onSave={handleEditorSave}
+        onClose={() => setImageEditor(null)}
+      />
+    )}
     </div>
   );
 }
@@ -199,6 +208,226 @@ function ChannelPanel({ channel, cfg, onChange }) {
       <Field label="Uwagi dodatkowe">
         <Textarea value={cfg.notes || ""} onChange={v => onChange({ ...cfg, notes: v })} placeholder="Specyficzne wymagania dla tego kanału..." rows={2} />
       </Field>
+    </div>
+  );
+}
+
+// ─── IMAGE EDITOR ────────────────────────────────────────────────────────────
+function ImageEditor({ src, name, onSave, onClose }) {
+  const canvasRef = React.useRef(null);
+  const [tool, setTool] = React.useState("pen");
+  const [color, setColor] = React.useState("#e63946");
+  const [lineWidth, setLineWidth] = React.useState(3);
+  const [drawing, setDrawing] = React.useState(false);
+  const [startPos, setStartPos] = React.useState(null);
+  const [history, setHistory] = React.useState([]);
+  const [text, setText] = React.useState("");
+  const [showTextInput, setShowTextInput] = React.useState(false);
+  const [textPos, setTextPos] = React.useState(null);
+  const imgRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const maxW = window.innerWidth * 0.85;
+      const maxH = window.innerHeight * 0.75;
+      const scale = Math.min(maxW / img.width, maxH / img.height, 1);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      imgRef.current = img;
+      saveHistory(ctx, canvas);
+    };
+    img.src = src;
+  }, [src]);
+
+  const saveHistory = (ctx, canvas) => {
+    setHistory(h => [...h, ctx.getImageData(0, 0, canvas.width, canvas.height)]);
+  };
+
+  const undo = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (history.length > 1) {
+      const newHistory = history.slice(0, -1);
+      setHistory(newHistory);
+      ctx.putImageData(newHistory[newHistory.length - 1], 0, 0);
+    }
+  };
+
+  const getPos = (e) => {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: (clientX - rect.left) * (canvas.width / rect.width), y: (clientY - rect.top) * (canvas.height / rect.height) };
+  };
+
+  const onMouseDown = (e) => {
+    const pos = getPos(e);
+    if (tool === "text") {
+      setTextPos(pos);
+      setShowTextInput(true);
+      return;
+    }
+    setDrawing(true);
+    setStartPos(pos);
+    if (tool === "pen") {
+      const ctx = canvasRef.current.getContext("2d");
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+  };
+
+  const onMouseMove = (e) => {
+    if (!drawing) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const pos = getPos(e);
+    if (tool === "pen") {
+      ctx.lineTo(pos.x, pos.y);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.stroke();
+    } else {
+      // Dla rect/arrow/line - redraw z historii
+      if (history.length > 0) ctx.putImageData(history[history.length - 1], 0, 0);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+      ctx.lineCap = "round";
+      if (tool === "rect") {
+        ctx.strokeRect(startPos.x, startPos.y, pos.x - startPos.x, pos.y - startPos.y);
+      } else if (tool === "arrow" || tool === "line") {
+        ctx.beginPath();
+        ctx.moveTo(startPos.x, startPos.y);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        if (tool === "arrow") {
+          const angle = Math.atan2(pos.y - startPos.y, pos.x - startPos.x);
+          const len = 14 + lineWidth * 2;
+          ctx.beginPath();
+          ctx.moveTo(pos.x, pos.y);
+          ctx.lineTo(pos.x - len * Math.cos(angle - 0.4), pos.y - len * Math.sin(angle - 0.4));
+          ctx.moveTo(pos.x, pos.y);
+          ctx.lineTo(pos.x - len * Math.cos(angle + 0.4), pos.y - len * Math.sin(angle + 0.4));
+          ctx.stroke();
+        }
+      }
+    }
+  };
+
+  const onMouseUp = (e) => {
+    if (!drawing) return;
+    setDrawing(false);
+    saveHistory(canvasRef.current.getContext("2d"), canvasRef.current);
+  };
+
+  const addText = () => {
+    if (!text.trim() || !textPos) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    ctx.font = `bold ${14 + lineWidth * 2}px -apple-system, sans-serif`;
+    ctx.fillStyle = color;
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 3;
+    ctx.strokeText(text, textPos.x, textPos.y);
+    ctx.fillText(text, textPos.x, textPos.y);
+    saveHistory(ctx, canvas);
+    setText("");
+    setShowTextInput(false);
+    setTextPos(null);
+  };
+
+  const clearAll = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (imgRef.current) ctx.drawImage(imgRef.current, 0, 0, canvas.width, canvas.height);
+    saveHistory(ctx, canvas);
+  };
+
+  const handleSave = () => {
+    const canvas = canvasRef.current;
+    canvas.toBlob(blob => {
+      const editedName = name.replace(/\.[^/.]+$/, "") + "_edited.png";
+      onSave({ name: editedName, type: "image/png", blob, dataUrl: canvas.toDataURL("image/png") });
+    }, "image/png");
+  };
+
+  const TOOLS = [
+    { id: "pen", label: "✏️", title: "Pisak" },
+    { id: "line", label: "╱", title: "Linia" },
+    { id: "arrow", label: "→", title: "Strzałka" },
+    { id: "rect", label: "▭", title: "Prostokąt" },
+    { id: "text", label: "T", title: "Tekst" },
+  ];
+  const COLORS = ["#e63946", "#2196f3", "#4caf50", "#ff9800", "#9c27b0", "#000000", "#ffffff"];
+  const WIDTHS = [2, 4, 7, 12];
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+      {/* Toolbar */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12, background: "#1a1a1a", padding: "10px 16px", borderRadius: 12, flexWrap: "wrap", maxWidth: "90vw" }}>
+        {/* Narzędzia */}
+        <div style={{ display: "flex", gap: 4 }}>
+          {TOOLS.map(t => (
+            <button key={t.id} onClick={() => setTool(t.id)} title={t.title}
+              style={{ width: 36, height: 36, borderRadius: 8, border: tool === t.id ? "2px solid #b8763a" : "1px solid #333", background: tool === t.id ? "#b8763a20" : "#111", color: tool === t.id ? "#b8763a" : "#aaa", fontSize: t.id === "text" ? 14 : 18, cursor: "pointer", fontWeight: 700 }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ width: 1, height: 28, background: "#333" }} />
+        {/* Kolory */}
+        <div style={{ display: "flex", gap: 4 }}>
+          {COLORS.map(c => (
+            <button key={c} onClick={() => setColor(c)}
+              style={{ width: 24, height: 24, borderRadius: "50%", background: c, border: color === c ? "3px solid #b8763a" : "2px solid #444", cursor: "pointer" }} />
+          ))}
+          <input type="color" value={color} onChange={e => setColor(e.target.value)}
+            style={{ width: 24, height: 24, borderRadius: "50%", border: "2px solid #444", cursor: "pointer", padding: 0 }} />
+        </div>
+        <div style={{ width: 1, height: 28, background: "#333" }} />
+        {/* Grubość */}
+        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          {WIDTHS.map(w => (
+            <button key={w} onClick={() => setLineWidth(w)}
+              style={{ width: 32, height: 32, borderRadius: 6, border: lineWidth === w ? "2px solid #b8763a" : "1px solid #333", background: "#111", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+              <div style={{ width: w * 2, height: w * 2, borderRadius: "50%", background: color, maxWidth: 20, maxHeight: 20 }} />
+            </button>
+          ))}
+        </div>
+        <div style={{ width: 1, height: 28, background: "#333" }} />
+        {/* Akcje */}
+        <button onClick={undo} style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #333", background: "#111", color: "#aaa", cursor: "pointer", fontSize: 12 }}>↩ Cofnij</button>
+        <button onClick={clearAll} style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #333", background: "#111", color: "#aaa", cursor: "pointer", fontSize: 12 }}>🗑 Wyczyść</button>
+        <button onClick={handleSave} style={{ padding: "6px 16px", borderRadius: 8, border: "none", background: "#b8763a", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>💾 Zapisz</button>
+        <button onClick={onClose} style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #555", background: "none", color: "#888", cursor: "pointer", fontSize: 12 }}>✕ Zamknij</button>
+      </div>
+
+      {/* Canvas */}
+      <div style={{ position: "relative" }}>
+        <canvas ref={canvasRef}
+          onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
+          style={{ display: "block", borderRadius: 8, cursor: tool === "text" ? "text" : "crosshair", maxWidth: "85vw", maxHeight: "75vh" }} />
+        {showTextInput && (
+          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "#1a1a1a", padding: 16, borderRadius: 10, display: "flex", gap: 8, flexDirection: "column", border: "1px solid #333" }}>
+            <div style={{ fontSize: 11, color: "#888" }}>Wpisz tekst (kliknij na obrazku żeby umieścić)</div>
+            <input value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key === "Enter" && addText()}
+              autoFocus placeholder="Treść uwagi..."
+              style={{ background: "#111", border: "1px solid #333", borderRadius: 6, padding: "6px 10px", color: "#fff", fontSize: 13, fontFamily: "inherit" }} />
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={addText} style={{ flex: 1, background: "#b8763a", color: "#fff", border: "none", borderRadius: 6, padding: "6px", cursor: "pointer", fontSize: 12 }}>Dodaj</button>
+              <button onClick={() => setShowTextInput(false)} style={{ background: "#333", color: "#aaa", border: "none", borderRadius: 6, padding: "6px 10px", cursor: "pointer", fontSize: 12 }}>✕</button>
+            </div>
+          </div>
+        )}
+      </div>
+      <div style={{ color: "#555", fontSize: 11, marginTop: 8 }}>Kliknij i przeciągnij aby rysować · Shift+Z = cofnij</div>
     </div>
   );
 }
@@ -301,6 +530,7 @@ export default function MarketingBrief() {
   const [synthesis, setSynthesis] = useState(null);
   const [synthesizing, setSynthesizing] = useState(false);
   const [fillingBrief, setFillingBrief] = useState(false);
+  const [imageEditor, setImageEditor] = useState(null); // { src, name, type }
   const [synthLength, setSynthLength] = useState("medium");
   const [copyFromModal, setCopyFromModal] = useState(null); // id kanału docelowego
   const [exportingXlsx, setExportingXlsx] = useState(false);
@@ -643,6 +873,19 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
       const a = document.createElement("a"); a.href = url; a.download = `brief-${brief.name || "export"}.xlsx`; a.click();
     } catch (e) { console.error(e); alert("Błąd eksportu XLSX: " + e.message); }
     setExportingXlsx(false);
+  };
+
+  const handleEditorSave = ({ name, type, blob, dataUrl }) => {
+    // Dodaj do załączników czatu
+    const newAttachment = { name, type, data: dataUrl.split(",")[1] };
+    setAttachments(prev => [...prev, newAttachment]);
+
+    // Dodaj też do referencji briefu (jako plik)
+    const fileEntry = { name, url: dataUrl, note: "Edytowana grafika" };
+    setBrief(b => ({ ...b, references: { ...b.references, files: [...(b.references?.files || []), fileEntry] } }));
+
+    setImageEditor(null);
+    alert("✅ Zapisano! Grafika dodana do załączników czatu i referencji briefu.");
   };
 
   const activeChannels = CHANNELS.filter(c => brief.channels[c.id]?.active);
@@ -1111,6 +1354,10 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
                     {attachments.map((a, i) => (
                       <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, background: "#f0ece6", border: "1px solid #ddd", borderRadius: 6, padding: "3px 8px", fontSize: 11 }}>
                         <span>{a.type.startsWith("image/") ? "🖼️" : "📄"} {a.name}</span>
+                        {a.type.startsWith("image/") && (
+                          <button onClick={() => setImageEditor({ src: `data:${a.type};base64,${a.data}`, name: a.name })}
+                            style={{ background: "none", border: "1px solid #ccc", borderRadius: 3, color: "#888", cursor: "pointer", fontSize: 10, padding: "1px 5px" }}>🖊️</button>
+                        )}
                         <button onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>
                       </div>
                     ))}
