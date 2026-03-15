@@ -264,14 +264,47 @@ function ChannelPanel({ channel, cfg, onChange }) {
                     </select>
                   </div>
                 )}
-                {/* Opis */}
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1, marginBottom: 5, textTransform: "uppercase", fontFamily: "monospace" }}>
-                    {fmt.isCarousel ? "Opis karuzeli" : "Opis / uwagi"}
-                  </div>
-                  <textarea value={getFormatData(fmt.id, "note", "")} onChange={e => setFormatData(fmt.id, "note", e.target.value)}
-                    placeholder={fmt.isCarousel ? "Co ma być w karuzeli? Motyw, liczba kart, treść..." : "Co ma być widoczne? Tekst, produkt, tło, styl..."}
-                    rows={2} style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "6px 8px", fontSize: 12, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                {/* Opis per typ lub ogólny dla karuzeli */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {fmt.isCarousel ? (
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1, marginBottom: 5, textTransform: "uppercase", fontFamily: "monospace" }}>Opis karuzeli</div>
+                      <textarea value={getFormatData(fmt.id, "note_karuzela", "")} onChange={e => setFormatData(fmt.id, "note_karuzela", e.target.value)}
+                        placeholder="Co ma być w karuzeli? Motyw, liczba kart, treść poszczególnych slajdów..."
+                        rows={2} style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "6px 8px", fontSize: 12, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                    </div>
+                  ) : (
+                    (() => {
+                      const selectedTypes = Array.isArray(getFormatData(fmt.id, "types", [])) ? getFormatData(fmt.id, "types", []) : [];
+                      const notesForTypes = selectedTypes.length > 0 ? selectedTypes : ["ogólny"];
+                      return notesForTypes.map(typ => (
+                        <div key={typ} style={{ background: typ === "ogólny" ? "#fff" : "#f9f7f5", border: "1px solid #e8e0d8", borderRadius: 6, padding: "8px 10px" }}>
+                          {typ !== "ogólny" && (
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: "#555", fontFamily: "monospace", textTransform: "uppercase" }}>{typ}</span>
+                              {selectedFmts.filter(f2 => f2.id !== fmt.id && !f2.isCarousel).length > 0 && (
+                                <select onChange={e => {
+                                  if (!e.target.value) return;
+                                  const srcNote = getFormatData(e.target.value, "note_" + typ, "");
+                                  if (srcNote) setFormatData(fmt.id, "note_" + typ, srcNote);
+                                  e.target.value = "";
+                                }} style={{ fontSize: 10, background: "#fff", border: "1px solid #ddd", borderRadius: 4, padding: "2px 6px", color: "#888", cursor: "pointer", fontFamily: "inherit" }}>
+                                  <option value="">📋 Kopiuj z...</option>
+                                  {selectedFmts.filter(f2 => f2.id !== fmt.id && !f2.isCarousel).map(f2 => (
+                                    <option key={f2.id} value={f2.id}>{f2.label}</option>
+                                  ))}
+                                </select>
+                              )}
+                            </div>
+                          )}
+                          <textarea value={getFormatData(fmt.id, typ === "ogólny" ? "note" : "note_" + typ, "")}
+                            onChange={e => setFormatData(fmt.id, typ === "ogólny" ? "note" : "note_" + typ, e.target.value)}
+                            placeholder={typ === "ogólny" ? "Opis zawartości, co ma być widoczne..." : `Brief dla ${typ} — co ma być widoczne, styl, treść...`}
+                            rows={2} style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "6px 8px", fontSize: 12, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                        </div>
+                      ));
+                    })()
+                  )}
                 </div>
               </div>
             </div>
