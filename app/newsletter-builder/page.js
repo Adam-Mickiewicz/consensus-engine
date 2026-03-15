@@ -680,6 +680,9 @@ function Block5DuoImages({ duo, setDuo }) {
   return (
     <Section title="Dwie grafiki obok siebie" number="5" html={generateDuoImageHTML(duo)} previewTitle="Duo grafiki" previewWidth={720}>
       <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+        <div style={{ background: "#fff8f8", border: "2px solid #cc0000", borderRadius: "8px", padding: "10px 14px", fontSize: "12px", color: "#cc0000", fontFamily: "sans-serif", lineHeight: 1.6 }}>
+          <strong>Uwaga:</strong> Wgrywanie zdjec tutaj sluzy wylacznie do podgladu. Docelowo grafiki musza zostac wgrane bezposrednio w narzedziu ESP (np. edrone), z ktorego wysylasz maila — tylko wtedy beda widoczne dla odbiorcow.
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
           <ImageUploadField side="left" image={duo.left} onChange={img => setD("left", img)} />
           <ImageUploadField side="right" image={duo.right} onChange={img => setD("right", img)} />
