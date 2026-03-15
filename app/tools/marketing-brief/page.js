@@ -259,6 +259,13 @@ function ChannelPanel({ channel, cfg, onChange }) {
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {fmt.isCarousel ? (
                     <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1, textTransform: "uppercase", fontFamily: "monospace" }}>Liczba kart:</span>
+                        <select value={getFormatData(fmt.id, "karuzela_cards", "3")} onChange={e => setFormatData(fmt.id, "karuzela_cards", e.target.value)}
+                          style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 4, padding: "2px 6px", fontSize: 11, fontFamily: "inherit", width: 52 }}>
+                          {["2","3","4","5","6","7","8","9","10+"].map(n => <option key={n}>{n}</option>)}
+                        </select>
+                      </div>
                       <div style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1, marginBottom: 5, textTransform: "uppercase", fontFamily: "monospace" }}>Opis karuzeli</div>
                       <textarea value={getFormatData(fmt.id, "note_karuzela", "")} onChange={e => setFormatData(fmt.id, "note_karuzela", e.target.value)}
                         placeholder="Co ma być w karuzeli? Motyw, liczba kart, treść poszczególnych slajdów..."
