@@ -602,6 +602,21 @@ export default function NewsletterBuilder() {
     <div style={{ minHeight: "100vh", background: "#f5f2ee", fontFamily: "Georgia, serif", display: "flex" }}>
 
       {/* SIDEBAR */}
+      <div style={{ width: 180, minWidth: 180, background: "#1a1a1a", borderRight: "1px solid #2a2a2a", padding: "16px 12px", display: "flex", flexDirection: "column", gap: 6, position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
+        <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8, paddingLeft: 4 }}>Bloki</div>
+        {[
+          { id: "0", label: "Nagłówek" },
+          { id: "1", label: "Blok tekstowy" },
+          { id: "2", label: "Produkty" },
+          { id: "4", label: "Przeglądarka" },
+          { id: "5", label: "Kolumny" },
+        ].map(item => (
+          <button key={item.id} onClick={() => setActiveBlock(item.id)}
+            style={{ display: "block", width: "100%", textAlign: "left", background: activeBlock === item.id ? "#b8763a20" : "none", border: activeBlock === item.id ? "1px solid #b8763a50" : "1px solid transparent", borderRadius: 8, padding: "8px 10px", cursor: "pointer", fontFamily: "inherit", color: activeBlock === item.id ? "#b8763a" : "#888", fontSize: 12, fontWeight: activeBlock === item.id ? 700 : 400 }}>
+            {item.label}
+          </button>
+        ))}
+      </div>
 
       {/* MAIN CONTENT */}
       <div style={{ flex: 1, padding: "28px 24px", display: "flex", flexDirection: "column", gap: "20px", overflowY: "auto" }}>
