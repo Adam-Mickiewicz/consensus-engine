@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { supabase } from "../../lib/supabase";
 
 const TOOLS = [
   { href: "/debate", label: "Consensus Engine", icon: "⚡" },
@@ -26,10 +27,18 @@ const DARK = {
 export default function Nav({ current }) {
   const [open, setOpen] = useState(false);
   const [dark, setDark] = useState(false);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     if (localStorage.getItem("ce-theme") === "dark") setDark(true);
+    supabase.auth.getUser().then(({ data }) => setUser(data?.user || null));
+    supabase.auth.onAuthStateChange((_, session) => setUser(session?.user || null));
   }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
 
   const toggleTheme = () => {
     setDark(d => {
@@ -83,6 +92,14 @@ export default function Nav({ current }) {
           <button className="ce-nav-theme" onClick={toggleTheme}>
             {dark ? "☀ Jasny" : "☾ Ciemny"}
           </button>
+          {user ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 11, color: t.textSub, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</span>
+              <button onClick={handleSignOut} style={{ background: "none", border: `1px solid ${t.border}`, borderRadius: 6, padding: "4px 10px", fontSize: 11, color: t.textSub, cursor: "pointer", fontFamily: "inherit" }}>Wyloguj</button>
+            </div>
+          ) : (
+            <Link href="/auth" style={{ fontSize: 11, color: t.accent, border: `1px solid ${t.accent}40`, borderRadius: 6, padding: "4px 10px", textDecoration: "none", fontWeight: 600 }}>Zaloguj</Link>
+          )}
         </div>
       </div>
 
