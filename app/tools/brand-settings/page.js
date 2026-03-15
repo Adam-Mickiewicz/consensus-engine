@@ -94,14 +94,6 @@ export default function BrandSettings() {
     <Nav current="/tools/brand-settings" />
     <div style={{ minHeight: "100vh", background: "#f5f2ee", fontFamily: "'IBM Plex Mono', monospace", display: "flex" }}>
       {/* SIDEBAR */}
-      <div style={{ width: 220, minWidth: 220, background: "#0f0f0f", borderRight: "1px solid #1a1a1a", padding: "24px 16px", display: "flex", flexDirection: "column", gap: 8, position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ color: ACCENT, fontWeight: 800, fontSize: 13, letterSpacing: 2 }}>CONSENSUS</div>
-          <div style={{ color: "#444", fontSize: 10, letterSpacing: 1 }}>ENGINE v1.0</div>
-        </div>
-        <div style={{ color: "#444", fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 4 }}>NAWIGACJA</div>
-        
-      </div>
 
       {/* MAIN */}
       <div style={{ flex: 1, padding: 32, overflowY: "auto" }}>

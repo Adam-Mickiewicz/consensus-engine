@@ -139,8 +139,6 @@ function PreviewFrame({ html, title, width = 360 }) {
   const mobileStyle = mobile ? `<style>table.prod { width: 46% !important; max-width: 46% !important; margin-right: 2% !important; margin-bottom: 8px !important; } </style>` : "";
   const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:#e8e4de;}*{box-sizing:border-box;}.wrapper{max-width:${activeWidth}px;margin:0 auto;background:#fff;padding:16px;}@media only screen and (max-width:400px){.prod{width:50% !important;max-width:50% !important;}}@media only screen and (max-width:400px){.prod{width:50% !important;max-width:50% !important;}}</style>${mobileStyle}</head><body><div class="wrapper">${html}</div></body></html>`;
   return (
-    <>
-    <Nav current="/newsletter-builder" />
     <div style={{ border: "1px solid #e8e4de", borderRadius: "10px", overflow: "hidden" }}>
       <div style={{ padding: "8px 14px", background: "#f5f2ee", borderBottom: "1px solid #e8e4de", fontSize: "11px", color: "#888", fontFamily: "sans-serif", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span>📧 Podgląd — {title}</span>
@@ -154,7 +152,6 @@ function PreviewFrame({ html, title, width = 360 }) {
         <iframe srcDoc={fullHtml} style={{ width: `${activeWidth}px`, maxWidth: "100%", height: "400px", border: "none", display: "block", borderRadius: "4px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }} title={title} />
       </div>
     </div>
-      </>
   );
 }
 
@@ -600,6 +597,8 @@ export default function NewsletterBuilder() {
 
 
   return (
+    <>
+    <Nav current="/newsletter-builder" />
     <div style={{ minHeight: "100vh", background: "#f5f2ee", fontFamily: "Georgia, serif", display: "flex" }}>
 
       {/* SIDEBAR */}
@@ -679,5 +678,6 @@ export default function NewsletterBuilder() {
 
       </div>
     </div>
+    </>
   );
 }
