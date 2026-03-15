@@ -1070,8 +1070,7 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
           ]})]
         }));
         // Treść pigułki w zielonym tle
-        const summaryLines = brief.summary.split("
-").filter(l => l.trim());
+        const summaryLines = brief.summary.split("\n").filter(l => l.trim());
         children.push(new Table({
           width: { size: PAGE_W, type: WidthType.DXA },
           columnWidths: [PAGE_W],
