@@ -472,5 +472,6 @@ export default function CountdownGenerator() {
         </div>
       </div>
     </div>
+    </>
   );
 }
