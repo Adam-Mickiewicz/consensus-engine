@@ -205,6 +205,7 @@ export default function SockDesigner() {
       const content = data.content || "";
       const aiMsg = { role: "assistant", content, model: chatModel, ts: Date.now() };
       const finalHistory = [...newHistory, aiMsg];
+      setChatHistory(finalHistory);
       let latestBrief = brief;
       const briefMatch = content.match(/<<<BRIEF_START>>>([\s\S]*?)<<<BRIEF_END>>>/);
       let pendingBrief = null;
