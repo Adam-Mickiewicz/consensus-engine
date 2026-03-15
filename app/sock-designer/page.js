@@ -426,10 +426,7 @@ export default function SockDesigner() {
                             method: "POST", headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
                               model: chatModel,
-                              messages: [...chatHistory.slice(0, i+1).map(m => ({ role: m.role, content: m.content })), { role: "user", content: "Na podstawie naszej rozmowy wygeneruj teraz kompletny brief w wymaganym formacie JSON. Odpowiedz WYŁĄCZNIE blokiem:
-{json}
-<<<BRIEF_END>>>
-Bez żadnego tekstu przed ani po." }],
+                              messages: [...chatHistory.slice(0, i+1).map(m => ({ role: m.role, content: m.content })), { role: "user", content: "Wygeneruj brief JSON z " + "<<<BRIEF_START>>>" + " i " + "<<<BRIEF_END>>>" }],
                               briefContext: null, systemOverride: SOCK_SYSTEM_PROMPT,
                             }),
                           });
