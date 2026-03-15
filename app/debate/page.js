@@ -182,6 +182,8 @@ async function extractText(file) {
 function Tooltip({ text, children }) {
   const [show, setShow] = useState(false);
   return (
+    <>
+    <Nav current="/debate" />
     <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}
       onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
       {children}
@@ -191,6 +193,7 @@ function Tooltip({ text, children }) {
         </span>
       )}
     </span>
+      </>
   );
 }
 
@@ -794,12 +797,85 @@ export default function ConsensusEngine() {
   const roundStatuses = Array.from({ length: 6 }, (_, i) => phase === "input" ? "pending" : i < currentRound ? "done" : i === currentRound ? "active" : "pending");
 
   return (
-    <>
-    <Nav current="/debate" />
     <div style={{ minHeight: "100vh", background: t.bg, color: t.text, fontFamily: "'IBM Plex Mono', 'Courier New', monospace", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "260px 1fr 300px", transition: "background 0.3s", position: "relative" }}>
       {isMobile && sidebarOpen && (
         <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", zIndex: 998 }} />
       )}
+      <div style={{ borderRight: `1px solid ${t.border}`, padding: 24, overflowY: "auto", background: t.bgPanel, ...(isMobile ? { position: "fixed", top: 0, left: sidebarOpen ? 0 : "-280px", width: 260, height: "100vh", zIndex: 999, transition: "left 0.3s", boxShadow: sidebarOpen ? "4px 0 20px rgba(0,0,0,0.2)" : "none" } : {}) }}>
+        <div style={{ marginBottom: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div><div style={{ color: accent, fontWeight: 800, fontSize: 15, letterSpacing: 2 }}>CONSENSUS</div><div style={{ color: t.textMuted, fontSize: 11, letterSpacing: 1 }}>ENGINE v1.0</div></div>
+          <ThemeToggle dark={dark} onToggle={() => setDark(d => !d)} t={t} />
+        </div>
+        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid " + t.border }}>
+          {user ? (
+            <div>
+              <div style={{ color: t.textMuted, fontSize: 10, marginBottom: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>👤 {user.email}</div>
+              <button onClick={async () => { const m = await import("../../lib/supabase"); await m.supabase.auth.signOut(); setUser(null); }} style={{ width: "100%", background: "none", border: "1px solid " + t.border, borderRadius: 8, padding: "7px 10px", cursor: "pointer", color: t.textSub, fontSize: 11, fontFamily: "inherit" }}>Wyloguj</button>
+            </div>
+          ) : (
+            <button onClick={() => window.location.href = "/auth"} style={{ width: "100%", background: accent + "15", border: "1px solid " + accent + "40", borderRadius: 8, padding: "7px 10px", cursor: "pointer", color: accent, fontSize: 11, fontFamily: "inherit", fontWeight: 700 }}>Zaloguj się</button>
+          )}
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <button onClick={() => { setPhase("input"); setRounds({}); setConsensus(null); setLog([]); setCurrentRound(0); setFollowupResponses([]); setCurrentDebateId(null); }} style={{ display: "block", width: "100%", background: accent, color: "#fff", border: "none", borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, textAlign: "center" }}>
+            + Nowa debata
+          </button>
+          <button onClick={() => window.location.href = "/sock-designer"} style={{ display: "block", width: "100%", background: "none", border: `1px solid ${t.border}`, color: t.textSub, borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, textAlign: "center" }}>
+            🧦 Sock Designer
+          </button>
+          <button onClick={() => window.location.href = "/newsletter-builder"} style={{ display: "block", width: "100%", background: "none", border: `1px solid ${t.border}`, color: t.textSub, borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, textAlign: "center" }}>
+            📧 Newsletter Builder
+          </button>
+          <button onClick={() => window.location.href = "/design-judge"} style={{ display: "block", width: "100%", background: "none", border: `1px solid ${t.border}`, color: t.textSub, borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, textAlign: "center" }}>
+            🎨 Design Judge
+          </button>
+          <button onClick={() => window.location.href = "/tools/countdown"} style={{ display: "block", width: "100%", background: "none", border: `1px solid ${t.border}`, color: t.textSub, borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, textAlign: "center" }}>
+            ⏱ Generator odliczania
+          </button>
+          <button onClick={() => window.location.href = "/tools/marketing-brief"} style={{ display: "block", width: "100%", background: "none", border: `1px solid ${t.border}`, color: t.textSub, borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, textAlign: "center" }}>
+            📋 Akcje marketingowe
+          </button>
+          <button onClick={() => window.location.href = "/tools/brand-settings"} style={{ display: "block", width: "100%", background: "none", border: `1px solid ${t.border}`, color: t.textSub, borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, textAlign: "center" }}>
+            🏷️ Ustawienia marki
+          </button>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2 }}>HISTORIA ({debates.length})</div>
+            <button onClick={() => setShowHistory(h => !h)} style={{ background: "none", border: "none", cursor: "pointer", color: t.textSub, fontSize: 11, fontFamily: "inherit" }}>{showHistory ? "▴ ukryj" : "▾ pokaż"}</button>
+          </div>
+          {showHistory && <HistoryPanel debates={debates} onLoad={handleLoadDebate} onDelete={handleDeleteDebate} t={t} accent={accent} />}
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 10 }}>TRYB PRACY</div>
+          {MODES.map(m => (
+            <Tooltip key={m.id} text={m.tooltip}>
+              <button onClick={() => setMode(m.id)} style={{ display: "block", width: "100%", textAlign: "left", background: mode === m.id ? `${accent}12` : t.modeBtnBg, border: `1px solid ${mode === m.id ? `${accent}38` : t.border}`, borderRadius: 8, padding: "8px 12px", marginBottom: 6, cursor: "pointer", fontFamily: "inherit" }}>
+                <div style={{ color: mode === m.id ? accent : t.textSub, fontSize: 12, fontWeight: 700 }}>{m.label} ℹ</div>
+                <div style={{ color: t.textMuted, fontSize: 10, marginTop: 1 }}>{m.desc}</div>
+              </button>
+            </Tooltip>
+          ))}
+        </div>
+        <div style={{ marginBottom: 24 }}>
+          <Tooltip text="Określa jak szczegółowe mają być odpowiedzi modeli">
+            <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 10, cursor: "help" }}>SZCZEGÓŁOWOŚĆ ℹ</div>
+          </Tooltip>
+          <div style={{ display: "flex", gap: 6 }}>
+            {DETAIL_LEVELS.map(d => (
+              <button key={d.id} onClick={() => setDetailLevel(d.id)} style={{ flex: 1, background: detailLevel === d.id ? `${accent}12` : t.modeBtnBg, border: `1px solid ${detailLevel === d.id ? `${accent}38` : t.border}`, borderRadius: 8, padding: "6px 4px", cursor: "pointer", fontFamily: "inherit" }}>
+                <div style={{ color: detailLevel === d.id ? accent : t.textSub, fontSize: 10, fontWeight: 700, textAlign: "center" }}>{d.label}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+
+        <div>
+          <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 10 }}>RUNDY</div>
+          {Array.from({ length: 6 }, (_, i) => <RoundBadge key={i} n={i} status={roundStatuses[i]} t={t} />)}
+        </div>
+      </div>
 
       <div style={{ padding: isMobile ? 16 : 36, overflowY: "auto", background: t.bgCenter, minHeight: isMobile ? "100vh" : "auto" }}>
         {isMobile && (
@@ -988,7 +1064,6 @@ export default function ConsensusEngine() {
         ::-webkit-scrollbar-thumb { background: ${t.scrollThumb}; border-radius: 4px; }
       `}</style>
     </div>
-      </>
   );
 }
 
