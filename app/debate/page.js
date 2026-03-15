@@ -49,8 +49,10 @@ const MODELS = {
   },
 };
 
-const SYSTEM_PROMPT = (webSearch) =>
-  `Jesteś asystentem AI w systemie multi-agentowym. Odpowiadaj konkretnie i rzeczowo. Używaj markdown. ${webSearch ? "Masz dostęp do web search — używaj go gdy potrzebujesz aktualnych danych." : ""} Odpowiadaj w języku użytkownika.`;
+const SYSTEM_PROMPT = (webSearch, expertMode) =>
+  expertMode
+    ? `Jesteś doświadczonym strategiem i ekspertem marketingowym w systemie multi-agentowym. Specjalizujesz się w e-commerce, brandingu, strategii cenowej i kampaniach cyfrowych. Odpowiadaj konkretnie, używaj danych i przykładów z rynku. Używaj markdown. ${webSearch ? "Masz dostęp do web search — używaj go gdy potrzebujesz aktualnych danych." : ""} Odpowiadaj w języku użytkownika.`
+    : `Jesteś asystentem AI. ${webSearch ? "Masz dostęp do web search — używaj go gdy potrzebujesz aktualnych danych." : ""} Odpowiadaj w języku użytkownika. Używaj markdown.`;
 
 const CROSS_PROMPT = (myLabel, otherResponses) =>
   `Jesteś ${myLabel}. Przeczytaj odpowiedzi innych modeli AI na to samo pytanie i skomentuj je krótko — z czym się zgadzasz, co byś dodał lub zakwestionował.\n\nOdpowiedzi innych:\n${otherResponses}\n\nTwój komentarz (max 150 słów):`;
@@ -89,6 +91,7 @@ export default function DebatePage() {
   const [activeModels, setActiveModels] = useState({ claude: true, openai: true, gemini: true });
   const [modelVersions, setModelVersions] = useState({ claude: "claude-sonnet-4-6", openai: "gpt-5-mini", gemini: "gemini-2.5-flash" });
   const [webSearch, setWebSearch] = useState(false);
+  const [expertMode, setExpertMode] = useState(true);
   const [attachments, setAttachments] = useState([]);
   const [showModelPicker, setShowModelPicker] = useState(null);
   const [pendingCross, setPendingCross] = useState(null);
@@ -147,7 +150,7 @@ export default function DebatePage() {
     const responses = {};
     await Promise.all(toQuery.map(async (provider) => {
       try {
-        const content = await callModel(provider, modelVersions[provider], history, SYSTEM_PROMPT(webSearch));
+        const content = await callModel(provider, modelVersions[provider], history, SYSTEM_PROMPT(webSearch, expertMode));
         responses[provider] = content;
       } catch (e) {
         responses[provider] = "❌ Błąd: " + e.message;
@@ -186,7 +189,7 @@ export default function DebatePage() {
       try {
         const content = await callModel(provider, modelVersions[provider],
           [{ role: "user", content: CROSS_PROMPT(MODELS[provider].label, others) }],
-          SYSTEM_PROMPT(false)
+          SYSTEM_PROMPT(false, expertMode)
         );
         crossResponses[provider] = content;
       } catch (e) {
@@ -274,6 +277,11 @@ export default function DebatePage() {
           })}
 
           <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+            <button onClick={() => setExpertMode(e => !e)}
+              style={{ fontSize: 11, padding: "5px 10px", borderRadius: 6, border: `1px solid ${expertMode ? ACCENT + "60" : t.border}`, background: expertMode ? ACCENT + "12" : "none", color: expertMode ? ACCENT : t.textSub, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}
+              title={expertMode ? "Tryb eksperta marketingu/strategii — kliknij aby wyłączyć" : "Czyste AI bez kontekstu — kliknij aby włączyć tryb eksperta"}>
+              🎯 {expertMode ? "Ekspert ON" : "Ekspert OFF"}
+            </button>
             <button onClick={() => setWebSearch(w => !w)}
               style={{ fontSize: 11, padding: "5px 10px", borderRadius: 6, border: `1px solid ${webSearch ? "#2563eb60" : t.border}`, background: webSearch ? "#2563eb12" : "none", color: webSearch ? "#2563eb" : t.textSub, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
               🌐 Web {webSearch ? "ON" : "OFF"}
