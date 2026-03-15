@@ -421,6 +421,38 @@ export default function SockDesigner() {
                         ✓ Użyj tego briefu →
                       </button>
                     )}
+                    {!msg.pendingBrief && !isUser && msg.content.length > 150 && (
+                      <button onClick={async () => {
+                        setChatLoading(true);
+                        try {
+                          const res = await fetch("/api/ai-chat", {
+                            method: "POST", headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              model: chatModel,
+                              messages: [...chatHistory.slice(0, i+1).map(m => ({ role: m.role, content: m.content })), { role: "user", content: "Na podstawie naszej rozmowy wygeneruj teraz kompletny brief w wymaganym formacie JSON. Odpowiedz WYŁĄCZNIE blokiem:
+<<<BRIEF_START>>>
+{json}
+<<<BRIEF_END>>>
+Bez żadnego tekstu przed ani po." }],
+                              briefContext: null, systemOverride: SOCK_SYSTEM_PROMPT,
+                            }),
+                          });
+                          const data = await res.json();
+                          if (!data.error) {
+                            const match = data.content.match(/<<<BRIEF_START>>>([\s\S]*?)<<<BRIEF_END>>>/);
+                            if (match) {
+                              const parsed = JSON.parse(match[1].trim());
+                              setBrief(parsed);
+                              setPrompts({ dalleLeft: parsed.dalle_prompt_left || "", dalleRight: parsed.dalle_prompt_right || "", geminiLeft: parsed.gemini_prompt_left || "", geminiRight: parsed.gemini_prompt_right || "" });
+                              setSaveMsg("✅ Brief gotowy"); setTimeout(() => setSaveMsg(""), 3000);
+                            }
+                          }
+                        } catch(e) { console.error(e); }
+                        setChatLoading(false);
+                      }} style={{ marginTop: 6, background: "#f5f3ef", color: ACCENT, border: "1px solid " + ACCENT + "44", borderRadius: 8, padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                        ⬇ Generuj brief JSON
+                      </button>
+                    )}
                     {msgTime && <div style={{ fontSize: 9, color: "#bbb", marginTop: 3, fontFamily: "monospace" }}>{msgTime}</div>}
                   </div>
                 );
