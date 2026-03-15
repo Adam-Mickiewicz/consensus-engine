@@ -212,7 +212,31 @@ export default function SockDesigner() {
       if (briefMatch) {
         try { pendingBrief = JSON.parse(briefMatch[1].trim()); } catch (e) { console.error("Brief parse error:", e); }
       }
-      // Zapisz pendingBrief w wiadomości — użytkownik musi zaakceptować
+
+      // Jeśli nie ma briefu w odpowiedzi i AI opisało projekt — poproś o JSON
+      const seemsLikeBrief = content.length > 200 && (content.includes("lewa") || content.includes("prawa") || content.includes("skarpet") || content.includes("LEGS") || content.includes("tło") || content.includes("kolekcj"));
+      if (!pendingBrief && seemsLikeBrief && !chatModel.startsWith("claude")) {
+        try {
+          const jsonReq = await fetch("/api/ai-chat", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: chatModel,
+              messages: [...newHistory.map(m => ({ role: m.role, content: m.content })), { role: "assistant", content }, { role: "user", content: "Teraz zwróć TYLKO blok JSON z briefem, bez żadnego tekstu przed ani po, dokładnie w tym formacie:
+<<<BRIEF_START>>>
+{...}
+<<<BRIEF_END>>>" }],
+              briefContext: null,
+              systemOverride: SOCK_SYSTEM_PROMPT,
+            }),
+          });
+          const jsonData = await jsonReq.json();
+          if (!jsonData.error) {
+            const jsonMatch = jsonData.content.match(/<<<BRIEF_START>>>([\s\S]*?)<<<BRIEF_END>>>/);
+            if (jsonMatch) { try { pendingBrief = JSON.parse(jsonMatch[1].trim()); } catch(e) {} }
+          }
+        } catch(e) { console.error("JSON extraction error:", e); }
+      }
+
       const finalMsgWithBrief = { ...aiMsg, pendingBrief };
       const finalHistoryWithBrief = [...newHistory, finalMsgWithBrief];
       setChatHistory(finalHistoryWithBrief);
