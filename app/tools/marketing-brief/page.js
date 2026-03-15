@@ -119,6 +119,7 @@ const defaultChannel = () => ({
 });
 
 const defaultBrief = () => ({
+  priority: 0,
   name: "",
   dateStart: "",
   dateEnd: "",
@@ -1095,6 +1096,27 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
       }
 
       // STRONA TYTUŁOWA
+      // Baner priorytetu
+      if (brief.priority >= 4) {
+        const priorityColor = brief.priority === 5 ? "E63946" : "D4380D";
+        const priorityText = brief.priority === 5
+          ? "🚨 MEGA PRIORYTET — " + "★".repeat(5)
+          : "⚠️ WYSOKI PRIORYTET — " + "★".repeat(brief.priority);
+        children.push(new Table({
+          width: { size: PAGE_W, type: WidthType.DXA },
+          columnWidths: [PAGE_W],
+          rows: [new TableRow({ children: [
+            new TableCell({
+              borders: noBorders,
+              shading: { fill: priorityColor, type: ShadingType.CLEAR },
+              margins: { top: 200, bottom: 200, left: 200, right: 200 },
+              width: { size: PAGE_W, type: WidthType.DXA },
+              children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: priorityText, bold: true, size: 32, font: "Arial", color: "FFFFFF" })] })]
+            })
+          ]})]
+        }));
+        children.push(spacer(160));
+      }
       children.push(spacer(400));
       children.push(new Paragraph({ children: [new TextRun({ text: "BRIEF MARKETINGOWY", bold: true, size: 52, font: "Arial", color: ACCENT_COLOR })] }));
       children.push(new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: ACCENT_COLOR, space: 1 } }, spacing: { after: 200 }, children: [] }));
@@ -1106,7 +1128,9 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
       // CZĘŚĆ OGÓLNA
       children.push(sectionHeader("CZĘŚĆ OGÓLNA"));
       children.push(spacer(80));
+      const priorityLabels = ["","Niska","Średnia","Ważna","Wysoka","MEGA — top priorytet!"];
       const generalPairs = [
+        ["Priorytet", brief.priority ? "★".repeat(brief.priority) + " " + (priorityLabels[brief.priority] || "") : null],
         ["Data startu", brief.dateStart], ["Data końca", brief.dateEnd],
         ["Deadline kreatywny", brief.deadlineCreative],
         ["Cel kampanii", brief.goal], ["Hasło główne", brief.headline],
@@ -1420,6 +1444,11 @@ Copy: ${brief.copyProposals || "—"}`;
               <div>
                 <button onClick={() => { setView("list"); if (typeof window !== "undefined") window.history.replaceState({}, "", "/tools/marketing-brief"); }} style={{ background: "none", border: "none", color: "#aaa", fontSize: 12, cursor: "pointer", fontFamily: "inherit", marginBottom: 8, padding: 0 }}>← Lista briefów</button>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "#1a1a1a" }}>{editId ? "Edytuj brief" : "Nowy brief"}</div>
+                {brief.priority >= 4 && (
+                  <div style={{ marginTop: 6, background: "#e63946", borderRadius: 6, padding: "4px 12px", fontSize: 11, fontWeight: 800, color: "#fff", letterSpacing: 0.5, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    {"★".repeat(brief.priority)} {brief.priority === 5 ? "MEGA PRIORYTET" : "WYSOKI PRIORYTET"}
+                  </div>
+                )}
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
                 {saveMsg && <span style={{ fontSize: 12, color: saveMsg.startsWith("✅") ? "#2d7a4f" : "#cc0000" }}>{saveMsg}</span>}
@@ -1448,6 +1477,29 @@ Copy: ${brief.copyProposals || "—"}`;
             {/* CZĘŚĆ OGÓLNA */}
             <Section title="CZĘŚĆ OGÓLNA">
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {/* PRIORYTET */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1.2, textTransform: "uppercase", fontFamily: "monospace" }}>Priorytet akcji</div>
+                  <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                    {[1,2,3,4,5].map(star => (
+                      <button key={star} onClick={() => set("priority", brief.priority === star ? 0 : star)}
+                        style={{ fontSize: 28, background: "none", border: "none", cursor: "pointer", padding: "2px 4px", lineHeight: 1, color: star <= (brief.priority || 0) ? (brief.priority >= 4 ? "#e63946" : brief.priority === 3 ? "#ff9800" : ACCENT) : "#ddd", transition: "color 0.15s, transform 0.1s", transform: star <= (brief.priority || 0) ? "scale(1.1)" : "scale(1)" }}>
+                        ★
+                      </button>
+                    ))}
+                    {brief.priority > 0 && (
+                      <span style={{ fontSize: 12, fontWeight: 700, marginLeft: 8, color: brief.priority >= 4 ? "#e63946" : brief.priority === 3 ? "#ff9800" : ACCENT }}>
+                        {["","Niska","Średnia","Ważna","Wysoka","🚨 MEGA — top priorytet!"][brief.priority]}
+                      </span>
+                    )}
+                  </div>
+                  {brief.priority >= 4 && (
+                    <div style={{ background: "#fff0f0", border: "2px solid #e63946", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "#e63946", display: "flex", alignItems: "center", gap: 8 }}>
+                      🚨 {brief.priority === 5 ? "MEGA PRIORYTET — cała machina w ruch!" : "WYSOKI PRIORYTET — akcja kluczowa"}
+                    </div>
+                  )}
+                </div>
+
                 <Field label="Nazwa akcji / kampanii">
                   <Input value={brief.name} onChange={v => set("name", v)} placeholder="np. Wyprzedaż wiosenna 2026" />
                 </Field>
