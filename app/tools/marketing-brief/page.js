@@ -1117,6 +1117,18 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
       if (generalPairs.length) children.push(kvTable(generalPairs));
       children.push(spacer(240));
 
+      // ZAPOTRZEBOWANIE NA COPY
+      const copyReqs = (brief.copyRequests || []).filter(r => r.label || r.text);
+      if (copyReqs.length > 0) {
+        children.push(sectionHeader("ZAPOTRZEBOWANIE NA COPY", "555555"));
+        children.push(spacer(80));
+        for (const req of copyReqs) {
+          if (req.label) children.push(new Paragraph({ spacing: { after: 40 }, children: [new TextRun({ text: req.label, bold: true, size: 20, font: "Arial", color: ACCENT_COLOR })] }));
+          if (req.text) children.push(new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: req.text, size: 18, font: "Arial", color: DARK })] }));
+        }
+        children.push(spacer(240));
+      }
+
       // BRIEF ROZSZERZONY
       if (brief.keyFindings || brief.copyProposals || brief.recommendations || brief.draftLink) {
         children.push(sectionHeader("BRIEF ROZSZERZONY", "2D5F8A"));
