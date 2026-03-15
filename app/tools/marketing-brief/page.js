@@ -7,52 +7,84 @@ import Nav from "../../components/Nav";
 const ACCENT = "#b8763a";
 const CHANNELS = [
   {
-    id: "organic_social", label: "📱 Kanały własne (organic)",
+    id: "organic_social",
+    label: "📱 Social Media Organic",
+    tooltip: "Posty organiczne na Instagramie i Facebooku — bez budżetu reklamowego. Karuzele, pojedyncze posty, Stories i Reels.",
     formats: ["Post kwadrat 1080×1080", "Post pionowy 1080×1350", "Stories 1080×1920", "Reels cover 1080×1920"],
     types: ["Grafika", "Zdjęcie", "Wideo", "Animacja"],
-    slidesLabel: "Liczba kart w karuzeli", slidesNote: "dotyczy tylko karuzeli",
+    slidesLabel: "Liczba kart w karuzeli",
+    slidesNote: "dotyczy tylko karuzeli",
+    hasFormatNotes: true,
   },
   {
-    id: "meta_ads", label: "🎯 Meta Ads",
+    id: "meta_ads",
+    label: "🎯 Meta Ads",
+    tooltip: "Płatne reklamy na Facebooku i Instagramie. Możesz opisać szczegółowe wymagania dla każdego formatu osobno.",
     formats: ["Kwadrat 1080×1080", "Pionowy 1080×1920", "Poziomy 1200×628", "Pionowy 1080×1350", "Collection Ad"],
     types: ["Grafika statyczna", "Zdjęcie", "Wideo", "Animacja", "Karuzela"],
-    slidesLabel: "Liczba ekranów / kart",
+    slidesLabel: "Liczba kreacji / kart karuzeli",
+    slidesLabelTooltip: "Ile osobnych kreacji lub kart w karuzeli potrzebujesz dla tego kanału",
+    hasFormatNotes: true,
   },
   {
-    id: "google_ads", label: "🔍 Google Ads",
-    formats: ["Leaderboard 728×90", "Medium Rectangle 300×250", "Large Rectangle 336×280", "Billboard 970×250", "Half Page 300×600", "Responsive Display"],
+    id: "google_ads",
+    label: "🔍 Google Ads",
+    tooltip: "Reklamy displayowe w sieci Google. Wybierz formaty i opisz wymagania.",
+    formats: ["Leaderboard 728×90", "Medium Rectangle 300×250", "Large Rectangle 336×280", "Billboard 970×250", "Half Page 300×600", "Responsive Display", "960×1200", "1200×628"],
     types: ["Grafika statyczna", "Animacja HTML5", "Responsive (tekst+grafika)"],
-    slidesLabel: "Liczba wariantów kreacji",
+    slidesLabel: "Liczba wariantów reklam",
+    hasFormatNotes: true,
   },
   {
-    id: "email", label: "📧 Email / Newsletter",
-    formats: ["Nagłówek 600×200", "Baner produktowy 600×300", "Full-width 600px"],
+    id: "euvic360",
+    label: "🌐 Euvic360",
+    tooltip: "Kanał płatny Euvic360 — opisz formaty i wymagania kreacji.",
+    formats: ["Format własny"],
+    types: ["Grafika statyczna", "Animacja", "Wideo"],
+    slidesLabel: "Liczba wariantów",
+    hasFormatNotes: true,
+  },
+  {
+    id: "email",
+    label: "📧 Email / Newsletter",
+    tooltip: "Grafiki do mailingu. Możesz też załączyć szkic układu newslettera.",
+    formats: ["600×600", "500×625"],
     types: ["Grafika statyczna", "Animacja GIF"],
     slidesLabel: "Liczba banerów w mailu",
+    hasFormatNotes: true,
+    hasSketch: true,
   },
   {
-    id: "slider_main", label: "🖥️ Slider strona główna",
-    formats: ["1920×600", "1440×500", "Mobile 768×400"],
+    id: "slider_main",
+    label: "🖥️ Slider strona główna",
+    tooltip: "Baner na sliderze strony głównej sklepu. Wymiar: 799×670 px.",
+    formats: ["799×670 px"],
     types: ["Grafika statyczna", "Animacja"],
     slidesLabel: "Liczba slajdów",
   },
   {
-    id: "slider_category", label: "🗂️ Slider mini kategoria",
-    formats: ["800×300", "600×250"],
+    id: "slider_category",
+    label: "🗂️ Slider mini kategoria",
+    tooltip: "Mały slider na stronie kategorii. Wymiar: 385×250 px.",
+    formats: ["385×250 px"],
     types: ["Grafika statyczna"],
     slidesLabel: "Liczba slajdów",
   },
   {
-    id: "popup", label: "💬 Pop-up grafika",
-    formats: ["Kwadrat 600×600", "Pionowy 600×800", "Poziomy 800×500"],
+    id: "popup",
+    label: "💬 Pop-up",
+    tooltip: "Grafika pop-up wyświetlana na stronie. Wymiar: 500×500 px.",
+    formats: ["500×500 px"],
     types: ["Grafika statyczna", "Animacja GIF"],
-    slidesLabel: "Liczba wariantów",
+    slidesLabel: "Liczba wariantów pop-upu",
   },
   {
-    id: "listing_banner", label: "🏷️ Baner na listingu",
-    formats: ["1200×200", "1000×200", "800×150"],
+    id: "listing_banner",
+    label: "🏷️ Baner na listingu",
+    tooltip: "Baner wyświetlany na stronie listingu produktów. Wymiar: 365×489 px.",
+    formats: ["365×489 px"],
     types: ["Grafika statyczna"],
-    slidesLabel: "Liczba wariantów",
+    slidesLabel: "Liczba wariantów banera",
   },
 ];
 
@@ -64,6 +96,7 @@ const defaultChannel = () => ({
   active: false,
   selectedFormats: [],
   selectedTypes: [],
+  formatNotes: {},
   slides: "1",
   cta: false,
   ctaText: "Kup teraz",
@@ -71,6 +104,7 @@ const defaultChannel = () => ({
   visible: [],
   hierarchy: ["", "", ""],
   notes: "",
+  sketchUrl: "",
 });
 
 const defaultBrief = () => ({
@@ -86,6 +120,10 @@ const defaultBrief = () => ({
   budget: "",
   targetAudience: "",
   brandNotes: "",
+  draftLink: "",
+  keyFindings: "",
+  copyProposals: "",
+  recommendations: "",
   references: { links: [], files: [] },
   chatHistory: [],
   channels: Object.fromEntries(CHANNELS.map(c => [c.id, defaultChannel()])),
@@ -95,6 +133,23 @@ const defaultBrief = () => ({
 
 function Label({ children }) {
   return <div style={{ fontSize: "10px", fontWeight: 700, color: "#888", letterSpacing: 1.2, marginBottom: 5, textTransform: "uppercase", fontFamily: "monospace" }}>{children}</div>;
+}
+
+function Tooltip({ text, children }) {
+  const [show, setShow] = React.useState(false);
+  return (
+    <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}
+      onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+      {children}
+      <span style={{ marginLeft: 4, width: 14, height: 14, borderRadius: "50%", background: "#e0dbd4", color: "#888", fontSize: 9, fontWeight: 700, display: "inline-flex", alignItems: "center", justifyContent: "center", cursor: "help", flexShrink: 0 }}>?</span>
+      {show && (
+        <span style={{ position: "absolute", bottom: "calc(100% + 6px)", left: 0, background: "#1a1a1a", color: "#fff", fontSize: 11, padding: "6px 10px", borderRadius: 6, whiteSpace: "nowrap", maxWidth: 280, zIndex: 999, lineHeight: 1.5, fontFamily: "-apple-system, sans-serif", fontWeight: 400, boxShadow: "0 4px 12px rgba(0,0,0,0.3)", pointerEvents: "none" }}
+          style2={{ whiteSpace: "normal" }}>
+          {text}
+        </span>
+      )}
+    </span>
+  );
 }
 
 function Input({ value, onChange, placeholder, type = "text", style }) {
@@ -137,21 +192,43 @@ function ChannelPanel({ channel, cfg, onChange }) {
     const cur = cfg[arr] || [];
     onChange({ ...cfg, [arr]: cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val] });
   };
+  const setFormatNote = (fmt, val) => onChange({ ...cfg, formatNotes: { ...(cfg.formatNotes || {}), [fmt]: val } });
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <Field label="Formaty">
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
           {channel.formats.map(f => <CheckPill key={f} label={f} checked={(cfg.selectedFormats || []).includes(f)} onChange={() => toggle("selectedFormats", f, "selectedFormats")} />)}
         </div>
+        {channel.hasFormatNotes && (cfg.selectedFormats || []).length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
+            {(cfg.selectedFormats || []).map(fmt => (
+              <div key={fmt} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                <div style={{ fontSize: 10, color: "#888", padding: "6px 0", minWidth: 120, fontFamily: "monospace", flexShrink: 0 }}>{fmt}:</div>
+                <textarea value={(cfg.formatNotes || {})[fmt] || ""} onChange={e => setFormatNote(fmt, e.target.value)}
+                  placeholder={`Opis wymagań dla ${fmt}...`} rows={1}
+                  style={{ flex: 1, background: "#f9f7f5", border: "1px solid #ddd", borderRadius: 6, padding: "5px 8px", fontSize: 12, fontFamily: "inherit", resize: "vertical" }} />
+              </div>
+            ))}
+          </div>
+        )}
       </Field>
       <Field label="Typ materiału">
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           {channel.types.map(t => <CheckPill key={t} label={t} checked={(cfg.selectedTypes || []).includes(t)} onChange={() => toggle("selectedTypes", t, "selectedTypes")} />)}
         </div>
       </Field>
+      {channel.hasSketch && (
+        <Field label="Szkic układu / referencja">
+          <div style={{ display: "flex", gap: 8 }}>
+            <input type="url" value={cfg.sketchUrl || ""} onChange={e => onChange({ ...cfg, sketchUrl: e.target.value })}
+              placeholder="Link do szkicu układu (Figma, Drive, zdjęcie)..."
+              style={{ flex: 1, background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 12, fontFamily: "inherit" }} />
+          </div>
+        </Field>
+      )}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label={channel.slidesLabel || "Liczba slajdów / ekranów"}>
+        <Field label={<Tooltip text={channel.slidesLabelTooltip || "Ile osobnych kreacji potrzebujesz dla tego kanału"}>{channel.slidesLabel || "Liczba slajdów / ekranów"}</Tooltip>}>
           <select value={cfg.slides || "1"} onChange={e => onChange({ ...cfg, slides: e.target.value })}
             style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 13, color: "#1a1a1a", fontFamily: "inherit" }}>
             {["1","2","3","4","5","6+"].map(n => <option key={n}>{n}</option>)}
@@ -1004,6 +1081,24 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
                 </Field>
                 <Field label="Uwagi brandowe / wytyczne">
                   <Textarea value={brief.brandNotes} onChange={v => set("brandNotes", v)} placeholder="Fonty, kolory, elementy obowiązkowe, czego unikać..." rows={2} />
+                </Field>
+              </div>
+            </Section>
+
+            {/* LINK DO DRAFTU + USTALENIA */}
+            <Section title="BRIEF ROZSZERZONY">
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <Field label={<Tooltip text="Link do rozszerzonego briefu lub draftu komunikacji (Notion, Google Docs, Figma itp.)">Link do rozszerzonego briefu / draftu</Tooltip>}>
+                  <Input value={brief.draftLink || ""} onChange={v => set("draftLink", v)} placeholder="https://..." />
+                </Field>
+                <Field label={<Tooltip text="Kluczowe ustalenia z rozmów, spotkań lub syntezy AI — co zostało zdecydowane">Kluczowe ustalenia</Tooltip>}>
+                  <Textarea value={brief.keyFindings || ""} onChange={v => set("keyFindings", v)} placeholder="Co zostało ustalone? Kluczowe decyzje i wnioski..." rows={3} />
+                </Field>
+                <Field label={<Tooltip text="Propozycje haseł, nagłówków i copy do wykorzystania w kreacjach">Propozycje copy i nagłówków</Tooltip>}>
+                  <Textarea value={brief.copyProposals || ""} onChange={v => set("copyProposals", v)} placeholder="Hasła, nagłówki, CTA, treści do grafik..." rows={3} />
+                </Field>
+                <Field label={<Tooltip text="Rekomendacje strategiczne i kolejne kroki">Rekomendacje</Tooltip>}>
+                  <Textarea value={brief.recommendations || ""} onChange={v => set("recommendations", v)} placeholder="Co warto zrobić? Kolejne kroki, sugestie..." rows={3} />
                 </Field>
               </div>
             </Section>
