@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { saveDesignReview, loadDesignReviews, deleteDesignReview } from "../../lib/supabase";
-import Nav from "../../components/Nav";
+import Nav from "../components/Nav";
 
 const accent = "#b8763a";
 
