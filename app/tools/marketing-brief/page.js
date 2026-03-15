@@ -929,46 +929,184 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
     setExportingDocx(true);
     try {
       const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-              HeadingLevel, AlignmentType, WidthType, BorderStyle, ShadingType } = await import("docx");
+              HeadingLevel, AlignmentType, WidthType, BorderStyle, ShadingType, LevelFormat } = await import("docx");
 
-      const border = { style: BorderStyle.SINGLE, size: 1, color: "DDDDDD" };
+      const ACCENT_COLOR = "B8763A";
+      const DARK = "1A1A1A";
+      const GRAY = "666666";
+      const LIGHT_BG = "FDF8F3";
+      const GREEN = "1A7A3A";
+
+      const border = { style: BorderStyle.SINGLE, size: 4, color: "E0DBD4" };
       const borders = { top: border, bottom: border, left: border, right: border };
+      const accentBorder = { style: BorderStyle.SINGLE, size: 4, color: ACCENT_COLOR };
       const noBorder = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
       const noBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder };
+      const PAGE_W = 9026; // A4 content width w DXA (1440*6.27)
 
-      const h1 = (text) => new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text, bold: true, size: 28, font: "Arial", color: "B8763A" })] });
-      const h2 = (text) => new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text, bold: true, size: 22, font: "Arial", color: "333333" })] });
-      const p = (text, opts = {}) => new Paragraph({ spacing: { after: 100 }, children: [new TextRun({ text, font: "Arial", size: 20, ...opts })] });
-      const kv = (key, val) => new Paragraph({ spacing: { after: 80 }, children: [new TextRun({ text: key + ": ", bold: true, font: "Arial", size: 20 }), new TextRun({ text: val || "—", font: "Arial", size: 20 })] });
-      const spacer = () => new Paragraph({ spacing: { after: 160 }, children: [] });
+      // Helpers
+      const spacer = (size = 160) => new Paragraph({ spacing: { after: size }, children: [] });
+      const divider = () => new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: "E0DBD4", space: 1 } }, spacing: { after: 120 }, children: [] });
 
-      const children = [
-        new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: "BRIEF MARKETINGOWY", bold: true, size: 36, font: "Arial", color: "B8763A" })] }),
-        new Paragraph({ spacing: { after: 300 }, children: [new TextRun({ text: brief.name || "Bez nazwy", size: 28, font: "Arial", color: "555555" })] }),
-        h1("CZĘŚĆ OGÓLNA"),
-        kv("Data startu", brief.dateStart), kv("Data końca", brief.dateEnd),
-        kv("Deadline kreatywny", brief.deadlineCreative),
-        kv("Cel kampanii", brief.goal), kv("Hasło główne", brief.headline),
-        kv("Priorytet hasła", brief.headlinePriority), kv("Rabat", brief.discount),
-        kv("Kod rabatowy", brief.promoCode), kv("Budżet mediowy", brief.budget),
-        kv("Grupa docelowa", brief.targetAudience), kv("Uwagi brandowe", brief.brandNotes),
-        spacer(),
-      ];
+      // Sekcja nagłówkowa z kolorowym tłem
+      const sectionHeader = (text, color = ACCENT_COLOR) => new Table({
+        width: { size: PAGE_W, type: WidthType.DXA },
+        columnWidths: [PAGE_W],
+        rows: [new TableRow({ children: [
+          new TableCell({
+            borders: noBorders,
+            shading: { fill: color, type: ShadingType.CLEAR },
+            margins: { top: 120, bottom: 120, left: 200, right: 200 },
+            width: { size: PAGE_W, type: WidthType.DXA },
+            children: [new Paragraph({ children: [new TextRun({ text, bold: true, size: 26, font: "Arial", color: "FFFFFF" })] })]
+          })
+        ]})]
+      });
 
-      const activeChannels = Object.entries(brief.channels || {}).filter(([, v]) => v.active);
-      if (activeChannels.length > 0) {
-        children.push(h1(`KANAŁY KOMUNIKACJI (${activeChannels.length})`));
-        for (const [id, cfg] of activeChannels) {
-          children.push(h2(CHANNELS_LABELS[id] || id));
-          if (cfg.selectedFormats?.length) children.push(kv("Formaty", cfg.selectedFormats.join(", ")));
-          if (cfg.selectedTypes?.length) children.push(kv("Typ materiału", cfg.selectedTypes.join(", ")));
-          children.push(kv("Liczba slajdów", cfg.slides || "1"));
-          children.push(kv("CTA", cfg.cta ? (cfg.ctaText === "Inne" ? cfg.ctaCustom : cfg.ctaText) : "Nie"));
-          if (cfg.visible?.length) children.push(kv("Co widoczne na grafice", cfg.visible.join(", ")));
-          const hier = (cfg.hierarchy || []).filter(h => h);
-          if (hier.length) children.push(kv("Hierarchia", hier.map((h, i) => `${i+1}. ${h}`).join(" | ")));
-          if (cfg.notes) children.push(kv("Uwagi", cfg.notes));
-          children.push(spacer());
+      // Para z labelką i wartością w tabeli 2-kolumnowej
+      const kvTable = (pairs) => new Table({
+        width: { size: PAGE_W, type: WidthType.DXA },
+        columnWidths: [2400, PAGE_W - 2400],
+        rows: pairs.filter(([, v]) => v).map(([k, v]) => new TableRow({ children: [
+          new TableCell({
+            borders,
+            shading: { fill: "F9F7F5", type: ShadingType.CLEAR },
+            margins: { top: 80, bottom: 80, left: 120, right: 80 },
+            width: { size: 2400, type: WidthType.DXA },
+            children: [new Paragraph({ children: [new TextRun({ text: k, bold: true, size: 18, font: "Arial", color: ACCENT_COLOR })] })]
+          }),
+          new TableCell({
+            borders,
+            margins: { top: 80, bottom: 80, left: 120, right: 120 },
+            width: { size: PAGE_W - 2400, type: WidthType.DXA },
+            children: [new Paragraph({ children: [new TextRun({ text: String(v || "—"), size: 18, font: "Arial", color: DARK })] })]
+          })
+        ]}))
+      });
+
+      // Nagłówek kanału
+      const channelHeader = (text) => new Table({
+        width: { size: PAGE_W, type: WidthType.DXA },
+        columnWidths: [PAGE_W],
+        rows: [new TableRow({ children: [
+          new TableCell({
+            borders: { top: accentBorder, bottom: accentBorder, left: { style: BorderStyle.SINGLE, size: 12, color: ACCENT_COLOR }, right: noBorder },
+            shading: { fill: "FDF8F3", type: ShadingType.CLEAR },
+            margins: { top: 100, bottom: 100, left: 180, right: 120 },
+            width: { size: PAGE_W, type: WidthType.DXA },
+            children: [new Paragraph({ children: [new TextRun({ text, bold: true, size: 22, font: "Arial", color: ACCENT_COLOR })] })]
+          })
+        ]})]
+      });
+
+      // Format row - kafelek formatu
+      const formatRow = (fmtLabel, items) => {
+        const rows = [new TableRow({ children: [
+          new TableCell({
+            columnSpan: 3,
+            borders,
+            shading: { fill: "F0EDE8", type: ShadingType.CLEAR },
+            margins: { top: 60, bottom: 60, left: 120, right: 120 },
+            width: { size: PAGE_W, type: WidthType.DXA },
+            children: [new Paragraph({ children: [new TextRun({ text: fmtLabel, bold: true, size: 18, font: "Arial", color: DARK })] })]
+          })
+        ]})];
+
+        for (const item of items) {
+          rows.push(new TableRow({ children: [
+            new TableCell({ borders, margins: { top: 60, bottom: 60, left: 160, right: 80 }, width: { size: 1800, type: WidthType.DXA },
+              children: [new Paragraph({ children: [new TextRun({ text: item.type || "—", size: 16, font: "Arial", color: GRAY })] })] }),
+            new TableCell({ borders, margins: { top: 60, bottom: 60, left: 80, right: 80 }, width: { size: 600, type: WidthType.DXA },
+              children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: item.count ? `×${item.count}` : "", bold: true, size: 16, font: "Arial", color: ACCENT_COLOR })] })] }),
+            new TableCell({ borders, margins: { top: 60, bottom: 60, left: 80, right: 120 }, width: { size: PAGE_W - 2400, type: WidthType.DXA },
+              children: [new Paragraph({ children: [new TextRun({ text: item.note || "", size: 16, font: "Arial", color: DARK })] })] }),
+          ]}));
+        }
+        return new Table({ width: { size: PAGE_W, type: WidthType.DXA }, columnWidths: [1800, 600, PAGE_W - 2400], rows });
+      };
+
+      // Buduj dokument
+      const children = [];
+
+      // STRONA TYTUŁOWA
+      children.push(spacer(400));
+      children.push(new Paragraph({ children: [new TextRun({ text: "BRIEF MARKETINGOWY", bold: true, size: 52, font: "Arial", color: ACCENT_COLOR })] }));
+      children.push(new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: ACCENT_COLOR, space: 1 } }, spacing: { after: 200 }, children: [] }));
+      children.push(new Paragraph({ spacing: { after: 80 }, children: [new TextRun({ text: brief.name || "Bez nazwy", bold: true, size: 36, font: "Arial", color: DARK })] }));
+      if (brief.dateStart || brief.dateEnd) {
+        children.push(new Paragraph({ spacing: { after: 400 }, children: [new TextRun({ text: `${brief.dateStart || "??"} → ${brief.dateEnd || "??"}`, size: 22, font: "Arial", color: GRAY })] }));
+      }
+
+      // CZĘŚĆ OGÓLNA
+      children.push(sectionHeader("CZĘŚĆ OGÓLNA"));
+      children.push(spacer(80));
+      const generalPairs = [
+        ["Data startu", brief.dateStart], ["Data końca", brief.dateEnd],
+        ["Deadline kreatywny", brief.deadlineCreative],
+        ["Cel kampanii", brief.goal], ["Hasło główne", brief.headline],
+        ["Priorytet hasła", brief.headlinePriority], ["Rabat", brief.discount],
+        ["Kod rabatowy", brief.promoCode], ["Budżet mediowy", brief.budget],
+        ["Grupa docelowa", brief.targetAudience], ["Uwagi brandowe", brief.brandNotes],
+      ].filter(([, v]) => v);
+      if (generalPairs.length) children.push(kvTable(generalPairs));
+      children.push(spacer(240));
+
+      // BRIEF ROZSZERZONY
+      if (brief.keyFindings || brief.copyProposals || brief.recommendations || brief.draftLink) {
+        children.push(sectionHeader("BRIEF ROZSZERZONY", "2D5F8A"));
+        children.push(spacer(80));
+        const extPairs = [
+          ["Link do draftu", brief.draftLink],
+          ["Kluczowe ustalenia", brief.keyFindings],
+          ["Propozycje copy", brief.copyProposals],
+          ["Rekomendacje", brief.recommendations],
+        ].filter(([, v]) => v);
+        if (extPairs.length) children.push(kvTable(extPairs));
+        children.push(spacer(240));
+      }
+
+      // KANAŁY
+      const activeChannelsList = Object.entries(brief.channels || {}).filter(([, v]) => v.active);
+      if (activeChannelsList.length > 0) {
+        children.push(sectionHeader(`KANAŁY KOMUNIKACJI (${activeChannelsList.length})`));
+        children.push(spacer(120));
+
+        for (const [id, cfg] of activeChannelsList) {
+          const channelDef = CHANNELS.find(c => c.id === id);
+          if (!channelDef) continue;
+          const label = channelDef.label.replace(/^[^\s]+ /, "");
+          children.push(channelHeader(channelDef.label));
+          children.push(spacer(60));
+
+          // Formaty
+          const selectedFmts = (channelDef.formats || []).filter(f => (cfg.selectedFormats || []).includes(f.id));
+          for (const fmt of selectedFmts) {
+            const fmtData = cfg.formatData?.[fmt.id] || {};
+            const items = [];
+            if (fmt.isCarousel) {
+              items.push({ type: `Karuzela — ${fmtData.karuzela_cards || "3"} kart`, count: null, note: fmtData.note_karuzela || "" });
+            } else {
+              const types = Array.isArray(fmtData.types) ? fmtData.types : [];
+              if (types.length > 0) {
+                for (const typ of types) items.push({ type: typ, count: fmtData["count_" + typ] || "1", note: fmtData["note_" + typ] || "" });
+              } else {
+                items.push({ type: "—", count: null, note: fmtData.note || "" });
+              }
+            }
+            children.push(formatRow(fmt.label, items));
+            children.push(spacer(60));
+          }
+
+          // Metadane kanału
+          const channelMeta = [
+            ["CTA", cfg.cta ? (cfg.ctaText === "Inne" ? cfg.ctaCustom : cfg.ctaText) : null],
+            ["Co widoczne", cfg.visible?.length ? cfg.visible.join(", ") : null],
+            ["Hierarchia", cfg.hierarchy?.filter(h => h).length ? cfg.hierarchy.filter(h => h).map((h, i) => `${i+1}. ${h}`).join(" → ") : null],
+            ["Szkic układu", cfg.sketchUrl || null],
+            ["Uwagi", cfg.notes || null],
+          ].filter(([, v]) => v);
+          if (channelMeta.length) children.push(kvTable(channelMeta));
+          children.push(spacer(200));
         }
       }
 
