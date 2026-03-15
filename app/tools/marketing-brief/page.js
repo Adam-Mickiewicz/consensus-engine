@@ -207,7 +207,6 @@ function ChannelPanel({ channel, cfg, onChange }) {
             {(cfg.selectedFormats || []).map(fmt => (
               <div key={fmt} style={{ display: "flex", flexDirection: "column", gap: 4, paddingBottom: 8, borderBottom: "1px solid #eee" }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, fontFamily: "monospace" }}>{fmt}</div>
-                <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {!isCarousel(fmt) && (
                     <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
@@ -226,7 +225,6 @@ function ChannelPanel({ channel, cfg, onChange }) {
                   placeholder={isCarousel(fmt) ? "Opisz zawartość karuzeli, styl, motyw..." : "Opis zawartości, co ma być widoczne, tekst, grafika..."}
                   rows={2} style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "5px 8px", fontSize: 12, fontFamily: "inherit", resize: "vertical", width: "100%" }} />
               </div>
-            </div>
             ))}
           </div>
         )}
