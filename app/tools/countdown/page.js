@@ -222,7 +222,6 @@ function ColorInput({ value, onChange }) {
       <input type="text" value={value} onChange={e => onChange(e.target.value)}
         style={{ flex: 1, background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: "6px", padding: "5px 8px", color: "#ccc", fontSize: "12px", fontFamily: "monospace" }} />
     </div>
-    </>
   );
 }
 
