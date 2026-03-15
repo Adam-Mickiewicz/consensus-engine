@@ -782,7 +782,7 @@ export default function MarketingBrief() {
   };
 
   const openNew = () => { setBrief(defaultBrief()); setEditId(null); setActiveChannel(null); setView("form"); };
-  const openEdit = (b) => { setBrief(b.data); setEditId(b.id); setActiveChannel(null); setView("form"); };
+  const openEdit = (b) => { setBrief(b.data); setEditId(b.id); setActiveChannel(null); setView("form"); if (b.data?.summary) setSummary(b.data.summary); else setSummary(null); };
 
   const deleteBrief = async (id) => {
     if (!confirm("Usunąć brief?")) return;
@@ -1232,6 +1232,11 @@ Copy: ${brief.copyProposals || "—"}`;
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setSummary(data.content);
+      // Zapisz summary w briefie
+      setBrief(b => ({ ...b, summary: data.content }));
+      if (editId) {
+        await fetch("/api/marketing-briefs", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editId, title: brief.name, data: { ...brief, summary: data.content } }) });
+      }
       setTimeout(() => summaryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     } catch(e) {
       alert("Błąd generowania podsumowania: " + e.message);
