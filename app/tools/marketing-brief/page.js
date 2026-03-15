@@ -1011,23 +1011,30 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
       ws1["!cols"] = [{ wch: 25 }, { wch: 60 }];
       XLSX.utils.book_append_sheet(wb, ws1, "Ogólne");
 
-      // Arkusz 2: Kanały
-      const headers = ["Kanał", "Aktywny", "Formaty", "Typ materiału", "Liczba slajdów", "CTA", "Co widoczne", "Hierarchia 1", "Hierarchia 2", "Hierarchia 3", "Uwagi"];
-      const rows = [headers, ...Object.entries(brief.channels || {}).map(([id, cfg]) => [
-        CHANNELS_LABELS[id] || id,
-        cfg.active ? "TAK" : "NIE",
-        (cfg.selectedFormats || []).join(", "),
-        (cfg.selectedTypes || []).join(", "),
-        cfg.slides || "1",
-        cfg.cta ? (cfg.ctaText === "Inne" ? cfg.ctaCustom : cfg.ctaText) : "NIE",
-        (cfg.visible || []).join(", "),
-        cfg.hierarchy?.[0] || "",
-        cfg.hierarchy?.[1] || "",
-        cfg.hierarchy?.[2] || "",
-        cfg.notes || "",
-      ])];
-      const ws2 = XLSX.utils.aoa_to_sheet(rows);
-      ws2["!cols"] = [{ wch: 28 }, { wch: 8 }, { wch: 35 }, { wch: 25 }, { wch: 16 }, { wch: 20 }, { wch: 40 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 40 }];
+      // Arkusz 2: Kanały - nowa struktura
+      const channelRows = [["Kanał", "Format", "Typ materiału", "Liczba", "Brief/Opis", "CTA", "Co widoczne", "Hierarchia", "Uwagi"]];
+      for (const [id, cfg] of Object.entries(brief.channels || {})) {
+        if (!cfg.active) continue;
+        const channelDef = CHANNELS.find(c => c.id === id);
+        const selectedFmts = (channelDef?.formats || []).filter(f => (cfg.selectedFormats || []).includes(f.id));
+        if (selectedFmts.length === 0) {
+          channelRows.push([channelDef?.label || id, "—", "—", "—", cfg.notes || "", cfg.cta ? cfg.ctaText : "NIE", (cfg.visible||[]).join(", "), (cfg.hierarchy||[]).filter(h=>h).map((h,i)=>`${i+1}. ${h}`).join(" | "), cfg.notes || ""]);
+          continue;
+        }
+        for (const fmt of selectedFmts) {
+          const fmtData = cfg.formatData?.[fmt.id] || {};
+          if (fmt.isCarousel) {
+            channelRows.push([channelDef?.label || id, fmt.label, "Karuzela", fmtData.karuzela_cards || "3", fmtData.note_karuzela || "", cfg.cta ? cfg.ctaText : "NIE", (cfg.visible||[]).join(", "), (cfg.hierarchy||[]).filter(h=>h).map((h,i)=>`${i+1}. ${h}`).join(" | "), cfg.notes || ""]);
+          } else {
+            const types = Array.isArray(fmtData.types) ? fmtData.types : ["—"];
+            for (const typ of types) {
+              channelRows.push([channelDef?.label || id, fmt.label, typ, fmtData["count_" + typ] || "1", fmtData["note_" + typ] || fmtData.note || "", cfg.cta ? cfg.ctaText : "NIE", (cfg.visible||[]).join(", "), (cfg.hierarchy||[]).filter(h=>h).map((h,i)=>`${i+1}. ${h}`).join(" | "), cfg.notes || ""]);
+            }
+          }
+        }
+      }
+      const ws2 = XLSX.utils.aoa_to_sheet(channelRows);
+      ws2["!cols"] = [{ wch: 22 }, { wch: 22 }, { wch: 20 }, { wch: 8 }, { wch: 50 }, { wch: 15 }, { wch: 35 }, { wch: 35 }, { wch: 30 }];
       XLSX.utils.book_append_sheet(wb, ws2, "Kanały");
 
       const xlsxBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
