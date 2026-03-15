@@ -193,6 +193,8 @@ function ChannelPanel({ channel, cfg, onChange }) {
     onChange({ ...cfg, [arr]: cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val] });
   };
   const setFormatNote = (fmt, val) => onChange({ ...cfg, formatNotes: { ...(cfg.formatNotes || {}), [fmt]: val } });
+  const setFormatCount = (fmt, val) => onChange({ ...cfg, formatCounts: { ...(cfg.formatCounts || {}), [fmt]: val } });
+  const isCarousel = (fmt) => fmt.toLowerCase().includes("karuzel") || fmt.toLowerCase().includes("collection");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -201,14 +203,30 @@ function ChannelPanel({ channel, cfg, onChange }) {
           {channel.formats.map(f => <CheckPill key={f} label={f} checked={(cfg.selectedFormats || []).includes(f)} onChange={() => toggle("selectedFormats", f, "selectedFormats")} />)}
         </div>
         {channel.hasFormatNotes && (cfg.selectedFormats || []).length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8, background: "#f9f7f5", borderRadius: 8, padding: 10 }}>
             {(cfg.selectedFormats || []).map(fmt => (
-              <div key={fmt} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                <div style={{ fontSize: 10, color: "#888", padding: "6px 0", minWidth: 120, fontFamily: "monospace", flexShrink: 0 }}>{fmt}:</div>
+              <div key={fmt} style={{ display: "flex", flexDirection: "column", gap: 4, paddingBottom: 8, borderBottom: "1px solid #eee" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, fontFamily: "monospace" }}>{fmt}</div>
+                <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  {!isCarousel(fmt) && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                      <span style={{ fontSize: 10, color: "#888" }}>Liczba:</span>
+                      <select value={(cfg.formatCounts || {})[fmt] || "1"} onChange={e => setFormatCount(fmt, e.target.value)}
+                        style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 4, padding: "3px 6px", fontSize: 11, fontFamily: "inherit", width: 52 }}>
+                        {["1","2","3","4","5","6","7","8","9","10+"].map(n => <option key={n}>{n}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  {isCarousel(fmt) && (
+                    <span style={{ fontSize: 10, color: "#aaa", fontStyle: "italic" }}>karuzela — opisz całość</span>
+                  )}
+                </div>
                 <textarea value={(cfg.formatNotes || {})[fmt] || ""} onChange={e => setFormatNote(fmt, e.target.value)}
-                  placeholder={`Opis wymagań dla ${fmt}...`} rows={1}
-                  style={{ flex: 1, background: "#f9f7f5", border: "1px solid #ddd", borderRadius: 6, padding: "5px 8px", fontSize: 12, fontFamily: "inherit", resize: "vertical" }} />
+                  placeholder={isCarousel(fmt) ? "Opisz zawartość karuzeli, styl, motyw..." : "Opis zawartości, co ma być widoczne, tekst, grafika..."}
+                  rows={2} style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "5px 8px", fontSize: 12, fontFamily: "inherit", resize: "vertical", width: "100%" }} />
               </div>
+            </div>
             ))}
           </div>
         )}
