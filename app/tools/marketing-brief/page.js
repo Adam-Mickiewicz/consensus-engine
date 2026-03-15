@@ -84,9 +84,9 @@ const CHANNELS = [
   {
     id: "popup",
     label: "💬 Pop-up",
-    tooltip: "Grafika pop-up. Wymiar: 500×500 px.",
+    tooltip: "Grafika pop-up. Wymiar: 800×800 px.",
     formats: [
-      { id: "popup_500x500", label: "500×500 px" },
+      { id: "popup_800x800", label: "800×800 px" },
     ],
   },
   {
