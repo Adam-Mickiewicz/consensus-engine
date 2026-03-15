@@ -688,6 +688,9 @@ export default function MarketingBrief() {
   const [copyFromModal, setCopyFromModal] = useState(null); // id kanału docelowego
   const [exportingXlsx, setExportingXlsx] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
+  const [summary, setSummary] = useState(null);
+  const [generatingSummary, setGeneratingSummary] = useState(false);
+  const summaryRef = React.useRef(null);
 
   const set = (key, val) => setBrief(prev => ({ ...prev, [key]: val }));
   const setChannel = (id, val) => setBrief(prev => ({ ...prev, channels: { ...prev.channels, [id]: val } }));
@@ -1041,6 +1044,49 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
     alert("✅ Zapisano! Grafika dodana do załączników czatu i referencji briefu.");
   };
 
+  const saveAndGenerateSummary = async () => {
+    await save();
+    setGeneratingSummary(true);
+    try {
+      const activeChList = CHANNELS.filter(c => brief.channels[c.id]?.active);
+      const channelsSummary = activeChList.map(c => {
+        const cfg = brief.channels[c.id];
+        const fmts = (c.formats || []).filter(f => (cfg.selectedFormats || []).includes(f.id));
+        return c.label + ": " + fmts.map(f => f.label).join(", ");
+      }).join(" | ");
+
+      const prompt = `Na podstawie poniższego briefu marketingowego napisz BARDZO KRÓTKIE podsumowanie (max 8 zdań / punktów) — samą esencję. Format: krótkie zdania lub bullet pointy. Bez wstępów. Tylko najważniejsze fakty: co za promocja, kiedy, dla kogo, hasło, kanały.
+
+BRIEF:
+Nazwa: ${brief.name || "—"}
+Daty: ${brief.dateStart || "—"} → ${brief.dateEnd || "—"}
+Cel: ${brief.goal || "—"}
+Hasło: ${brief.headline || "—"}
+Rabat: ${brief.discount || "—"} ${brief.promoCode ? "| Kod: " + brief.promoCode : ""}
+Grupa docelowa: ${brief.targetAudience || "—"}
+Kanały: ${channelsSummary || "—"}
+Kluczowe ustalenia: ${brief.keyFindings || "—"}
+Copy: ${brief.copyProposals || "—"}`;
+
+      const res = await fetch("/api/ai-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: chatModel,
+          messages: [{ role: "user", content: prompt }],
+          briefContext: null,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setSummary(data.content);
+      setTimeout(() => summaryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    } catch(e) {
+      alert("Błąd generowania podsumowania: " + e.message);
+    }
+    setGeneratingSummary(false);
+  };
+
   const activeChannels = CHANNELS.filter(c => brief.channels[c.id]?.active);
 
   const panelStyle = { background: "#fff", border: "1px solid #e0dbd4", borderRadius: 10, overflow: "hidden", marginBottom: 16 };
@@ -1117,6 +1163,12 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
                 <button onClick={openNew} style={{ background: "none", color: "#555", border: "1px solid #ccc", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                   + Nowy brief
                 </button>
+                {summary && (
+                  <button onClick={() => summaryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                    style={{ background: "#1a7a3a", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                    📋 Sprawdź podsumowanie
+                  </button>
+                )}
                 <div style={{ width: 1, height: 20, background: "#ddd" }} />
                 <button onClick={exportDocx} disabled={exportingDocx} style={{ background: "#1a5ca8", color: "#fff", border: "none", borderRadius: 6, padding: "8px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
                   {exportingDocx ? "..." : "⬇ DOCX"}
@@ -1331,7 +1383,7 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
             )}
 
             {/* DOLNY PASEK ZAPISU */}
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, paddingTop: 8, paddingBottom: 32 }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, paddingTop: 8, flexWrap: "wrap" }}>
               {saveMsg && <span style={{ fontSize: 12, color: saveMsg.startsWith("✅") ? "#2d7a4f" : "#cc0000", alignSelf: "center" }}>{saveMsg}</span>}
               <button onClick={exportDocx} disabled={exportingDocx} style={{ background: "#1a5ca8", color: "#fff", border: "none", borderRadius: 6, padding: "10px 16px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
                 {exportingDocx ? "Generuję..." : "⬇ Pobierz DOCX"}
@@ -1342,7 +1394,33 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
               <button onClick={save} disabled={saving} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "10px 24px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                 {saving ? "Zapisuję..." : "💾 Zapisz brief"}
               </button>
+              <button onClick={saveAndGenerateSummary} disabled={generatingSummary || saving}
+                style={{ background: "#1a1a1a", color: "#fff", border: "none", borderRadius: 8, padding: "10px 24px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                {generatingSummary ? "⏳ Generuję..." : "✨ Zapisz i generuj podsumowanie"}
+              </button>
             </div>
+
+            {/* PIGUŁKA PODSUMOWANIA */}
+            {(summary || generatingSummary) && (
+              <div ref={summaryRef} style={{ marginTop: 24, marginBottom: 32, background: "#fff", border: "3px solid #1a7a3a", borderRadius: 14, overflow: "hidden", boxShadow: "0 8px 32px rgba(26,122,58,0.15)" }}>
+                <div style={{ padding: "14px 20px", background: "#1a7a3a", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: "monospace", letterSpacing: 0.5 }}>📋 PIGUŁKA BRIEFU</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>Esencja akcji — do szybkiego podglądu</div>
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => navigator.clipboard.writeText(summary || "")}
+                      style={{ fontSize: 11, padding: "4px 12px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.3)", background: "none", color: "#fff", cursor: "pointer", fontFamily: "inherit" }}>Kopiuj</button>
+                    <button onClick={() => setSummary(null)}
+                      style={{ fontSize: 16, background: "none", border: "none", color: "rgba(255,255,255,0.6)", cursor: "pointer", lineHeight: 1 }}>×</button>
+                  </div>
+                </div>
+                <div style={{ padding: "20px 24px", background: "#f0faf4" }}>
+                  {generatingSummary && <div style={{ color: "#aaa", fontSize: 13 }}>⏳ Generuję podsumowanie...</div>}
+                  {summary && <div style={{ fontSize: 14, lineHeight: 1.8, color: "#1a1a1a", fontFamily: "-apple-system, sans-serif" }}>{renderMarkdown(summary)}</div>}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ─── PANEL CZATU AI ─── */}
