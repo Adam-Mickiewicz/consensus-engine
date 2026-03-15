@@ -12,7 +12,7 @@ function generateHeadingHTML(h) {
     : "";
   const subtextHTML = h.subtext ? `\n<p style="font-family: ${h.fontFamily}; font-size: ${h.subtextFontSize}px; font-weight: ${h.subtextFontWeight}; color: ${h.subtextColor}; text-align: ${h.textAlign}; line-height: 1.5; padding: ${h.subtextMarginTop}px ${h.paddingH}px ${h.paddingBottom}px ${h.paddingH}px; margin: 0;">${h.subtext}</p>` : "";
   return `${fontImport}
-<p style="font-family: ${h.fontFamily}; font-size: ${h.fontSize}px; font-weight: ${h.fontWeight}; color: ${h.color}; text-align: ${h.textAlign}; line-height: ${h.lineHeight}; letter-spacing: ${h.letterSpacing}px; padding: ${h.paddingTop}px ${h.paddingH}px 0px ${h.paddingH}px; margin: 0;">${h.text}</p>${subtextHTML}`;
+<p style="font-family: ${h.fontFamily}; font-size: ${h.fontSize}px; font-weight: ${h.fontWeight}; color: ${h.color}; text-align: ${h.textAlign}; line-height: ${h.lineHeight}; letter-spacing: ${h.letterSpacing}px; padding: ${h.paddingTop}px ${h.paddingH}px 0px ${h.paddingH}px; margin: 0 0 ${h.marginBottom}px 0;">${h.text}</p>${subtextHTML}`;
 }
 
 const defaultHeading = {
@@ -32,6 +32,7 @@ const defaultHeading = {
   paddingTop: 16,
   paddingBottom: 16,
   paddingH: 24,
+  marginBottom: 0,
 };
 
 function generateTextBlockHTML(text) {
@@ -813,6 +814,7 @@ export default function NewsletterBuilder() {
               <StyleField label="Padding góra" flex={2}><SliderInput value={heading.paddingTop} onChange={v => setH("paddingTop", v)} min={0} max={60} /></StyleField>
               <StyleField label="Padding dół" flex={2}><SliderInput value={heading.paddingBottom} onChange={v => setH("paddingBottom", v)} min={0} max={60} /></StyleField>
               <StyleField label="Padding boki" flex={2}><SliderInput value={heading.paddingH} onChange={v => setH("paddingH", v)} min={0} max={60} /></StyleField>
+              <StyleField label="Margin dół" flex={2}><SliderInput value={heading.marginBottom} onChange={v => setH("marginBottom", v)} min={-40} max={40} /></StyleField>
             </StyleRow>
           </div>
         </Section>}
