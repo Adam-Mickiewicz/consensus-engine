@@ -336,10 +336,6 @@ export default function CountdownGenerator() {
     textSub: dark ? "#555" : "#888",
     textMuted: dark ? "#444" : "#aaa",
     accent: "#b8763a",
-    sidebar: dark ? "#0a0a0a" : "#1a1a1a",
-    sidebarBorder: dark ? "#1a1a1a" : "#2a2a2a",
-    sidebarText: dark ? "#666" : "#888",
-    sidebarActive: "#b8763a",
     input: dark ? "#1a1a1a" : "#ffffff",
     inputBorder: dark ? "#2a2a2a" : "#ddd",
     code: dark ? "#a8d8a8" : "#2d6a2d",
@@ -349,13 +345,6 @@ export default function CountdownGenerator() {
   const jsCode = customJs || defaultJs;
   const html = buildHTML(deadline, cfg, tplKey);
 
-  const navItems = [
-    { href: "/", label: "⚡ Consensus Engine" },
-    { href: "/newsletter-builder", label: "📧 Newsletter Builder" },
-    { href: "/sock-designer", label: "🧦 Sock Designer" },
-    { href: "/design-judge", label: "🎨 Design Judge" },
-    { href: "/tools/countdown", label: "⏱ Generator odliczania", active: true },
-  ];
 
   const panelStyle = { background: t.bgPanel, border: `1px solid ${t.border}`, borderRadius: "12px", overflow: "hidden", marginBottom: "20px" };
   const panelHead = { padding: "10px 16px", borderBottom: `1px solid ${t.border}`, fontSize: "11px", color: t.textSub, display: "flex", justifyContent: "space-between", alignItems: "center" };
@@ -366,16 +355,6 @@ export default function CountdownGenerator() {
     <div style={{ minHeight: "100vh", background: t.bg, color: t.text, fontFamily: "monospace", display: "flex", transition: "background 0.2s" }}>
 
       {/* SIDEBAR */}
-      <div style={{ width: "220px", minWidth: "220px", background: t.sidebar, borderRight: `1px solid ${t.sidebarBorder}`, padding: "24px 16px", display: "flex", flexDirection: "column", gap: "8px", position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
-        <div style={{ marginBottom: "20px" }}>
-          <div style={{ color: "#b8763a", fontWeight: 800, fontSize: "13px", letterSpacing: 2 }}>CONSENSUS</div>
-          <div style={{ color: "#444", fontSize: "10px", letterSpacing: 1 }}>ENGINE v1.0</div>
-        </div>
-        <div style={{ color: "#555", fontSize: "10px", fontWeight: 700, letterSpacing: 1.2, marginBottom: "4px" }}>NAWIGACJA</div>
-        {navItems.map(item => (
-          <a key={item.href} href={item.href} style={{ display: "block", padding: "9px 12px", borderRadius: "8px", fontSize: "11px", fontWeight: item.active ? 700 : 400, background: item.active ? "#b8763a20" : "none", border: item.active ? "1px solid #b8763a40" : "1px solid transparent", color: item.active ? "#b8763a" : "#666", textDecoration: "none" }}>{item.label}</a>
-        ))}
-      </div>
 
       {/* MAIN */}
       <div style={{ flex: 1, padding: "32px", overflowY: "auto" }}>

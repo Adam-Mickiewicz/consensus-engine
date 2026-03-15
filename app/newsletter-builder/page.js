@@ -603,31 +603,6 @@ export default function NewsletterBuilder() {
     <div style={{ minHeight: "100vh", background: "#f5f2ee", fontFamily: "Georgia, serif", display: "flex" }}>
 
       {/* SIDEBAR */}
-      <div style={{ width: "220px", minWidth: "220px", background: "#0a0a0a", borderRight: "1px solid #1a1a1a", padding: "24px 16px", display: "flex", flexDirection: "column", gap: "8px", position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
-        <div style={{ marginBottom: "20px" }}>
-          <div style={{ color: "#b8763a", fontWeight: 800, fontSize: "13px", letterSpacing: 2, fontFamily: "monospace" }}>CONSENSUS</div>
-          <div style={{ color: "#444", fontSize: "10px", letterSpacing: 1, fontFamily: "monospace" }}>ENGINE v1.0</div>
-        </div>
-        <div style={{ color: "#555", fontSize: "10px", fontWeight: 700, letterSpacing: 1.2, fontFamily: "monospace", marginBottom: "4px" }}>NAWIGACJA</div>
-        {[
-          { href: "/", label: "⚡ Consensus Engine" },
-          { href: "/sock-designer", label: "🧦 Sock Designer" },
-          { href: "/design-judge", label: "🎨 Design Judge" },
-        ].map(item => (
-          <a key={item.href} href={item.href} style={{ display: "block", padding: "9px 12px", borderRadius: "8px", fontSize: "11px", fontFamily: "monospace", background: "none", border: "1px solid transparent", color: "#666", textDecoration: "none" }}>{item.label}</a>
-        ))}
-        <div style={{ color: "#555", fontSize: "10px", fontWeight: 700, letterSpacing: 1.2, fontFamily: "monospace", margin: "12px 0 4px" }}>📧 NEWSLETTER</div>
-        {[
-          { id: "0", label: "Nagłówek" },
-          { id: "1", label: "Blok tekstowy" },
-          { id: "2", label: "Blok produktów" },
-        ].map(item => (
-          <button key={item.id} onClick={() => setActiveBlock(item.id)} style={{ display: "block", width: "100%", textAlign: "left", padding: "9px 12px", borderRadius: "8px", fontSize: "11px", fontFamily: "monospace", fontWeight: activeBlock === item.id ? 700 : 400, background: activeBlock === item.id ? "#b8763a20" : "none", border: activeBlock === item.id ? "1px solid #b8763a40" : "1px solid transparent", color: activeBlock === item.id ? "#b8763a" : "#666", cursor: "pointer" }}>{item.label}</button>
-        ))}
-        <div style={{ marginTop: "auto", paddingTop: "16px", borderTop: "1px solid #1a1a1a", color: "#333", fontSize: "10px", fontFamily: "monospace", lineHeight: 1.6 }}>
-          Każdy blok = osobny HTML → wklej do ESP
-        </div>
-      </div>
 
       {/* MAIN CONTENT */}
       <div style={{ flex: 1, padding: "28px 24px", display: "flex", flexDirection: "column", gap: "20px", overflowY: "auto" }}>
