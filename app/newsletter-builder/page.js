@@ -599,7 +599,12 @@ export default function NewsletterBuilder() {
   return (
     <>
     <Nav current="/newsletter-builder" />
-    <div style={{ minHeight: "100vh", background: "#f5f2ee", fontFamily: "Georgia, serif", display: "flex" }}>
+    <div style={{ minHeight: "100vh", background: "#f5f2ee", fontFamily: "var(--font-open-sans), system-ui, sans-serif", display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: "28px 32px 20px", borderBottom: "1px solid #e8e4de", background: "#f5f2ee" }}>
+        <h1 style={{ fontFamily: "var(--font-dm-serif), 'DM Serif Display', Georgia, serif", fontSize: 28, fontWeight: 400, color: "#1a1814", margin: "0 0 4px", lineHeight: 1.2 }}>📧 Newsletter Builder</h1>
+        <p style={{ fontSize: 13, color: "#7a7570", margin: 0, fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>Buduj emaile blok po bloku — Gmail-safe HTML gotowy do wklejenia w ESP.</p>
+      </div>
+      <div style={{ display: "flex", flex: 1 }}>
 
       {/* SIDEBAR */}
       <div style={{ width: 180, minWidth: 180, background: "#ffffff", borderRight: "1px solid #e0dbd4", padding: "16px 12px", display: "flex", flexDirection: "column", gap: 4, position: "sticky", top: 0, height: "100vh", overflowY: "auto", fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
@@ -689,6 +694,7 @@ export default function NewsletterBuilder() {
           </>
         )}
 
+      </div>
       </div>
     </div>
     </>

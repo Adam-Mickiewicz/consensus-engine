@@ -175,8 +175,8 @@ export default function DesignJudge() {
   const s = {
     page: { minHeight: "100vh", background: "#f5f3ef", fontFamily: "var(--font-open-sans), system-ui, sans-serif", padding: 24 },
     header: { marginBottom: 28 },
-    title: { color: accent, fontWeight: 800, fontSize: 20, letterSpacing: 2, marginBottom: 4 },
-    subtitle: { color: "#888", fontSize: 12 },
+    title: { color: "#1a1814", fontWeight: 400, fontSize: 28, marginBottom: 4, fontFamily: "var(--font-dm-serif), 'DM Serif Display', Georgia, serif", lineHeight: 1.2 },
+    subtitle: { color: "#7a7570", fontSize: 13, fontFamily: "var(--font-open-sans), system-ui, sans-serif" },
     tabs: { display: "flex", gap: 8, marginBottom: 24 },
     tab: (active) => ({ padding: "8px 18px", borderRadius: 8, border: `1px solid ${active ? accent : "#ddd"}`, background: active ? accent + "15" : "#fff", color: active ? accent : "#888", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }),
     card: { background: "#fff", borderRadius: 12, padding: 20, border: "1px solid #e8e4de", marginBottom: 16 },
