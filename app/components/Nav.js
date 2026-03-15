@@ -93,12 +93,13 @@ export default function Nav({ current }) {
             {dark ? "☀ Jasny" : "☾ Ciemny"}
           </button>
           {user ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 11, color: t.textSub, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</span>
-              <button onClick={handleSignOut} style={{ background: "none", border: `1px solid ${t.border}`, borderRadius: 6, padding: "4px 10px", fontSize: 11, color: t.textSub, cursor: "pointer", fontFamily: "inherit" }}>Wyloguj</button>
-            </div>
+            <button onClick={handleSignOut} style={{ background: "#f0faf4", border: "1px solid #a8dbb8", borderRadius: 6, padding: "4px 12px", fontSize: 11, color: "#2d7a4f", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+              <span style={{ fontSize: 13 }}>●</span> Zalogowany
+            </button>
           ) : (
-            <Link href="/auth" style={{ fontSize: 11, color: t.accent, border: `1px solid ${t.accent}40`, borderRadius: 6, padding: "4px 10px", textDecoration: "none", fontWeight: 600 }}>Zaloguj</Link>
+            <Link href="/auth" style={{ background: "#fdf2f2", border: "1px solid #f0b8b8", borderRadius: 6, padding: "4px 12px", fontSize: 11, color: "#b83020", textDecoration: "none", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+              <span style={{ fontSize: 13 }}>●</span> Niezalogowany
+            </Link>
           )}
         </div>
       </div>
