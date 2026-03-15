@@ -75,14 +75,14 @@ export default function Nav({ current }) {
           >
             <span /><span /><span />
           </button>
+          <Link href="/" className="ce-nav-back">
+            ← Powrót
+          </Link>
         </div>
         <div className="ce-nav-right">
           <button className="ce-nav-theme" onClick={toggleTheme}>
             {dark ? "☀ Jasny" : "☾ Ciemny"}
           </button>
-          <Link href="/" className="ce-nav-back">
-            ← Powrót
-          </Link>
         </div>
       </div>
 
