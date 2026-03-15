@@ -577,6 +577,7 @@ export default function NewsletterBuilder() {
   const [text, setText] = useState(defaultText);
   const [products, setProducts] = useState(defaultProducts);
 
+  const [duo, setDuo] = useState(defaultDuo);
   const [activeBlock, setActiveBlock] = useState("0");
   const setH = useCallback((key, value) => setHeading(prev => ({ ...prev, [key]: value })), []);
   const handleProductChange = useCallback((i, updated) => setProducts(prev => prev.map((p, idx) => idx === i ? updated : p)), []);
@@ -613,6 +614,7 @@ export default function NewsletterBuilder() {
           { id: "0", label: "Nagłówek" },
           { id: "1", label: "Blok tekstowy" },
           { id: "2", label: "Produkty" },
+          { id: "5", label: "Duo grafiki" },
         ].map(item => (
           <button key={item.id} onClick={() => setActiveBlock(item.id)}
             style={{ display: "block", width: "100%", textAlign: "left", background: activeBlock === item.id ? "#b8763a14" : "none", border: activeBlock === item.id ? "1px solid #b8763a40" : "1px solid transparent", borderRadius: 8, padding: "8px 10px", cursor: "pointer", fontFamily: "inherit", color: activeBlock === item.id ? "#b8763a" : "#7a7570", fontSize: 12, fontWeight: activeBlock === item.id ? 600 : 400 }}>
@@ -693,6 +695,8 @@ export default function NewsletterBuilder() {
             </div>
           </>
         )}
+
+        {activeBlock === "5" && <Block5DuoImages duo={duo} setDuo={setDuo} />}
 
       </div>
       </div>
