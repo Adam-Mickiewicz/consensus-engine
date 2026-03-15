@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Nav from "../../components/Nav";
+import { useDarkMode } from "../../hooks/useDarkMode";
 
 // ─── SZABLONY TIMERÓW ────────────────────────────────────────────────────────
 
@@ -322,7 +323,7 @@ export default function CountdownGenerator() {
     border: false,
     borderColor: "#ffffff",
   });
-  const [dark, setDark] = useState(false);
+  const [dark, toggleDark] = useDarkMode();
   const [jsModified, setJsModified] = useState(false);
   const [customJs, setCustomJs] = useState("");
 

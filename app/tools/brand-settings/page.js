@@ -4,7 +4,7 @@ import Nav from "../../components/Nav";
 
 const ACCENT = "#b8763a";
 function Label({ children }) {
-  return <div style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1.2, marginBottom: 5, textTransform: "uppercase", fontFamily: "monospace" }}>{children}</div>;
+  return <div style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1.2, marginBottom: 5, textTransform: "uppercase", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>{children}</div>;
 }
 function Field({ label, children }) {
   return <div style={{ display: "flex", flexDirection: "column", gap: 4 }}><Label>{label}</Label>{children}</div>;
@@ -16,7 +16,7 @@ function Textarea({ value, onChange, placeholder, rows = 4 }) {
 function Section({ title, children }) {
   return (
     <div style={{ background: "#fff", border: "1px solid #e0dbd4", borderRadius: 10, overflow: "hidden", marginBottom: 16 }}>
-      <div style={{ padding: "10px 16px", background: "#f9f7f5", borderBottom: "1px solid #e0dbd4", fontSize: 12, fontWeight: 700, color: "#555", fontFamily: "monospace" }}>{title}</div>
+      <div style={{ padding: "10px 16px", background: "#f9f7f5", borderBottom: "1px solid #e0dbd4", fontSize: 12, fontWeight: 700, color: "#555", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>{title}</div>
       <div style={{ padding: 20 }}>{children}</div>
     </div>
   );
@@ -92,7 +92,7 @@ export default function BrandSettings() {
   return (
     <>
     <Nav current="/tools/brand-settings" />
-    <div style={{ minHeight: "100vh", background: "#f5f2ee", fontFamily: "'IBM Plex Mono', monospace", display: "flex" }}>
+    <div style={{ minHeight: "100vh", background: "#f5f2ee", fontFamily: "var(--font-open-sans), system-ui, sans-serif", display: "flex" }}>
       {/* SIDEBAR */}
 
       {/* MAIN */}

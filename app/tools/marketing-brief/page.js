@@ -143,7 +143,7 @@ const defaultBrief = () => ({
 // ─── UI KOMPONENTY ─────────────────────────────────────────────────────────
 
 function Label({ children }) {
-  return <div style={{ fontSize: "10px", fontWeight: 700, color: "#888", letterSpacing: 1.2, marginBottom: 5, textTransform: "uppercase", fontFamily: "monospace" }}>{children}</div>;
+  return <div style={{ fontSize: "10px", fontWeight: 700, color: "#888", letterSpacing: 1.2, marginBottom: 5, textTransform: "uppercase", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>{children}</div>;
 }
 
 function Tooltip({ text, children }) {
@@ -181,7 +181,7 @@ function Section({ title, children, accent }) {
   return (
     <div style={{ background: "#fff", border: "1px solid #e0dbd4", borderRadius: 10, overflow: "hidden", marginBottom: 16 }}>
       <div style={{ padding: "10px 16px", background: accent ? ACCENT : "#f9f7f5", borderBottom: "1px solid #e0dbd4" }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: accent ? "#fff" : "#555", fontFamily: "monospace", letterSpacing: 0.5 }}>{title}</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: accent ? "#fff" : "#555", fontFamily: "var(--font-open-sans), system-ui, sans-serif", letterSpacing: 0.5 }}>{title}</div>
       </div>
       <div style={{ padding: 16 }}>{children}</div>
     {/* IMAGE EDITOR MODAL */}
@@ -192,7 +192,7 @@ function Section({ title, children, accent }) {
 function CheckPill({ label, checked, onChange }) {
   return (
     <button onClick={() => onChange(!checked)}
-      style={{ padding: "5px 10px", borderRadius: 20, border: `1px solid ${checked ? ACCENT : "#ddd"}`, background: checked ? ACCENT + "15" : "#f9f9f9", color: checked ? ACCENT : "#888", fontSize: 11, cursor: "pointer", fontFamily: "monospace", fontWeight: checked ? 700 : 400 }}>
+      style={{ padding: "5px 10px", borderRadius: 20, border: `1px solid ${checked ? ACCENT : "#ddd"}`, background: checked ? ACCENT + "15" : "#f9f9f9", color: checked ? ACCENT : "#888", fontSize: 11, cursor: "pointer", fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: checked ? 700 : 400 }}>
       {label}
     </button>
   );
@@ -231,13 +231,13 @@ function ChannelPanel({ channel, cfg, onChange }) {
           {selectedFmts.map(fmt => (
             <div key={fmt.id} style={{ background: "#f9f7f5", border: "1px solid #e0dbd4", borderRadius: 8, overflow: "hidden" }}>
               <div style={{ padding: "7px 12px", background: ACCENT + "12", borderBottom: "1px solid #e0dbd4", display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: ACCENT, fontFamily: "monospace" }}>{fmt.label}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: ACCENT, fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>{fmt.label}</span>
                 {fmt.isCarousel && <span style={{ fontSize: 10, color: "#aaa", fontStyle: "italic" }}>karuzela — opisz całość</span>}
               </div>
               <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
                 {/* Typ materiału per format */}
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1, marginBottom: 5, textTransform: "uppercase", fontFamily: "monospace" }}>Typ materiału</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1, marginBottom: 5, textTransform: "uppercase", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>Typ materiału</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                     {FORMAT_TYPES.map(t => {
                       const cur = getFormatData(fmt.id, "types", []);
@@ -247,7 +247,7 @@ function ChannelPanel({ channel, cfg, onChange }) {
                           const cur2 = getFormatData(fmt.id, "types", []);
                           const arr = Array.isArray(cur2) ? cur2 : [];
                           setFormatData(fmt.id, "types", checked ? arr.filter(x => x !== t) : [...arr, t]);
-                        }} style={{ padding: "4px 9px", borderRadius: 20, border: `1px solid ${checked ? ACCENT : "#ddd"}`, background: checked ? ACCENT + "15" : "#fff", color: checked ? ACCENT : "#888", fontSize: 11, cursor: "pointer", fontFamily: "monospace", fontWeight: checked ? 700 : 400 }}>
+                        }} style={{ padding: "4px 9px", borderRadius: 20, border: `1px solid ${checked ? ACCENT : "#ddd"}`, background: checked ? ACCENT + "15" : "#fff", color: checked ? ACCENT : "#888", fontSize: 11, cursor: "pointer", fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: checked ? 700 : 400 }}>
                           {t}
                         </button>
                       );
@@ -260,13 +260,13 @@ function ChannelPanel({ channel, cfg, onChange }) {
                   {fmt.isCarousel ? (
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1, textTransform: "uppercase", fontFamily: "monospace" }}>Liczba kart:</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1, textTransform: "uppercase", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>Liczba kart:</span>
                         <select value={getFormatData(fmt.id, "karuzela_cards", "3")} onChange={e => setFormatData(fmt.id, "karuzela_cards", e.target.value)}
                           style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 4, padding: "2px 6px", fontSize: 11, fontFamily: "inherit", width: 52 }}>
                           {["2","3","4","5","6","7","8","9","10+"].map(n => <option key={n}>{n}</option>)}
                         </select>
                       </div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1, marginBottom: 5, textTransform: "uppercase", fontFamily: "monospace" }}>Opis karuzeli</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1, marginBottom: 5, textTransform: "uppercase", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>Opis karuzeli</div>
                       <textarea value={getFormatData(fmt.id, "note_karuzela", "")} onChange={e => setFormatData(fmt.id, "note_karuzela", e.target.value)}
                         placeholder="Co ma być w karuzeli? Motyw, liczba kart, treść poszczególnych slajdów..."
                         rows={2} style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "6px 8px", fontSize: 12, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
@@ -279,7 +279,7 @@ function ChannelPanel({ channel, cfg, onChange }) {
                         <div key={typ} style={{ background: typ === "ogólny" ? "#fff" : "#f9f7f5", border: "1px solid #e8e0d8", borderRadius: 6, padding: "8px 10px" }}>
                           {typ !== "ogólny" && (
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                              <span style={{ fontSize: 10, fontWeight: 700, color: "#555", fontFamily: "monospace", textTransform: "uppercase" }}>{typ}</span>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: "#555", fontFamily: "var(--font-open-sans), system-ui, sans-serif", textTransform: "uppercase" }}>{typ}</span>
                               <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                                 <span style={{ fontSize: 10, color: "#888" }}>Liczba:</span>
                                 <select value={getFormatData(fmt.id, "count_" + typ, "1")} onChange={e => setFormatData(fmt.id, "count_" + typ, e.target.value)}
@@ -616,7 +616,7 @@ function renderMarkdown(text) {
       const codeText = codeLines.join("\n");
       elements.push(
         <div key={i} style={{ margin: "10px 0", borderRadius: 8, overflow: "hidden", border: "1px solid #e0dbd4" }}>
-          {lang && <div style={{ background: "#f0ece6", padding: "3px 10px", fontSize: 10, color: "#888", fontFamily: "monospace", borderBottom: "1px solid #e0dbd4" }}>{lang}</div>}
+          {lang && <div style={{ background: "#f0ece6", padding: "3px 10px", fontSize: 10, color: "#888", fontFamily: "var(--font-open-sans), system-ui, sans-serif", borderBottom: "1px solid #e0dbd4" }}>{lang}</div>}
           <pre style={{ margin: 0, padding: "10px 12px", background: "#fafaf8", fontSize: 11.5, fontFamily: "'SF Mono', 'Fira Code', monospace", overflowX: "auto", lineHeight: 1.6, color: "#1a1a1a", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{codeText}</pre>
         </div>
       );
@@ -656,7 +656,7 @@ function parseBold(text) {
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) return <strong key={i} style={{ color: "#1a1a1a" }}>{part.slice(2, -2)}</strong>;
-    if (part.startsWith("`") && part.endsWith("`")) return <code key={i} style={{ background: "#f0ece6", borderRadius: 3, padding: "1px 5px", fontSize: "0.9em", fontFamily: "monospace" }}>{part.slice(1, -1)}</code>;
+    if (part.startsWith("`") && part.endsWith("`")) return <code key={i} style={{ background: "#f0ece6", borderRadius: 3, padding: "1px 5px", fontSize: "0.9em", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>{part.slice(1, -1)}</code>;
     return part;
   });
 }
@@ -1242,7 +1242,7 @@ Copy: ${brief.copyProposals || "—"}`;
   const activeChannels = CHANNELS.filter(c => brief.channels[c.id]?.active);
 
   const panelStyle = { background: "#fff", border: "1px solid #e0dbd4", borderRadius: 10, overflow: "hidden", marginBottom: 16 };
-  const panelHead = { padding: "10px 16px", background: "#f9f7f5", borderBottom: "1px solid #e0dbd4", fontSize: 11, color: "#555", fontFamily: "monospace", fontWeight: 700, display: "flex", justifyContent: "space-between", alignItems: "center" };
+  const panelHead = { padding: "10px 16px", background: "#f9f7f5", borderBottom: "1px solid #e0dbd4", fontSize: 11, color: "#555", fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: 700, display: "flex", justifyContent: "space-between", alignItems: "center" };
 
   return (
     <>
@@ -1493,7 +1493,7 @@ Copy: ${brief.copyProposals || "—"}`;
             {activeChannels.map(c => (
               <div key={c.id} style={{ display: activeChannel === c.id ? "block" : "none" }}>
                 <div style={{ background: ACCENT, borderRadius: "10px 10px 0 0", padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", fontFamily: "monospace" }}>KONFIGURACJA: {c.label}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>KONFIGURACJA: {c.label}</div>
                   <button onClick={() => setCopyFromModal(c.id)}
                     style={{ background: "rgba(255,255,255,0.2)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 6, padding: "4px 12px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
                     📋 Kopiuj z innego kanału
@@ -1557,7 +1557,7 @@ Copy: ${brief.copyProposals || "—"}`;
               <div ref={summaryRef} style={{ marginTop: 24, marginBottom: 32, background: "#fff", border: "3px solid #1a7a3a", borderRadius: 14, overflow: "hidden", boxShadow: "0 8px 32px rgba(26,122,58,0.15)" }}>
                 <div style={{ padding: "14px 20px", background: "#1a7a3a", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: "monospace", letterSpacing: 0.5 }}>📋 PIGUŁKA BRIEFU</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: "var(--font-open-sans), system-ui, sans-serif", letterSpacing: 0.5 }}>📋 PIGUŁKA BRIEFU</div>
                     <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>Esencja akcji — do szybkiego podglądu</div>
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
@@ -1587,8 +1587,8 @@ Copy: ${brief.copyProposals || "—"}`;
               {/* Header */}
               <div style={{ padding: "12px 16px 12px 40px", borderBottom: "1px solid #e0dbd4", flexShrink: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", fontFamily: "monospace" }}>🤖 Doradca AI</div>
-                  <button onClick={clearChat} style={{ padding: "2px 8px", borderRadius: 20, border: "1px solid #eee", background: "none", color: "#ccc", fontSize: 10, cursor: "pointer", fontFamily: "monospace" }}>Wyczyść</button>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>🤖 Doradca AI</div>
+                  <button onClick={clearChat} style={{ padding: "2px 8px", borderRadius: 20, border: "1px solid #eee", background: "none", color: "#ccc", fontSize: 10, cursor: "pointer", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>Wyczyść</button>
                 </div>
                 {/* Wybór providera */}
                 {(() => {
@@ -1625,7 +1625,7 @@ Copy: ${brief.copyProposals || "—"}`;
                       <div style={{ display: "flex", gap: 4 }}>
                         {PROVIDERS.map(p => (
                           <button key={p.id} onClick={() => setChatModel(MODELS[p.id][0].id)}
-                            style={{ flex: 1, padding: "4px 6px", borderRadius: 6, border: `1px solid ${activeProvider === p.id ? p.color : "#ddd"}`, background: activeProvider === p.id ? p.color + "15" : "#f9f9f9", color: activeProvider === p.id ? p.color : "#aaa", fontSize: 10, fontWeight: activeProvider === p.id ? 700 : 400, cursor: "pointer", fontFamily: "monospace" }}>
+                            style={{ flex: 1, padding: "4px 6px", borderRadius: 6, border: `1px solid ${activeProvider === p.id ? p.color : "#ddd"}`, background: activeProvider === p.id ? p.color + "15" : "#f9f9f9", color: activeProvider === p.id ? p.color : "#aaa", fontSize: 10, fontWeight: activeProvider === p.id ? 700 : 400, cursor: "pointer", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>
                             {p.label}
                           </button>
                         ))}
@@ -1634,7 +1634,7 @@ Copy: ${brief.copyProposals || "—"}`;
                       <div style={{ display: "flex", gap: 4 }}>
                         {MODELS[activeProvider].map(m => (
                           <button key={m.id} onClick={() => setChatModel(m.id)} title={`${m.tip} ${m.price}`}
-                            style={{ flex: 1, padding: "4px 4px", borderRadius: 6, border: `1px solid ${chatModel === m.id ? activeColor : "#ddd"}`, background: chatModel === m.id ? activeColor + "15" : "#fafafa", color: chatModel === m.id ? activeColor : "#888", fontSize: 10, fontWeight: chatModel === m.id ? 700 : 400, cursor: "pointer", fontFamily: "monospace" }}>
+                            style={{ flex: 1, padding: "4px 4px", borderRadius: 6, border: `1px solid ${chatModel === m.id ? activeColor : "#ddd"}`, background: chatModel === m.id ? activeColor + "15" : "#fafafa", color: chatModel === m.id ? activeColor : "#888", fontSize: 10, fontWeight: chatModel === m.id ? 700 : 400, cursor: "pointer", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>
                             {m.short}
                           </button>
                         ))}
@@ -1655,7 +1655,7 @@ Copy: ${brief.copyProposals || "—"}`;
                 ref={el => { if (el) el.scrollTop = el.scrollHeight; }}>
                 {(brief.chatHistory || []).length === 0 && brandSettings && (
                   <div style={{ background: "#fffbf5", border: "1px solid " + ACCENT + "40", borderRadius: 12, padding: 16, marginBottom: 8 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, fontFamily: "monospace", marginBottom: 12 }}>🏷️ KONTEKST MARKI DLA TEJ ROZMOWY</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, fontFamily: "var(--font-open-sans), system-ui, sans-serif", marginBottom: 12 }}>🏷️ KONTEKST MARKI DLA TEJ ROZMOWY</div>
                     <div style={{ fontSize: 11, color: "#888", marginBottom: 12 }}>Wybierz co AI ma brać pod uwagę:</div>
                     {[
                       { key: "brand_description", label: "Opis marki", icon: "🏢", hasData: !!brandSettings.brand_description },
@@ -1694,13 +1694,13 @@ Copy: ${brief.copyProposals || "—"}`;
                   if (msg.role === "synthesis") {
                     return (
                       <div key={i} style={{ display: "flex", flexDirection: "column", width: "100%" }}>
-                        <div style={{ fontSize: 9, color: ACCENT, marginBottom: 4, fontFamily: "monospace", fontWeight: 700 }}>✨ SYNTEZA ROZMOWY · {msgTime}</div>
+                        <div style={{ fontSize: 9, color: ACCENT, marginBottom: 4, fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: 700 }}>✨ SYNTEZA ROZMOWY · {msgTime}</div>
                         <div style={{ width: "100%", background: "#fffdf7", border: "2px solid " + ACCENT, borderRadius: 12, overflow: "hidden", boxShadow: "0 4px 20px rgba(184,118,58,0.15)" }}>
                           <div style={{ padding: "10px 14px", borderBottom: "2px solid " + ACCENT + "40", display: "flex", justifyContent: "space-between", alignItems: "center", background: ACCENT + "18" }}>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: ACCENT, fontFamily: "monospace" }}>✨ Synteza rozmowy</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: ACCENT, fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>✨ Synteza rozmowy</span>
                             <div style={{ display: "flex", gap: 6 }}>
-                              <button onClick={() => navigator.clipboard.writeText(msg.content)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, border: "1px solid " + ACCENT + "60", background: "#fff", color: ACCENT, cursor: "pointer", fontFamily: "monospace", fontWeight: 700 }}>Kopiuj</button>
-                              <button onClick={() => fillBriefFromSynthesis(msg.content)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, border: "none", background: ACCENT, color: "#fff", cursor: "pointer", fontFamily: "monospace", fontWeight: 700 }}>
+                              <button onClick={() => navigator.clipboard.writeText(msg.content)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, border: "1px solid " + ACCENT + "60", background: "#fff", color: ACCENT, cursor: "pointer", fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: 700 }}>Kopiuj</button>
+                              <button onClick={() => fillBriefFromSynthesis(msg.content)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, border: "none", background: ACCENT, color: "#fff", cursor: "pointer", fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: 700 }}>
                                 {fillingBrief ? "⏳..." : "📋 Wypełnij brief"}
                               </button>
                             </div>
@@ -1715,7 +1715,7 @@ Copy: ${brief.copyProposals || "—"}`;
 
                   return (
                     <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isUser ? "flex-end" : "flex-start" }}>
-                      {!isUser && <div style={{ fontSize: 9, color: modelColors[msg.model] || "#aaa", marginBottom: 3, fontFamily: "monospace", fontWeight: 700 }}>{msg.model}</div>}
+                      {!isUser && <div style={{ fontSize: 9, color: modelColors[msg.model] || "#aaa", marginBottom: 3, fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: 700 }}>{msg.model}</div>}
                       <div style={{ maxWidth: "90%", padding: isUser ? "8px 12px" : "12px 16px", borderRadius: isUser ? "12px 12px 4px 12px" : "12px 12px 12px 4px", background: isUser ? ACCENT : "#fff", color: isUser ? "#fff" : "#1a1a1a", fontSize: 12, lineHeight: 1.6, wordBreak: "break-word", border: isUser ? "none" : "1px solid #e8e0d8", boxShadow: isUser ? "none" : "0 1px 4px rgba(0,0,0,0.06)" }}>
                         {isUser ? (
                           <div style={{ whiteSpace: "pre-wrap", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", fontSize: 13, lineHeight: 1.6 }}>
@@ -1732,7 +1732,7 @@ Copy: ${brief.copyProposals || "—"}`;
                           <div>{renderMarkdown(msg.content)}</div>
                         )}
                       </div>
-                      {msgTime && <div style={{ fontSize: 9, color: "#bbb", marginTop: 3, fontFamily: "monospace" }}>{msgTime}</div>}
+                      {msgTime && <div style={{ fontSize: 9, color: "#bbb", marginTop: 3, fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>{msgTime}</div>}
                     </div>
                   );
                 })}

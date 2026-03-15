@@ -173,7 +173,7 @@ export default function DesignJudge() {
   }
 
   const s = {
-    page: { minHeight: "100vh", background: "#f5f3ef", fontFamily: "'IBM Plex Mono', monospace", padding: 24 },
+    page: { minHeight: "100vh", background: "#f5f3ef", fontFamily: "var(--font-open-sans), system-ui, sans-serif", padding: 24 },
     header: { marginBottom: 28 },
     title: { color: accent, fontWeight: 800, fontSize: 20, letterSpacing: 2, marginBottom: 4 },
     subtitle: { color: "#888", fontSize: 12 },

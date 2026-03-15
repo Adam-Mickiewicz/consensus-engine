@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Nav from "../components/Nav";
+import { useDarkMode } from "../hooks/useDarkMode";
 import ReactMarkdown from "react-markdown";
 import { saveDebate, updateDebate, loadDebates } from "../../lib/supabase";
 
@@ -600,7 +601,7 @@ function HistoryPanel({ debates, onLoad, onDelete, t, accent }) {
 }
 
 export default function ConsensusEngine() {
-  const [dark, setDark] = useState(false);
+  const [dark, toggleDark] = useDarkMode();
   const t = THEMES[dark ? "dark" : "light"];
   const accent = "#b8763a";
   const width = useWindowSize();
@@ -803,7 +804,7 @@ export default function ConsensusEngine() {
       <div style={{ borderRight: `1px solid ${t.border}`, padding: 24, overflowY: "auto", background: t.bgPanel, ...(isMobile ? { position: "fixed", top: 0, left: sidebarOpen ? 0 : "-280px", width: 260, height: "100vh", zIndex: 999, transition: "left 0.3s", boxShadow: sidebarOpen ? "4px 0 20px rgba(0,0,0,0.2)" : "none" } : {}) }}>
         <div style={{ marginBottom: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div><div style={{ color: accent, fontWeight: 800, fontSize: 15, letterSpacing: 2 }}>CONSENSUS</div><div style={{ color: t.textMuted, fontSize: 11, letterSpacing: 1 }}>ENGINE v1.0</div></div>
-          <ThemeToggle dark={dark} onToggle={() => setDark(d => !d)} t={t} />
+          <ThemeToggle dark={dark} onToggle={toggleDark} t={t} />
         </div>
 
 

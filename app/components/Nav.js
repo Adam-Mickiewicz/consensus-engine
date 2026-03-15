@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import { useDarkMode } from "../hooks/useDarkMode";
 
 const TOOLS = [
   { href: "/debate", label: "Consensus Engine", icon: "⚡" },
