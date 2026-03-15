@@ -205,18 +205,17 @@ export default function SockDesigner() {
       const content = data.content || "";
       const aiMsg = { role: "assistant", content, model: chatModel, ts: Date.now() };
       const finalHistory = [...newHistory, aiMsg];
-      setChatHistory(finalHistory);
       let latestBrief = brief;
       const briefMatch = content.match(/<<<BRIEF_START>>>([\s\S]*?)<<<BRIEF_END>>>/);
+      let pendingBrief = null;
       if (briefMatch) {
-        try {
-          const parsed = JSON.parse(briefMatch[1].trim());
-          latestBrief = parsed; setBrief(parsed);
-          setPrompts({ dalleLeft: parsed.dalle_prompt_left || "", dalleRight: parsed.dalle_prompt_right || "", geminiLeft: parsed.gemini_prompt_left || "", geminiRight: parsed.gemini_prompt_right || "" });
-          setSaveMsg("✅ Brief gotowy"); setTimeout(() => setSaveMsg(""), 3000);
-        } catch (e) { console.error("Brief parse error:", e); }
+        try { pendingBrief = JSON.parse(briefMatch[1].trim()); } catch (e) { console.error("Brief parse error:", e); }
       }
-      await saveSession(finalHistory.map(({ role, content }) => ({ role, content })), latestBrief, latestBrief?.collection_name || chatInput.slice(0, 50));
+      // Zapisz pendingBrief w wiadomości — użytkownik musi zaakceptować
+      const finalMsgWithBrief = { ...aiMsg, pendingBrief };
+      const finalHistoryWithBrief = [...newHistory, finalMsgWithBrief];
+      setChatHistory(finalHistoryWithBrief);
+      await saveSession(finalHistoryWithBrief.map(({ role, content }) => ({ role, content })), latestBrief, latestBrief?.collection_name || chatInput.slice(0, 50));
     } catch (e) { setChatHistory(prev => [...prev, { role: "assistant", content: "❌ Błąd: " + e.message, model: chatModel, ts: Date.now() }]); }
     setChatLoading(false);
   };
@@ -388,6 +387,15 @@ export default function SockDesigner() {
                     <div style={{ maxWidth: "90%", padding: isUser ? "8px 12px" : "12px 16px", borderRadius: isUser ? "12px 12px 4px 12px" : "12px 12px 12px 4px", background: isUser ? ACCENT : "#fff", color: isUser ? "#fff" : "#1a1a1a", fontSize: 12, lineHeight: 1.6, wordBreak: "break-word", border: isUser ? "none" : "1px solid #e8e0d8", boxShadow: isUser ? "none" : "0 1px 4px rgba(0,0,0,0.06)" }}>
                       {isUser ? <div style={{ whiteSpace: "pre-wrap", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", fontSize: 13, lineHeight: 1.6 }}>{msg.content}</div> : <div>{renderMarkdown(msg.content)}</div>}
                     </div>
+                    {msg.pendingBrief && (
+                      <button onClick={() => {
+                        setBrief(msg.pendingBrief);
+                        setPrompts({ dalleLeft: msg.pendingBrief.dalle_prompt_left || "", dalleRight: msg.pendingBrief.dalle_prompt_right || "", geminiLeft: msg.pendingBrief.gemini_prompt_left || "", geminiRight: msg.pendingBrief.gemini_prompt_right || "" });
+                        setSaveMsg("✅ Brief zastosowany"); setTimeout(() => setSaveMsg(""), 3000);
+                      }} style={{ marginTop: 6, background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                        ✓ Użyj tego briefu →
+                      </button>
+                    )}
                     {msgTime && <div style={{ fontSize: 9, color: "#bbb", marginTop: 3, fontFamily: "monospace" }}>{msgTime}</div>}
                   </div>
                 );
