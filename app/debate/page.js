@@ -182,8 +182,6 @@ async function extractText(file) {
 function Tooltip({ text, children }) {
   const [show, setShow] = useState(false);
   return (
-    <>
-    <Nav current="/debate" />
     <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}
       onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
       {children}
@@ -193,7 +191,6 @@ function Tooltip({ text, children }) {
         </span>
       )}
     </span>
-      </>
   );
 }
 
@@ -797,6 +794,8 @@ export default function ConsensusEngine() {
   const roundStatuses = Array.from({ length: 6 }, (_, i) => phase === "input" ? "pending" : i < currentRound ? "done" : i === currentRound ? "active" : "pending");
 
   return (
+    <>
+    <Nav current="/debate" />
     <div style={{ minHeight: "100vh", background: t.bg, color: t.text, fontFamily: "'IBM Plex Mono', 'Courier New', monospace", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "260px 1fr 300px", transition: "background 0.3s", position: "relative" }}>
       {isMobile && sidebarOpen && (
         <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", zIndex: 998 }} />
@@ -1064,6 +1063,7 @@ export default function ConsensusEngine() {
         ::-webkit-scrollbar-thumb { background: ${t.scrollThumb}; border-radius: 4px; }
       `}</style>
     </div>
+      </>
   );
 }
 
