@@ -361,7 +361,7 @@ export default function CountdownGenerator() {
       <div style={{ flex: 1, padding: "32px", overflowY: "auto" }}>
         <div style={{ maxWidth: "820px" }}>
           <div style={{ marginBottom: "28px" }}>
-            <div style={ fontFamily: "var(--font-dm-serif), 'DM Serif Display', Georgia, serif", fontSize: 28, fontWeight: 400, color: "#1a1814", marginBottom: 4, lineHeight: 1.2 }>⏱ Generator odliczania</div>
+            <div style={{ fontFamily: "var(--font-dm-serif), 'DM Serif Display', Georgia, serif", fontSize: 28, fontWeight: 400, color: "#1a1814", marginBottom: 4, lineHeight: 1.2 }}>⏱ Generator odliczania</div>
             <div style={{ fontSize: "12px", color: t.textSub }}>Wybierz szablon, skonfiguruj kolory i skopiuj gotowy HTML + JS</div>
           </div>
 

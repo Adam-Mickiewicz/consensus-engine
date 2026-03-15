@@ -1288,7 +1288,7 @@ Copy: ${brief.copyProposals || "—"}`;
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                 <div>
-                  <div style={ fontFamily: "var(--font-dm-serif), 'DM Serif Display', Georgia, serif", fontSize: 28, fontWeight: 400, color: "#1a1814", marginBottom: 4, lineHeight: 1.2 }>📋 Akcje marketingowe</div>
+                  <div style={{ fontFamily: "var(--font-dm-serif), 'DM Serif Display', Georgia, serif", fontSize: 28, fontWeight: 400, color: "#1a1814", marginBottom: 4, lineHeight: 1.2 }}>📋 Akcje marketingowe</div>
                   <div style={{ fontSize: 12, color: "#888" }}>Historia briefów dla zespołu kreatywnego</div>
                 </div>
                 <button onClick={openNew} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>

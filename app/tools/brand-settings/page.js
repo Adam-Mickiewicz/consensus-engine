@@ -100,7 +100,7 @@ export default function BrandSettings() {
         <div style={{ maxWidth: 800 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28 }}>
             <div>
-              <div style={ fontFamily: "var(--font-dm-serif), 'DM Serif Display', Georgia, serif", fontSize: 28, fontWeight: 400, color: "#1a1814", marginBottom: 4, lineHeight: 1.2 }>🏷️ Ustawienia marki</div>
+              <div style={{ fontFamily: "var(--font-dm-serif), 'DM Serif Display', Georgia, serif", fontSize: 28, fontWeight: 400, color: "#1a1814", marginBottom: 4, lineHeight: 1.2 }}>🏷️ Ustawienia marki</div>
               <div style={{ fontSize: 12, color: "#888" }}>Kontekst stały dla wszystkich czatów AI w aplikacji</div>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>

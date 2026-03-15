@@ -294,7 +294,7 @@ export default function SockDesigner() {
       <div style={{ flex: 1, display: "flex", height: "100vh", overflow: "hidden" }}>
         <div style={{ flex: 1, overflowY: "auto", padding: 24 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <div><div style={ fontFamily: "var(--font-dm-serif), 'DM Serif Display', Georgia, serif", fontSize: 28, fontWeight: 400, color: "#1a1814", lineHeight: 1.2 }>🧦 Sock Designer</div><div style={ fontSize: 13, color: "#7a7570", marginTop: 4, fontFamily: "var(--font-open-sans), system-ui, sans-serif" }>Opisz kolekcję w czacie → brief wypełni prompty → generuj obrazy</div></div>
+            <div><div style={{ fontFamily: "var(--font-dm-serif), 'DM Serif Display', Georgia, serif", fontSize: 28, fontWeight: 400, color: "#1a1814", lineHeight: 1.2 }}>🧦 Sock Designer</div><div style={{ fontSize: 13, color: "#7a7570", marginTop: 4, fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>Opisz kolekcję w czacie → brief wypełni prompty → generuj obrazy</div></div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>{saveMsg && <span style={{ fontSize: 11, color: "#2d7a4f" }}>{saveMsg}</span>}<button onClick={newSession} style={{ background: "none", color: "#888", border: "1px solid #ddd", borderRadius: 7, padding: "6px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>+ Nowy</button></div>
           </div>
 
