@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
-import { saveDebate, updateDebate, loadDebates } from "../lib/supabase";
+import { saveDebate, updateDebate, loadDebates } from "../../lib/supabase";
 
 function useWindowSize() {
   const [width, setWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
@@ -608,7 +608,7 @@ export default function ConsensusEngine() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    import("../lib/supabase").then(({ supabase }) => {
+    import("../../lib/supabase").then(({ supabase }) => {
       supabase.auth.getUser().then(({ data }) => setUser(data?.user || null));
       supabase.auth.onAuthStateChange((_, session) => setUser(session?.user || null));
     });
@@ -663,7 +663,7 @@ export default function ConsensusEngine() {
 
   async function handleDeleteDebate(id) {
     if (!window.confirm("Usunac ta debate?")) return;
-    const { supabase } = await import("../lib/supabase");
+    const { supabase } = await import("../../lib/supabase");
     await supabase.from("debates").delete().eq("id", id);
     setDebates(prev => prev.filter(d => d.id !== id));
   }
@@ -806,7 +806,7 @@ export default function ConsensusEngine() {
           {user ? (
             <div>
               <div style={{ color: t.textMuted, fontSize: 10, marginBottom: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>👤 {user.email}</div>
-              <button onClick={async () => { const m = await import("../lib/supabase"); await m.supabase.auth.signOut(); setUser(null); }} style={{ width: "100%", background: "none", border: "1px solid " + t.border, borderRadius: 8, padding: "7px 10px", cursor: "pointer", color: t.textSub, fontSize: 11, fontFamily: "inherit" }}>Wyloguj</button>
+              <button onClick={async () => { const m = await import("../../lib/supabase"); await m.supabase.auth.signOut(); setUser(null); }} style={{ width: "100%", background: "none", border: "1px solid " + t.border, borderRadius: 8, padding: "7px 10px", cursor: "pointer", color: t.textSub, fontSize: 11, fontFamily: "inherit" }}>Wyloguj</button>
             </div>
           ) : (
             <button onClick={() => window.location.href = "/auth"} style={{ width: "100%", background: accent + "15", border: "1px solid " + accent + "40", borderRadius: 8, padding: "7px 10px", cursor: "pointer", color: accent, fontSize: 11, fontFamily: "inherit", fontWeight: 700 }}>Zaloguj się</button>
