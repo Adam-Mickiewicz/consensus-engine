@@ -570,6 +570,152 @@ function Block4FeedBrowser({ onAddToNewsletter }) {
   );
 }
 
+
+const defaultDuo = {
+  left: { url: "", link: "", alt: "" },
+  right: { url: "", link: "", alt: "" },
+  gap: 12,
+  borderRadius: 0,
+  paddingTop: 16,
+  paddingBottom: 16,
+  paddingH: 0,
+  bgColor: "#ffffff",
+};
+
+function generateDuoImageHTML(duo) {
+  const gap = duo.gap;
+  const radius = duo.borderRadius;
+  const paddingTop = duo.paddingTop;
+  const paddingBottom = duo.paddingBottom;
+  const paddingH = duo.paddingH;
+  const bgColor = duo.bgColor;
+  const makeCell = (img) => {
+    const imgTag = `<img src="${img.url || 'https://via.placeholder.com/300x200/f5f2ee/888888?text=Grafika'}" width="100%" style="display:block;width:100%;height:auto;border-radius:${radius}px;" alt="${img.alt || ''}" />`;
+    const inner = img.link
+      ? `<a href="${img.link}" style="display:block;text-decoration:none;">${imgTag}</a>`
+      : imgTag;
+    return `<td width="50%" valign="top" style="width:50%;padding:0 ${gap/2}px;">${inner}</td>`;
+  };
+  return `<table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" style="background:${bgColor};padding:${paddingTop}px ${paddingH}px ${paddingBottom}px ${paddingH}px;box-sizing:border-box;"><tr>${makeCell(duo.left)}${makeCell(duo.right)}</tr></table>`;
+}
+
+const SUPABASE_URL = "https://dayrmhsdpcgakbsfjkyp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRheXJtaHNkcGNnYWtic2Zqa3lwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MzMyMDIsImV4cCI6MjA4ODQwOTIwMn0.BpZe7KvxdwTQkWLpQtzBfD4VxOQZQ5yxwjPZXuW6dl4";
+
+function ImageUploadField({ side, image, onChange }) {
+  const [uploading, setUploading] = React.useState(false);
+  const [uploadError, setUploadError] = React.useState(null);
+  const handleFile = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const ext = file.name.split(".").pop();
+      const filename = `duo-${side}-${Date.now()}.${ext}`;
+      const res = await fetch(
+        `${SUPABASE_URL}/storage/v1/object/newsletter-images/${filename}`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            "apikey": SUPABASE_ANON_KEY,
+            "Content-Type": file.type,
+            "x-upsert": "true",
+          },
+          body: file,
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Upload failed");
+      }
+      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/newsletter-images/${filename}`;
+      onChange({ ...image, url: publicUrl });
+    } catch (err) {
+      setUploadError(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "8px", background: "#fafaf8", border: "1px solid #e8e4de", borderRadius: "10px", padding: "12px" }}>
+      <div style={{ fontSize: "11px", color: "#b8763a", fontFamily: "sans-serif", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.6px" }}>
+        {side === "left" ? "◧ Lewa grafika" : "◨ Prawa grafika"}
+      </div>
+      {image.url && (
+        <img src={image.url} alt="" style={{ width: "100%", height: "100px", objectFit: "cover", borderRadius: "6px", border: "1px solid #e8e4de" }} />
+      )}
+      <div>
+        <Label>Wgraj z dysku</Label>
+        <label style={{ display: "block", cursor: uploading ? "wait" : "pointer" }}>
+          <div style={{ border: "2px dashed #e8e4de", borderRadius: "8px", padding: "10px", textAlign: "center", fontSize: "12px", color: uploading ? "#b8763a" : "#aaa", fontFamily: "sans-serif", background: uploading ? "#fdf6ee" : "#fff", transition: "all 0.15s" }}>
+            {uploading ? "Uploading do Supabase…" : "Kliknij aby wybrać plik"}
+          </div>
+          <input type="file" accept="image/*" onChange={handleFile} style={{ display: "none" }} />
+        </label>
+        {uploadError && <p style={{ fontSize: "11px", color: "#cc0000", margin: "4px 0 0 0", fontFamily: "sans-serif" }}>Blad: {uploadError}</p>}
+      </div>
+      <div>
+        <Label>lub wklej URL</Label>
+        <input value={image.url} onChange={e => onChange({ ...image, url: e.target.value })} placeholder="https://..." style={inputStyle} />
+      </div>
+      <div>
+        <Label>Link (opcjonalnie)</Label>
+        <input value={image.link} onChange={e => onChange({ ...image, link: e.target.value })} placeholder="https://nadwyraz.com/..." style={inputStyle} />
+      </div>
+      <div>
+        <Label>Alt text</Label>
+        <input value={image.alt} onChange={e => onChange({ ...image, alt: e.target.value })} placeholder="Opis grafiki" style={inputStyle} />
+      </div>
+    </div>
+  );
+}
+
+function Block5DuoImages({ duo, setDuo }) {
+  const setD = (key, value) => setDuo(prev => ({ ...prev, [key]: value }));
+  return (
+    <Section title="Dwie grafiki obok siebie" number="5" html={generateDuoImageHTML(duo)} previewTitle="Duo grafiki" previewWidth={720}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+          <ImageUploadField side="left" image={duo.left} onChange={img => setD("left", img)} />
+          <ImageUploadField side="right" image={duo.right} onChange={img => setD("right", img)} />
+        </div>
+        <StyleGroup title="Odstepy i tlo">
+          <StyleRow>
+            <StyleField label="Odstep miedzy grafikami">
+              <SliderInput value={duo.gap} onChange={v => setD("gap", Number(v))} min={0} max={40} />
+            </StyleField>
+            <StyleField label="Padding gora">
+              <SliderInput value={duo.paddingTop} onChange={v => setD("paddingTop", Number(v))} min={0} max={80} />
+            </StyleField>
+          </StyleRow>
+          <StyleRow>
+            <StyleField label="Padding dol">
+              <SliderInput value={duo.paddingBottom} onChange={v => setD("paddingBottom", Number(v))} min={0} max={80} />
+            </StyleField>
+            <StyleField label="Padding boki">
+              <SliderInput value={duo.paddingH} onChange={v => setD("paddingH", Number(v))} min={0} max={60} />
+            </StyleField>
+          </StyleRow>
+          <StyleRow>
+            <StyleField label="Kolor tla">
+              <ColorInput value={duo.bgColor} onChange={v => setD("bgColor", v)} />
+            </StyleField>
+          </StyleRow>
+        </StyleGroup>
+        <StyleGroup title="Grafiki">
+          <StyleRow>
+            <StyleField label="Zaokraglenie rogow">
+              <SliderInput value={duo.borderRadius} onChange={v => setD("borderRadius", Number(v))} min={0} max={40} />
+            </StyleField>
+          </StyleRow>
+        </StyleGroup>
+      </div>
+    </Section>
+  );
+}
+
 // ─── MAIN ────────────────────────────────────────────────────────────────────
 
 export default function NewsletterBuilder() {
@@ -577,6 +723,7 @@ export default function NewsletterBuilder() {
   const [text, setText] = useState(defaultText);
   const [products, setProducts] = useState(defaultProducts);
 
+  const [duo, setDuo] = useState(defaultDuo);
   const [duo, setDuo] = useState(defaultDuo);
   const [activeBlock, setActiveBlock] = useState("0");
   const setH = useCallback((key, value) => setHeading(prev => ({ ...prev, [key]: value })), []);
