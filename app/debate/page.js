@@ -13,10 +13,12 @@ const MODELS = {
     emoji: "🔍",
     color: "#b8763a",
     options: [
-      { id: "claude-haiku-4-5-20251001", label: "Haiku", desc: "Szybki · tani" },
-      { id: "claude-sonnet-4-5", label: "Sonnet", desc: "Inteligentny" },
+      { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5", desc: "Błyskawiczny do prostych pytań", price: "$0.25/1M" },
+      { id: "claude-sonnet-4-5", label: "Sonnet 4.5", desc: "Inteligentny, dobry balans", price: "$3/1M" },
+      { id: "claude-sonnet-4-6", label: "Sonnet 4.6", desc: "Nowy domyślny, prawie poziom Opus", price: "$3/1M" },
+      { id: "claude-opus-4-6", label: "Opus 4.6", desc: "Najlepszy Claude, 1M kontekst", price: "$15/1M" },
     ],
-    default: "claude-haiku-4-5-20251001",
+    default: "claude-sonnet-4-6",
   },
   openai: {
     id: "openai",
@@ -24,10 +26,12 @@ const MODELS = {
     emoji: "⚡",
     color: "#0d9e6e",
     options: [
-      { id: "gpt-4o-mini", label: "4o mini", desc: "Szybki · tani" },
-      { id: "gpt-5.4", label: "GPT-5.4", desc: "Najmocniejszy" },
+      { id: "gpt-5-mini", label: "GPT-5 mini", desc: "Tani wariant z rozumowaniem", price: "$1.1/1M" },
+      { id: "gpt-4o-mini", label: "GPT-4o mini", desc: "Sprawdzony, szybki i tani", price: "$0.15/1M" },
+      { id: "gpt-5.2", label: "GPT-5.2", desc: "Poprzedni flagship, szybszy", price: "$3/1M" },
+      { id: "gpt-5.4", label: "GPT-5.4", desc: "Flagowy OpenAI, kodowanie + agenty", price: "$15/1M" },
     ],
-    default: "gpt-4o-mini",
+    default: "gpt-5-mini",
   },
   gemini: {
     id: "gemini",
@@ -35,8 +39,11 @@ const MODELS = {
     emoji: "🌐",
     color: "#2563eb",
     options: [
-      { id: "gemini-2.5-flash", label: "Flash", desc: "Szybki · tani" },
-      { id: "gemini-2.5-pro", label: "Pro", desc: "Najmocniejszy" },
+      { id: "gemini-2.0-flash", label: "2.0 Flash", desc: "Sprawdzony i tani", price: "$0.10/1M" },
+      { id: "gemini-2.5-flash", label: "2.5 Flash", desc: "Hybrid reasoning, 1M kontekst", price: "$0.30/1M" },
+      { id: "gemini-2.5-pro", label: "2.5 Pro", desc: "Stabilny, świetny do kodowania", price: "$1.25/1M" },
+      { id: "gemini-3-flash-preview", label: "3 Flash", desc: "Szybki Gemini 3 z myśleniem", price: "$0.50/1M" },
+      { id: "gemini-3-pro-preview", label: "3 Pro", desc: "Najnowszy Google, multimodal", price: "$2/1M" },
     ],
     default: "gemini-2.5-flash",
   },
@@ -80,7 +87,7 @@ export default function DebatePage() {
   const [loading, setLoading] = useState(false);
   const [crossLoading, setCrossLoading] = useState(false);
   const [activeModels, setActiveModels] = useState({ claude: true, openai: true, gemini: true });
-  const [modelVersions, setModelVersions] = useState({ claude: "claude-haiku-4-5-20251001", openai: "gpt-4o-mini", gemini: "gemini-2.5-flash" });
+  const [modelVersions, setModelVersions] = useState({ claude: "claude-sonnet-4-6", openai: "gpt-5-mini", gemini: "gemini-2.5-flash" });
   const [webSearch, setWebSearch] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [showModelPicker, setShowModelPicker] = useState(null);
@@ -220,36 +227,51 @@ export default function DebatePage() {
           <div style={{ fontFamily: "var(--font-dm-serif), 'DM Serif Display', Georgia, serif", fontSize: 20, color: t.text, marginRight: 8 }}>⚡ Consensus Engine</div>
 
           {/* Model toggles */}
-          {Object.values(MODELS).map(m => (
-            <div key={m.id} style={{ position: "relative" }}>
-              <div
-                onClick={() => toggleModel(m.id)}
-                style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 20, border: `1px solid ${activeModels[m.id] ? m.color + "60" : t.border}`, background: activeModels[m.id] ? m.color + "12" : "none", color: activeModels[m.id] ? m.color : t.textSub, fontSize: 12, fontWeight: 600, cursor: "pointer", userSelect: "none" }}
-              >
-                <span>{m.emoji}</span>
-                <span>{m.label}</span>
-                {activeModels[m.id] && (
-                  <span
-                    onClick={e => { e.stopPropagation(); setShowModelPicker(showModelPicker === m.id ? null : m.id); }}
-                    style={{ fontSize: 10, background: m.color + "20", borderRadius: 4, padding: "1px 5px", marginLeft: 2 }}
+          {Object.values(MODELS).map(m => {
+            const activeOpt = m.options.find(o => o.id === modelVersions[m.id]);
+            const isActive = activeModels[m.id];
+            return (
+              <div key={m.id} style={{ position: "relative" }}>
+                <div style={{ display: "flex", alignItems: "center", border: `1px solid ${isActive ? m.color + "50" : t.border}`, borderRadius: 8, overflow: "hidden", background: isActive ? m.color + "08" : "none", transition: "all 0.15s" }}>
+                  {/* Toggle on/off */}
+                  <button
+                    onClick={() => toggleModel(m.id)}
+                    style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 10px", background: "none", border: "none", cursor: "pointer", color: isActive ? m.color : t.textSub, fontWeight: 600, fontSize: 12, fontFamily: "inherit" }}
                   >
-                    {m.options.find(o => o.id === modelVersions[m.id])?.label} ▾
-                  </span>
+                    <span style={{ fontSize: 14 }}>{m.emoji}</span>
+                    <span>{m.label}</span>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: isActive ? m.color : t.border, display: "inline-block", marginLeft: 2, transition: "background 0.15s" }} />
+                  </button>
+                  {/* Model picker trigger */}
+                  <button
+                    onClick={() => setShowModelPicker(showModelPicker === m.id ? null : m.id)}
+                    style={{ padding: "6px 8px", background: "none", border: "none", borderLeft: `1px solid ${isActive ? m.color + "30" : t.border}`, cursor: "pointer", color: isActive ? m.color : t.textSub, fontSize: 11, fontFamily: "inherit", display: "flex", alignItems: "center", gap: 3 }}
+                  >
+                    <span style={{ fontWeight: 600 }}>{activeOpt?.label}</span>
+                    <span style={{ opacity: 0.6 }}>▾</span>
+                  </button>
+                </div>
+                {showModelPicker === m.id && (
+                  <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, padding: 6, zIndex: 200, minWidth: 220, boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}>
+                    <div style={{ fontSize: 9, color: t.textSub, letterSpacing: "0.1em", textTransform: "uppercase", padding: "4px 8px 6px", fontWeight: 600 }}>{m.label} — wybierz model</div>
+                    {m.options.map(opt => {
+                      const isSel = modelVersions[m.id] === opt.id;
+                      return (
+                        <div key={opt.id} onClick={() => { setModelVersions(prev => ({ ...prev, [m.id]: opt.id })); setShowModelPicker(null); }}
+                          style={{ padding: "8px 10px", borderRadius: 7, cursor: "pointer", background: isSel ? m.color + "15" : "none", marginBottom: 2, border: `1px solid ${isSel ? m.color + "40" : "transparent"}`, transition: "background 0.1s" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
+                            <span style={{ fontWeight: 700, fontSize: 12, color: isSel ? m.color : t.text }}>{opt.label}</span>
+                            <span style={{ fontSize: 10, color: isSel ? m.color : t.textSub, background: isSel ? m.color + "15" : (dark ? "#1a1a1a" : "#f5f2ec"), borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>{opt.price}</span>
+                          </div>
+                          <div style={{ fontSize: 11, color: t.textSub, lineHeight: 1.4 }}>{opt.desc}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
-              {showModelPicker === m.id && (
-                <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 6, zIndex: 100, minWidth: 160, boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }}>
-                  {m.options.map(opt => (
-                    <div key={opt.id} onClick={() => { setModelVersions(prev => ({ ...prev, [m.id]: opt.id })); setShowModelPicker(null); }}
-                      style={{ padding: "7px 10px", borderRadius: 6, cursor: "pointer", background: modelVersions[m.id] === opt.id ? m.color + "15" : "none", color: modelVersions[m.id] === opt.id ? m.color : t.text, fontSize: 12 }}>
-                      <div style={{ fontWeight: 600 }}>{opt.label}</div>
-                      <div style={{ fontSize: 10, color: t.textSub }}>{opt.desc}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
 
           <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
             <button onClick={() => setWebSearch(w => !w)}
