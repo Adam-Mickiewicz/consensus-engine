@@ -762,6 +762,22 @@ export default function MarketingBrief() {
 
   useEffect(() => { loadBriefs(); }, [loadBriefs]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    if (id) {
+      fetch("/api/marketing-briefs").then(r => r.json()).then(data => {
+        const found = Array.isArray(data) ? data.find(b => b.id === id) : null;
+        if (found) {
+          openEdit(found);
+          // Usuń param z URL bez przeładowania
+          window.history.replaceState({}, "", "/tools/marketing-brief?id=" + id);
+        }
+      });
+    }
+  }, []);
+
   const save = async () => {
     if (!brief.name.trim()) { setSaveMsg("Wpisz nazwę akcji!"); return; }
     setSaving(true);
@@ -782,7 +798,14 @@ export default function MarketingBrief() {
   };
 
   const openNew = () => { setBrief(defaultBrief()); setEditId(null); setActiveChannel(null); setView("form"); };
-  const openEdit = (b) => { setBrief(b.data); setEditId(b.id); setActiveChannel(null); setView("form"); if (b.data?.summary) setSummary(b.data.summary); else setSummary(null); };
+  const openEdit = (b) => {
+    setBrief(b.data);
+    setEditId(b.id);
+    setActiveChannel(null);
+    setView("form");
+    if (b.data?.summary) setSummary(b.data.summary); else setSummary(null);
+    if (typeof window !== "undefined") window.history.replaceState({}, "", "/tools/marketing-brief?id=" + b.id);
+  };
 
   const deleteBrief = async (id) => {
     if (!confirm("Usunąć brief?")) return;
@@ -1296,6 +1319,8 @@ Copy: ${brief.copyProposals || "—"}`;
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => { navigator.clipboard.writeText(window.location.origin + "/tools/marketing-brief?id=" + b.id); alert("✅ Link skopiowany!"); }}
+                      style={{ background: "none", color: "#888", border: "1px solid #ddd", borderRadius: 6, padding: "6px 12px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }} title="Kopiuj link">🔗</button>
                     <button onClick={() => openEdit(b)} style={{ background: ACCENT + "15", color: ACCENT, border: `1px solid ${ACCENT}40`, borderRadius: 6, padding: "6px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>Edytuj</button>
                     <button onClick={() => deleteBrief(b.id)} style={{ background: "none", color: "#ccc", border: "1px solid #eee", borderRadius: 6, padding: "6px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>Usuń</button>
                   </div>
@@ -1312,7 +1337,7 @@ Copy: ${brief.copyProposals || "—"}`;
             {/* Nagłówek */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
               <div>
-                <button onClick={() => setView("list")} style={{ background: "none", border: "none", color: "#aaa", fontSize: 12, cursor: "pointer", fontFamily: "inherit", marginBottom: 8, padding: 0 }}>← Lista briefów</button>
+                <button onClick={() => { setView("list"); if (typeof window !== "undefined") window.history.replaceState({}, "", "/tools/marketing-brief"); }} style={{ background: "none", border: "none", color: "#aaa", fontSize: 12, cursor: "pointer", fontFamily: "inherit", marginBottom: 8, padding: 0 }}>← Lista briefów</button>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "#1a1a1a" }}>{editId ? "Edytuj brief" : "Nowy brief"}</div>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
