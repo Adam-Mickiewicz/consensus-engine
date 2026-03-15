@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { saveDesignReview, loadDesignReviews, deleteDesignReview } from "../../lib/supabase";
+import Nav from "../../components/Nav";
 
 const accent = "#b8763a";
 
@@ -186,6 +187,8 @@ export default function DesignJudge() {
   };
 
   return (
+    <>
+    <Nav current="/design-judge" />
     <div style={s.page}>
       <div style={s.header}>
         <a href="/" style={{ color: "#888", fontSize: 11, textDecoration: "none" }}>← Consensus Engine</a>
@@ -369,5 +372,6 @@ export default function DesignJudge() {
         * { box-sizing: border-box; }
       `}</style>
     </div>
+      </>
   );
 }

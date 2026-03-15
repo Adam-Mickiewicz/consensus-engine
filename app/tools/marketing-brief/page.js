@@ -1,19 +1,10 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
+import Nav from "../../components/Nav";
 
 // ─── STAŁE ───────────────────────────────────────────────────────────────────
 
 const ACCENT = "#b8763a";
-const NAV = [
-  { href: "/", label: "⚡ Consensus Engine" },
-  { href: "/newsletter-builder", label: "📧 Newsletter Builder" },
-  { href: "/sock-designer", label: "🧦 Sock Designer" },
-  { href: "/design-judge", label: "🎨 Design Judge" },
-  { href: "/tools/countdown", label: "⏱ Generator odliczania" },
-  { href: "/tools/marketing-brief", label: "📋 Akcje marketingowe", active: true },
-  { href: "/tools/brand-settings", label: "🏷️ Ustawienia marki" },
-];
-
 const CHANNELS = [
   {
     id: "organic_social", label: "📱 Kanały własne (organic)",
@@ -886,6 +877,8 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
   const panelHead = { padding: "10px 16px", background: "#f9f7f5", borderBottom: "1px solid #e0dbd4", fontSize: 11, color: "#555", fontFamily: "monospace", fontWeight: 700, display: "flex", justifyContent: "space-between", alignItems: "center" };
 
   return (
+    <>
+    <Nav current="/tools/marketing-brief" />
     <div style={{ minHeight: "100vh", background: "#f5f2ee", fontFamily: "'IBM Plex Mono', monospace", display: "flex" }}>
 
       {/* SIDEBAR */}
@@ -895,9 +888,7 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
           <div style={{ color: "#444", fontSize: 10, letterSpacing: 1 }}>ENGINE v1.0</div>
         </div>
         <div style={{ color: "#444", fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 4 }}>NAWIGACJA</div>
-        {NAV.map(item => (
-          <a key={item.href} href={item.href} style={{ display: "block", padding: "9px 12px", borderRadius: 8, fontSize: 11, fontWeight: item.active ? 700 : 400, background: item.active ? ACCENT + "20" : "none", border: item.active ? `1px solid ${ACCENT}40` : "1px solid transparent", color: item.active ? ACCENT : "#666", textDecoration: "none" }}>{item.label}</a>
-        ))}
+        
       </div>
 
       {/* MAIN */}
@@ -1435,5 +1426,6 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
       />
     )}
     </div>
+      </>
   );
 }

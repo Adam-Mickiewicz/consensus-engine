@@ -1,17 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
+import Nav from "../../components/Nav";
 
 const ACCENT = "#b8763a";
-const NAV = [
-  { href: "/", label: "⚡ Consensus Engine" },
-  { href: "/newsletter-builder", label: "📧 Newsletter Builder" },
-  { href: "/sock-designer", label: "🧦 Sock Designer" },
-  { href: "/design-judge", label: "🎨 Design Judge" },
-  { href: "/tools/countdown", label: "⏱ Generator odliczania" },
-  { href: "/tools/marketing-brief", label: "📋 Akcje marketingowe" },
-  { href: "/tools/brand-settings", label: "🏷️ Ustawienia marki", active: true },
-];
-
 function Label({ children }) {
   return <div style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1.2, marginBottom: 5, textTransform: "uppercase", fontFamily: "monospace" }}>{children}</div>;
 }
@@ -99,6 +90,8 @@ export default function BrandSettings() {
   if (loading) return <div style={{ padding: 40, color: "#aaa" }}>Ładowanie...</div>;
 
   return (
+    <>
+    <Nav current="/tools/brand-settings" />
     <div style={{ minHeight: "100vh", background: "#f5f2ee", fontFamily: "'IBM Plex Mono', monospace", display: "flex" }}>
       {/* SIDEBAR */}
       <div style={{ width: 220, minWidth: 220, background: "#0f0f0f", borderRight: "1px solid #1a1a1a", padding: "24px 16px", display: "flex", flexDirection: "column", gap: 8, position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
@@ -107,9 +100,7 @@ export default function BrandSettings() {
           <div style={{ color: "#444", fontSize: 10, letterSpacing: 1 }}>ENGINE v1.0</div>
         </div>
         <div style={{ color: "#444", fontSize: 10, fontWeight: 700, letterSpacing: 1.2, marginBottom: 4 }}>NAWIGACJA</div>
-        {NAV.map(item => (
-          <a key={item.href} href={item.href} style={{ display: "block", padding: "9px 12px", borderRadius: 8, fontSize: 11, fontWeight: item.active ? 700 : 400, background: item.active ? ACCENT + "20" : "none", border: item.active ? `1px solid ${ACCENT}40` : "1px solid transparent", color: item.active ? ACCENT : "#666", textDecoration: "none" }}>{item.label}</a>
-        ))}
+        
       </div>
 
       {/* MAIN */}
@@ -237,5 +228,6 @@ export default function BrandSettings() {
         </div>
       </div>
     </div>
+      </>
   );
 }

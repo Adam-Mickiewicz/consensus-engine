@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import Nav from "../components/Nav";
 import ReactMarkdown from "react-markdown";
 import { saveDebate, updateDebate, loadDebates } from "../../lib/supabase";
 
@@ -181,6 +182,8 @@ async function extractText(file) {
 function Tooltip({ text, children }) {
   const [show, setShow] = useState(false);
   return (
+    <>
+    <Nav current="/debate" />
     <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}
       onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
       {children}
@@ -190,6 +193,7 @@ function Tooltip({ text, children }) {
         </span>
       )}
     </span>
+      </>
   );
 }
 

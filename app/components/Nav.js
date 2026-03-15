@@ -1,0 +1,104 @@
+"use client";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+
+const TOOLS = [
+  { href: "/", label: "Strona główna", icon: "⊞" },
+  { href: "/debate", label: "Consensus Engine", icon: "⚡" },
+  { href: "/sock-designer", label: "Sock Designer", icon: "🧦" },
+  { href: "/newsletter-builder", label: "Newsletter Builder", icon: "📧" },
+  { href: "/design-judge", label: "Design Judge", icon: "🎨" },
+  { href: "/tools/countdown", label: "Generator odliczania", icon: "⏱" },
+  { href: "/tools/marketing-brief", label: "Akcje marketingowe", icon: "📋" },
+  { href: "/tools/brand-settings", label: "Ustawienia marki", icon: "🏷️" },
+];
+
+const LIGHT = {
+  bg: "#f5f4f0", surface: "#ffffff", border: "#ddd9d2",
+  text: "#1a1814", textSub: "#7a7570", accent: "#b8763a",
+  toggleBg: "#eeecea",
+};
+const DARK = {
+  bg: "#0a0a0a", surface: "#111110", border: "#1e1e1e",
+  text: "#e0ddd8", textSub: "#6a6560", accent: "#b8763a",
+  toggleBg: "#1a1a1a",
+};
+
+export default function Nav({ current }) {
+  const [open, setOpen] = useState(false);
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem("ce-theme") === "dark") setDark(true);
+  }, []);
+
+  const toggleTheme = () => {
+    setDark(d => {
+      localStorage.setItem("ce-theme", d ? "light" : "dark");
+      return !d;
+    });
+  };
+
+  const t = dark ? DARK : LIGHT;
+
+  return (
+    <>
+      <style>{`
+        .ce-nav-bar { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 44px; background: ${t.bg}; border-bottom: 1px solid ${t.border}; font-family: var(--font-geist-sans), system-ui, sans-serif; transition: background 0.2s; }
+        .ce-nav-logo { font-size: 13px; font-weight: 600; color: ${t.accent}; text-decoration: none; }
+        .ce-nav-right { display: flex; align-items: center; gap: 8px; }
+        .ce-nav-theme { background: ${t.toggleBg}; border: 1px solid ${t.border}; color: ${t.textSub}; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; font-family: inherit; }
+        .ce-nav-burger { background: none; border: 1px solid ${t.border}; border-radius: 6px; width: 32px; height: 32px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 0; }
+        .ce-nav-burger span { display: block; width: 14px; height: 1.5px; background: ${t.textSub}; border-radius: 2px; transition: transform 0.2s, opacity 0.2s; }
+        .ce-nav-burger.open span:nth-child(1) { transform: rotate(45deg) translate(4px, 4px); }
+        .ce-nav-burger.open span:nth-child(2) { opacity: 0; }
+        .ce-nav-burger.open span:nth-child(3) { transform: rotate(-45deg) translate(4px, -4px); }
+        .ce-nav-overlay { position: fixed; inset: 44px 0 0 0; z-index: 99; display: flex; justify-content: flex-end; }
+        .ce-nav-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.15); }
+        .ce-nav-menu { position: relative; width: 260px; background: ${t.surface}; border-left: 1px solid ${t.border}; overflow-y: auto; padding: 8px 0; box-shadow: -4px 0 24px rgba(0,0,0,0.08); }
+        .ce-nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; text-decoration: none; color: ${t.textSub}; font-size: 13px; transition: background 0.1s; border-left: 2px solid transparent; font-family: var(--font-geist-sans), system-ui, sans-serif; }
+        .ce-nav-item:hover { background: ${t.toggleBg}; color: ${t.text}; }
+        .ce-nav-item.active { color: ${t.accent}; border-left-color: ${t.accent}; background: ${t.toggleBg}; }
+        .ce-nav-sep { height: 1px; background: ${t.border}; margin: 6px 0; }
+        @media (max-width: 480px) { .ce-nav-menu { width: 100%; } }
+      `}</style>
+
+      <div className="ce-nav-bar">
+        <Link href="/" className="ce-nav-logo">CE / Narzędzia</Link>
+        <div className="ce-nav-right">
+          <button className="ce-nav-theme" onClick={toggleTheme}>
+            {dark ? "☀ Jasny" : "☾ Ciemny"}
+          </button>
+          <button
+            className={"ce-nav-burger" + (open ? " open" : "")}
+            onClick={() => setOpen(o => !o)}
+            aria-label="Menu"
+          >
+            <span /><span /><span />
+          </button>
+        </div>
+      </div>
+
+      {open && (
+        <div className="ce-nav-overlay">
+          <div className="ce-nav-backdrop" onClick={() => setOpen(false)} />
+          <div className="ce-nav-menu">
+            {TOOLS.map((tool, i) => (
+              <span key={tool.href}>
+                {i === 1 && <div className="ce-nav-sep" />}
+                <Link
+                  href={tool.href}
+                  className={"ce-nav-item" + (current === tool.href ? " active" : "")}
+                  onClick={() => setOpen(false)}
+                >
+                  <span style={{ fontSize: 15, width: 20, textAlign: "center" }}>{tool.icon}</span>
+                  {tool.label}
+                </Link>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
