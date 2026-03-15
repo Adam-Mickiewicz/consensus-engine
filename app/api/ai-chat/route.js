@@ -1,4 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
+
+export const maxDuration = 60;
 import { NextResponse } from "next/server";
 
 const supabase = createClient(
@@ -38,7 +40,7 @@ Odpowiadaj po polsku. Bądź konkretny, praktyczny i kreatywny. Gdy oceniasz pom
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
-        body: JSON.stringify({ model, max_tokens: 4096, system: systemPrompt, messages: messages.map(m => ({
+        body: JSON.stringify({ model, max_tokens: 8096, system: systemPrompt, messages: messages.map(m => ({
           role: m.role === "synthesis" ? "assistant" : m.role,
           content: (m.role === "assistant" && m.model && m.model !== model)
             ? `[Odpowiedź wygenerowana przez ${m.model}]:
@@ -69,7 +71,7 @@ ${Array.isArray(m.content) ? m.content.map(c=>c.text||"").join("") : m.content}`
         const body = {
           model,
           input: inputMessages,
-          max_output_tokens: 4096,
+          max_output_tokens: 16000,
         };
         if (deepResearch) body.tools = [{ type: "web_search_preview" }];
 
@@ -114,7 +116,7 @@ ${Array.isArray(m.content) ? m.content.map(c=>c.text||"").join("") : m.content}`
           body: JSON.stringify({
             model,
             messages: [{ role: "system", content: systemPrompt }, ...messages.map(m => ({ role: m.role, content: m.content }))],
-            max_completion_tokens: 4096,
+            max_completion_tokens: 16000,
           }),
         });
         const data = await res.json();
