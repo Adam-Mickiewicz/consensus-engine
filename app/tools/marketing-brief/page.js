@@ -1086,28 +1086,30 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
         ].filter(([, v]) => v);
         if (extPairs.length) children.push(kvTable(extPairs));
 
-        // Referencje - linki
-        const links = brief.references?.links || [];
-        const files = brief.references?.files || [];
-        if (links.length > 0 || files.length > 0) {
-          children.push(spacer(80));
-          children.push(new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: "REFERENCJE GRAFICZNE", bold: true, size: 20, font: "Arial", color: ACCENT_COLOR })] }));
-          for (const link of links) {
-            const url = typeof link === "object" ? link.url : link;
-            const note = typeof link === "object" ? link.note : "";
-            children.push(new Paragraph({ spacing: { after: 40 }, children: [
-              new TextRun({ text: "🔗 " + url, size: 18, font: "Arial", color: "1A5CA8" }),
-              ...(note ? [new TextRun({ text: "  — " + note, size: 18, font: "Arial", color: GRAY })] : [])
-            ]}));
-          }
-          for (const file of files) {
-            const name = file.name || "plik";
-            const note = file.note || "";
-            children.push(new Paragraph({ spacing: { after: 40 }, children: [
-              new TextRun({ text: "📄 " + name, size: 18, font: "Arial", color: DARK }),
-              ...(note ? [new TextRun({ text: "  — " + note, size: 18, font: "Arial", color: GRAY })] : [])
-            ]}));
-          }
+        children.push(spacer(240));
+      }
+
+      // REFERENCJE - zawsze jeśli istnieją
+      const links = brief.references?.links || [];
+      const files = brief.references?.files || [];
+      if (links.length > 0 || files.length > 0) {
+        children.push(sectionHeader("REFERENCJE GRAFICZNE", "555555"));
+        children.push(spacer(80));
+        for (const link of links) {
+          const url = typeof link === "object" ? link.url : link;
+          const note = typeof link === "object" ? link.note : "";
+          children.push(new Paragraph({ spacing: { after: 60 }, children: [
+            new TextRun({ text: "🔗 " + url, size: 18, font: "Arial", color: "1A5CA8" }),
+            ...(note ? [new TextRun({ text: "  — " + note, size: 18, font: "Arial", color: GRAY })] : [])
+          ]}));
+        }
+        for (const file of files) {
+          const name = file.name || "plik";
+          const note = file.note || "";
+          children.push(new Paragraph({ spacing: { after: 60 }, children: [
+            new TextRun({ text: "📄 " + name, size: 18, font: "Arial", color: DARK }),
+            ...(note ? [new TextRun({ text: "  — " + note, size: 18, font: "Arial", color: GRAY })] : [])
+          ]}));
         }
         children.push(spacer(240));
       }
