@@ -64,11 +64,7 @@ export default function Nav({ current }) {
       `}</style>
 
       <div className="ce-nav-bar">
-        <Link href="/" className="ce-nav-logo">CE / Narzędzia</Link>
         <div className="ce-nav-right">
-          <button className="ce-nav-theme" onClick={toggleTheme}>
-            {dark ? "☀ Jasny" : "☾ Ciemny"}
-          </button>
           <button
             className={"ce-nav-burger" + (open ? " open" : "")}
             onClick={() => setOpen(o => !o)}
@@ -76,7 +72,11 @@ export default function Nav({ current }) {
           >
             <span /><span /><span />
           </button>
+          <button className="ce-nav-theme" onClick={toggleTheme}>
+            {dark ? "☀ Jasny" : "☾ Ciemny"}
+          </button>
         </div>
+        <Link href="/" className="ce-nav-logo">Strona główna</Link>
       </div>
 
       {open && (
