@@ -1051,6 +1051,47 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
       // Buduj dokument
       const children = [];
 
+      // PIGUŁKA BRIEFU (jeśli istnieje)
+      if (brief.summary) {
+        children.push(new Table({
+          width: { size: PAGE_W, type: WidthType.DXA },
+          columnWidths: [PAGE_W],
+          rows: [new TableRow({ children: [
+            new TableCell({
+              borders: { top: { style: BorderStyle.SINGLE, size: 8, color: GREEN }, bottom: { style: BorderStyle.SINGLE, size: 8, color: GREEN }, left: { style: BorderStyle.SINGLE, size: 8, color: GREEN }, right: { style: BorderStyle.SINGLE, size: 8, color: GREEN } },
+              shading: { fill: "1A7A3A", type: ShadingType.CLEAR },
+              margins: { top: 160, bottom: 100, left: 200, right: 200 },
+              width: { size: PAGE_W, type: WidthType.DXA },
+              children: [
+                new Paragraph({ children: [new TextRun({ text: "📋 PIGUŁKA BRIEFU", bold: true, size: 28, font: "Arial", color: "FFFFFF" })] }),
+                new Paragraph({ spacing: { after: 40 }, children: [new TextRun({ text: "Esencja akcji — do szybkiego podglądu", size: 18, font: "Arial", color: "C8F0D8" })] }),
+              ]
+            })
+          ]})]
+        }));
+        // Treść pigułki w zielonym tle
+        const summaryLines = brief.summary.split("
+").filter(l => l.trim());
+        children.push(new Table({
+          width: { size: PAGE_W, type: WidthType.DXA },
+          columnWidths: [PAGE_W],
+          rows: [new TableRow({ children: [
+            new TableCell({
+              borders: { top: noBorders.top, bottom: { style: BorderStyle.SINGLE, size: 8, color: GREEN }, left: { style: BorderStyle.SINGLE, size: 8, color: GREEN }, right: { style: BorderStyle.SINGLE, size: 8, color: GREEN } },
+              shading: { fill: "F0FAF4", type: ShadingType.CLEAR },
+              margins: { top: 160, bottom: 160, left: 200, right: 200 },
+              width: { size: PAGE_W, type: WidthType.DXA },
+              children: summaryLines.map(line => {
+                const clean = line.replace(/^#+\s*/, "").replace(/\*\*/g, "").replace(/^[-•*]\s*/, "");
+                const isBold = line.startsWith("#");
+                return new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: (line.startsWith("-") || line.startsWith("•") ? "• " : "") + clean, bold: isBold, size: isBold ? 20 : 18, font: "Arial", color: isBold ? "1A7A3A" : DARK })] });
+              })
+            })
+          ]})]
+        }));
+        children.push(spacer(320));
+      }
+
       // STRONA TYTUŁOWA
       children.push(spacer(400));
       children.push(new Paragraph({ children: [new TextRun({ text: "BRIEF MARKETINGOWY", bold: true, size: 52, font: "Arial", color: ACCENT_COLOR })] }));
