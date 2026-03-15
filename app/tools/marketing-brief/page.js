@@ -188,101 +188,134 @@ function CheckPill({ label, checked, onChange }) {
 }
 
 function ChannelPanel({ channel, cfg, onChange }) {
-  const toggle = (key, val, arr) => {
-    const cur = cfg[arr] || [];
-    onChange({ ...cfg, [arr]: cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val] });
+  const toggleFormat = (fmtId) => {
+    const cur = cfg.selectedFormats || [];
+    onChange({ ...cfg, selectedFormats: cur.includes(fmtId) ? cur.filter(x => x !== fmtId) : [...cur, fmtId] });
   };
-  const setFormatNote = (fmt, val) => onChange({ ...cfg, formatNotes: { ...(cfg.formatNotes || {}), [fmt]: val } });
-  const setFormatCount = (fmt, val) => onChange({ ...cfg, formatCounts: { ...(cfg.formatCounts || {}), [fmt]: val } });
-  const isCarousel = (fmt) => fmt.toLowerCase().includes("karuzel") || fmt.toLowerCase().includes("collection");
+  const toggleVisible = (val) => {
+    const cur = cfg.visible || [];
+    onChange({ ...cfg, visible: cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val] });
+  };
+  const setFormatData = (fmtId, key, val) => {
+    onChange({ ...cfg, formatData: { ...(cfg.formatData || {}), [fmtId]: { ...(cfg.formatData?.[fmtId] || {}), [key]: val } } });
+  };
+  const getFormatData = (fmtId, key, def = "") => (cfg.formatData?.[fmtId]?.[key] ?? def);
+
+  const selectedFmts = channel.formats.filter(f => (cfg.selectedFormats || []).includes(f.id));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <Field label="Formaty">
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
-          {channel.formats.map(f => <CheckPill key={f} label={f} checked={(cfg.selectedFormats || []).includes(f)} onChange={() => toggle("selectedFormats", f, "selectedFormats")} />)}
-        </div>
-        {channel.hasFormatNotes && (cfg.selectedFormats || []).length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8, background: "#f9f7f5", borderRadius: 8, padding: 10 }}>
-            {(cfg.selectedFormats || []).map(fmt => (
-              <div key={fmt} style={{ display: "flex", flexDirection: "column", gap: 4, paddingBottom: 8, borderBottom: "1px solid #eee" }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, fontFamily: "monospace" }}>{fmt}</div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  {!isCarousel(fmt) && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-                      <span style={{ fontSize: 10, color: "#888" }}>Liczba:</span>
-                      <select value={(cfg.formatCounts || {})[fmt] || "1"} onChange={e => setFormatCount(fmt, e.target.value)}
-                        style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 4, padding: "3px 6px", fontSize: 11, fontFamily: "inherit", width: 52 }}>
-                        {["1","2","3","4","5","6","7","8","9","10+"].map(n => <option key={n}>{n}</option>)}
-                      </select>
-                    </div>
-                  )}
-                  {isCarousel(fmt) && (
-                    <span style={{ fontSize: 10, color: "#aaa", fontStyle: "italic" }}>karuzela — opisz całość</span>
-                  )}
-                </div>
-                <textarea value={(cfg.formatNotes || {})[fmt] || ""} onChange={e => setFormatNote(fmt, e.target.value)}
-                  placeholder={isCarousel(fmt) ? "Opisz zawartość karuzeli, styl, motyw..." : "Opis zawartości, co ma być widoczne, tekst, grafika..."}
-                  rows={2} style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "5px 8px", fontSize: 12, fontFamily: "inherit", resize: "vertical", width: "100%" }} />
-              </div>
-            ))}
-          </div>
-        )}
-      </Field>
-      <Field label="Typ materiału">
+      {/* WYBÓR FORMATÓW */}
+      <Field label="Wybierz formaty">
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {channel.types.map(t => <CheckPill key={t} label={t} checked={(cfg.selectedTypes || []).includes(t)} onChange={() => toggle("selectedTypes", t, "selectedTypes")} />)}
+          {channel.formats.map(f => (
+            <CheckPill key={f.id} label={f.label} checked={(cfg.selectedFormats || []).includes(f.id)} onChange={() => toggleFormat(f.id)} />
+          ))}
         </div>
       </Field>
+
+      {/* SZCZEGÓŁY KAŻDEGO FORMATU */}
+      {selectedFmts.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {selectedFmts.map(fmt => (
+            <div key={fmt.id} style={{ background: "#f9f7f5", border: "1px solid #e0dbd4", borderRadius: 8, overflow: "hidden" }}>
+              <div style={{ padding: "7px 12px", background: ACCENT + "12", borderBottom: "1px solid #e0dbd4", display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: ACCENT, fontFamily: "monospace" }}>{fmt.label}</span>
+                {fmt.isCarousel && <span style={{ fontSize: 10, color: "#aaa", fontStyle: "italic" }}>karuzela — opisz całość</span>}
+              </div>
+              <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+                {/* Typ materiału per format */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1, marginBottom: 5, textTransform: "uppercase", fontFamily: "monospace" }}>Typ materiału</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                    {FORMAT_TYPES.map(t => {
+                      const cur = getFormatData(fmt.id, "types", []);
+                      const checked = Array.isArray(cur) ? cur.includes(t) : false;
+                      return (
+                        <button key={t} onClick={() => {
+                          const cur2 = getFormatData(fmt.id, "types", []);
+                          const arr = Array.isArray(cur2) ? cur2 : [];
+                          setFormatData(fmt.id, "types", checked ? arr.filter(x => x !== t) : [...arr, t]);
+                        }} style={{ padding: "4px 9px", borderRadius: 20, border: `1px solid ${checked ? ACCENT : "#ddd"}`, background: checked ? ACCENT + "15" : "#fff", color: checked ? ACCENT : "#888", fontSize: 11, cursor: "pointer", fontFamily: "monospace", fontWeight: checked ? 700 : 400 }}>
+                          {t}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {/* Liczba (tylko dla nie-karuzeli) */}
+                {!fmt.isCarousel && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1, textTransform: "uppercase", fontFamily: "monospace" }}>Liczba kreacji:</span>
+                    <select value={getFormatData(fmt.id, "count", "1")} onChange={e => setFormatData(fmt.id, "count", e.target.value)}
+                      style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 4, padding: "3px 8px", fontSize: 12, fontFamily: "inherit" }}>
+                      {["1","2","3","4","5","6","7","8","9","10+"].map(n => <option key={n}>{n}</option>)}
+                    </select>
+                  </div>
+                )}
+                {/* Opis */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1, marginBottom: 5, textTransform: "uppercase", fontFamily: "monospace" }}>
+                    {fmt.isCarousel ? "Opis karuzeli" : "Opis / uwagi"}
+                  </div>
+                  <textarea value={getFormatData(fmt.id, "note", "")} onChange={e => setFormatData(fmt.id, "note", e.target.value)}
+                    placeholder={fmt.isCarousel ? "Co ma być w karuzeli? Motyw, liczba kart, treść..." : "Co ma być widoczne? Tekst, produkt, tło, styl..."}
+                    rows={2} style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "6px 8px", fontSize: 12, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* SZKIC dla email */}
       {channel.hasSketch && (
-        <Field label="Szkic układu / referencja">
-          <div style={{ display: "flex", gap: 8 }}>
-            <input type="url" value={cfg.sketchUrl || ""} onChange={e => onChange({ ...cfg, sketchUrl: e.target.value })}
-              placeholder="Link do szkicu układu (Figma, Drive, zdjęcie)..."
-              style={{ flex: 1, background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 12, fontFamily: "inherit" }} />
-          </div>
+        <Field label="Szkic układu newslettera (link do Figma, Drive, zdjęcia)">
+          <input type="url" value={cfg.sketchUrl || ""} onChange={e => onChange({ ...cfg, sketchUrl: e.target.value })}
+            placeholder="https://..."
+            style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 12, fontFamily: "inherit", boxSizing: "border-box" }} />
         </Field>
       )}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label={<Tooltip text={channel.slidesLabelTooltip || "Ile osobnych kreacji potrzebujesz dla tego kanału"}>{channel.slidesLabel || "Liczba slajdów / ekranów"}</Tooltip>}>
-          <select value={cfg.slides || "1"} onChange={e => onChange({ ...cfg, slides: e.target.value })}
-            style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 13, color: "#1a1a1a", fontFamily: "inherit" }}>
-            {["1","2","3","4","5","6+"].map(n => <option key={n}>{n}</option>)}
-          </select>
-        </Field>
-        <Field label="CTA">
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <input type="checkbox" checked={cfg.cta || false} onChange={e => onChange({ ...cfg, cta: e.target.checked })}
-              style={{ accentColor: ACCENT, width: 16, height: 16 }} />
-            {cfg.cta && (
-              <select value={cfg.ctaText || "Kup teraz"} onChange={e => onChange({ ...cfg, ctaText: e.target.value })}
-                style={{ flex: 1, background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "7px 8px", fontSize: 12, fontFamily: "inherit" }}>
-                {CTA_OPTIONS.map(o => <option key={o}>{o}</option>)}
-              </select>
-            )}
-          </div>
-          {cfg.cta && cfg.ctaText === "Inne" && (
-            <Input value={cfg.ctaCustom || ""} onChange={v => onChange({ ...cfg, ctaCustom: v })} placeholder="Wpisz własny CTA..." style={{ marginTop: 6 }} />
+
+      {/* CTA */}
+      <Field label="CTA">
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <input type="checkbox" checked={cfg.cta || false} onChange={e => onChange({ ...cfg, cta: e.target.checked })}
+            style={{ accentColor: ACCENT, width: 16, height: 16 }} />
+          {cfg.cta && (
+            <select value={cfg.ctaText || "Kup teraz"} onChange={e => onChange({ ...cfg, ctaText: e.target.value })}
+              style={{ flex: 1, background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "7px 8px", fontSize: 12, fontFamily: "inherit" }}>
+              {CTA_OPTIONS.map(o => <option key={o}>{o}</option>)}
+            </select>
           )}
-        </Field>
-      </div>
-      <Field label="Co ma być widoczne na grafice">
+        </div>
+        {cfg.cta && cfg.ctaText === "Inne" && (
+          <Input value={cfg.ctaCustom || ""} onChange={v => onChange({ ...cfg, ctaCustom: v })} placeholder="Wpisz własny CTA..." style={{ marginTop: 6 }} />
+        )}
+      </Field>
+
+      {/* CO WIDOCZNE */}
+      <Field label={<Tooltip text="Zaznacz elementy które muszą pojawić się na grafice">Co ma być widoczne na grafice</Tooltip>}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {VISIBLE_OPTIONS.map(v => <CheckPill key={v} label={v} checked={(cfg.visible || []).includes(v)} onChange={() => toggle("visible", v, "visible")} />)}
+          {VISIBLE_OPTIONS.map(v => <CheckPill key={v} label={v} checked={(cfg.visible || []).includes(v)} onChange={() => toggleVisible(v)} />)}
         </div>
       </Field>
-      <Field label="Hierarchia informacji (od najważniejszego)">
+
+      {/* HIERARCHIA */}
+      <Field label={<Tooltip text="Kolejność ważności elementów — co przykuwa uwagę w pierwszej kolejności">Hierarchia informacji</Tooltip>}>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {[0, 1, 2].map(i => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 11, color: "#aaa", width: 20, textAlign: "center" }}>{i + 1}.</span>
-              <Input value={(cfg.hierarchy || ["", "", ""])[i] || ""} onChange={v => { const h = [...(cfg.hierarchy || ["", "", ""])]; h[i] = v; onChange({ ...cfg, hierarchy: h }); }} placeholder={["Najważniejsze", "Drugie", "Trzecie"][i]} />
+              <Input value={(cfg.hierarchy || ["", "", ""])[i] || ""} onChange={v => { const h = [...(cfg.hierarchy || ["", "", ""])]; h[i] = v; onChange({ ...cfg, hierarchy: h }); }} placeholder={["Najważniejsze (np. hasło, rabat)", "Drugie (np. produkt, data)", "Trzecie (np. logo, CTA)"][i]} />
             </div>
           ))}
         </div>
       </Field>
-      <Field label="Uwagi dodatkowe">
-        <Textarea value={cfg.notes || ""} onChange={v => onChange({ ...cfg, notes: v })} placeholder="Specyficzne wymagania dla tego kanału..." rows={2} />
+
+      {/* UWAGI */}
+      <Field label="Uwagi dodatkowe do kanału">
+        <Textarea value={cfg.notes || ""} onChange={v => onChange({ ...cfg, notes: v })} placeholder="Dodatkowe wymagania, styl, tone of voice dla tego kanału..." rows={2} />
       </Field>
     </div>
   );
