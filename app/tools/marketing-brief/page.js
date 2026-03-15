@@ -135,6 +135,7 @@ const defaultBrief = () => ({
   keyFindings: "",
   copyProposals: "",
   recommendations: "",
+  copyRequests: [{ label: "", text: "" }],
   references: { links: [], files: [] },
   chatHistory: [],
   channels: Object.fromEntries(CHANNELS.map(c => [c.id, defaultChannel()])),
@@ -1432,77 +1433,6 @@ Copy: ${brief.copyProposals || "—"}`;
               </div>
             </div>
 
-            {/* ZAKŁADKI */}
-            <div style={{ display: "flex", gap: 0, marginBottom: 20, borderBottom: "2px solid #e0dbd4" }}>
-              {[
-                { id: "brief", label: "📋 Brief" },
-                { id: "copy", label: "✍️ Copy kampanii" },
-              ].map(tab => (
-                <button key={tab.id} onClick={() => setFormTab(tab.id)}
-                  style={{ padding: "10px 24px", fontSize: 13, fontWeight: formTab === tab.id ? 700 : 400, color: formTab === tab.id ? ACCENT : "#888", background: "none", border: "none", borderBottom: formTab === tab.id ? `2px solid ${ACCENT}` : "2px solid transparent", marginBottom: -2, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}>
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {formTab === "copy" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 16, paddingBottom: 32 }}>
-                {CHANNELS.filter(c => brief.channels[c.id]?.active).length === 0 ? (
-                  <div style={{ background: "#fff", border: "1px solid #e0dbd4", borderRadius: 10, padding: 40, textAlign: "center", color: "#aaa" }}>
-                    <div style={{ fontSize: 28, marginBottom: 8 }}>✍️</div>
-                    <div style={{ fontSize: 13 }}>Najpierw aktywuj kanały w zakładce Brief</div>
-                  </div>
-                ) : (
-                  CHANNELS.filter(c => brief.channels[c.id]?.active).map(channel => {
-                    const cfg = brief.channels[channel.id];
-                    const selectedFmts = channel.formats.filter(f => (cfg.selectedFormats || []).includes(f.id));
-                    return (
-                      <div key={channel.id} style={{ background: "#fff", border: "1px solid #e0dbd4", borderRadius: 10, overflow: "hidden" }}>
-                        <div style={{ padding: "10px 16px", background: ACCENT + "12", borderBottom: "1px solid #e0dbd4", display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: ACCENT, fontFamily: "monospace" }}>{channel.label}</span>
-                        </div>
-                        <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
-                          {selectedFmts.length === 0 ? (
-                            <div style={{ fontSize: 12, color: "#bbb", fontStyle: "italic" }}>Brak skonfigurowanych formatów</div>
-                          ) : (
-                            selectedFmts.map(fmt => {
-                              const fmtData = cfg.formatData?.[fmt.id] || {};
-                              const types = fmt.isCarousel ? ["karuzela"] : (Array.isArray(fmtData.types) && fmtData.types.length > 0 ? fmtData.types : ["ogólny"]);
-                              return types.map(typ => {
-                                const copyKey = `copy_${channel.id}_${fmt.id}_${typ}`;
-                                const currentCopy = brief.copyData?.[copyKey] || "";
-                                return (
-                                  <div key={copyKey}>
-                                    <div style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1, marginBottom: 6, textTransform: "uppercase", fontFamily: "monospace" }}>
-                                      {fmt.label}{typ !== "ogólny" && typ !== "karuzela" ? ` — ${typ}` : ""}
-                                    </div>
-                                    <textarea
-                                      value={currentCopy}
-                                      onChange={e => setBrief(b => ({ ...b, copyData: { ...(b.copyData || {}), [copyKey]: e.target.value } }))}
-                                      placeholder={`Wpisz finalny tekst copy dla ${fmt.label}${typ !== "ogólny" && typ !== "karuzela" ? ` (${typ})` : ""}...`}
-                                      rows={4}
-                                      style={{ width: "100%", background: "#f9f7f5", border: "1px solid #ddd", borderRadius: 8, padding: "10px 12px", fontSize: 13, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", resize: "vertical", boxSizing: "border-box", lineHeight: 1.6, color: "#1a1a1a" }}
-                                    />
-                                  </div>
-                                );
-                              });
-                            })
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, paddingTop: 8 }}>
-                  {saveMsg && <span style={{ fontSize: 12, color: saveMsg.startsWith("✅") ? "#2d7a4f" : "#cc0000", alignSelf: "center" }}>{saveMsg}</span>}
-                  <button onClick={save} disabled={saving} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "10px 24px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-                    {saving ? "Zapisuję..." : "💾 Zapisz copy"}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {formTab === "brief" && <>
             {/* CZĘŚĆ OGÓLNA */}
             <Section title="CZĘŚĆ OGÓLNA">
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -1615,6 +1545,31 @@ Copy: ${brief.copyProposals || "—"}`;
               </div>
             </Section>
 
+            {/* ZAPOTRZEBOWANIE NA COPY */}
+            <Section title="ZAPOTRZEBOWANIE NA COPY">
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>Opisz czego potrzebujesz od copywritera — ile tekstów, jak długie, co mają zawierać.</div>
+                {(brief.copyRequests || [{ label: "", text: "" }]).map((req, i) => (
+                  <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+                      <input value={req.label} onChange={e => { const arr = [...(brief.copyRequests || [])]; arr[i] = { ...arr[i], label: e.target.value }; set("copyRequests", arr); }}
+                        placeholder={`np. "Post Meta Ads", "Newsletter intro", "Blog 800 słów"...`}
+                        style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "7px 10px", fontSize: 12, fontFamily: "inherit", boxSizing: "border-box", fontWeight: 600 }} />
+                      <textarea value={req.text} onChange={e => { const arr = [...(brief.copyRequests || [])]; arr[i] = { ...arr[i], text: e.target.value }; set("copyRequests", arr); }}
+                        placeholder="Opis: długość, ton, co ma być zawarte, CTA, słowa kluczowe..."
+                        rows={2} style={{ width: "100%", background: "#f9f7f5", border: "1px solid #ddd", borderRadius: 6, padding: "7px 10px", fontSize: 12, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                    </div>
+                    <button onClick={() => set("copyRequests", (brief.copyRequests || []).filter((_, j) => j !== i))}
+                      style={{ background: "none", border: "none", color: "#ccc", cursor: "pointer", fontSize: 18, padding: "6px 0", flexShrink: 0 }}>×</button>
+                  </div>
+                ))}
+                <button onClick={() => set("copyRequests", [...(brief.copyRequests || []), { label: "", text: "" }])}
+                  style={{ alignSelf: "flex-start", background: "none", border: `1px dashed ${ACCENT}`, borderRadius: 8, padding: "7px 16px", fontSize: 12, color: ACCENT, cursor: "pointer", fontFamily: "inherit" }}>
+                  + Dodaj kolejne zapotrzebowanie
+                </button>
+              </div>
+            </Section>
+
             {/* WYBÓR KANAŁÓW */}
             <Section title="KANAŁY KOMUNIKACJI — wybierz aktywne">
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1703,10 +1658,8 @@ Copy: ${brief.copyProposals || "—"}`;
               </Section>
             )}
 
-            </> }
-
             {/* DOLNY PASEK ZAPISU */}
-            {formTab === "brief" && <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, paddingTop: 8, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, paddingTop: 8, flexWrap: "wrap" }}>
               {saveMsg && <span style={{ fontSize: 12, color: saveMsg.startsWith("✅") ? "#2d7a4f" : "#cc0000", alignSelf: "center" }}>{saveMsg}</span>}
               <button onClick={exportDocx} disabled={exportingDocx} style={{ background: "#1a5ca8", color: "#fff", border: "none", borderRadius: 6, padding: "10px 16px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
                 {exportingDocx ? "Generuję..." : "⬇ Pobierz DOCX"}
@@ -1721,7 +1674,7 @@ Copy: ${brief.copyProposals || "—"}`;
                 style={{ background: "#1a1a1a", color: "#fff", border: "none", borderRadius: 8, padding: "10px 24px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                 {generatingSummary ? "⏳ Generuję..." : "✨ Zapisz i generuj podsumowanie"}
               </button>
-            </div>}
+            </div>
 
             {/* PIGUŁKA PODSUMOWANIA */}
             {(summary || generatingSummary) && (
