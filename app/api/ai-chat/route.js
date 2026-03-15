@@ -9,7 +9,9 @@ const supabase = createClient(
 );
 
 export async function POST(req) {
-  const { model, messages, briefContext, deepResearch, brandContextFilter, systemOverride } = await req.json();
+  const body = await req.json();
+  const { model, messages, briefContext, deepResearch, brandContextFilter, systemOverride } = body;
+  console.log("[ai-chat] systemOverride:", systemOverride?.slice(0, 80));
 
   const { data: brand } = await supabase.from("brand_settings").select("*").limit(1).single();
 

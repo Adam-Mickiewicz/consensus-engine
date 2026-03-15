@@ -208,7 +208,7 @@ export default function DebatePage() {
     const res = await fetch("/api/ai-chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provider, model, systemPrompt, messages: msgs, webSearch }),
+      body: JSON.stringify({ provider, model, systemOverride: systemPrompt, messages: msgs, webSearch }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Błąd API");
