@@ -821,24 +821,6 @@ export default function ConsensusEngine() {
           <button onClick={() => { setPhase("input"); setRounds({}); setConsensus(null); setLog([]); setCurrentRound(0); setFollowupResponses([]); setCurrentDebateId(null); }} style={{ display: "block", width: "100%", background: accent, color: "#fff", border: "none", borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 700, textAlign: "center" }}>
             + Nowa debata
           </button>
-          <button onClick={() => window.location.href = "/sock-designer"} style={{ display: "block", width: "100%", background: "none", border: `1px solid ${t.border}`, color: t.textSub, borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, textAlign: "center" }}>
-            🧦 Sock Designer
-          </button>
-          <button onClick={() => window.location.href = "/newsletter-builder"} style={{ display: "block", width: "100%", background: "none", border: `1px solid ${t.border}`, color: t.textSub, borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, textAlign: "center" }}>
-            📧 Newsletter Builder
-          </button>
-          <button onClick={() => window.location.href = "/design-judge"} style={{ display: "block", width: "100%", background: "none", border: `1px solid ${t.border}`, color: t.textSub, borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, textAlign: "center" }}>
-            🎨 Design Judge
-          </button>
-          <button onClick={() => window.location.href = "/tools/countdown"} style={{ display: "block", width: "100%", background: "none", border: `1px solid ${t.border}`, color: t.textSub, borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, textAlign: "center" }}>
-            ⏱ Generator odliczania
-          </button>
-          <button onClick={() => window.location.href = "/tools/marketing-brief"} style={{ display: "block", width: "100%", background: "none", border: `1px solid ${t.border}`, color: t.textSub, borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, textAlign: "center" }}>
-            📋 Akcje marketingowe
-          </button>
-          <button onClick={() => window.location.href = "/tools/brand-settings"} style={{ display: "block", width: "100%", background: "none", border: `1px solid ${t.border}`, color: t.textSub, borderRadius: 8, padding: "10px 12px", marginBottom: 10, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, textAlign: "center" }}>
-            🏷️ Ustawienia marki
-          </button>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div style={{ color: t.textLabel, fontSize: 10, fontWeight: 700, letterSpacing: 1.2 }}>HISTORIA ({debates.length})</div>
             <button onClick={() => setShowHistory(h => !h)} style={{ background: "none", border: "none", cursor: "pointer", color: t.textSub, fontSize: 11, fontFamily: "inherit" }}>{showHistory ? "▴ ukryj" : "▾ pokaż"}</button>
