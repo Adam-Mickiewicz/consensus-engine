@@ -200,12 +200,17 @@ function SliderPreview({ s, t }) {
   const previewHTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:Arial,sans-serif;background:${s.bgColor};}
-    .columns{display:flex;flex-direction:${mobile ? "column" : "row"};min-height:${mobile ? "auto" : "340px"};}
-    .column--1{flex:1;background:${s.bgColor};display:flex;align-items:center;justify-content:center;padding:16px;}
-    .column--2{flex:1;background:${s.bgColor};display:flex;align-items:center;justify-content:center;padding:24px;}
-    .content{display:flex;flex-direction:column;align-items:flex-start;gap:12px;max-width:380px;}
-    img{max-width:100%;height:auto;display:block;}
-    .btn{padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;background:${btnStyle.bg};color:${btnStyle.color};border:${btnStyle.border};border-radius:${btnStyle.borderRadius};}
+    .columns{display:grid;grid-template-columns:${mobile ? "1fr" : "1fr 1fr"};align-items:center;height:${mobile ? "auto" : "380px"};width:100%;}
+    .column--1{background:${s.bgColor};overflow:hidden;height:${mobile ? "220px" : "380px"};}
+    .column--1 .image__wrapper{width:100%;height:100%;}
+    .column--1 .image__wrapper img{width:100%;height:100%;object-fit:cover;display:block;}
+    .column--2{background:${s.bgColor};display:flex;align-items:center;justify-content:center;padding:${mobile ? "20px 16px" : "32px 40px"};}
+    .content{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;max-width:420px;width:100%;}
+    .content img{max-width:100%;height:auto;display:block;}
+    .btn--custom{display:inline-block;padding:12px 32px;font-size:14px;font-weight:700;cursor:pointer;text-transform:uppercase;border:none;border-radius:3px;font-family:inherit;}
+    .btn--red{background:#cc0000;color:#fff;}
+    .btn--custom3{background:#1a1a1a;color:#fff;}
+    p{line-height:1.6;margin:4px 0;}
   </style></head><body>
   <div class="columns">
     <div class="column--1">${s.image1 ? `<img src="${s.image1}" alt=""/>` : `<div style="width:200px;height:200px;background:#ddd;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;">Grafika 1</div>`}</div>
