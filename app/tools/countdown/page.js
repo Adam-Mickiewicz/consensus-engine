@@ -259,22 +259,23 @@ function CountdownPreview({ cfg, tplKey, deadline }) {
   const [time, setTime] = useState({ d: "05", h: "12", m: "34", s: "56" });
   const tpl = TEMPLATES[tplKey];
 
-  useState(() => {
+  const { useEffect } = require("react");
+  useEffect(() => {
     function update() {
       const diff = new Date(deadline).getTime() - Date.now();
-      if (diff <= 0) return;
       const p = n => String(n).padStart(2, "0");
+      const safe = Math.max(0, diff);
       setTime({
-        d: p(Math.floor(diff / 86400000)),
-        h: p(Math.floor(diff / 3600000) % 24),
-        m: p(Math.floor(diff / 60000) % 60),
-        s: p(Math.floor(diff / 1000) % 60),
+        d: p(Math.floor(safe / 86400000)),
+        h: p(Math.floor(safe / 3600000) % 24),
+        m: p(Math.floor(safe / 60000) % 60),
+        s: p(Math.floor(safe / 1000) % 60),
       });
     }
     update();
     const id = setInterval(update, 1000);
     return () => clearInterval(id);
-  });
+  }, [deadline]);
 
   const ds = tpl.digitStyle(cfg);
   const ls = tpl.labelStyle(cfg);
