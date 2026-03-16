@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Nav from "../../components/Nav";
 import { useDarkMode } from "../../hooks/useDarkMode";
 
@@ -213,6 +213,168 @@ function buildJS(tpl) {
 })();`;
 }
 
+
+// ─── GENERATOR SLIDERA ───────────────────────────────────────────────────────
+
+function buildSliderHTML(s) {
+  const timerHTML = s.useTimer ? `
+          <p style="color:${s.timerTextColor};"><b>${s.timerCopy}</b></p>
+          ${buildHTML(s.timerDeadline, { bg: s.timerBg, text: s.timerText, labelText: s.timerLabelText, radius: 4, border: false, borderColor: "#fff" }, s.timerTemplate)}
+          <script>${buildJS(s.timerTemplate)}<\/script>` : "";
+
+  const dateAttrs = (s.dateStart || s.dateEnd)
+    ? ` data-start="${s.dateStart || ""}" data-end="${s.dateEnd || ""}"`
+    : "";
+
+  return `<!--poczatek-slide-->
+    <li class="slide"${dateAttrs}>
+      <div class="columns">
+        <!--kolumna-z-grafika-->
+        <a href="${s.link}" class="column column--1" style="background-color:${s.bgColor};">
+          <div class="image__wrapper">
+            <img src="${s.image1}" alt="hero image"/>
+          </div>
+        </a>
+        <!--koniec-kolumny-z-grafika-->
+        <!--kolumna-z-tekstem-->
+        <div class="column column--2" style="background-color:${s.bgColor};">
+          <div class="content">
+            <img src="${s.image2}" alt="hero image"/>${timerHTML}
+            <br><br>
+            <a href="${s.link}">
+              <button class="btn btn--custom ${s.btnClass}">${s.btnText}</button>
+            </a>
+          </div>
+        </div>
+        <!--koniec-kolumny-z-tekstem-->
+      </div>
+    </li>
+    <!--koniec-slide-->`;
+}
+
+function SliderGenerator({ t, cfg, tplKey, deadline }) {
+  const [s, setS] = useState({
+    image1: "",
+    image2: "",
+    link: "https://nadwyraz.com/",
+    bgColor: "#E5BF8E",
+    dateStart: "",
+    dateEnd: "",
+    btnText: "Sprawdź! >",
+    btnClass: "btn--red",
+    useTimer: false,
+    timerCopy: "Oferta kończy się za:",
+    timerTextColor: "#1a1a1a",
+    timerDeadline: deadline,
+    timerBg: "#b63b2f",
+    timerText: "#ffffff",
+    timerLabelText: "#5b5b5b",
+    timerTemplate: tplKey,
+  });
+  const set = (k, v) => setS(prev => ({ ...prev, [k]: v }));
+  const html = buildSliderHTML(s);
+
+  const inputStyle = { background: t.input, border: `1px solid ${t.inputBorder}`, borderRadius: "6px", padding: "7px 10px", color: t.text, fontSize: "13px", fontFamily: "monospace", width: "100%", boxSizing: "border-box" };
+  const panelStyle = { background: t.bgPanel, border: `1px solid ${t.border}`, borderRadius: "12px", overflow: "hidden", marginBottom: "20px" };
+  const panelHead = { padding: "10px 16px", borderBottom: `1px solid ${t.border}`, fontSize: "11px", color: t.textSub, display: "flex", justifyContent: "space-between", alignItems: "center" };
+
+  return (
+    <div>
+      {/* GRAFIKI I LINK */}
+      <div style={panelStyle}>
+        <div style={panelHead}><span>Grafiki i link</span></div>
+        <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
+          <Field label="Grafika 1 — zdjęcie produktu (URL)">
+            <input value={s.image1} onChange={e => set("image1", e.target.value)} placeholder="/userdata/public/assets/..." style={inputStyle} />
+          </Field>
+          <Field label="Grafika 2 — nagłówek (URL)">
+            <input value={s.image2} onChange={e => set("image2", e.target.value)} placeholder="/userdata/public/assets/..." style={inputStyle} />
+          </Field>
+          <Field label="Link (href)">
+            <input value={s.link} onChange={e => set("link", e.target.value)} placeholder="https://nadwyraz.com/..." style={inputStyle} />
+          </Field>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <Field label="Kolor tła"><ColorInput value={s.bgColor} onChange={v => set("bgColor", v)} /></Field>
+          </div>
+        </div>
+      </div>
+
+      {/* DATY WIDOCZNOŚCI */}
+      <div style={panelStyle}>
+        <div style={panelHead}><span>Daty widoczności (opcjonalne)</span></div>
+        <div style={{ padding: "16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+          <Field label="Data rozpoczęcia">
+            <input type="datetime-local" value={s.dateStart} onChange={e => set("dateStart", e.target.value)} style={inputStyle} />
+          </Field>
+          <Field label="Data zakończenia">
+            <input type="datetime-local" value={s.dateEnd} onChange={e => set("dateEnd", e.target.value)} style={inputStyle} />
+          </Field>
+        </div>
+      </div>
+
+      {/* PRZYCISK */}
+      <div style={panelStyle}>
+        <div style={panelHead}><span>Przycisk</span></div>
+        <div style={{ padding: "16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+          <Field label="Tekst przycisku">
+            <input value={s.btnText} onChange={e => set("btnText", e.target.value)} style={inputStyle} />
+          </Field>
+          <Field label="Styl przycisku">
+            <select value={s.btnClass} onChange={e => set("btnClass", e.target.value)} style={inputStyle}>
+              <option value="btn--red">btn--red (czerwony)</option>
+              <option value="btn--custom3">btn--custom3</option>
+            </select>
+          </Field>
+        </div>
+      </div>
+
+      {/* TIMER */}
+      <div style={{ ...panelStyle, border: s.useTimer ? "1px solid #b8763a" : `1px solid ${t.border}` }}>
+        <div style={{ ...panelHead, borderBottom: s.useTimer ? "1px solid #b8763a" : `1px solid ${t.border}` }}>
+          <span>Timer odliczania (opcjonalny)</span>
+          <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+            <div onClick={() => set("useTimer", !s.useTimer)} style={{ width: "34px", height: "18px", borderRadius: "9px", background: s.useTimer ? "#b8763a" : "#444", position: "relative", cursor: "pointer" }}>
+              <div style={{ position: "absolute", top: "1px", left: s.useTimer ? "17px" : "1px", width: "16px", height: "16px", borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+            </div>
+            <span style={{ fontSize: "11px", color: s.useTimer ? "#b8763a" : t.textSub }}>{s.useTimer ? "Włączony" : "Wyłączony"}</span>
+          </label>
+        </div>
+        {s.useTimer && (
+          <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
+            <Field label="Tekst przed timerem">
+              <input value={s.timerCopy} onChange={e => set("timerCopy", e.target.value)} style={inputStyle} />
+            </Field>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <Field label="Kolor tekstu"><ColorInput value={s.timerTextColor} onChange={v => set("timerTextColor", v)} /></Field>
+              <Field label="Data końca timera">
+                <input type="datetime-local" value={s.timerDeadline.slice(0,16)} onChange={e => set("timerDeadline", e.target.value + ":59")} style={inputStyle} />
+              </Field>
+              <Field label="Kolor tła cyfr"><ColorInput value={s.timerBg} onChange={v => set("timerBg", v)} /></Field>
+              <Field label="Kolor cyfr"><ColorInput value={s.timerText} onChange={v => set("timerText", v)} /></Field>
+              <Field label="Szablon timera">
+                <select value={s.timerTemplate} onChange={e => set("timerTemplate", e.target.value)} style={inputStyle}>
+                  {Object.entries(TEMPLATES).map(([k, tpl]) => (
+                    <option key={k} value={k}>{tpl.name}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* KOD HTML */}
+      <div style={panelStyle}>
+        <div style={panelHead}>
+          <span>Gotowy kod HTML slidera</span>
+          <CopyBtn text={html} label="Kopiuj HTML" />
+        </div>
+        <pre style={{ margin: 0, padding: "16px", background: t.codeBg, color: t.code, fontSize: "11px", lineHeight: 1.6, overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{html}</pre>
+      </div>
+    </div>
+  );
+}
+
 // ─── UI KOMPONENTY ────────────────────────────────────────────────────────────
 
 function ColorInput({ value, onChange }) {
@@ -325,6 +487,7 @@ export default function CountdownGenerator() {
     borderColor: "#ffffff",
   });
   const [dark, toggleDark] = useDarkMode();
+  const [activeTab, setActiveTab] = useState("countdown");
   const [jsModified, setJsModified] = useState(false);
   const [customJs, setCustomJs] = useState("");
 
@@ -366,6 +529,17 @@ export default function CountdownGenerator() {
             <div style={{ fontSize: "12px", color: t.textSub }}>Wybierz szablon, skonfiguruj kolory i skopiuj gotowy HTML + JS</div>
           </div>
 
+          {/* ZAKŁADKI */}
+          <div style={{ display: "flex", gap: "4px", marginBottom: "24px", background: t.bgPanel, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "4px" }}>
+            {[{ id: "countdown", label: "⏱ Countdown" }, { id: "slider", label: "🖼 Generator slidera" }].map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                style={{ flex: 1, padding: "8px 16px", borderRadius: "7px", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 600, fontFamily: "monospace", background: activeTab === tab.id ? "#b8763a" : "transparent", color: activeTab === tab.id ? "#fff" : t.textSub, transition: "all 0.15s" }}>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === "countdown" && <div>
           {/* WYBÓR SZABLONU */}
           <div style={panelStyle}>
             <div style={panelHead}><span>Wybierz szablon</span></div>
@@ -450,6 +624,9 @@ export default function CountdownGenerator() {
               ⚠️ Kod JS został zmieniony — pamiętaj zaktualizować plik JS w Shoperze przed użyciem nowego HTML!
             </div>
           )}
+          </div>}
+
+          {activeTab === "slider" && <SliderGenerator t={t} cfg={cfg} tplKey={tplKey} deadline={deadline} />}
         </div>
       </div>
     </div>
