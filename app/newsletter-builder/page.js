@@ -223,7 +223,7 @@ function Section({ title, number, html, previewTitle, previewWidth, children }) 
       {/* BODY — lewa: kontrolki, prawa: podgląd sticky */}
       <div style={{ display: "flex", gap: "0", alignItems: "flex-start" }}>
         {/* LEWA — kontrolki */}
-        <div style={{ flex: "0 0 420px", minWidth: 0, padding: "20px", borderRight: "1px solid #f0ece6", display: "flex", flexDirection: "column", gap: "14px" }}>
+        <div style={{ flex: "0 0 600px", minWidth: 0, padding: "20px", borderRight: "1px solid #f0ece6", display: "flex", flexDirection: "column", gap: "14px" }}>
           {children}
           {showCode && (
             <div style={{ background: "#1a1a1a", borderRadius: "8px", overflow: "hidden" }}>
@@ -973,7 +973,7 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
 
       <div style={{ display: "flex", alignItems: "flex-start" }}>
 
-        <div style={{ flex: "0 0 420px", minWidth: 0, padding: "20px", borderRight: "1px solid #f0ece6", display: "flex", flexDirection: "column", gap: "14px" }}>
+        <div style={{ flex: "0 0 600px", minWidth: 0, padding: "20px", borderRight: "1px solid #f0ece6", display: "flex", flexDirection: "column", gap: "14px" }}>
 
           <SectionCode title="Kod — główny blok" html={htmlMain} />
           <SectionCode title="Kod — menu kategorii" html={htmlMenu} />
