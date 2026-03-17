@@ -787,6 +787,11 @@ const defaultPromo = {
   promoCodeFontFamily: "arial, helvetica, sans-serif",
   promoCodeLetterSpacing: 2,
   promoCodePaddingBottom: 16,
+  promoCodeBgShow: false,
+  promoCodeBg: "#f5f2ee",
+  promoCodeBgRadius: 8,
+  promoCodeBgPaddingV: 8,
+  promoCodeBgPaddingH: 16,
   // Przycisk
   buttonShow: true,
   buttonType: "link",
@@ -863,8 +868,12 @@ function generatePromoHTML(p) {
 
   const subtitleHTML = p.subtitleShow ? `<p style="font-family:${p.subtitleFontFamily};font-size:${p.subtitleFontSize}px;font-weight:${p.subtitleFontWeight};color:${p.subtitleColor};letter-spacing:${p.subtitleLetterSpacing}px;margin:0 0 ${p.subtitlePaddingBottom}px 0;line-height:1.5;">${p.subtitle}</p>` : "";
 
-  const promoHTML = p.promoCodeShow ? `<p style="font-family:${p.promoCodeFontFamily};font-size:12px;color:${p.promoCodeLabelColor};margin:0 0 4px 0;">${p.promoCodeLabel}</p>
-<p style="font-family:${p.promoCodeFontFamily};font-size:${p.promoCodeFontSize}px;font-weight:${p.promoCodeFontWeight};color:${p.promoCodeColor};letter-spacing:${p.promoCodeLetterSpacing}px;margin:0 0 ${p.promoCodePaddingBottom}px 0;">${p.promoCode}</p>` : "";
+  const promoInner = p.promoCodeShow ? `<p style="font-family:${p.promoCodeFontFamily};font-size:12px;color:${p.promoCodeLabelColor};margin:0 0 4px 0;">${p.promoCodeLabel}</p>
+<p style="font-family:${p.promoCodeFontFamily};font-size:${p.promoCodeFontSize}px;font-weight:${p.promoCodeFontWeight};color:${p.promoCodeColor};letter-spacing:${p.promoCodeLetterSpacing}px;margin:0;">${p.promoCode}</p>` : "";
+  const promoHTML = p.promoCodeShow ? (p.promoCodeBgShow
+    ? `<div style="display:inline-block;background:${p.promoCodeBg};border-radius:${p.promoCodeBgRadius}px;padding:${p.promoCodeBgPaddingV}px ${p.promoCodeBgPaddingH}px;margin:0 0 ${p.promoCodePaddingBottom}px 0;">${promoInner}</div>`
+    : `<div style="margin:0 0 ${p.promoCodePaddingBottom}px 0;">${promoInner}</div>`
+  ) : "";
 
   const buttonHTML = p.buttonShow ? (p.buttonType === "button"
     ? `<div style="padding-bottom:${p.buttonPaddingBottom}px;"><a href="${p.buttonLink}" style="display:inline-block;background-color:${p.buttonBg};color:${p.buttonColor};font-family:${p.buttonFontFamily};font-weight:${p.buttonFontWeight};font-size:${p.buttonFontSize}px;letter-spacing:${p.buttonLetterSpacing}px;padding:${p.buttonPaddingV}px ${p.buttonPaddingH}px;border-radius:${p.buttonRadius}px;border:${p.buttonBorder};text-decoration:none;">${p.buttonText}</a></div>`
@@ -1049,6 +1058,15 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
                 <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.promoCodeLetterSpacing} onChange={v => set("promoCodeLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
                 <StyleField label="Margin dół" flex={2}><SliderInput value={promo.promoCodePaddingBottom} onChange={v => set("promoCodePaddingBottom", Number(v))} min={0} max={40} /></StyleField>
               </StyleRow>
+              <StyleRow>
+                <StyleField label="Tło pod kodem" flex={1}><ToggleSwitch value={promo.promoCodeBgShow} onChange={v => set("promoCodeBgShow", v)} /></StyleField>
+              </StyleRow>
+              {promo.promoCodeBgShow && <StyleRow>
+                <StyleField label="Kolor tła" flex={2}><ColorInput value={promo.promoCodeBg} onChange={v => set("promoCodeBg", v)} /></StyleField>
+                <StyleField label="Border radius" flex={2}><SliderInput value={promo.promoCodeBgRadius} onChange={v => set("promoCodeBgRadius", Number(v))} min={0} max={40} /></StyleField>
+                <StyleField label="Padding góra/dół" flex={2}><SliderInput value={promo.promoCodeBgPaddingV} onChange={v => set("promoCodeBgPaddingV", Number(v))} min={0} max={40} /></StyleField>
+                <StyleField label="Padding boki" flex={2}><SliderInput value={promo.promoCodeBgPaddingH} onChange={v => set("promoCodeBgPaddingH", Number(v))} min={0} max={60} /></StyleField>
+              </StyleRow>}
             </>}
           </StyleGroup>
 
