@@ -983,7 +983,6 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
           <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: "#1a1a1a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700 }}>6</div>
           <span style={{ fontFamily: "Georgia, serif", fontSize: "15px", fontWeight: 600 }}>Blok promo</span>
         </div>
-        <CopyButton html={htmlAll} />
       </div>
 
       <div style={{ display: "flex", alignItems: "flex-start" }}>
