@@ -823,6 +823,9 @@ const defaultPromoMenu = {
   color: "#1a1a1a",
   letterSpacing: 0,
   borderColor: "#e0dbd4",
+  showTopBorder: true,
+  showBottomBorder: true,
+  showVerticalBorder: true,
   paddingTop: 0,
   paddingBottom: 0,
   paddingH: 0,
@@ -882,17 +885,20 @@ function generatePromoHTML(p) {
 
 function generatePromoMenuHTML(m) {
   const fontLink = getFontImportURL([m.fontFamily]);
+  const topBorder = m.showTopBorder !== false ? `border-top:1px solid ${m.borderColor};` : "";
+  const bottomBorder = m.showBottomBorder !== false ? `border-bottom:1px solid ${m.borderColor};` : "";
+  const vertBorder = m.showVerticalBorder !== false ? `border-left:1px solid ${m.borderColor};` : "";
   const rows = [];
   for (let i = 0; i < m.items.length; i += 2) {
     const left = m.items[i];
     const right = m.items[i + 1];
     rows.push(`  <tr>
-    <td width="50%" style="padding:${m.itemPaddingV}px 0;border-bottom:1px solid ${m.borderColor};"><a href="${left.link}" style="font-family:${m.fontFamily};font-size:${m.fontSize}px;font-weight:${m.fontWeight};color:${m.color};letter-spacing:${m.letterSpacing}px;text-decoration:none;">${left.label} ›</a></td>
-    ${right ? `<td width="50%" style="padding:${m.itemPaddingV}px 0 ${m.itemPaddingV}px 16px;border-bottom:1px solid ${m.borderColor};border-left:1px solid ${m.borderColor};"><a href="${right.link}" style="font-family:${m.fontFamily};font-size:${m.fontSize}px;font-weight:${m.fontWeight};color:${m.color};letter-spacing:${m.letterSpacing}px;text-decoration:none;">${right.label} ›</a></td>` : "<td></td>"}
+    <td width="50%" style="padding:${m.itemPaddingV}px 0;${bottomBorder}"><a href="${left.link}" style="font-family:${m.fontFamily};font-size:${m.fontSize}px;font-weight:${m.fontWeight};color:${m.color};letter-spacing:${m.letterSpacing}px;text-decoration:none;">${left.label} ›</a></td>
+    ${right ? `<td width="50%" style="padding:${m.itemPaddingV}px 0 ${m.itemPaddingV}px 16px;${bottomBorder}${vertBorder}"><a href="${right.link}" style="font-family:${m.fontFamily};font-size:${m.fontSize}px;font-weight:${m.fontWeight};color:${m.color};letter-spacing:${m.letterSpacing}px;text-decoration:none;">${right.label} ›</a></td>` : "<td></td>"}
   </tr>`);
   }
   return `${fontLink}
-<table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" style="background:transparent;padding:${m.paddingTop}px ${m.paddingH}px ${m.paddingBottom}px ${m.paddingH}px;border-top:1px solid ${m.borderColor};">
+<table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" style="background:transparent;padding:${m.paddingTop}px ${m.paddingH}px ${m.paddingBottom}px ${m.paddingH}px;${topBorder}">
 ${rows.join("\n")}
 </table>`;
 }
@@ -1092,6 +1098,11 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
             <StyleRow><StyleField label="Pokaż" flex={1}><ToggleSwitch value={menu.show} onChange={v => setM("show", v)} /></StyleField></StyleRow>
             {menu.show && <>
               <MenuItemEditor items={menu.items} onChange={v => setM("items", v)} />
+              <StyleRow>
+                <StyleField label="Kreska górna" flex={1}><ToggleSwitch value={menu.showTopBorder !== false} onChange={v => setM("showTopBorder", v)} /></StyleField>
+                <StyleField label="Kreska dolna (wiersze)" flex={1}><ToggleSwitch value={menu.showBottomBorder !== false} onChange={v => setM("showBottomBorder", v)} /></StyleField>
+                <StyleField label="Kreska pionowa" flex={1}><ToggleSwitch value={menu.showVerticalBorder !== false} onChange={v => setM("showVerticalBorder", v)} /></StyleField>
+              </StyleRow>
               <StyleRow>
                 <StyleField label="Font" flex={3}><Select value={menu.fontFamily} onChange={v => setM("fontFamily", v)} options={FONT_OPTIONS} /></StyleField>
                 <StyleField label="Rozmiar" flex={2}><SliderInput value={menu.fontSize} onChange={v => setM("fontSize", Number(v))} min={10} max={18} /></StyleField>
