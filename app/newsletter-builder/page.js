@@ -963,15 +963,15 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
   const SectionCode = ({ title, html }) => {
     const [show, setShow] = React.useState(false);
     return (
-      <div style={{ background: "#fafaf8", border: "1px solid #e8e4de", borderRadius: "10px", overflow: "hidden" }}>
-        <div style={{ padding: "8px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e8e4de" }}>
-          <span style={{ fontSize: "11px", color: "#888", fontFamily: "sans-serif" }}>{title}</span>
+      <div style={{ background: "#fff", border: "2px solid #1a1a1a", borderRadius: "10px", overflow: "hidden" }}>
+        <div style={{ padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#1a1a1a" }}>
+          <span style={{ fontSize: "11px", color: "#e8e8e8", fontFamily: "sans-serif", fontWeight: 600 }}>{title}</span>
           <div style={{ display: "flex", gap: "6px" }}>
-            <button onClick={() => setShow(s => !s)} style={{ background: "transparent", border: "1px solid #ddd", color: "#888", borderRadius: "5px", padding: "3px 8px", fontSize: "10px", cursor: "pointer" }}>{show ? "Ukryj" : "Pokaż kod"}</button>
+            <button onClick={() => setShow(s => !s)} style={{ background: "transparent", border: "1px solid #444", color: "#aaa", borderRadius: "5px", padding: "3px 8px", fontSize: "10px", cursor: "pointer" }}>{show ? "Ukryj" : "Pokaż kod"}</button>
             <CopyButton html={html} />
           </div>
         </div>
-        {show && <pre style={{ margin: 0, padding: "12px", background: "#1a1a1a", color: "#a8d8a8", fontSize: "10px", lineHeight: 1.6, overflow: "auto", maxHeight: "160px", fontFamily: "monospace" }}>{html}</pre>}
+        {show && <pre style={{ margin: 0, padding: "12px", background: "#0a0a0a", color: "#a8d8a8", fontSize: "10px", lineHeight: 1.6, overflow: "auto", maxHeight: "160px", fontFamily: "monospace" }}>{html}</pre>}
       </div>
     );
   };
