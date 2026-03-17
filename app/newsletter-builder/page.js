@@ -935,8 +935,9 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
   const setD = (key, val) => setDisclaimer(prev => ({ ...prev, [key]: val }));
 
   const htmlMain = generatePromoHTML(promo);
-  const htmlMenu = generatePromoMenuHTML(menu);
-  const htmlDisclaimer = generatePromoDisclaimerHTML(disclaimer);
+  const htmlMenu = menu.show ? generatePromoMenuHTML(menu) : "";
+  const htmlDisclaimer = disclaimer.show ? generatePromoDisclaimerHTML(disclaimer) : "";
+  const htmlAll = htmlMain + htmlMenu + htmlDisclaimer;
 
   const SectionCode = ({ title, html }) => {
     const [show, setShow] = React.useState(false);
@@ -956,478 +957,219 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
 
   return (
     <div style={{ background: "#fff", border: "1px solid #e8e4de", borderRadius: "14px", overflow: "hidden" }}>
+      {/* HEADER */}
       <div style={{ padding: "14px 20px", borderBottom: "1px solid #f0ece6", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fafaf8" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: "#1a1a1a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700 }}>6</div>
           <span style={{ fontFamily: "Georgia, serif", fontSize: "15px", fontWeight: 600 }}>Blok promo</span>
         </div>
+        <CopyButton html={htmlAll} />
       </div>
 
-      <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+      {/* BODY — lewa: kontrolki, prawa: podgląd sticky */}
+      <div style={{ display: "flex", alignItems: "flex-start" }}>
 
-        {/* PODGLĄD */}
-        <PreviewFrame html={htmlMain + htmlMenu + htmlDisclaimer} title="Blok promo" width={720} />
+        {/* LEWA — kontrolki */}
+        <div style={{ flex: "0 0 420px", minWidth: 0, padding: "20px", borderRight: "1px solid #f0ece6", display: "flex", flexDirection: "column", gap: "14px" }}>
 
-        {/* KODY */}
-        <SectionCode title="📋 Kod HTML — główny blok (badge + nagłówek + podtytuł + kod + przycisk)" html={htmlMain} />
-        <SectionCode title="📋 Kod HTML — menu kategorii" html={htmlMenu} />
-        <SectionCode title="📋 Kod HTML — disclaimer" html={htmlDisclaimer} />
+          {/* KODY */}
+          <SectionCode title="📋 Główny blok (badge + nagłówek + podtytuł + kod + przycisk)" html={htmlMain} />
+          <SectionCode title="📋 Menu kategorii" html={htmlMenu} />
+          <SectionCode title="📋 Disclaimer" html={htmlDisclaimer} />
 
-        {/* ── BADGE ── */}
-        <StyleGroup title="Etykieta / Badge">
-          <StyleRow>
-            <StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.badgeShow} onChange={v => set("badgeShow", v)} /></StyleField>
-          </StyleRow>
-          {promo.badgeShow && <>
+          {/* BADGE */}
+          <StyleGroup title="Etykieta / Badge">
             <StyleRow>
-              <StyleField label="Tekst" flex={3}><input value={promo.badge} onChange={e => set("badge", e.target.value)} style={inputStyle} /></StyleField>
-              <StyleField label="Tło" flex={2}><ColorInput value={promo.badgeBg} onChange={v => set("badgeBg", v)} /></StyleField>
-              <StyleField label="Kolor tekstu" flex={2}><ColorInput value={promo.badgeColor} onChange={v => set("badgeColor", v)} /></StyleField>
+              <StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.badgeShow} onChange={v => set("badgeShow", v)} /></StyleField>
             </StyleRow>
-            <StyleRow>
-              <StyleField label="Font" flex={3}><Select value={promo.badgeFontFamily} onChange={v => set("badgeFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
-              <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.badgeFontSize} onChange={v => set("badgeFontSize", Number(v))} min={9} max={20} /></StyleField>
-              <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.badgeLetterSpacing} onChange={v => set("badgeLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
-              <StyleField label="Zaokrąglenie" flex={2}><SliderInput value={promo.badgeRadius} onChange={v => set("badgeRadius", Number(v))} min={0} max={30} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Padding góra" flex={2}><SliderInput value={promo.badgePaddingTop} onChange={v => set("badgePaddingTop", Number(v))} min={0} max={40} /></StyleField>
-              <StyleField label="Margin dół" flex={2}><SliderInput value={promo.badgePaddingBottom} onChange={v => set("badgePaddingBottom", Number(v))} min={0} max={40} /></StyleField>
-            </StyleRow>
-          </>}
-        </StyleGroup>
-
-        {/* ── NAGŁÓWEK ── */}
-        <StyleGroup title="Nagłówek">
-          <StyleRow>
-            <StyleField label="Tekst" flex={4}><input value={promo.headline} onChange={e => set("headline", e.target.value)} style={inputStyle} /></StyleField>
-          </StyleRow>
-          <StyleRow>
-            <StyleField label="Font" flex={3}><Select value={promo.headlineFontFamily} onChange={v => set("headlineFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
-            <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.headlineFontSize} onChange={v => set("headlineFontSize", Number(v))} min={14} max={48} /></StyleField>
-            <StyleField label="Grubość" flex={2}><Select value={promo.headlineFontWeight} onChange={v => set("headlineFontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
-          </StyleRow>
-          <StyleRow>
-            <StyleField label="Kolor" flex={2}><ColorInput value={promo.headlineColor} onChange={v => set("headlineColor", v)} /></StyleField>
-            <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.headlineLetterSpacing} onChange={v => set("headlineLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
-            <StyleField label="Margin dół" flex={2}><SliderInput value={promo.headlinePaddingBottom} onChange={v => set("headlinePaddingBottom", Number(v))} min={0} max={40} /></StyleField>
-          </StyleRow>
-        </StyleGroup>
-
-        {/* ── PODTYTUŁ ── */}
-        <StyleGroup title="Podtytuł">
-          <StyleRow>
-            <StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.subtitleShow} onChange={v => set("subtitleShow", v)} /></StyleField>
-          </StyleRow>
-          {promo.subtitleShow && <>
-            <StyleRow>
-              <StyleField label="Tekst" flex={4}><input value={promo.subtitle} onChange={e => set("subtitle", e.target.value)} style={inputStyle} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Font" flex={3}><Select value={promo.subtitleFontFamily} onChange={v => set("subtitleFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
-              <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.subtitleFontSize} onChange={v => set("subtitleFontSize", Number(v))} min={11} max={24} /></StyleField>
-              <StyleField label="Grubość" flex={2}><Select value={promo.subtitleFontWeight} onChange={v => set("subtitleFontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Kolor" flex={2}><ColorInput value={promo.subtitleColor} onChange={v => set("subtitleColor", v)} /></StyleField>
-              <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.subtitleLetterSpacing} onChange={v => set("subtitleLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
-              <StyleField label="Margin dół" flex={2}><SliderInput value={promo.subtitlePaddingBottom} onChange={v => set("subtitlePaddingBottom", Number(v))} min={0} max={40} /></StyleField>
-            </StyleRow>
-          </>}
-        </StyleGroup>
-
-        {/* ── KOD PROMO ── */}
-        <StyleGroup title="Kod promocyjny">
-          <StyleRow>
-            <StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.promoCodeShow} onChange={v => set("promoCodeShow", v)} /></StyleField>
-          </StyleRow>
-          {promo.promoCodeShow && <>
-            <StyleRow>
-              <StyleField label="Label" flex={3}><input value={promo.promoCodeLabel} onChange={e => set("promoCodeLabel", e.target.value)} style={inputStyle} /></StyleField>
-              <StyleField label="Kolor labela" flex={2}><ColorInput value={promo.promoCodeLabelColor} onChange={v => set("promoCodeLabelColor", v)} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Kod" flex={3}><input value={promo.promoCode} onChange={e => set("promoCode", e.target.value)} style={inputStyle} /></StyleField>
-              <StyleField label="Font" flex={3}><Select value={promo.promoCodeFontFamily} onChange={v => set("promoCodeFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.promoCodeFontSize} onChange={v => set("promoCodeFontSize", Number(v))} min={14} max={36} /></StyleField>
-              <StyleField label="Grubość" flex={2}><Select value={promo.promoCodeFontWeight} onChange={v => set("promoCodeFontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
-              <StyleField label="Kolor" flex={2}><ColorInput value={promo.promoCodeColor} onChange={v => set("promoCodeColor", v)} /></StyleField>
-              <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.promoCodeLetterSpacing} onChange={v => set("promoCodeLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
-              <StyleField label="Margin dół" flex={2}><SliderInput value={promo.promoCodePaddingBottom} onChange={v => set("promoCodePaddingBottom", Number(v))} min={0} max={40} /></StyleField>
-            </StyleRow>
-          </>}
-        </StyleGroup>
-
-        {/* ── PRZYCISK / LINK ── */}
-        <StyleGroup title="Przycisk / Link">
-          <StyleRow>
-            <StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.buttonShow} onChange={v => set("buttonShow", v)} /></StyleField>
-            {promo.buttonShow && <StyleField label="Typ" flex={2}>
-              <Select value={promo.buttonType} onChange={v => set("buttonType", v)} options={[{ value: "link", label: "Link tekstowy" }, { value: "button", label: "Przycisk (button)" }]} />
-            </StyleField>}
-          </StyleRow>
-          {promo.buttonShow && <>
-            <StyleRow>
-              <StyleField label="Tekst" flex={3}><input value={promo.buttonText} onChange={e => set("buttonText", e.target.value)} style={inputStyle} /></StyleField>
-              <StyleField label="Link" flex={3}><input value={promo.buttonLink} onChange={e => set("buttonLink", e.target.value)} style={inputStyle} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Font" flex={3}><Select value={promo.buttonFontFamily} onChange={v => set("buttonFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
-              <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.buttonFontSize} onChange={v => set("buttonFontSize", Number(v))} min={11} max={24} /></StyleField>
-              <StyleField label="Grubość" flex={2}><Select value={promo.buttonFontWeight} onChange={v => set("buttonFontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
-              <StyleField label="Kolor tekstu" flex={2}><ColorInput value={promo.buttonColor} onChange={v => set("buttonColor", v)} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.buttonLetterSpacing} onChange={v => set("buttonLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
-              <StyleField label="Margin dół" flex={2}><SliderInput value={promo.buttonPaddingBottom} onChange={v => set("buttonPaddingBottom", Number(v))} min={0} max={60} /></StyleField>
-            </StyleRow>
-            {promo.buttonType === "button" && <>
+            {promo.badgeShow && <>
               <StyleRow>
-                <StyleField label="Tło przycisku" flex={2}><ColorInput value={promo.buttonBg} onChange={v => set("buttonBg", v)} /></StyleField>
-                <StyleField label="Border" flex={3}><input value={promo.buttonBorder} onChange={e => set("buttonBorder", e.target.value)} placeholder="1px solid #000" style={inputStyle} /></StyleField>
-                <StyleField label="Border radius" flex={2}><SliderInput value={promo.buttonRadius} onChange={v => set("buttonRadius", Number(v))} min={0} max={40} /></StyleField>
+                <StyleField label="Tekst" flex={3}><input value={promo.badge} onChange={e => set("badge", e.target.value)} style={inputStyle} /></StyleField>
+                <StyleField label="Tło" flex={2}><ColorInput value={promo.badgeBg} onChange={v => set("badgeBg", v)} /></StyleField>
+                <StyleField label="Kolor tekstu" flex={2}><ColorInput value={promo.badgeColor} onChange={v => set("badgeColor", v)} /></StyleField>
               </StyleRow>
               <StyleRow>
-                <StyleField label="Padding góra/dół" flex={2}><SliderInput value={promo.buttonPaddingV} onChange={v => set("buttonPaddingV", Number(v))} min={4} max={30} /></StyleField>
-                <StyleField label="Padding lewo/prawo" flex={2}><SliderInput value={promo.buttonPaddingH} onChange={v => set("buttonPaddingH", Number(v))} min={8} max={80} /></StyleField>
+                <StyleField label="Font" flex={3}><Select value={promo.badgeFontFamily} onChange={v => set("badgeFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
+                <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.badgeFontSize} onChange={v => set("badgeFontSize", Number(v))} min={9} max={20} /></StyleField>
+                <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.badgeLetterSpacing} onChange={v => set("badgeLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
+                <StyleField label="Zaokrąglenie" flex={2}><SliderInput value={promo.badgeRadius} onChange={v => set("badgeRadius", Number(v))} min={0} max={30} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Padding góra" flex={2}><SliderInput value={promo.badgePaddingTop} onChange={v => set("badgePaddingTop", Number(v))} min={0} max={40} /></StyleField>
+                <StyleField label="Margin dół" flex={2}><SliderInput value={promo.badgePaddingBottom} onChange={v => set("badgePaddingBottom", Number(v))} min={0} max={40} /></StyleField>
               </StyleRow>
             </>}
-          </>}
-        </StyleGroup>
+          </StyleGroup>
 
-        {/* ── PADDING GŁÓWNY ── */}
-        <StyleGroup title="Padding głównego bloku">
-          <StyleRow>
-            <StyleField label="Góra"><SliderInput value={promo.paddingTop} onChange={v => set("paddingTop", Number(v))} min={0} max={80} /></StyleField>
-            <StyleField label="Dół"><SliderInput value={promo.paddingBottom} onChange={v => set("paddingBottom", Number(v))} min={0} max={80} /></StyleField>
-            <StyleField label="Boki"><SliderInput value={promo.paddingH} onChange={v => set("paddingH", Number(v))} min={0} max={60} /></StyleField>
-          </StyleRow>
-        </StyleGroup>
-
-        {/* ── MENU ── */}
-        <StyleGroup title="Menu kategorii — osobny kod HTML">
-          <StyleRow>
-            <StyleField label="Pokaż" flex={1}><ToggleSwitch value={menu.show} onChange={v => setM("show", v)} /></StyleField>
-          </StyleRow>
-          {menu.show && <>
-            <MenuItemEditor items={menu.items} onChange={v => setM("items", v)} />
+          {/* NAGŁÓWEK */}
+          <StyleGroup title="Nagłówek">
             <StyleRow>
-              <StyleField label="Font" flex={3}><Select value={menu.fontFamily} onChange={v => setM("fontFamily", v)} options={FONT_OPTIONS} /></StyleField>
-              <StyleField label="Rozmiar" flex={2}><SliderInput value={menu.fontSize} onChange={v => setM("fontSize", Number(v))} min={10} max={18} /></StyleField>
-              <StyleField label="Grubość" flex={2}><Select value={menu.fontWeight} onChange={v => setM("fontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
+              <StyleField label="Tekst" flex={4}><input value={promo.headline} onChange={e => set("headline", e.target.value)} style={inputStyle} /></StyleField>
             </StyleRow>
             <StyleRow>
-              <StyleField label="Kolor tekstu" flex={2}><ColorInput value={menu.color} onChange={v => setM("color", v)} /></StyleField>
-              <StyleField label="Kolor linii" flex={2}><ColorInput value={menu.borderColor} onChange={v => setM("borderColor", v)} /></StyleField>
-              <StyleField label="Letter spacing" flex={2}><SliderInput value={menu.letterSpacing} onChange={v => setM("letterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
-              <StyleField label="Padding wiersza" flex={2}><SliderInput value={menu.itemPaddingV} onChange={v => setM("itemPaddingV", Number(v))} min={4} max={24} /></StyleField>
+              <StyleField label="Font" flex={3}><Select value={promo.headlineFontFamily} onChange={v => set("headlineFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
+              <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.headlineFontSize} onChange={v => set("headlineFontSize", Number(v))} min={14} max={48} /></StyleField>
+              <StyleField label="Grubość" flex={2}><Select value={promo.headlineFontWeight} onChange={v => set("headlineFontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
             </StyleRow>
             <StyleRow>
-              <StyleField label="Padding góra"><SliderInput value={menu.paddingTop} onChange={v => setM("paddingTop", Number(v))} min={0} max={60} /></StyleField>
-              <StyleField label="Padding dół"><SliderInput value={menu.paddingBottom} onChange={v => setM("paddingBottom", Number(v))} min={0} max={60} /></StyleField>
-              <StyleField label="Padding boki"><SliderInput value={menu.paddingH} onChange={v => setM("paddingH", Number(v))} min={0} max={60} /></StyleField>
+              <StyleField label="Kolor" flex={2}><ColorInput value={promo.headlineColor} onChange={v => set("headlineColor", v)} /></StyleField>
+              <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.headlineLetterSpacing} onChange={v => set("headlineLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
+              <StyleField label="Margin dół" flex={2}><SliderInput value={promo.headlinePaddingBottom} onChange={v => set("headlinePaddingBottom", Number(v))} min={0} max={40} /></StyleField>
             </StyleRow>
-          </>}
-        </StyleGroup>
+          </StyleGroup>
 
-        {/* ── DISCLAIMER ── */}
-        <StyleGroup title="Disclaimer — osobny kod HTML">
-          <StyleRow>
-            <StyleField label="Pokaż" flex={1}><ToggleSwitch value={disclaimer.show} onChange={v => setD("show", v)} /></StyleField>
-          </StyleRow>
-          {disclaimer.show && <>
+          {/* PODTYTUŁ */}
+          <StyleGroup title="Podtytuł">
             <StyleRow>
-              <StyleField label="Treść" flex={4}><textarea value={disclaimer.text} onChange={e => setD("text", e.target.value)} rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.5 }} /></StyleField>
+              <StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.subtitleShow} onChange={v => set("subtitleShow", v)} /></StyleField>
             </StyleRow>
+            {promo.subtitleShow && <>
+              <StyleRow>
+                <StyleField label="Tekst" flex={4}><input value={promo.subtitle} onChange={e => set("subtitle", e.target.value)} style={inputStyle} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Font" flex={3}><Select value={promo.subtitleFontFamily} onChange={v => set("subtitleFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
+                <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.subtitleFontSize} onChange={v => set("subtitleFontSize", Number(v))} min={11} max={24} /></StyleField>
+                <StyleField label="Grubość" flex={2}><Select value={promo.subtitleFontWeight} onChange={v => set("subtitleFontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Kolor" flex={2}><ColorInput value={promo.subtitleColor} onChange={v => set("subtitleColor", v)} /></StyleField>
+                <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.subtitleLetterSpacing} onChange={v => set("subtitleLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
+                <StyleField label="Margin dół" flex={2}><SliderInput value={promo.subtitlePaddingBottom} onChange={v => set("subtitlePaddingBottom", Number(v))} min={0} max={40} /></StyleField>
+              </StyleRow>
+            </>}
+          </StyleGroup>
+
+          {/* KOD PROMO */}
+          <StyleGroup title="Kod promocyjny">
             <StyleRow>
-              <StyleField label="Font" flex={3}><Select value={disclaimer.fontFamily} onChange={v => setD("fontFamily", v)} options={FONT_OPTIONS} /></StyleField>
-              <StyleField label="Rozmiar" flex={2}><SliderInput value={disclaimer.fontSize} onChange={v => setD("fontSize", Number(v))} min={9} max={16} /></StyleField>
-              <StyleField label="Grubość" flex={2}><Select value={disclaimer.fontWeight} onChange={v => setD("fontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
+              <StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.promoCodeShow} onChange={v => set("promoCodeShow", v)} /></StyleField>
             </StyleRow>
+            {promo.promoCodeShow && <>
+              <StyleRow>
+                <StyleField label="Label" flex={3}><input value={promo.promoCodeLabel} onChange={e => set("promoCodeLabel", e.target.value)} style={inputStyle} /></StyleField>
+                <StyleField label="Kolor labela" flex={2}><ColorInput value={promo.promoCodeLabelColor} onChange={v => set("promoCodeLabelColor", v)} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Kod" flex={3}><input value={promo.promoCode} onChange={e => set("promoCode", e.target.value)} style={inputStyle} /></StyleField>
+                <StyleField label="Font" flex={3}><Select value={promo.promoCodeFontFamily} onChange={v => set("promoCodeFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.promoCodeFontSize} onChange={v => set("promoCodeFontSize", Number(v))} min={14} max={36} /></StyleField>
+                <StyleField label="Grubość" flex={2}><Select value={promo.promoCodeFontWeight} onChange={v => set("promoCodeFontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
+                <StyleField label="Kolor" flex={2}><ColorInput value={promo.promoCodeColor} onChange={v => set("promoCodeColor", v)} /></StyleField>
+                <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.promoCodeLetterSpacing} onChange={v => set("promoCodeLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
+                <StyleField label="Margin dół" flex={2}><SliderInput value={promo.promoCodePaddingBottom} onChange={v => set("promoCodePaddingBottom", Number(v))} min={0} max={40} /></StyleField>
+              </StyleRow>
+            </>}
+          </StyleGroup>
+
+          {/* PRZYCISK */}
+          <StyleGroup title="Przycisk / Link">
             <StyleRow>
-              <StyleField label="Kolor" flex={2}><ColorInput value={disclaimer.color} onChange={v => setD("color", v)} /></StyleField>
-              <StyleField label="Letter spacing" flex={2}><SliderInput value={disclaimer.letterSpacing} onChange={v => setD("letterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
+              <StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.buttonShow} onChange={v => set("buttonShow", v)} /></StyleField>
+              {promo.buttonShow && <StyleField label="Typ" flex={2}><Select value={promo.buttonType} onChange={v => set("buttonType", v)} options={[{ value: "link", label: "Link tekstowy" }, { value: "button", label: "Przycisk (button)" }]} /></StyleField>}
             </StyleRow>
+            {promo.buttonShow && <>
+              <StyleRow>
+                <StyleField label="Tekst" flex={3}><input value={promo.buttonText} onChange={e => set("buttonText", e.target.value)} style={inputStyle} /></StyleField>
+                <StyleField label="Link" flex={3}><input value={promo.buttonLink} onChange={e => set("buttonLink", e.target.value)} style={inputStyle} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Font" flex={3}><Select value={promo.buttonFontFamily} onChange={v => set("buttonFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
+                <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.buttonFontSize} onChange={v => set("buttonFontSize", Number(v))} min={11} max={24} /></StyleField>
+                <StyleField label="Grubość" flex={2}><Select value={promo.buttonFontWeight} onChange={v => set("buttonFontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
+                <StyleField label="Kolor tekstu" flex={2}><ColorInput value={promo.buttonColor} onChange={v => set("buttonColor", v)} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.buttonLetterSpacing} onChange={v => set("buttonLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
+                <StyleField label="Margin dół" flex={2}><SliderInput value={promo.buttonPaddingBottom} onChange={v => set("buttonPaddingBottom", Number(v))} min={0} max={60} /></StyleField>
+              </StyleRow>
+              {promo.buttonType === "button" && <>
+                <StyleRow>
+                  <StyleField label="Tło przycisku" flex={2}><ColorInput value={promo.buttonBg} onChange={v => set("buttonBg", v)} /></StyleField>
+                  <StyleField label="Border" flex={3}><input value={promo.buttonBorder} onChange={e => set("buttonBorder", e.target.value)} placeholder="1px solid #000" style={inputStyle} /></StyleField>
+                  <StyleField label="Border radius" flex={2}><SliderInput value={promo.buttonRadius} onChange={v => set("buttonRadius", Number(v))} min={0} max={40} /></StyleField>
+                </StyleRow>
+                <StyleRow>
+                  <StyleField label="Padding góra/dół" flex={2}><SliderInput value={promo.buttonPaddingV} onChange={v => set("buttonPaddingV", Number(v))} min={4} max={30} /></StyleField>
+                  <StyleField label="Padding lewo/prawo" flex={2}><SliderInput value={promo.buttonPaddingH} onChange={v => set("buttonPaddingH", Number(v))} min={8} max={80} /></StyleField>
+                </StyleRow>
+              </>}
+            </>}
+          </StyleGroup>
+
+          {/* PADDING GŁÓWNY */}
+          <StyleGroup title="Padding głównego bloku">
             <StyleRow>
-              <StyleField label="Padding góra"><SliderInput value={disclaimer.paddingTop} onChange={v => setD("paddingTop", Number(v))} min={0} max={60} /></StyleField>
-              <StyleField label="Padding dół"><SliderInput value={disclaimer.paddingBottom} onChange={v => setD("paddingBottom", Number(v))} min={0} max={60} /></StyleField>
-              <StyleField label="Padding boki"><SliderInput value={disclaimer.paddingH} onChange={v => setD("paddingH", Number(v))} min={0} max={60} /></StyleField>
+              <StyleField label="Góra"><SliderInput value={promo.paddingTop} onChange={v => set("paddingTop", Number(v))} min={0} max={80} /></StyleField>
+              <StyleField label="Dół"><SliderInput value={promo.paddingBottom} onChange={v => set("paddingBottom", Number(v))} min={0} max={80} /></StyleField>
+              <StyleField label="Boki"><SliderInput value={promo.paddingH} onChange={v => set("paddingH", Number(v))} min={0} max={60} /></StyleField>
             </StyleRow>
-          </>}
-        </StyleGroup>
+          </StyleGroup>
 
-      </div>
-    </div>
-  );
-}
+          {/* MENU */}
+          <StyleGroup title="Menu kategorii — osobny kod HTML">
+            <StyleRow>
+              <StyleField label="Pokaż" flex={1}><ToggleSwitch value={menu.show} onChange={v => setM("show", v)} /></StyleField>
+            </StyleRow>
+            {menu.show && <>
+              <MenuItemEditor items={menu.items} onChange={v => setM("items", v)} />
+              <StyleRow>
+                <StyleField label="Font" flex={3}><Select value={menu.fontFamily} onChange={v => setM("fontFamily", v)} options={FONT_OPTIONS} /></StyleField>
+                <StyleField label="Rozmiar" flex={2}><SliderInput value={menu.fontSize} onChange={v => setM("fontSize", Number(v))} min={10} max={18} /></StyleField>
+                <StyleField label="Grubość" flex={2}><Select value={menu.fontWeight} onChange={v => setM("fontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Kolor tekstu" flex={2}><ColorInput value={menu.color} onChange={v => setM("color", v)} /></StyleField>
+                <StyleField label="Kolor linii" flex={2}><ColorInput value={menu.borderColor} onChange={v => setM("borderColor", v)} /></StyleField>
+                <StyleField label="Letter spacing" flex={2}><SliderInput value={menu.letterSpacing} onChange={v => setM("letterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
+                <StyleField label="Padding wiersza" flex={2}><SliderInput value={menu.itemPaddingV} onChange={v => setM("itemPaddingV", Number(v))} min={4} max={24} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Padding góra"><SliderInput value={menu.paddingTop} onChange={v => setM("paddingTop", Number(v))} min={0} max={60} /></StyleField>
+                <StyleField label="Padding dół"><SliderInput value={menu.paddingBottom} onChange={v => setM("paddingBottom", Number(v))} min={0} max={60} /></StyleField>
+                <StyleField label="Padding boki"><SliderInput value={menu.paddingH} onChange={v => setM("paddingH", Number(v))} min={0} max={60} /></StyleField>
+              </StyleRow>
+            </>}
+          </StyleGroup>
 
-// ─── MAIN ────────────────────────────────────────────────────────────────────
+          {/* DISCLAIMER */}
+          <StyleGroup title="Disclaimer — osobny kod HTML">
+            <StyleRow>
+              <StyleField label="Pokaż" flex={1}><ToggleSwitch value={disclaimer.show} onChange={v => setD("show", v)} /></StyleField>
+            </StyleRow>
+            {disclaimer.show && <>
+              <StyleRow>
+                <StyleField label="Treść" flex={4}><textarea value={disclaimer.text} onChange={e => setD("text", e.target.value)} rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.5 }} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Font" flex={3}><Select value={disclaimer.fontFamily} onChange={v => setD("fontFamily", v)} options={FONT_OPTIONS} /></StyleField>
+                <StyleField label="Rozmiar" flex={2}><SliderInput value={disclaimer.fontSize} onChange={v => setD("fontSize", Number(v))} min={9} max={16} /></StyleField>
+                <StyleField label="Grubość" flex={2}><Select value={disclaimer.fontWeight} onChange={v => setD("fontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Kolor" flex={2}><ColorInput value={disclaimer.color} onChange={v => setD("color", v)} /></StyleField>
+                <StyleField label="Letter spacing" flex={2}><SliderInput value={disclaimer.letterSpacing} onChange={v => setD("letterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Padding góra"><SliderInput value={disclaimer.paddingTop} onChange={v => setD("paddingTop", Number(v))} min={0} max={60} /></StyleField>
+                <StyleField label="Padding dół"><SliderInput value={disclaimer.paddingBottom} onChange={v => setD("paddingBottom", Number(v))} min={0} max={60} /></StyleField>
+                <StyleField label="Padding boki"><SliderInput value={disclaimer.paddingH} onChange={v => setD("paddingH", Number(v))} min={0} max={60} /></StyleField>
+              </StyleRow>
+            </>}
+          </StyleGroup>
 
-export default function NewsletterBuilder() {
-  const [heading, setHeading] = useState(defaultHeading);
-  const [text, setText] = useState(defaultText);
-  const [products, setProducts] = useState(defaultProducts);
+        </div>
 
-  const [duo, setDuo] = useState(defaultDuo);
-  const [promo, setPromo] = useState(defaultPromo);
-  const [promoMenu, setPromoMenu] = useState(defaultPromoMenu);
-  const [promoDisclaimer, setPromoDisclaimer] = useState(defaultPromoDisclaimer);
-  const [activeBlock, setActiveBlock] = useState("0");
-  const [sessions, setSessions] = useState([]);
-  const [sessionName, setSessionName] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-  const [saveMsg, setSaveMsg] = useState(null);
-  const [showHistory, setShowHistory] = useState(false);
-
-  const getCurrentBlocks = () => ({
-    heading, text, products, duo, promo, promoMenu, promoDisclaimer
-  });
-
-  const loadFromSession = (blocks) => {
-    if (blocks.heading) setHeading(blocks.heading);
-    if (blocks.text) setText(blocks.text);
-    if (blocks.products) setProducts(blocks.products);
-    if (blocks.duo) setDuo(blocks.duo);
-    if (blocks.promo) setPromo(blocks.promo);
-    if (blocks.promoMenu) setPromoMenu(blocks.promoMenu);
-    if (blocks.promoDisclaimer) setPromoDisclaimer(blocks.promoDisclaimer);
-  };
-
-  const saveSession = async () => {
-    if (!sessionName.trim()) { setSaveMsg({ type: "error", text: "Podaj nazwę sesji" }); return; }
-    setSaving(true);
-    setSaveMsg(null);
-    try {
-      const { error } = await supabase.from("newsletter_sessions").insert({
-        name: sessionName.trim(),
-        blocks: getCurrentBlocks(),
-      });
-      if (error) throw error;
-      setSaveMsg({ type: "ok", text: "Zapisano!" });
-      setSessionName("");
-      fetchSessions();
-    } catch (e) {
-      setSaveMsg({ type: "error", text: e.message });
-    } finally {
-      setSaving(false);
-      setTimeout(() => setSaveMsg(null), 3000);
-    }
-  };
-
-  const autoSave = useCallback(async () => {
-    try {
-      await supabase.from("newsletter_sessions").insert({
-        name: "Auto-zapis " + new Date().toLocaleString("pl-PL"),
-        blocks: getCurrentBlocks(),
-      });
-    } catch (e) { console.error("Auto-zapis błąd:", e); }
-  }, [heading, text, products, duo, promo, promoMenu, promoDisclaimer]);
-
-  const fetchSessions = async () => {
-    setLoadingHistory(true);
-    const { data } = await supabase.from("newsletter_sessions").select("id,name,created_at").order("updated_at", { ascending: false }).limit(20);
-    setSessions(data || []);
-    setLoadingHistory(false);
-  };
-
-  const loadSession = async (id) => {
-    const { data } = await supabase.from("newsletter_sessions").select("blocks").eq("id", id).single();
-    if (data?.blocks) { loadFromSession(data.blocks); setSaveMsg({ type: "ok", text: "Wczytano sesję!" }); setTimeout(() => setSaveMsg(null), 2000); }
-  };
-
-  const deleteSession = async (id) => {
-    await supabase.from("newsletter_sessions").delete().eq("id", id);
-    fetchSessions();
-  };
-
-  useEffect(() => { fetchSessions(); }, []);
-
-  useEffect(() => {
-    const id = setInterval(autoSave, 5 * 60 * 1000);
-    return () => clearInterval(id);
-  }, [autoSave]);
-  const setH = useCallback((key, value) => setHeading(prev => ({ ...prev, [key]: value })), []);
-  const handleProductChange = useCallback((i, updated) => setProducts(prev => prev.map((p, idx) => idx === i ? updated : p)), []);
-
-  const handleAddFromFeed = useCallback((feedProducts) => {
-    setProducts(feedProducts.map((fp, i) => ({
-      id: Date.now() + i,
-      name: fp.name,
-      imageUrl: fp.imageUrl,
-      price: fp.price,
-      oldPrice: fp.oldPrice || "",
-      discount: fp.discount || "",
-      isPromo: fp.isPromo,
-      link: fp.link,
-    })));
-    setTimeout(() => document.getElementById("blok2")?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
-  }, []);
-
-
-  return (
-    <>
-    <Nav current="/newsletter-builder" />
-    <div style={{ minHeight: "100vh", background: "#f5f2ee", fontFamily: "var(--font-open-sans), system-ui, sans-serif", display: "flex", flexDirection: "column" }}>
-      <div style={{ padding: "28px 32px 20px", borderBottom: "1px solid #e8e4de", background: "#f5f2ee" }}>
-        <h1 style={{ fontFamily: "var(--font-dm-serif), 'DM Serif Display', Georgia, serif", fontSize: 28, fontWeight: 400, color: "#1a1814", margin: "0 0 4px", lineHeight: 1.2 }}>📧 Newsletter Builder</h1>
-        <p style={{ fontSize: 13, color: "#7a7570", margin: 0, fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>Buduj emaile blok po bloku — Gmail-safe HTML gotowy do wklejenia w ESP.</p>
-      </div>
-      <div style={{ display: "flex", flex: 1 }}>
-
-      {/* SIDEBAR */}
-      <div style={{ width: 180, minWidth: 180, background: "#ffffff", borderRight: "1px solid #e0dbd4", padding: "16px 12px", display: "flex", flexDirection: "column", gap: 4, position: "sticky", top: 0, height: "100vh", overflowY: "auto", fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
-        <div style={{ fontSize: 10, color: "#9a9590", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8, paddingLeft: 4 }}>Bloki</div>
-        {[
-          { id: "0", label: "Nagłówek" },
-          { id: "1", label: "Blok tekstowy" },
-          { id: "2", label: "Produkty" },
-          { id: "5", label: "Duo grafiki" },
-          { id: "6", label: "Blok promo" },
-        ].map(item => (
-          <button key={item.id} onClick={() => setActiveBlock(item.id)}
-            style={{ display: "block", width: "100%", textAlign: "left", background: activeBlock === item.id ? "#b8763a14" : "none", border: activeBlock === item.id ? "1px solid #b8763a40" : "1px solid transparent", borderRadius: 8, padding: "8px 10px", cursor: "pointer", fontFamily: "inherit", color: activeBlock === item.id ? "#b8763a" : "#7a7570", fontSize: 12, fontWeight: activeBlock === item.id ? 600 : 400 }}>
-            {item.label}
-          </button>
-        ))}
-
-        {/* ZAPIS / HISTORIA */}
-        <div style={{ borderTop: "1px solid #e0dbd4", paddingTop: 12, marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
-          <div style={{ fontSize: 10, color: "#9a9590", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4, paddingLeft: 4 }}>Sesje</div>
-
-          {saveMsg && (
-            <div style={{ fontSize: 11, padding: "4px 8px", borderRadius: 6, background: saveMsg.type === "ok" ? "#e8f8ee" : "#fff0f0", color: saveMsg.type === "ok" ? "#2d7a4f" : "#cc0000", fontFamily: "sans-serif" }}>
-              {saveMsg.text}
-            </div>
-          )}
-
-          <div style={{ display: "flex", gap: 4 }}>
-            <input
-              value={sessionName}
-              onChange={e => setSessionName(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && saveSession()}
-              placeholder="Nazwa sesji..."
-              style={{ flex: 1, fontSize: 11, padding: "5px 7px", border: "1px solid #e0dbd4", borderRadius: 6, fontFamily: "inherit", outline: "none", minWidth: 0 }}
-            />
-            <button onClick={saveSession} disabled={saving} title="Zapisz sesję"
-              style={{ background: saving ? "#ccc" : "#b8763a", color: "#fff", border: "none", borderRadius: 6, padding: "5px 8px", fontSize: 11, cursor: saving ? "default" : "pointer", fontWeight: 700 }}>
-              {saving ? "..." : "💾"}
-            </button>
-          </div>
-
-          <button onClick={() => { setShowHistory(h => !h); if (!showHistory) fetchSessions(); }}
-            style={{ background: "none", border: "1px solid #e0dbd4", borderRadius: 6, padding: "5px 8px", fontSize: 11, cursor: "pointer", color: "#7a7570", textAlign: "left" }}>
-            {showHistory ? "▲ Ukryj historię" : "▼ Historia sesji"}
-          </button>
-
-          {showHistory && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 200, overflowY: "auto" }}>
-              {loadingHistory && <div style={{ fontSize: 11, color: "#aaa", padding: "4px 0" }}>Ładowanie...</div>}
-              {!loadingHistory && sessions.length === 0 && <div style={{ fontSize: 11, color: "#aaa", padding: "4px 0" }}>Brak zapisanych sesji</div>}
-              {sessions.map(s => (
-                <div key={s.id} style={{ background: "#fafaf8", border: "1px solid #e8e4de", borderRadius: 6, padding: "6px 8px", display: "flex", flexDirection: "column", gap: 3 }}>
-                  <div style={{ fontSize: 11, color: "#1a1a1a", fontWeight: 600, lineHeight: 1.3, wordBreak: "break-word" }}>{s.name}</div>
-                  <div style={{ fontSize: 10, color: "#aaa" }}>{new Date(s.created_at).toLocaleString("pl-PL")}</div>
-                  <div style={{ display: "flex", gap: 4, marginTop: 2 }}>
-                    <button onClick={() => loadSession(s.id)}
-                      style={{ flex: 1, background: "#1a1a1a", color: "#fff", border: "none", borderRadius: 4, padding: "3px 0", fontSize: 10, cursor: "pointer" }}>
-                      Wczytaj
-                    </button>
-                    <button onClick={() => deleteSession(s.id)}
-                      style={{ background: "none", border: "1px solid #f5c0c0", color: "#cc0000", borderRadius: 4, padding: "3px 6px", fontSize: 10, cursor: "pointer" }}>
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        {/* PRAWA — podgląd sticky */}
+        <div style={{ flex: 1, minWidth: 0, padding: "20px", position: "sticky", top: "0", alignSelf: "flex-start" }}>
+          <PreviewFrame html={htmlAll} title="Blok promo" width={720} />
         </div>
 
       </div>
-
-      {/* MAIN CONTENT */}
-      <div style={{ flex: 1, padding: "28px 24px", display: "flex", flexDirection: "column", gap: "20px", overflowY: "auto" }}>
-
-        {activeBlock === "0" && <Section title="Nagłówek" number="0" html={generateHeadingHTML(heading)} previewTitle="Nagłówek" previewWidth={720}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            <div><Label>Tekst nagłówka</Label><input value={heading.text} onChange={e => setH("text", e.target.value)} style={inputStyle} /></div>
-            <div><Label>Copy pod nagłówkiem (opcjonalne)</Label><input value={heading.subtext} onChange={e => setH("subtext", e.target.value)} style={inputStyle} placeholder="np. Odkryj wyjątkowe produkty..." /></div>
-            {heading.subtext && <StyleRow>
-              <StyleField label="Rozmiar copy" flex={2}><SliderInput value={heading.subtextFontSize} onChange={v => setH("subtextFontSize", v)} min={10} max={30} /></StyleField>
-              <StyleField label="Grubość copy" flex={2}>
-                <Select value={heading.subtextFontWeight} onChange={v => setH("subtextFontWeight", v)} options={[{ value: "300", label: "Light" }, { value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} />
-              </StyleField>
-              <StyleField label="Kolor copy" flex={2}><ColorInput value={heading.subtextColor} onChange={v => setH("subtextColor", v)} /></StyleField>
-              <StyleField label="Odstęp od nagłówka" flex={2}><SliderInput value={heading.subtextMarginTop} onChange={v => setH("subtextMarginTop", v)} min={0} max={40} /></StyleField>
-            </StyleRow>}
-            <StyleRow>
-              <StyleField label="Font" flex={3}>
-                <Select value={heading.fontFamily} onChange={v => setH("fontFamily", v)} options={[
-                  { value: "'Playfair Display', serif", label: "Playfair Display" },
-                  { value: "'DM Serif Display', serif", label: "DM Serif Display" },
-                  { value: "'Open Sans', sans-serif", label: "Open Sans" },
-                  { value: "Georgia, serif", label: "Georgia" },
-                  { value: "arial, helvetica, sans-serif", label: "Arial" },
-                ]} />
-              </StyleField>
-              <StyleField label="Rozmiar" flex={2}><SliderInput value={heading.fontSize} onChange={v => setH("fontSize", v)} min={14} max={60} /></StyleField>
-              <StyleField label="Grubość" flex={2}>
-                <Select value={heading.fontWeight} onChange={v => setH("fontWeight", v)} options={[{ value: "300", label: "Light" }, { value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} />
-              </StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Kolor" flex={2}><ColorInput value={heading.color} onChange={v => setH("color", v)} /></StyleField>
-              <StyleField label="Wyrównanie" flex={2}>
-                <Select value={heading.textAlign} onChange={v => setH("textAlign", v)} options={[{ value: "left", label: "Lewo" }, { value: "center", label: "Środek" }, { value: "right", label: "Prawo" }]} />
-              </StyleField>
-              <StyleField label="Letter spacing" flex={2}><SliderInput value={heading.letterSpacing} onChange={v => setH("letterSpacing", v)} min={-2} max={10} step={0.5} /></StyleField>
-              <StyleField label="Line height" flex={2}><SliderInput value={heading.lineHeight} onChange={v => setH("lineHeight", v)} min={1} max={3} step={0.1} unit="" /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Padding góra" flex={2}><SliderInput value={heading.paddingTop} onChange={v => setH("paddingTop", v)} min={0} max={60} /></StyleField>
-              <StyleField label="Padding dół" flex={2}><SliderInput value={heading.paddingBottom} onChange={v => setH("paddingBottom", v)} min={0} max={60} /></StyleField>
-              <StyleField label="Padding boki" flex={2}><SliderInput value={heading.paddingH} onChange={v => setH("paddingH", v)} min={0} max={60} /></StyleField>
-              <StyleField label="Margin dół" flex={2}><SliderInput value={heading.marginBottom} onChange={v => setH("marginBottom", v)} min={-40} max={40} /></StyleField>
-            </StyleRow>
-          </div>
-        </Section>}
-
-        {activeBlock === "1" && <Section title="Blok tekstowy + przycisk" number="1" html={generateTextBlockHTML(text)} previewTitle="Blok tekstowy">
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            <div><Label>Nagłówek</Label><input value={text.headline} onChange={e => setText({ ...text, headline: e.target.value })} style={inputStyle} /></div>
-            <div><Label>Treść (pusta linia = odstęp)</Label><textarea value={text.body} onChange={e => setText({ ...text, body: e.target.value })} rows={5} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} /></div>
-            <div style={{ display: "flex", gap: "10px" }}>
-              <div style={{ flex: 1 }}><Label>Tekst przycisku</Label><input value={text.buttonText} onChange={e => setText({ ...text, buttonText: e.target.value })} style={inputStyle} /></div>
-              <div style={{ flex: 1 }}><Label>Link przycisku</Label><input value={text.buttonLink} onChange={e => setText({ ...text, buttonLink: e.target.value })} style={inputStyle} /></div>
-            </div>
-          </div>
-        </Section>}
-
-        {activeBlock === "2" && (
-          <>
-            <Block4FeedBrowser onAddToNewsletter={handleAddFromFeed} />
-            <div id="blok2">
-              <Section title="Blok produktów (ręczny)" number="2" html={generateProductsHTML(products)} previewTitle="Blok produktów" previewWidth={720}>
-                <div style={{ background: "#f0f7ff", border: "1px solid #c8e0f8", borderRadius: "8px", padding: "10px 14px", fontSize: "12px", color: "#555", fontFamily: "sans-serif", lineHeight: 1.6 }}>
-                  💡 Wybierz produkty w Bloku 4 powyżej — trafią tutaj automatycznie. Możesz też edytować ręcznie.
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                  {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} onChange={updated => handleProductChange(i, updated)} />)}
-                </div>
-              </Section>
-            </div>
-          </>
-        )}
-
-        {activeBlock === "5" && <Block5DuoImages duo={duo} setDuo={setDuo} />}
-        {activeBlock === "6" && <Block6Promo promo={promo} setPromo={setPromo} menu={promoMenu} setMenu={setPromoMenu} disclaimer={promoDisclaimer} setDisclaimer={setPromoDisclaimer} />}
-
-      </div>
-      </div>
     </div>
-    </>
   );
 }
+
+
