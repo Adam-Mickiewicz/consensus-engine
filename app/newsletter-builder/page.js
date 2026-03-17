@@ -935,8 +935,9 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
   const setD = (key, val) => setDisclaimer(prev => ({ ...prev, [key]: val }));
 
   const htmlMain = generatePromoHTML(promo);
-  const htmlMenu = generatePromoMenuHTML(menu);
-  const htmlDisclaimer = generatePromoDisclaimerHTML(disclaimer);
+  const htmlMenu = menu.show ? generatePromoMenuHTML(menu) : "";
+  const htmlDisclaimer = disclaimer.show ? generatePromoDisclaimerHTML(disclaimer) : "";
+  const htmlAll = htmlMain + htmlMenu + htmlDisclaimer;
 
   const SectionCode = ({ title, html }) => {
     const [show, setShow] = React.useState(false);
@@ -961,202 +962,181 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
           <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: "#1a1a1a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700 }}>6</div>
           <span style={{ fontFamily: "Georgia, serif", fontSize: "15px", fontWeight: 600 }}>Blok promo</span>
         </div>
+        <CopyButton html={htmlAll} />
       </div>
 
-      <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div style={{ display: "flex", alignItems: "flex-start" }}>
 
-        {/* PODGLĄD */}
-        <PreviewFrame html={htmlMain + htmlMenu + htmlDisclaimer} title="Blok promo" width={720} />
+        <div style={{ flex: "0 0 420px", minWidth: 0, padding: "20px", borderRight: "1px solid #f0ece6", display: "flex", flexDirection: "column", gap: "14px" }}>
 
-        {/* KODY */}
-        <SectionCode title="📋 Kod HTML — główny blok (badge + nagłówek + podtytuł + kod + przycisk)" html={htmlMain} />
-        <SectionCode title="📋 Kod HTML — menu kategorii" html={htmlMenu} />
-        <SectionCode title="📋 Kod HTML — disclaimer" html={htmlDisclaimer} />
+          <SectionCode title="Kod — główny blok" html={htmlMain} />
+          <SectionCode title="Kod — menu kategorii" html={htmlMenu} />
+          <SectionCode title="Kod — disclaimer" html={htmlDisclaimer} />
 
-        {/* ── BADGE ── */}
-        <StyleGroup title="Etykieta / Badge">
-          <StyleRow>
-            <StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.badgeShow} onChange={v => set("badgeShow", v)} /></StyleField>
-          </StyleRow>
-          {promo.badgeShow && <>
-            <StyleRow>
-              <StyleField label="Tekst" flex={3}><input value={promo.badge} onChange={e => set("badge", e.target.value)} style={inputStyle} /></StyleField>
-              <StyleField label="Tło" flex={2}><ColorInput value={promo.badgeBg} onChange={v => set("badgeBg", v)} /></StyleField>
-              <StyleField label="Kolor tekstu" flex={2}><ColorInput value={promo.badgeColor} onChange={v => set("badgeColor", v)} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Font" flex={3}><Select value={promo.badgeFontFamily} onChange={v => set("badgeFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
-              <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.badgeFontSize} onChange={v => set("badgeFontSize", Number(v))} min={9} max={20} /></StyleField>
-              <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.badgeLetterSpacing} onChange={v => set("badgeLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
-              <StyleField label="Zaokrąglenie" flex={2}><SliderInput value={promo.badgeRadius} onChange={v => set("badgeRadius", Number(v))} min={0} max={30} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Padding góra" flex={2}><SliderInput value={promo.badgePaddingTop} onChange={v => set("badgePaddingTop", Number(v))} min={0} max={40} /></StyleField>
-              <StyleField label="Margin dół" flex={2}><SliderInput value={promo.badgePaddingBottom} onChange={v => set("badgePaddingBottom", Number(v))} min={0} max={40} /></StyleField>
-            </StyleRow>
-          </>}
-        </StyleGroup>
-
-        {/* ── NAGŁÓWEK ── */}
-        <StyleGroup title="Nagłówek">
-          <StyleRow>
-            <StyleField label="Tekst" flex={4}><input value={promo.headline} onChange={e => set("headline", e.target.value)} style={inputStyle} /></StyleField>
-          </StyleRow>
-          <StyleRow>
-            <StyleField label="Font" flex={3}><Select value={promo.headlineFontFamily} onChange={v => set("headlineFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
-            <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.headlineFontSize} onChange={v => set("headlineFontSize", Number(v))} min={14} max={48} /></StyleField>
-            <StyleField label="Grubość" flex={2}><Select value={promo.headlineFontWeight} onChange={v => set("headlineFontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
-          </StyleRow>
-          <StyleRow>
-            <StyleField label="Kolor" flex={2}><ColorInput value={promo.headlineColor} onChange={v => set("headlineColor", v)} /></StyleField>
-            <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.headlineLetterSpacing} onChange={v => set("headlineLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
-            <StyleField label="Margin dół" flex={2}><SliderInput value={promo.headlinePaddingBottom} onChange={v => set("headlinePaddingBottom", Number(v))} min={0} max={40} /></StyleField>
-          </StyleRow>
-        </StyleGroup>
-
-        {/* ── PODTYTUŁ ── */}
-        <StyleGroup title="Podtytuł">
-          <StyleRow>
-            <StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.subtitleShow} onChange={v => set("subtitleShow", v)} /></StyleField>
-          </StyleRow>
-          {promo.subtitleShow && <>
-            <StyleRow>
-              <StyleField label="Tekst" flex={4}><input value={promo.subtitle} onChange={e => set("subtitle", e.target.value)} style={inputStyle} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Font" flex={3}><Select value={promo.subtitleFontFamily} onChange={v => set("subtitleFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
-              <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.subtitleFontSize} onChange={v => set("subtitleFontSize", Number(v))} min={11} max={24} /></StyleField>
-              <StyleField label="Grubość" flex={2}><Select value={promo.subtitleFontWeight} onChange={v => set("subtitleFontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Kolor" flex={2}><ColorInput value={promo.subtitleColor} onChange={v => set("subtitleColor", v)} /></StyleField>
-              <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.subtitleLetterSpacing} onChange={v => set("subtitleLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
-              <StyleField label="Margin dół" flex={2}><SliderInput value={promo.subtitlePaddingBottom} onChange={v => set("subtitlePaddingBottom", Number(v))} min={0} max={40} /></StyleField>
-            </StyleRow>
-          </>}
-        </StyleGroup>
-
-        {/* ── KOD PROMO ── */}
-        <StyleGroup title="Kod promocyjny">
-          <StyleRow>
-            <StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.promoCodeShow} onChange={v => set("promoCodeShow", v)} /></StyleField>
-          </StyleRow>
-          {promo.promoCodeShow && <>
-            <StyleRow>
-              <StyleField label="Label" flex={3}><input value={promo.promoCodeLabel} onChange={e => set("promoCodeLabel", e.target.value)} style={inputStyle} /></StyleField>
-              <StyleField label="Kolor labela" flex={2}><ColorInput value={promo.promoCodeLabelColor} onChange={v => set("promoCodeLabelColor", v)} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Kod" flex={3}><input value={promo.promoCode} onChange={e => set("promoCode", e.target.value)} style={inputStyle} /></StyleField>
-              <StyleField label="Font" flex={3}><Select value={promo.promoCodeFontFamily} onChange={v => set("promoCodeFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.promoCodeFontSize} onChange={v => set("promoCodeFontSize", Number(v))} min={14} max={36} /></StyleField>
-              <StyleField label="Grubość" flex={2}><Select value={promo.promoCodeFontWeight} onChange={v => set("promoCodeFontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
-              <StyleField label="Kolor" flex={2}><ColorInput value={promo.promoCodeColor} onChange={v => set("promoCodeColor", v)} /></StyleField>
-              <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.promoCodeLetterSpacing} onChange={v => set("promoCodeLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
-              <StyleField label="Margin dół" flex={2}><SliderInput value={promo.promoCodePaddingBottom} onChange={v => set("promoCodePaddingBottom", Number(v))} min={0} max={40} /></StyleField>
-            </StyleRow>
-          </>}
-        </StyleGroup>
-
-        {/* ── PRZYCISK / LINK ── */}
-        <StyleGroup title="Przycisk / Link">
-          <StyleRow>
-            <StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.buttonShow} onChange={v => set("buttonShow", v)} /></StyleField>
-            {promo.buttonShow && <StyleField label="Typ" flex={2}>
-              <Select value={promo.buttonType} onChange={v => set("buttonType", v)} options={[{ value: "link", label: "Link tekstowy" }, { value: "button", label: "Przycisk (button)" }]} />
-            </StyleField>}
-          </StyleRow>
-          {promo.buttonShow && <>
-            <StyleRow>
-              <StyleField label="Tekst" flex={3}><input value={promo.buttonText} onChange={e => set("buttonText", e.target.value)} style={inputStyle} /></StyleField>
-              <StyleField label="Link" flex={3}><input value={promo.buttonLink} onChange={e => set("buttonLink", e.target.value)} style={inputStyle} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Font" flex={3}><Select value={promo.buttonFontFamily} onChange={v => set("buttonFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
-              <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.buttonFontSize} onChange={v => set("buttonFontSize", Number(v))} min={11} max={24} /></StyleField>
-              <StyleField label="Grubość" flex={2}><Select value={promo.buttonFontWeight} onChange={v => set("buttonFontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
-              <StyleField label="Kolor tekstu" flex={2}><ColorInput value={promo.buttonColor} onChange={v => set("buttonColor", v)} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.buttonLetterSpacing} onChange={v => set("buttonLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
-              <StyleField label="Margin dół" flex={2}><SliderInput value={promo.buttonPaddingBottom} onChange={v => set("buttonPaddingBottom", Number(v))} min={0} max={60} /></StyleField>
-            </StyleRow>
-            {promo.buttonType === "button" && <>
+          <StyleGroup title="Etykieta / Badge">
+            <StyleRow><StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.badgeShow} onChange={v => set("badgeShow", v)} /></StyleField></StyleRow>
+            {promo.badgeShow && <>
               <StyleRow>
-                <StyleField label="Tło przycisku" flex={2}><ColorInput value={promo.buttonBg} onChange={v => set("buttonBg", v)} /></StyleField>
-                <StyleField label="Border" flex={3}><input value={promo.buttonBorder} onChange={e => set("buttonBorder", e.target.value)} placeholder="1px solid #000" style={inputStyle} /></StyleField>
-                <StyleField label="Border radius" flex={2}><SliderInput value={promo.buttonRadius} onChange={v => set("buttonRadius", Number(v))} min={0} max={40} /></StyleField>
+                <StyleField label="Tekst" flex={3}><input value={promo.badge} onChange={e => set("badge", e.target.value)} style={inputStyle} /></StyleField>
+                <StyleField label="Tło" flex={2}><ColorInput value={promo.badgeBg} onChange={v => set("badgeBg", v)} /></StyleField>
+                <StyleField label="Kolor tekstu" flex={2}><ColorInput value={promo.badgeColor} onChange={v => set("badgeColor", v)} /></StyleField>
               </StyleRow>
               <StyleRow>
-                <StyleField label="Padding góra/dół" flex={2}><SliderInput value={promo.buttonPaddingV} onChange={v => set("buttonPaddingV", Number(v))} min={4} max={30} /></StyleField>
-                <StyleField label="Padding lewo/prawo" flex={2}><SliderInput value={promo.buttonPaddingH} onChange={v => set("buttonPaddingH", Number(v))} min={8} max={80} /></StyleField>
+                <StyleField label="Font" flex={3}><Select value={promo.badgeFontFamily} onChange={v => set("badgeFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
+                <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.badgeFontSize} onChange={v => set("badgeFontSize", Number(v))} min={9} max={20} /></StyleField>
+                <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.badgeLetterSpacing} onChange={v => set("badgeLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
+                <StyleField label="Zaokrąglenie" flex={2}><SliderInput value={promo.badgeRadius} onChange={v => set("badgeRadius", Number(v))} min={0} max={30} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Padding góra" flex={2}><SliderInput value={promo.badgePaddingTop} onChange={v => set("badgePaddingTop", Number(v))} min={0} max={40} /></StyleField>
+                <StyleField label="Margin dół" flex={2}><SliderInput value={promo.badgePaddingBottom} onChange={v => set("badgePaddingBottom", Number(v))} min={0} max={40} /></StyleField>
               </StyleRow>
             </>}
-          </>}
-        </StyleGroup>
+          </StyleGroup>
 
-        {/* ── PADDING GŁÓWNY ── */}
-        <StyleGroup title="Padding głównego bloku">
-          <StyleRow>
-            <StyleField label="Góra"><SliderInput value={promo.paddingTop} onChange={v => set("paddingTop", Number(v))} min={0} max={80} /></StyleField>
-            <StyleField label="Dół"><SliderInput value={promo.paddingBottom} onChange={v => set("paddingBottom", Number(v))} min={0} max={80} /></StyleField>
-            <StyleField label="Boki"><SliderInput value={promo.paddingH} onChange={v => set("paddingH", Number(v))} min={0} max={60} /></StyleField>
-          </StyleRow>
-        </StyleGroup>
+          <StyleGroup title="Nagłówek">
+            <StyleRow><StyleField label="Tekst" flex={4}><input value={promo.headline} onChange={e => set("headline", e.target.value)} style={inputStyle} /></StyleField></StyleRow>
+            <StyleRow>
+              <StyleField label="Font" flex={3}><Select value={promo.headlineFontFamily} onChange={v => set("headlineFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
+              <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.headlineFontSize} onChange={v => set("headlineFontSize", Number(v))} min={14} max={48} /></StyleField>
+              <StyleField label="Grubość" flex={2}><Select value={promo.headlineFontWeight} onChange={v => set("headlineFontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
+            </StyleRow>
+            <StyleRow>
+              <StyleField label="Kolor" flex={2}><ColorInput value={promo.headlineColor} onChange={v => set("headlineColor", v)} /></StyleField>
+              <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.headlineLetterSpacing} onChange={v => set("headlineLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
+              <StyleField label="Margin dół" flex={2}><SliderInput value={promo.headlinePaddingBottom} onChange={v => set("headlinePaddingBottom", Number(v))} min={0} max={40} /></StyleField>
+            </StyleRow>
+          </StyleGroup>
 
-        {/* ── MENU ── */}
-        <StyleGroup title="Menu kategorii — osobny kod HTML">
-          <StyleRow>
-            <StyleField label="Pokaż" flex={1}><ToggleSwitch value={menu.show} onChange={v => setM("show", v)} /></StyleField>
-          </StyleRow>
-          {menu.show && <>
-            <MenuItemEditor items={menu.items} onChange={v => setM("items", v)} />
-            <StyleRow>
-              <StyleField label="Font" flex={3}><Select value={menu.fontFamily} onChange={v => setM("fontFamily", v)} options={FONT_OPTIONS} /></StyleField>
-              <StyleField label="Rozmiar" flex={2}><SliderInput value={menu.fontSize} onChange={v => setM("fontSize", Number(v))} min={10} max={18} /></StyleField>
-              <StyleField label="Grubość" flex={2}><Select value={menu.fontWeight} onChange={v => setM("fontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Kolor tekstu" flex={2}><ColorInput value={menu.color} onChange={v => setM("color", v)} /></StyleField>
-              <StyleField label="Kolor linii" flex={2}><ColorInput value={menu.borderColor} onChange={v => setM("borderColor", v)} /></StyleField>
-              <StyleField label="Letter spacing" flex={2}><SliderInput value={menu.letterSpacing} onChange={v => setM("letterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
-              <StyleField label="Padding wiersza" flex={2}><SliderInput value={menu.itemPaddingV} onChange={v => setM("itemPaddingV", Number(v))} min={4} max={24} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Padding góra"><SliderInput value={menu.paddingTop} onChange={v => setM("paddingTop", Number(v))} min={0} max={60} /></StyleField>
-              <StyleField label="Padding dół"><SliderInput value={menu.paddingBottom} onChange={v => setM("paddingBottom", Number(v))} min={0} max={60} /></StyleField>
-              <StyleField label="Padding boki"><SliderInput value={menu.paddingH} onChange={v => setM("paddingH", Number(v))} min={0} max={60} /></StyleField>
-            </StyleRow>
-          </>}
-        </StyleGroup>
+          <StyleGroup title="Podtytuł">
+            <StyleRow><StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.subtitleShow} onChange={v => set("subtitleShow", v)} /></StyleField></StyleRow>
+            {promo.subtitleShow && <>
+              <StyleRow><StyleField label="Tekst" flex={4}><input value={promo.subtitle} onChange={e => set("subtitle", e.target.value)} style={inputStyle} /></StyleField></StyleRow>
+              <StyleRow>
+                <StyleField label="Font" flex={3}><Select value={promo.subtitleFontFamily} onChange={v => set("subtitleFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
+                <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.subtitleFontSize} onChange={v => set("subtitleFontSize", Number(v))} min={11} max={24} /></StyleField>
+                <StyleField label="Grubość" flex={2}><Select value={promo.subtitleFontWeight} onChange={v => set("subtitleFontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Kolor" flex={2}><ColorInput value={promo.subtitleColor} onChange={v => set("subtitleColor", v)} /></StyleField>
+                <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.subtitleLetterSpacing} onChange={v => set("subtitleLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
+                <StyleField label="Margin dół" flex={2}><SliderInput value={promo.subtitlePaddingBottom} onChange={v => set("subtitlePaddingBottom", Number(v))} min={0} max={40} /></StyleField>
+              </StyleRow>
+            </>}
+          </StyleGroup>
 
-        {/* ── DISCLAIMER ── */}
-        <StyleGroup title="Disclaimer — osobny kod HTML">
-          <StyleRow>
-            <StyleField label="Pokaż" flex={1}><ToggleSwitch value={disclaimer.show} onChange={v => setD("show", v)} /></StyleField>
-          </StyleRow>
-          {disclaimer.show && <>
+          <StyleGroup title="Kod promocyjny">
+            <StyleRow><StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.promoCodeShow} onChange={v => set("promoCodeShow", v)} /></StyleField></StyleRow>
+            {promo.promoCodeShow && <>
+              <StyleRow>
+                <StyleField label="Label" flex={3}><input value={promo.promoCodeLabel} onChange={e => set("promoCodeLabel", e.target.value)} style={inputStyle} /></StyleField>
+                <StyleField label="Kolor labela" flex={2}><ColorInput value={promo.promoCodeLabelColor} onChange={v => set("promoCodeLabelColor", v)} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Kod" flex={3}><input value={promo.promoCode} onChange={e => set("promoCode", e.target.value)} style={inputStyle} /></StyleField>
+                <StyleField label="Font" flex={3}><Select value={promo.promoCodeFontFamily} onChange={v => set("promoCodeFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.promoCodeFontSize} onChange={v => set("promoCodeFontSize", Number(v))} min={14} max={36} /></StyleField>
+                <StyleField label="Grubość" flex={2}><Select value={promo.promoCodeFontWeight} onChange={v => set("promoCodeFontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
+                <StyleField label="Kolor" flex={2}><ColorInput value={promo.promoCodeColor} onChange={v => set("promoCodeColor", v)} /></StyleField>
+                <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.promoCodeLetterSpacing} onChange={v => set("promoCodeLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
+                <StyleField label="Margin dół" flex={2}><SliderInput value={promo.promoCodePaddingBottom} onChange={v => set("promoCodePaddingBottom", Number(v))} min={0} max={40} /></StyleField>
+              </StyleRow>
+            </>}
+          </StyleGroup>
+
+          <StyleGroup title="Przycisk / Link">
             <StyleRow>
-              <StyleField label="Treść" flex={4}><textarea value={disclaimer.text} onChange={e => setD("text", e.target.value)} rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.5 }} /></StyleField>
+              <StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.buttonShow} onChange={v => set("buttonShow", v)} /></StyleField>
+              {promo.buttonShow && <StyleField label="Typ" flex={2}><Select value={promo.buttonType} onChange={v => set("buttonType", v)} options={[{ value: "link", label: "Link tekstowy" }, { value: "button", label: "Przycisk (button)" }]} /></StyleField>}
             </StyleRow>
+            {promo.buttonShow && <>
+              <StyleRow>
+                <StyleField label="Tekst" flex={3}><input value={promo.buttonText} onChange={e => set("buttonText", e.target.value)} style={inputStyle} /></StyleField>
+                <StyleField label="Link" flex={3}><input value={promo.buttonLink} onChange={e => set("buttonLink", e.target.value)} style={inputStyle} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Font" flex={3}><Select value={promo.buttonFontFamily} onChange={v => set("buttonFontFamily", v)} options={FONT_OPTIONS} /></StyleField>
+                <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.buttonFontSize} onChange={v => set("buttonFontSize", Number(v))} min={11} max={24} /></StyleField>
+                <StyleField label="Grubość" flex={2}><Select value={promo.buttonFontWeight} onChange={v => set("buttonFontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
+                <StyleField label="Kolor tekstu" flex={2}><ColorInput value={promo.buttonColor} onChange={v => set("buttonColor", v)} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Letter spacing" flex={2}><SliderInput value={promo.buttonLetterSpacing} onChange={v => set("buttonLetterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
+                <StyleField label="Margin dół" flex={2}><SliderInput value={promo.buttonPaddingBottom} onChange={v => set("buttonPaddingBottom", Number(v))} min={0} max={60} /></StyleField>
+              </StyleRow>
+              {promo.buttonType === "button" && <>
+                <StyleRow>
+                  <StyleField label="Tło przycisku" flex={2}><ColorInput value={promo.buttonBg} onChange={v => set("buttonBg", v)} /></StyleField>
+                  <StyleField label="Border" flex={3}><input value={promo.buttonBorder} onChange={e => set("buttonBorder", e.target.value)} placeholder="1px solid #000" style={inputStyle} /></StyleField>
+                  <StyleField label="Border radius" flex={2}><SliderInput value={promo.buttonRadius} onChange={v => set("buttonRadius", Number(v))} min={0} max={40} /></StyleField>
+                </StyleRow>
+                <StyleRow>
+                  <StyleField label="Padding góra/dół" flex={2}><SliderInput value={promo.buttonPaddingV} onChange={v => set("buttonPaddingV", Number(v))} min={4} max={30} /></StyleField>
+                  <StyleField label="Padding lewo/prawo" flex={2}><SliderInput value={promo.buttonPaddingH} onChange={v => set("buttonPaddingH", Number(v))} min={8} max={80} /></StyleField>
+                </StyleRow>
+              </>}
+            </>}
+          </StyleGroup>
+
+          <StyleGroup title="Padding głównego bloku">
             <StyleRow>
-              <StyleField label="Font" flex={3}><Select value={disclaimer.fontFamily} onChange={v => setD("fontFamily", v)} options={FONT_OPTIONS} /></StyleField>
-              <StyleField label="Rozmiar" flex={2}><SliderInput value={disclaimer.fontSize} onChange={v => setD("fontSize", Number(v))} min={9} max={16} /></StyleField>
-              <StyleField label="Grubość" flex={2}><Select value={disclaimer.fontWeight} onChange={v => setD("fontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
+              <StyleField label="Góra"><SliderInput value={promo.paddingTop} onChange={v => set("paddingTop", Number(v))} min={0} max={80} /></StyleField>
+              <StyleField label="Dół"><SliderInput value={promo.paddingBottom} onChange={v => set("paddingBottom", Number(v))} min={0} max={80} /></StyleField>
+              <StyleField label="Boki"><SliderInput value={promo.paddingH} onChange={v => set("paddingH", Number(v))} min={0} max={60} /></StyleField>
             </StyleRow>
-            <StyleRow>
-              <StyleField label="Kolor" flex={2}><ColorInput value={disclaimer.color} onChange={v => setD("color", v)} /></StyleField>
-              <StyleField label="Letter spacing" flex={2}><SliderInput value={disclaimer.letterSpacing} onChange={v => setD("letterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Padding góra"><SliderInput value={disclaimer.paddingTop} onChange={v => setD("paddingTop", Number(v))} min={0} max={60} /></StyleField>
-              <StyleField label="Padding dół"><SliderInput value={disclaimer.paddingBottom} onChange={v => setD("paddingBottom", Number(v))} min={0} max={60} /></StyleField>
-              <StyleField label="Padding boki"><SliderInput value={disclaimer.paddingH} onChange={v => setD("paddingH", Number(v))} min={0} max={60} /></StyleField>
-            </StyleRow>
-          </>}
-        </StyleGroup>
+          </StyleGroup>
+
+          <StyleGroup title="Menu kategorii — osobny kod HTML">
+            <StyleRow><StyleField label="Pokaż" flex={1}><ToggleSwitch value={menu.show} onChange={v => setM("show", v)} /></StyleField></StyleRow>
+            {menu.show && <>
+              <MenuItemEditor items={menu.items} onChange={v => setM("items", v)} />
+              <StyleRow>
+                <StyleField label="Font" flex={3}><Select value={menu.fontFamily} onChange={v => setM("fontFamily", v)} options={FONT_OPTIONS} /></StyleField>
+                <StyleField label="Rozmiar" flex={2}><SliderInput value={menu.fontSize} onChange={v => setM("fontSize", Number(v))} min={10} max={18} /></StyleField>
+                <StyleField label="Grubość" flex={2}><Select value={menu.fontWeight} onChange={v => setM("fontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Kolor tekstu" flex={2}><ColorInput value={menu.color} onChange={v => setM("color", v)} /></StyleField>
+                <StyleField label="Kolor linii" flex={2}><ColorInput value={menu.borderColor} onChange={v => setM("borderColor", v)} /></StyleField>
+                <StyleField label="Letter spacing" flex={2}><SliderInput value={menu.letterSpacing} onChange={v => setM("letterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
+                <StyleField label="Padding wiersza" flex={2}><SliderInput value={menu.itemPaddingV} onChange={v => setM("itemPaddingV", Number(v))} min={4} max={24} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Padding góra"><SliderInput value={menu.paddingTop} onChange={v => setM("paddingTop", Number(v))} min={0} max={60} /></StyleField>
+                <StyleField label="Padding dół"><SliderInput value={menu.paddingBottom} onChange={v => setM("paddingBottom", Number(v))} min={0} max={60} /></StyleField>
+                <StyleField label="Padding boki"><SliderInput value={menu.paddingH} onChange={v => setM("paddingH", Number(v))} min={0} max={60} /></StyleField>
+              </StyleRow>
+            </>}
+          </StyleGroup>
+
+          <StyleGroup title="Disclaimer — osobny kod HTML">
+            <StyleRow><StyleField label="Pokaż" flex={1}><ToggleSwitch value={disclaimer.show} onChange={v => setD("show", v)} /></StyleField></StyleRow>
+            {disclaimer.show && <>
+              <StyleRow><StyleField label="Treść" flex={4}><textarea value={disclaimer.text} onChange={e => setD("text", e.target.value)} rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.5 }} /></StyleField></StyleRow>
+              <StyleRow>
+                <StyleField label="Font" flex={3}><Select value={disclaimer.fontFamily} onChange={v => setD("fontFamily", v)} options={FONT_OPTIONS} /></StyleField>
+                <StyleField label="Rozmiar" flex={2}><SliderInput value={disclaimer.fontSize} onChange={v => setD("fontSize", Number(v))} min={9} max={16} /></StyleField>
+                <StyleField label="Grubość" flex={2}><Select value={disclaimer.fontWeight} onChange={v => setD("fontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Kolor" flex={2}><ColorInput value={disclaimer.color} onChange={v => setD("color", v)} /></StyleField>
+                <StyleField label="Letter spacing" flex={2}><SliderInput value={disclaimer.letterSpacing} onChange={v => setD("letterSpacing", Number(v))} min={-2} max={10} step={0.5} /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Padding góra"><SliderInput value={disclaimer.paddingTop} onChange={v => setD("paddingTop", Number(v))} min={0} max={60} /></StyleField>
+                <StyleField label="Padding dół"><SliderInput value={disclaimer.paddingBottom} onChange={v => setD("paddingBottom", Number(v))} min={0} max={60} /></StyleField>
+                <StyleField label="Padding boki"><SliderInput value={disclaimer.paddingH} onChange={v => setD("paddingH", Number(v))} min={0} max={60} /></StyleField>
+              </StyleRow>
+            </>}
+          </StyleGroup>
+
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0, padding: "20px", position: "sticky", top: "0", alignSelf: "flex-start" }}>
+          <PreviewFrame html={htmlAll} title="Blok promo" width={720} />
+        </div>
 
       </div>
     </div>
