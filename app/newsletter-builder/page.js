@@ -722,6 +722,249 @@ function Block5DuoImages({ duo, setDuo }) {
   );
 }
 
+
+// ─── BLOK 6 — BLOK PROMO ────────────────────────────────────────────────────
+
+const defaultPromo = {
+  badge: "+Promo",
+  badgeShow: true,
+  badgeBg: "#1a1a1a",
+  badgeColor: "#ffffff",
+  badgeRadius: 20,
+  headline: "15% extra na początek wiosny 🌸",
+  headlineFontFamily: "'Playfair Display', serif",
+  headlineFontSize: 26,
+  headlineFontWeight: "700",
+  headlineColor: "#1a1a1a",
+  subtitle: "Przy zamówieniu za min 200 zł",
+  subtitleShow: true,
+  subtitleFontFamily: "'Open Sans', sans-serif",
+  subtitleFontSize: 15,
+  subtitleColor: "#444444",
+  promoCodeShow: true,
+  promoCodeLabel: "z kodem*:",
+  promoCode: "WIOSNA15",
+  promoCodeFontSize: 22,
+  promoCodeFontWeight: "700",
+  promoCodeColor: "#1a1a1a",
+  promoCodeLabelColor: "#888888",
+  buttonShow: true,
+  buttonText: "Skorzystaj →",
+  buttonLink: "https://nadwyraz.com/",
+  buttonColor: "#1a1a1a",
+  buttonFontFamily: "'Open Sans', sans-serif",
+  buttonFontSize: 14,
+  menuShow: true,
+  menuItems: [
+    { label: "Koszulki", link: "https://nadwyraz.com/" },
+    { label: "Skarpety", link: "https://nadwyraz.com/" },
+    { label: "Bluzy", link: "https://nadwyraz.com/" },
+    { label: "Akcesoria", link: "https://nadwyraz.com/" },
+  ],
+  menuColor: "#1a1a1a",
+  menuFontSize: 13,
+  menuBorderColor: "#e0dbd4",
+  paddingTop: 24,
+  paddingBottom: 24,
+  paddingH: 24,
+  bgColor: "#ffffff",
+};
+
+function generatePromoHTML(p) {
+  const fontImports = [
+    p.headlineFontFamily.includes("Playfair") ? "Playfair+Display:wght@400;700" : null,
+    p.headlineFontFamily.includes("DM Serif") ? "DM+Serif+Display" : null,
+    p.subtitleFontFamily.includes("Open Sans") || p.buttonFontFamily.includes("Open Sans") ? "Open+Sans:wght@400;700" : null,
+  ].filter(Boolean);
+  const fontLink = fontImports.length ? `<link href="https://fonts.googleapis.com/css2?family=${fontImports.join("&family=")}&display=swap" rel="stylesheet">` : "";
+
+  const badgeHTML = p.badgeShow ? `<p style="display:inline-block;background:${p.badgeBg};color:${p.badgeColor};font-family:'Open Sans',sans-serif;font-size:11px;font-weight:700;padding:3px 10px;border-radius:${p.badgeRadius}px;margin:0 0 10px 0;">${p.badge}</p>` : "";
+
+  const headlineHTML = `<p style="font-family:${p.headlineFontFamily};font-size:${p.headlineFontSize}px;font-weight:${p.headlineFontWeight};color:${p.headlineColor};margin:0 0 6px 0;line-height:1.3;">${p.headline}</p>`;
+
+  const subtitleHTML = p.subtitleShow ? `<p style="font-family:${p.subtitleFontFamily};font-size:${p.subtitleFontSize}px;color:${p.subtitleColor};margin:0 0 14px 0;line-height:1.5;">${p.subtitle}</p>` : "";
+
+  const promoHTML = p.promoCodeShow ? `<p style="font-family:'Open Sans',sans-serif;font-size:12px;color:${p.promoCodeLabelColor};margin:0 0 4px 0;">${p.promoCodeLabel}</p>
+<p style="font-family:'Open Sans',sans-serif;font-size:${p.promoCodeFontSize}px;font-weight:${p.promoCodeFontWeight};color:${p.promoCodeColor};margin:0 0 16px 0;letter-spacing:1px;">${p.promoCode}</p>` : "";
+
+  const buttonHTML = p.buttonShow ? `<p style="margin:0 0 0 0;"><a href="${p.buttonLink}" style="font-family:${p.buttonFontFamily};font-size:${p.buttonFontSize}px;font-weight:700;color:${p.buttonColor};text-decoration:none;">${p.buttonText}</a></p>` : "";
+
+  const menuHTML = p.menuShow && p.menuItems.length ? `<table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:16px;border-top:1px solid ${p.menuBorderColor};">
+  ${p.menuItems.map((item, i) => `<tr>
+    <td width="50%" style="padding:10px 0;border-bottom:1px solid ${p.menuBorderColor};${i % 2 === 1 ? `border-left:1px solid ${p.menuBorderColor};padding-left:16px;` : ""}">
+      <a href="${item.link}" style="font-family:'Open Sans',sans-serif;font-size:${p.menuFontSize}px;color:${p.menuColor};text-decoration:none;font-weight:400;">${item.label} ›</a>
+    </td>
+    ${i % 2 === 0 && p.menuItems[i+1] ? "" : ""}`).filter((_, i) => i % 2 === 0).map((_, i) => {
+      const left = p.menuItems[i*2];
+      const right = p.menuItems[i*2+1];
+      return `<tr>
+    <td width="50%" style="padding:10px 0;border-bottom:1px solid ${p.menuBorderColor};"><a href="${left.link}" style="font-family:'Open Sans',sans-serif;font-size:${p.menuFontSize}px;color:${p.menuColor};text-decoration:none;">${left.label} ›</a></td>
+    ${right ? `<td width="50%" style="padding:10px 0 10px 16px;border-bottom:1px solid ${p.menuBorderColor};border-left:1px solid ${p.menuBorderColor};"><a href="${right.link}" style="font-family:'Open Sans',sans-serif;font-size:${p.menuFontSize}px;color:${p.menuColor};text-decoration:none;">${right.label} ›</a></td>` : "<td></td>"}
+  </tr>`}).join("\n")}
+</table>` : "";
+
+  return `${fontLink}
+<table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" style="background:${p.bgColor};">
+  <tr><td style="padding:${p.paddingTop}px ${p.paddingH}px ${p.paddingBottom}px ${p.paddingH}px;">
+    ${badgeHTML}
+    ${headlineHTML}
+    ${subtitleHTML}
+    ${promoHTML}
+    ${buttonHTML}
+    ${menuHTML}
+  </td></tr>
+</table>`;
+}
+
+function MenuItemEditor({ items, onChange, inputStyle, t }) {
+  const add = () => onChange([...items, { label: "Nowa kategoria", link: "https://nadwyraz.com/" }]);
+  const remove = (i) => onChange(items.filter((_, idx) => idx !== i));
+  const update = (i, key, val) => onChange(items.map((item, idx) => idx === i ? { ...item, [key]: val } : item));
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      {items.map((item, i) => (
+        <div key={i} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <input value={item.label} onChange={e => update(i, "label", e.target.value)} placeholder="Nazwa" style={{ ...inputStyle, flex: 1 }} />
+          <input value={item.link} onChange={e => update(i, "link", e.target.value)} placeholder="Link" style={{ ...inputStyle, flex: 2 }} />
+          <button onClick={() => remove(i)} style={{ background: "none", border: "1px solid #f5c0c0", borderRadius: "6px", color: "#cc0000", cursor: "pointer", padding: "6px 10px", fontSize: "11px" }}>✕</button>
+        </div>
+      ))}
+      <button onClick={add} style={{ background: "none", border: "1px solid #e8e4de", borderRadius: "6px", padding: "7px", fontSize: "11px", cursor: "pointer", color: "#888" }}>+ Dodaj pozycję menu</button>
+    </div>
+  );
+}
+
+function Block6Promo({ promo, setPromo }) {
+  const set = (key, val) => setPromo(prev => ({ ...prev, [key]: val }));
+  const html = generatePromoHTML(promo);
+
+  return (
+    <Section title="Blok promo" number="6" html={html} previewTitle="Blok promo" previewWidth={720}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+
+        {/* BADGE */}
+        <StyleGroup title="Etykieta / Badge">
+          <StyleRow>
+            <StyleField label="Pokaż badge" flex={1}>
+              <div onClick={() => set("badgeShow", !promo.badgeShow)} style={{ width: "34px", height: "18px", borderRadius: "9px", background: promo.badgeShow ? "#b8763a" : "#ddd", position: "relative", cursor: "pointer" }}>
+                <div style={{ position: "absolute", top: "1px", left: promo.badgeShow ? "17px" : "1px", width: "16px", height: "16px", borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+              </div>
+            </StyleField>
+          </StyleRow>
+          {promo.badgeShow && <StyleRow>
+            <StyleField label="Tekst badge" flex={3}><input value={promo.badge} onChange={e => set("badge", e.target.value)} style={inputStyle} /></StyleField>
+            <StyleField label="Tło badge" flex={2}><ColorInput value={promo.badgeBg} onChange={v => set("badgeBg", v)} /></StyleField>
+            <StyleField label="Kolor tekstu" flex={2}><ColorInput value={promo.badgeColor} onChange={v => set("badgeColor", v)} /></StyleField>
+            <StyleField label="Zaokrąglenie" flex={2}><SliderInput value={promo.badgeRadius} onChange={v => set("badgeRadius", Number(v))} min={0} max={30} /></StyleField>
+          </StyleRow>}
+        </StyleGroup>
+
+        {/* NAGŁÓWEK */}
+        <StyleGroup title="Nagłówek">
+          <StyleRow>
+            <StyleField label="Tekst" flex={4}><input value={promo.headline} onChange={e => set("headline", e.target.value)} style={inputStyle} /></StyleField>
+          </StyleRow>
+          <StyleRow>
+            <StyleField label="Font" flex={3}>
+              <Select value={promo.headlineFontFamily} onChange={v => set("headlineFontFamily", v)} options={[
+                { value: "'Playfair Display', serif", label: "Playfair Display" },
+                { value: "'DM Serif Display', serif", label: "DM Serif Display" },
+                { value: "'Open Sans', sans-serif", label: "Open Sans" },
+                { value: "Georgia, serif", label: "Georgia" },
+                { value: "arial, helvetica, sans-serif", label: "Arial" },
+              ]} />
+            </StyleField>
+            <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.headlineFontSize} onChange={v => set("headlineFontSize", Number(v))} min={14} max={48} /></StyleField>
+            <StyleField label="Grubość" flex={2}>
+              <Select value={promo.headlineFontWeight} onChange={v => set("headlineFontWeight", v)} options={[{ value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} />
+            </StyleField>
+            <StyleField label="Kolor" flex={2}><ColorInput value={promo.headlineColor} onChange={v => set("headlineColor", v)} /></StyleField>
+          </StyleRow>
+        </StyleGroup>
+
+        {/* PODTYTUŁ */}
+        <StyleGroup title="Podtytuł">
+          <StyleRow>
+            <StyleField label="Pokaż" flex={1}>
+              <div onClick={() => set("subtitleShow", !promo.subtitleShow)} style={{ width: "34px", height: "18px", borderRadius: "9px", background: promo.subtitleShow ? "#b8763a" : "#ddd", position: "relative", cursor: "pointer" }}>
+                <div style={{ position: "absolute", top: "1px", left: promo.subtitleShow ? "17px" : "1px", width: "16px", height: "16px", borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+              </div>
+            </StyleField>
+          </StyleRow>
+          {promo.subtitleShow && <StyleRow>
+            <StyleField label="Tekst" flex={4}><input value={promo.subtitle} onChange={e => set("subtitle", e.target.value)} style={inputStyle} /></StyleField>
+            <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.subtitleFontSize} onChange={v => set("subtitleFontSize", Number(v))} min={11} max={24} /></StyleField>
+            <StyleField label="Kolor" flex={2}><ColorInput value={promo.subtitleColor} onChange={v => set("subtitleColor", v)} /></StyleField>
+          </StyleRow>}
+        </StyleGroup>
+
+        {/* KOD PROMO */}
+        <StyleGroup title="Kod promocyjny">
+          <StyleRow>
+            <StyleField label="Pokaż" flex={1}>
+              <div onClick={() => set("promoCodeShow", !promo.promoCodeShow)} style={{ width: "34px", height: "18px", borderRadius: "9px", background: promo.promoCodeShow ? "#b8763a" : "#ddd", position: "relative", cursor: "pointer" }}>
+                <div style={{ position: "absolute", top: "1px", left: promo.promoCodeShow ? "17px" : "1px", width: "16px", height: "16px", borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+              </div>
+            </StyleField>
+          </StyleRow>
+          {promo.promoCodeShow && <>
+            <StyleRow>
+              <StyleField label="Label przed kodem" flex={3}><input value={promo.promoCodeLabel} onChange={e => set("promoCodeLabel", e.target.value)} style={inputStyle} /></StyleField>
+              <StyleField label="Kolor labela" flex={2}><ColorInput value={promo.promoCodeLabelColor} onChange={v => set("promoCodeLabelColor", v)} /></StyleField>
+            </StyleRow>
+            <StyleRow>
+              <StyleField label="Kod" flex={3}><input value={promo.promoCode} onChange={e => set("promoCode", e.target.value)} style={inputStyle} /></StyleField>
+              <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.promoCodeFontSize} onChange={v => set("promoCodeFontSize", Number(v))} min={14} max={36} /></StyleField>
+              <StyleField label="Kolor" flex={2}><ColorInput value={promo.promoCodeColor} onChange={v => set("promoCodeColor", v)} /></StyleField>
+            </StyleRow>
+          </>}
+        </StyleGroup>
+
+        {/* PRZYCISK */}
+        <StyleGroup title="Przycisk / Link">
+          <StyleRow>
+            <StyleField label="Pokaż" flex={1}>
+              <div onClick={() => set("buttonShow", !promo.buttonShow)} style={{ width: "34px", height: "18px", borderRadius: "9px", background: promo.buttonShow ? "#b8763a" : "#ddd", position: "relative", cursor: "pointer" }}>
+                <div style={{ position: "absolute", top: "1px", left: promo.buttonShow ? "17px" : "1px", width: "16px", height: "16px", borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+              </div>
+            </StyleField>
+          </StyleRow>
+          {promo.buttonShow && <StyleRow>
+            <StyleField label="Tekst" flex={3}><input value={promo.buttonText} onChange={e => set("buttonText", e.target.value)} style={inputStyle} /></StyleField>
+            <StyleField label="Link" flex={3}><input value={promo.buttonLink} onChange={e => set("buttonLink", e.target.value)} style={inputStyle} /></StyleField>
+            <StyleField label="Kolor" flex={2}><ColorInput value={promo.buttonColor} onChange={v => set("buttonColor", v)} /></StyleField>
+          </StyleRow>}
+        </StyleGroup>
+
+        {/* MENU */}
+        <StyleGroup title="Menu kategorii">
+          <StyleRow>
+            <StyleField label="Pokaż menu" flex={1}>
+              <div onClick={() => set("menuShow", !promo.menuShow)} style={{ width: "34px", height: "18px", borderRadius: "9px", background: promo.menuShow ? "#b8763a" : "#ddd", position: "relative", cursor: "pointer" }}>
+                <div style={{ position: "absolute", top: "1px", left: promo.menuShow ? "17px" : "1px", width: "16px", height: "16px", borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+              </div>
+            </StyleField>
+            <StyleField label="Kolor tekstu" flex={2}><ColorInput value={promo.menuColor} onChange={v => set("menuColor", v)} /></StyleField>
+            <StyleField label="Kolor linii" flex={2}><ColorInput value={promo.menuBorderColor} onChange={v => set("menuBorderColor", v)} /></StyleField>
+            <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.menuFontSize} onChange={v => set("menuFontSize", Number(v))} min={10} max={18} /></StyleField>
+          </StyleRow>
+          {promo.menuShow && <MenuItemEditor items={promo.menuItems} onChange={v => set("menuItems", v)} inputStyle={inputStyle} />}
+        </StyleGroup>
+
+        {/* PADDING */}
+        <StyleGroup title="Odstępy">
+          <StyleRow>
+            <StyleField label="Padding góra"><SliderInput value={promo.paddingTop} onChange={v => set("paddingTop", Number(v))} min={0} max={80} /></StyleField>
+            <StyleField label="Padding dół"><SliderInput value={promo.paddingBottom} onChange={v => set("paddingBottom", Number(v))} min={0} max={80} /></StyleField>
+            <StyleField label="Padding boki"><SliderInput value={promo.paddingH} onChange={v => set("paddingH", Number(v))} min={0} max={60} /></StyleField>
+          </StyleRow>
+        </StyleGroup>
+
+      </div>
+    </Section>
+  );
+}
+
 // ─── MAIN ────────────────────────────────────────────────────────────────────
 
 export default function NewsletterBuilder() {
@@ -730,6 +973,7 @@ export default function NewsletterBuilder() {
   const [products, setProducts] = useState(defaultProducts);
 
   const [duo, setDuo] = useState(defaultDuo);
+  const [promo, setPromo] = useState(defaultPromo);
   const [activeBlock, setActiveBlock] = useState("0");
   const setH = useCallback((key, value) => setHeading(prev => ({ ...prev, [key]: value })), []);
   const handleProductChange = useCallback((i, updated) => setProducts(prev => prev.map((p, idx) => idx === i ? updated : p)), []);
@@ -767,6 +1011,7 @@ export default function NewsletterBuilder() {
           { id: "1", label: "Blok tekstowy" },
           { id: "2", label: "Produkty" },
           { id: "5", label: "Duo grafiki" },
+          { id: "6", label: "Blok promo" },
         ].map(item => (
           <button key={item.id} onClick={() => setActiveBlock(item.id)}
             style={{ display: "block", width: "100%", textAlign: "left", background: activeBlock === item.id ? "#b8763a14" : "none", border: activeBlock === item.id ? "1px solid #b8763a40" : "1px solid transparent", borderRadius: 8, padding: "8px 10px", cursor: "pointer", fontFamily: "inherit", color: activeBlock === item.id ? "#b8763a" : "#7a7570", fontSize: 12, fontWeight: activeBlock === item.id ? 600 : 400 }}>
@@ -850,6 +1095,7 @@ export default function NewsletterBuilder() {
         )}
 
         {activeBlock === "5" && <Block5DuoImages duo={duo} setDuo={setDuo} />}
+        {activeBlock === "6" && <Block6Promo promo={promo} setPromo={setPromo} />}
 
       </div>
       </div>
