@@ -207,6 +207,7 @@ function Section({ title, number, html, previewTitle, previewWidth, children }) 
   const [showCode, setShowCode] = useState(false);
   return (
     <div style={{ background: "#fff", border: "1px solid #e8e4de", borderRadius: "14px", overflow: "hidden" }}>
+      {/* HEADER */}
       <div style={{ padding: "14px 20px", borderBottom: "1px solid #f0ece6", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fafaf8" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: "#1a1a1a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700 }}>{number}</div>
@@ -219,14 +220,21 @@ function Section({ title, number, html, previewTitle, previewWidth, children }) 
           <CopyButton html={html} />
         </div>
       </div>
-      <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
-        {children}
-        <PreviewFrame html={html} title={previewTitle} width={previewWidth || 360} />
-        {showCode && (
-          <div style={{ background: "#1a1a1a", borderRadius: "8px", overflow: "hidden" }}>
-            <pre style={{ margin: 0, padding: "14px", color: "#a8d8a8", fontSize: "11px", lineHeight: 1.6, overflow: "auto", maxHeight: "200px", fontFamily: "monospace" }}>{html}</pre>
-          </div>
-        )}
+      {/* BODY — lewa: kontrolki, prawa: podgląd sticky */}
+      <div style={{ display: "flex", gap: "0", alignItems: "flex-start" }}>
+        {/* LEWA — kontrolki */}
+        <div style={{ flex: "0 0 420px", minWidth: 0, padding: "20px", borderRight: "1px solid #f0ece6", display: "flex", flexDirection: "column", gap: "14px" }}>
+          {children}
+          {showCode && (
+            <div style={{ background: "#1a1a1a", borderRadius: "8px", overflow: "hidden" }}>
+              <pre style={{ margin: 0, padding: "14px", color: "#a8d8a8", fontSize: "11px", lineHeight: 1.6, overflow: "auto", maxHeight: "200px", fontFamily: "monospace" }}>{html}</pre>
+            </div>
+          )}
+        </div>
+        {/* PRAWA — podgląd sticky */}
+        <div style={{ flex: 1, minWidth: 0, padding: "20px", position: "sticky", top: "0", alignSelf: "flex-start" }}>
+          <PreviewFrame html={html} title={previewTitle} width={previewWidth || 360} />
+        </div>
       </div>
     </div>
   );
