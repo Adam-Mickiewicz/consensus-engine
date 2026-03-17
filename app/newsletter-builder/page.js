@@ -268,15 +268,19 @@ function SliderInput({ value, onChange, min, max, step = 1, unit = "px" }) {
 
 function StyleField({ label, children, flex = 1 }) {
   return (
-    <div style={{ flex, minWidth: "120px" }}>
+    <div style={{ flex, minWidth: 0 }}>
       <Label>{label}</Label>
       {children}
     </div>
   );
 }
 
-function StyleRow({ children }) {
-  return <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "10px" }}>{children}</div>;
+function StyleRow({ children, cols = 2 }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: "10px", marginBottom: "10px" }}>
+      {children}
+    </div>
+  );
 }
 
 function StyleGroup({ title, children }) {
