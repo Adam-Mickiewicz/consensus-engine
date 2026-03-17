@@ -1,5 +1,11 @@
 "use client";
 import React, { useState, useCallback, useEffect, useMemo } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 import Nav from "../components/Nav";
 
 function generateHeadingHTML(h) {
@@ -1161,6 +1167,80 @@ export default function NewsletterBuilder() {
   const [promoMenu, setPromoMenu] = useState(defaultPromoMenu);
   const [promoDisclaimer, setPromoDisclaimer] = useState(defaultPromoDisclaimer);
   const [activeBlock, setActiveBlock] = useState("0");
+  const [sessions, setSessions] = useState([]);
+  const [sessionName, setSessionName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [saveMsg, setSaveMsg] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
+
+  const getCurrentBlocks = () => ({
+    heading, text, products, duo, promo, promoMenu, promoDisclaimer
+  });
+
+  const loadFromSession = (blocks) => {
+    if (blocks.heading) setHeading(blocks.heading);
+    if (blocks.text) setText(blocks.text);
+    if (blocks.products) setProducts(blocks.products);
+    if (blocks.duo) setDuo(blocks.duo);
+    if (blocks.promo) setPromo(blocks.promo);
+    if (blocks.promoMenu) setPromoMenu(blocks.promoMenu);
+    if (blocks.promoDisclaimer) setPromoDisclaimer(blocks.promoDisclaimer);
+  };
+
+  const saveSession = async () => {
+    if (!sessionName.trim()) { setSaveMsg({ type: "error", text: "Podaj nazwę sesji" }); return; }
+    setSaving(true);
+    setSaveMsg(null);
+    try {
+      const { error } = await supabase.from("newsletter_sessions").insert({
+        name: sessionName.trim(),
+        blocks: getCurrentBlocks(),
+      });
+      if (error) throw error;
+      setSaveMsg({ type: "ok", text: "Zapisano!" });
+      setSessionName("");
+      fetchSessions();
+    } catch (e) {
+      setSaveMsg({ type: "error", text: e.message });
+    } finally {
+      setSaving(false);
+      setTimeout(() => setSaveMsg(null), 3000);
+    }
+  };
+
+  const autoSave = useCallback(async () => {
+    try {
+      await supabase.from("newsletter_sessions").insert({
+        name: "Auto-zapis " + new Date().toLocaleString("pl-PL"),
+        blocks: getCurrentBlocks(),
+      });
+    } catch (e) { console.error("Auto-zapis błąd:", e); }
+  }, [heading, text, products, duo, promo, promoMenu, promoDisclaimer]);
+
+  const fetchSessions = async () => {
+    setLoadingHistory(true);
+    const { data } = await supabase.from("newsletter_sessions").select("id,name,created_at").order("updated_at", { ascending: false }).limit(20);
+    setSessions(data || []);
+    setLoadingHistory(false);
+  };
+
+  const loadSession = async (id) => {
+    const { data } = await supabase.from("newsletter_sessions").select("blocks").eq("id", id).single();
+    if (data?.blocks) { loadFromSession(data.blocks); setSaveMsg({ type: "ok", text: "Wczytano sesję!" }); setTimeout(() => setSaveMsg(null), 2000); }
+  };
+
+  const deleteSession = async (id) => {
+    await supabase.from("newsletter_sessions").delete().eq("id", id);
+    fetchSessions();
+  };
+
+  useEffect(() => { fetchSessions(); }, []);
+
+  useEffect(() => {
+    const id = setInterval(autoSave, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [autoSave]);
   const setH = useCallback((key, value) => setHeading(prev => ({ ...prev, [key]: value })), []);
   const handleProductChange = useCallback((i, updated) => setProducts(prev => prev.map((p, idx) => idx === i ? updated : p)), []);
 
@@ -1204,6 +1284,60 @@ export default function NewsletterBuilder() {
             {item.label}
           </button>
         ))}
+
+        {/* ZAPIS / HISTORIA */}
+        <div style={{ borderTop: "1px solid #e0dbd4", paddingTop: 12, marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ fontSize: 10, color: "#9a9590", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4, paddingLeft: 4 }}>Sesje</div>
+
+          {saveMsg && (
+            <div style={{ fontSize: 11, padding: "4px 8px", borderRadius: 6, background: saveMsg.type === "ok" ? "#e8f8ee" : "#fff0f0", color: saveMsg.type === "ok" ? "#2d7a4f" : "#cc0000", fontFamily: "sans-serif" }}>
+              {saveMsg.text}
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 4 }}>
+            <input
+              value={sessionName}
+              onChange={e => setSessionName(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && saveSession()}
+              placeholder="Nazwa sesji..."
+              style={{ flex: 1, fontSize: 11, padding: "5px 7px", border: "1px solid #e0dbd4", borderRadius: 6, fontFamily: "inherit", outline: "none", minWidth: 0 }}
+            />
+            <button onClick={saveSession} disabled={saving} title="Zapisz sesję"
+              style={{ background: saving ? "#ccc" : "#b8763a", color: "#fff", border: "none", borderRadius: 6, padding: "5px 8px", fontSize: 11, cursor: saving ? "default" : "pointer", fontWeight: 700 }}>
+              {saving ? "..." : "💾"}
+            </button>
+          </div>
+
+          <button onClick={() => { setShowHistory(h => !h); if (!showHistory) fetchSessions(); }}
+            style={{ background: "none", border: "1px solid #e0dbd4", borderRadius: 6, padding: "5px 8px", fontSize: 11, cursor: "pointer", color: "#7a7570", textAlign: "left" }}>
+            {showHistory ? "▲ Ukryj historię" : "▼ Historia sesji"}
+          </button>
+
+          {showHistory && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 200, overflowY: "auto" }}>
+              {loadingHistory && <div style={{ fontSize: 11, color: "#aaa", padding: "4px 0" }}>Ładowanie...</div>}
+              {!loadingHistory && sessions.length === 0 && <div style={{ fontSize: 11, color: "#aaa", padding: "4px 0" }}>Brak zapisanych sesji</div>}
+              {sessions.map(s => (
+                <div key={s.id} style={{ background: "#fafaf8", border: "1px solid #e8e4de", borderRadius: 6, padding: "6px 8px", display: "flex", flexDirection: "column", gap: 3 }}>
+                  <div style={{ fontSize: 11, color: "#1a1a1a", fontWeight: 600, lineHeight: 1.3, wordBreak: "break-word" }}>{s.name}</div>
+                  <div style={{ fontSize: 10, color: "#aaa" }}>{new Date(s.created_at).toLocaleString("pl-PL")}</div>
+                  <div style={{ display: "flex", gap: 4, marginTop: 2 }}>
+                    <button onClick={() => loadSession(s.id)}
+                      style={{ flex: 1, background: "#1a1a1a", color: "#fff", border: "none", borderRadius: 4, padding: "3px 0", fontSize: 10, cursor: "pointer" }}>
+                      Wczytaj
+                    </button>
+                    <button onClick={() => deleteSession(s.id)}
+                      style={{ background: "none", border: "1px solid #f5c0c0", color: "#cc0000", borderRadius: 4, padding: "3px 6px", fontSize: 10, cursor: "pointer" }}>
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* MAIN CONTENT */}
