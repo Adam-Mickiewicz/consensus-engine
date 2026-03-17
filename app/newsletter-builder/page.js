@@ -796,6 +796,7 @@ const defaultPromo = {
   promoCodeBgRadius: 8,
   promoCodeBgPaddingV: 8,
   promoCodeBgPaddingH: 16,
+  promoCodeBgMinWidth: 0,
   // Przycisk
   buttonShow: true,
   buttonType: "link",
@@ -872,12 +873,13 @@ function generatePromoHTML(p) {
 
   const subtitleHTML = p.subtitleShow ? `<p style="font-family:${p.subtitleFontFamily};font-size:${p.subtitleFontSize}px;font-weight:${p.subtitleFontWeight};color:${p.subtitleColor};letter-spacing:${p.subtitleLetterSpacing}px;margin:0 0 ${p.subtitlePaddingBottom}px 0;line-height:1.5;">${p.subtitle}</p>` : "";
 
-  const promoInner = p.promoCodeShow ? `<p style="font-family:${p.promoCodeFontFamily};font-size:12px;color:${p.promoCodeLabelColor};margin:0 0 4px 0;">${p.promoCodeLabel}</p>
-<p style="font-family:${p.promoCodeFontFamily};font-size:${p.promoCodeFontSize}px;font-weight:${p.promoCodeFontWeight};color:${p.promoCodeColor};letter-spacing:${p.promoCodeLetterSpacing}px;margin:0;">${p.promoCode}</p>` : "";
-  const promoHTML = p.promoCodeShow ? (p.promoCodeBgShow
-    ? `<div style="display:inline-block;background:${p.promoCodeBg};border-radius:${p.promoCodeBgRadius}px;padding:${p.promoCodeBgPaddingV}px ${p.promoCodeBgPaddingH}px;margin:0 0 ${p.promoCodePaddingBottom}px 0;">${promoInner}</div>`
-    : `<div style="margin:0 0 ${p.promoCodePaddingBottom}px 0;">${promoInner}</div>`
+  const promoLabel = p.promoCodeShow ? `<p style="font-family:${p.promoCodeFontFamily};font-size:12px;color:${p.promoCodeLabelColor};margin:0 0 4px 0;">${p.promoCodeLabel}</p>` : "";
+  const promoCode = p.promoCodeShow ? `<p style="font-family:${p.promoCodeFontFamily};font-size:${p.promoCodeFontSize}px;font-weight:${p.promoCodeFontWeight};color:${p.promoCodeColor};letter-spacing:${p.promoCodeLetterSpacing}px;margin:0;">${p.promoCode}</p>` : "";
+  const promoCodeWrapped = p.promoCodeShow ? (p.promoCodeBgShow
+    ? `<div style="display:inline-block;background:${p.promoCodeBg};border-radius:${p.promoCodeBgRadius}px;padding:${p.promoCodeBgPaddingV}px ${p.promoCodeBgPaddingH}px;min-width:${p.promoCodeBgMinWidth || 0}px;">${promoCode}</div>`
+    : promoCode
   ) : "";
+  const promoHTML = p.promoCodeShow ? `${promoLabel}<div style="margin:0 0 ${p.promoCodePaddingBottom}px 0;">${promoCodeWrapped}</div>` : "";
 
   const buttonHTML = p.buttonShow ? (p.buttonType === "button"
     ? `<div style="padding-bottom:${p.buttonPaddingBottom}px;"><a href="${p.buttonLink}" style="display:inline-block;background-color:${p.buttonBg};color:${p.buttonColor};font-family:${p.buttonFontFamily};font-weight:${p.buttonFontWeight};font-size:${p.buttonFontSize}px;letter-spacing:${p.buttonLetterSpacing}px;padding:${p.buttonPaddingV}px ${p.buttonPaddingH}px;border-radius:${p.buttonRadius}px;border:${p.buttonBorder};text-decoration:none;">${p.buttonText}</a></div>`
@@ -1070,6 +1072,7 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
                 <StyleField label="Border radius" flex={2}><SliderInput value={promo.promoCodeBgRadius} onChange={v => set("promoCodeBgRadius", Number(v))} min={0} max={40} /></StyleField>
                 <StyleField label="Padding góra/dół" flex={2}><SliderInput value={promo.promoCodeBgPaddingV} onChange={v => set("promoCodeBgPaddingV", Number(v))} min={0} max={40} /></StyleField>
                 <StyleField label="Padding boki" flex={2}><SliderInput value={promo.promoCodeBgPaddingH} onChange={v => set("promoCodeBgPaddingH", Number(v))} min={0} max={60} /></StyleField>
+                <StyleField label="Min. szerokość" flex={2}><SliderInput value={promo.promoCodeBgMinWidth || 0} onChange={v => set("promoCodeBgMinWidth", Number(v))} min={0} max={400} /></StyleField>
               </StyleRow>}
             </>}
           </StyleGroup>
