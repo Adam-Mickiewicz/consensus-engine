@@ -223,7 +223,7 @@ function Section({ title, number, html, previewTitle, previewWidth, children }) 
       {/* BODY — lewa: kontrolki, prawa: podgląd sticky */}
       <div style={{ display: "flex", gap: "0", alignItems: "flex-start" }}>
         {/* LEWA — kontrolki */}
-        <div style={{ flex: "0 0 600px", minWidth: 0, padding: "20px", borderRight: "1px solid #f0ece6", display: "flex", flexDirection: "column", gap: "14px" }}>
+        <div style={{ flex: "0 0 600px", minWidth: 0, padding: "20px", borderRight: "1px solid #f0ece6", display: "flex", flexDirection: "column", gap: "14px", overflowY: "auto", maxHeight: "calc(100vh - 150px)" }}>
           {children}
           {showCode && (
             <div style={{ background: "#1a1a1a", borderRadius: "8px", overflow: "hidden" }}>
@@ -232,7 +232,7 @@ function Section({ title, number, html, previewTitle, previewWidth, children }) 
           )}
         </div>
         {/* PRAWA — podgląd sticky */}
-        <div style={{ flex: 1, minWidth: 0, padding: "20px", position: "sticky", top: "0", alignSelf: "flex-start" }}>
+        <div style={{ flex: 1, minWidth: 0, padding: "20px", position: "sticky", top: "0", alignSelf: "flex-start", maxHeight: "calc(100vh - 150px)", overflowY: "auto" }}>
           <PreviewFrame html={html} title={previewTitle} width={previewWidth || 360} />
         </div>
       </div>
@@ -973,7 +973,7 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
 
       <div style={{ display: "flex", alignItems: "flex-start" }}>
 
-        <div style={{ flex: "0 0 600px", minWidth: 0, padding: "20px", borderRight: "1px solid #f0ece6", display: "flex", flexDirection: "column", gap: "14px" }}>
+        <div style={{ flex: "0 0 600px", minWidth: 0, padding: "20px", borderRight: "1px solid #f0ece6", display: "flex", flexDirection: "column", gap: "14px", overflowY: "auto", maxHeight: "calc(100vh - 150px)" }}>
 
           <SectionCode title="Kod — główny blok" html={htmlMain} />
           <SectionCode title="Kod — menu kategorii" html={htmlMenu} />
@@ -1145,7 +1145,7 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
 
         </div>
 
-        <div style={{ flex: 1, minWidth: 0, padding: "20px", position: "sticky", top: "0", alignSelf: "flex-start" }}>
+        <div style={{ flex: 1, minWidth: 0, padding: "20px", position: "sticky", top: "0", alignSelf: "flex-start", maxHeight: "calc(100vh - 150px)", overflowY: "auto" }}>
           <PreviewFrame html={htmlAll} title="Blok promo" width={720} />
         </div>
 
@@ -1266,7 +1266,7 @@ export default function NewsletterBuilder() {
         <h1 style={{ fontFamily: "var(--font-dm-serif), 'DM Serif Display', Georgia, serif", fontSize: 28, fontWeight: 400, color: "#1a1814", margin: "0 0 4px", lineHeight: 1.2 }}>📧 Newsletter Builder</h1>
         <p style={{ fontSize: 13, color: "#7a7570", margin: 0, fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>Buduj emaile blok po bloku — Gmail-safe HTML gotowy do wklejenia w ESP.</p>
       </div>
-      <div style={{ display: "flex", flex: 1 }}>
+      <div style={{ display: "flex", flex: 1, height: "calc(100vh - 89px)", overflow: "hidden" }}>
 
       {/* SIDEBAR */}
       <div style={{ width: 180, minWidth: 180, background: "#ffffff", borderRight: "1px solid #e0dbd4", padding: "16px 12px", display: "flex", flexDirection: "column", gap: 4, position: "sticky", top: 0, height: "100vh", overflowY: "auto", fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
@@ -1340,7 +1340,7 @@ export default function NewsletterBuilder() {
       </div>
 
       {/* MAIN CONTENT */}
-      <div style={{ flex: 1, padding: "28px 24px", display: "flex", flexDirection: "column", gap: "20px", overflowY: "auto" }}>
+      <div style={{ flex: 1, padding: "28px 24px", display: "flex", flexDirection: "column", gap: "20px", overflowY: "auto", height: "100%" }}>
 
         {activeBlock === "0" && <Section title="Nagłówek" number="0" html={generateHeadingHTML(heading)} previewTitle="Nagłówek" previewWidth={720}>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
