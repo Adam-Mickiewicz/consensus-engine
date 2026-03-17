@@ -768,6 +768,10 @@ const defaultPromo = {
   paddingBottom: 24,
   paddingH: 24,
   bgColor: "#ffffff",
+  disclaimerShow: false,
+  disclaimer: "*Promocja ważna do odwołania. Nie łączy się z innymi ofertami.",
+  disclaimerFontSize: 11,
+  disclaimerColor: "#888888",
 };
 
 function generatePromoHTML(p) {
@@ -803,6 +807,7 @@ function generatePromoHTML(p) {
   </tr>`}).join("\n")}
 </table>` : "";
 
+  const disclaimerHTML = p.disclaimerShow ? `<p style="font-family:'Open Sans',sans-serif;font-size:${p.disclaimerFontSize}px;color:${p.disclaimerColor};margin:16px 0 0 0;line-height:1.5;">${p.disclaimer}</p>` : "";
   return `${fontLink}
 <table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" style="background:${p.bgColor};">
   <tr><td style="padding:${p.paddingTop}px ${p.paddingH}px ${p.paddingBottom}px ${p.paddingH}px;">
@@ -812,6 +817,7 @@ function generatePromoHTML(p) {
     ${promoHTML}
     ${buttonHTML}
     ${menuHTML}
+    ${disclaimerHTML}
   </td></tr>
 </table>`;
 }
@@ -949,6 +955,26 @@ function Block6Promo({ promo, setPromo }) {
             <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.menuFontSize} onChange={v => set("menuFontSize", Number(v))} min={10} max={18} /></StyleField>
           </StyleRow>
           {promo.menuShow && <MenuItemEditor items={promo.menuItems} onChange={v => set("menuItems", v)} inputStyle={inputStyle} />}
+        </StyleGroup>
+
+        {/* DISCLAIMER */}
+        <StyleGroup title="Disclaimer">
+          <StyleRow>
+            <StyleField label="Pokaż disclaimer" flex={1}>
+              <div onClick={() => set("disclaimerShow", !promo.disclaimerShow)} style={{ width: "34px", height: "18px", borderRadius: "9px", background: promo.disclaimerShow ? "#b8763a" : "#ddd", position: "relative", cursor: "pointer" }}>
+                <div style={{ position: "absolute", top: "1px", left: promo.disclaimerShow ? "17px" : "1px", width: "16px", height: "16px", borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+              </div>
+            </StyleField>
+          </StyleRow>
+          {promo.disclaimerShow && <>
+            <StyleRow>
+              <StyleField label="Treść" flex={4}><textarea value={promo.disclaimer} onChange={e => set("disclaimer", e.target.value)} rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.5 }} /></StyleField>
+            </StyleRow>
+            <StyleRow>
+              <StyleField label="Rozmiar" flex={2}><SliderInput value={promo.disclaimerFontSize} onChange={v => set("disclaimerFontSize", Number(v))} min={9} max={16} /></StyleField>
+              <StyleField label="Kolor" flex={2}><ColorInput value={promo.disclaimerColor} onChange={v => set("disclaimerColor", v)} /></StyleField>
+            </StyleRow>
+          </>}
         </StyleGroup>
 
         {/* PADDING */}
