@@ -855,8 +855,8 @@ function generatePromoHTML(p) {
   ) : "";
 
   return `${fontLink}
-<table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
-  <tr><td style="padding:${p.paddingTop}px ${p.paddingH}px ${p.paddingBottom}px ${p.paddingH}px;">
+<table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" style="background:transparent;">
+  <tr><td style="padding:${p.paddingTop}px ${p.paddingH}px ${p.paddingBottom}px ${p.paddingH}px;background:transparent;">
     ${badgeHTML}
     ${headlineHTML}
     ${subtitleHTML}
@@ -878,7 +878,7 @@ function generatePromoMenuHTML(m) {
   </tr>`);
   }
   return `${fontLink}
-<table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" style="padding:${m.paddingTop}px ${m.paddingH}px ${m.paddingBottom}px ${m.paddingH}px;border-top:1px solid ${m.borderColor};">
+<table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" style="background:transparent;padding:${m.paddingTop}px ${m.paddingH}px ${m.paddingBottom}px ${m.paddingH}px;border-top:1px solid ${m.borderColor};">
 ${rows.join("\n")}
 </table>`;
 }
