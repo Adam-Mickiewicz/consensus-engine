@@ -1012,9 +1012,9 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
         </div>
       </div>
 
-      <div style={{ display: "flex", alignItems: "flex-start" }}>
+      <div>
 
-        <div style={{ flex: "0 0 600px", minWidth: 0, padding: "20px", borderRight: "1px solid #f0ece6", display: "flex", flexDirection: "column", gap: "14px" }}>
+        <div style={{ width: "100%", minWidth: 0, padding: "20px", borderRight: "1px solid #f0ece6", display: "flex", flexDirection: "column", gap: "14px" }}>
 
           <StyleGroup title="Etykieta / Badge">
             <StyleRow><StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.badgeShow} onChange={v => set("badgeShow", v)} /></StyleField></StyleRow>
