@@ -232,8 +232,10 @@ function Section({ title, number, html, previewTitle, previewWidth, children }) 
           )}
         </div>
         {/* PRAWA — podgląd sticky */}
-        <div style={{ flex: 1, minWidth: 0, padding: "20px", position: "sticky", top: "0", alignSelf: "flex-start", maxHeight: "calc(100vh - 150px)", overflowY: "auto" }}>
-          <PreviewFrame html={html} title={previewTitle} width={previewWidth || 360} />
+        <div style={{ flex: 1, minWidth: 0, padding: "20px" }}>
+          <div style={{ position: "sticky", top: "20px" }}>
+            <PreviewFrame html={html} title={previewTitle} width={previewWidth || 360} />
+          </div>
         </div>
       </div>
     </div>
@@ -1169,8 +1171,10 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
 
         </div>
 
-        <div style={{ flex: 1, minWidth: 0, padding: "20px", position: "sticky", top: "0", alignSelf: "flex-start", maxHeight: "calc(100vh - 150px)", overflowY: "auto" }}>
-          <PreviewFrame html={htmlAll} title="Blok promo" width={720} />
+        <div style={{ flex: 1, minWidth: 0, padding: "20px" }}>
+          <div style={{ position: "sticky", top: "20px" }}>
+            <PreviewFrame html={htmlAll} title="Blok promo" width={720} />
+          </div>
         </div>
 
       </div>
