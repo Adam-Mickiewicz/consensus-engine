@@ -1294,7 +1294,7 @@ export default function NewsletterBuilder() {
       <div style={{ display: "flex", flex: 1 }}>
 
       {/* SIDEBAR */}
-      <div style={{ width: 180, minWidth: 180, background: "#ffffff", borderRight: "1px solid #e0dbd4", padding: "16px 12px", display: "flex", flexDirection: "column", gap: 4, position: "sticky", top: 0, height: "100vh", overflowY: "auto", fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
+      <div style={{ width: 180, minWidth: 180, background: "#ffffff", borderRight: "1px solid #e0dbd4", padding: "16px 12px", display: "flex", flexDirection: "column", gap: 4, position: "fixed", top: 0, left: 0, height: "100vh", overflowY: "auto", fontFamily: "var(--font-geist-sans), system-ui, sans-serif", zIndex: 20 }}>
         <div style={{ fontSize: 10, color: "#9a9590", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8, paddingLeft: 4 }}>Bloki</div>
         {[
           { id: "0", label: "Nagłówek" },
@@ -1365,7 +1365,7 @@ export default function NewsletterBuilder() {
       </div>
 
       {/* MAIN CONTENT */}
-      <div style={{ flex: 1, padding: "28px 24px", display: "flex", flexDirection: "column", gap: "20px" }}>
+      <div style={{ flex: 1, padding: "28px 24px", display: "flex", flexDirection: "column", gap: "20px", marginLeft: 180 }}>
 
         {activeBlock === "0" && <Section title="Nagłówek" number="0" html={generateHeadingHTML(heading)} previewTitle="Nagłówek" previewWidth={720}>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
