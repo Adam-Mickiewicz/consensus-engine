@@ -234,7 +234,7 @@ function Section({ title, number, html, children }) {
 
 function PreviewIframe({ activeBlock, heading, text, products, duo, promo, promoMenu, promoDisclaimer }) {
   const [mobile, setMobile] = React.useState(false);
-  const [bg, setBg] = React.useState("#e8e4de");
+  const [bg, setBg] = React.useState("#ffffff");
 
   const getHtml = () => {
     if (activeBlock === "0") return generateHeadingHTML(heading);
@@ -1268,6 +1268,8 @@ function NewsletterBuilderInner() {
 
   const fetchSessions = async () => {
     setLoadingHistory(true);
+    // Usuń stare auto-zapisy
+    await supabase.from("newsletter_sessions").delete().ilike("name", "Auto-zapis%");
     const { data } = await supabase.from("newsletter_sessions").select("id,name,created_at").order("updated_at", { ascending: false }).limit(20);
     setSessions(data || []);
     setLoadingHistory(false);
