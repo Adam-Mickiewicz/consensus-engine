@@ -989,10 +989,6 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
 
         <div style={{ flex: "0 0 600px", minWidth: 0, padding: "20px", borderRight: "1px solid #f0ece6", display: "flex", flexDirection: "column", gap: "14px" }}>
 
-          <SectionCode title="Kod — główny blok" html={htmlMain} />
-          <SectionCode title="Kod — menu kategorii" html={htmlMenu} />
-          <SectionCode title="Kod — disclaimer" html={htmlDisclaimer} />
-
           <StyleGroup title="Etykieta / Badge">
             <StyleRow><StyleField label="Pokaż" flex={1}><ToggleSwitch value={promo.badgeShow} onChange={v => set("badgeShow", v)} /></StyleField></StyleRow>
             {promo.badgeShow && <>
@@ -1169,9 +1165,12 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
 
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ position: "fixed", top: "120px", right: "24px", width: "calc(100vw - 820px)", maxWidth: "700px", zIndex: 10 }}>
+        <div style={{ flex: 1, minWidth: 0, padding: "20px", position: "sticky", top: "20px", alignSelf: "flex-start" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <PreviewFrame html={htmlAll} title="Blok promo" width={720} />
+            <SectionCode title="Kod — główny blok" html={htmlMain} />
+            <SectionCode title="Kod — menu kategorii" html={htmlMenu} />
+            <SectionCode title="Kod — disclaimer" html={htmlDisclaimer} />
           </div>
         </div>
 
