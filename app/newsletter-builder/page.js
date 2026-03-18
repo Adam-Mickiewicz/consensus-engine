@@ -232,10 +232,8 @@ function Section({ title, number, html, previewTitle, previewWidth, children }) 
           )}
         </div>
         {/* PRAWA — podgląd sticky */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ position: "fixed", top: "120px", right: "24px", width: "calc(100vw - 820px)", maxWidth: "700px", zIndex: 10 }}>
-            <PreviewFrame html={html} title={previewTitle} width={previewWidth || 360} />
-          </div>
+        <div style={{ flex: 1, minWidth: 0, padding: "20px", position: "sticky", top: "20px", alignSelf: "flex-start" }}>
+          <PreviewFrame html={html} title={previewTitle} width={previewWidth || 360} />
         </div>
       </div>
     </div>
