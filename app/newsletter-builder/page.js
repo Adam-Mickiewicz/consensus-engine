@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 
@@ -1209,7 +1209,7 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
 
 // ─── MAIN ────────────────────────────────────────────────────────────────────
 
-export default function NewsletterBuilder() {
+function NewsletterBuilderInner() {
   const [heading, setHeading] = useState(defaultHeading);
   const [text, setText] = useState(defaultText);
   const [products, setProducts] = useState(defaultProducts);
@@ -1471,4 +1471,8 @@ export default function NewsletterBuilder() {
     </div>
     </>
   );
+}
+
+export default function NewsletterBuilder() {
+  return <Suspense fallback={null}><NewsletterBuilderInner /></Suspense>;
 }
