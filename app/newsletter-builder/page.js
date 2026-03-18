@@ -203,11 +203,10 @@ function CopyButton({ html }) {
   );
 }
 
-function Section({ title, number, html, previewTitle, previewWidth, children }) {
+function Section({ title, number, html, children }) {
   const [showCode, setShowCode] = useState(false);
   return (
     <div style={{ background: "#fff", border: "1px solid #e8e4de", borderRadius: "14px", overflow: "hidden" }}>
-      {/* HEADER */}
       <div style={{ padding: "14px 20px", borderBottom: "1px solid #f0ece6", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fafaf8" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: "#1a1a1a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700 }}>{number}</div>
@@ -220,25 +219,53 @@ function Section({ title, number, html, previewTitle, previewWidth, children }) 
           <CopyButton html={html} />
         </div>
       </div>
-      {/* BODY — lewa: kontrolki, prawa: podgląd sticky */}
-      <div style={{ display: "flex", gap: "0", alignItems: "flex-start" }}>
-        {/* LEWA — kontrolki */}
-        <div style={{ flex: "0 0 600px", minWidth: 0, padding: "20px", borderRight: "1px solid #f0ece6", display: "flex", flexDirection: "column", gap: "14px", overflowY: "auto", maxHeight: "calc(100vh - 150px)" }}>
-          {children}
-          {showCode && (
-            <div style={{ background: "#1a1a1a", borderRadius: "8px", overflow: "hidden" }}>
-              <pre style={{ margin: 0, padding: "14px", color: "#a8d8a8", fontSize: "11px", lineHeight: 1.6, overflow: "auto", maxHeight: "200px", fontFamily: "monospace" }}>{html}</pre>
-            </div>
-          )}
-        </div>
-        {/* PRAWA — podgląd sticky */}
-        <div style={{ flex: 1, minWidth: 0, padding: "20px", position: "sticky", top: "20px", alignSelf: "flex-start" }}>
-          <PreviewFrame html={html} title={previewTitle} width={previewWidth || 360} />
-        </div>
+      <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+        {children}
+        {showCode && (
+          <div style={{ background: "#1a1a1a", borderRadius: "8px", overflow: "hidden" }}>
+            <pre style={{ margin: 0, padding: "14px", color: "#a8d8a8", fontSize: "11px", lineHeight: 1.6, overflow: "auto", maxHeight: "200px", fontFamily: "monospace" }}>{html}</pre>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+function PreviewIframe({ activeBlock, heading, text, products, duo, promo, promoMenu, promoDisclaimer }) {
+  const [mobile, setMobile] = React.useState(false);
+  const [bg, setBg] = React.useState("#e8e4de");
+
+  const getHtml = () => {
+    if (activeBlock === "0") return generateHeadingHTML(heading);
+    if (activeBlock === "1") return generateTextBlockHTML(text);
+    if (activeBlock === "2") return generateProductsHTML(products);
+    if (activeBlock === "5") return generateDuoImageHTML(duo);
+    if (activeBlock === "6") return generatePromoHTML(promo) + (promoMenu.show ? generatePromoMenuHTML(promoMenu) : "") + (promoDisclaimer.show ? generatePromoDisclaimerHTML(promoDisclaimer) : "");
+    return "";
+  };
+
+  const html = getHtml();
+  const w = mobile ? 375 : 600;
+  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:${bg};}*{box-sizing:border-box;}.wrapper{max-width:${w}px;margin:0 auto;background:transparent;padding:16px;}@media only screen and (max-width:400px){.prod{width:50% !important;max-width:50% !important;}}</style></head><body><div class="wrapper">${html}</div></body></html>`;
+
+  return (
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", gap: "8px" }}>
+      <div style={{ display: "flex", gap: "6px", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", gap: "4px" }}>
+          <button onClick={() => setMobile(false)} style={{ background: !mobile ? "#1a1a1a" : "transparent", color: !mobile ? "#fff" : "#888", border: "1px solid #ccc", borderRadius: "5px", padding: "4px 12px", fontSize: "11px", cursor: "pointer" }}>🖥 Desktop</button>
+          <button onClick={() => setMobile(true)} style={{ background: mobile ? "#1a1a1a" : "transparent", color: mobile ? "#fff" : "#888", border: "1px solid #ccc", borderRadius: "5px", padding: "4px 12px", fontSize: "11px", cursor: "pointer" }}>📱 Mobile</button>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <span style={{ fontSize: "10px", color: "#999" }}>tło:</span>
+          <input type="color" value={bg} onChange={e => setBg(e.target.value)} style={{ width: "22px", height: "22px", border: "1px solid #ccc", borderRadius: "4px", cursor: "pointer", padding: "1px" }} />
+          <input value={bg} onChange={e => setBg(e.target.value)} style={{ width: "70px", fontSize: "10px", padding: "2px 4px", border: "1px solid #ccc", borderRadius: "4px", fontFamily: "monospace" }} />
+        </div>
+      </div>
+      <iframe srcDoc={fullHtml} style={{ flex: 1, width: "100%", border: "none", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", background: bg }} title="Podgląd" />
+    </div>
+  );
+}
+
 
 function ColorInput({ value, onChange }) {
   return (
@@ -1286,162 +1313,166 @@ export default function NewsletterBuilder() {
   return (
     <>
     <Nav current="/newsletter-builder" />
-    <div style={{ minHeight: "100vh", background: "#f5f2ee", fontFamily: "var(--font-open-sans), system-ui, sans-serif", display: "flex", flexDirection: "column" }}>
-      <div style={{ padding: "28px 32px 20px", borderBottom: "1px solid #e8e4de", background: "#f5f2ee" }}>
-        <h1 style={{ fontFamily: "var(--font-dm-serif), 'DM Serif Display', Georgia, serif", fontSize: 28, fontWeight: 400, color: "#1a1814", margin: "0 0 4px", lineHeight: 1.2 }}>📧 Newsletter Builder</h1>
-        <p style={{ fontSize: 13, color: "#7a7570", margin: 0, fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>Buduj emaile blok po bloku — Gmail-safe HTML gotowy do wklejenia w ESP.</p>
-      </div>
-      <div style={{ display: "flex", flex: 1 }}>
+    <div style={{ background: "#f5f2ee", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>
 
-      {/* SIDEBAR */}
-      <div style={{ width: 180, minWidth: 180, background: "#ffffff", borderRight: "1px solid #e0dbd4", padding: "16px 12px", display: "flex", flexDirection: "column", gap: 4, position: "fixed", top: 0, left: 0, height: "100vh", overflowY: "auto", fontFamily: "var(--font-geist-sans), system-ui, sans-serif", zIndex: 20 }}>
-        <div style={{ fontSize: 10, color: "#9a9590", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8, paddingLeft: 4 }}>Bloki</div>
-        {[
-          { id: "0", label: "Nagłówek" },
-          { id: "1", label: "Blok tekstowy" },
-          { id: "2", label: "Produkty" },
-          { id: "5", label: "Duo grafiki" },
-          { id: "6", label: "Blok promo" },
-        ].map(item => (
-          <button key={item.id} onClick={() => setActiveBlock(item.id)}
-            style={{ display: "block", width: "100%", textAlign: "left", background: activeBlock === item.id ? "#b8763a14" : "none", border: activeBlock === item.id ? "1px solid #b8763a40" : "1px solid transparent", borderRadius: 8, padding: "8px 10px", cursor: "pointer", fontFamily: "inherit", color: activeBlock === item.id ? "#b8763a" : "#7a7570", fontSize: 12, fontWeight: activeBlock === item.id ? 600 : 400 }}>
-            {item.label}
-          </button>
-        ))}
+      {/* LAYOUT: sidebar (fixed) + środek (scroll) + podgląd (fixed) */}
+      <div style={{ display: "flex" }}>
 
-        {/* ZAPIS / HISTORIA */}
-        <div style={{ borderTop: "1px solid #e0dbd4", paddingTop: 12, marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
-          <div style={{ fontSize: 10, color: "#9a9590", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4, paddingLeft: 4 }}>Sesje</div>
-
-          {saveMsg && (
-            <div style={{ fontSize: 11, padding: "4px 8px", borderRadius: 6, background: saveMsg.type === "ok" ? "#e8f8ee" : "#fff0f0", color: saveMsg.type === "ok" ? "#2d7a4f" : "#cc0000", fontFamily: "sans-serif" }}>
-              {saveMsg.text}
-            </div>
-          )}
-
-          <div style={{ display: "flex", gap: 4 }}>
-            <input
-              value={sessionName}
-              onChange={e => setSessionName(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && saveSession()}
-              placeholder="Nazwa sesji..."
-              style={{ flex: 1, fontSize: 11, padding: "5px 7px", border: "1px solid #e0dbd4", borderRadius: 6, fontFamily: "inherit", outline: "none", minWidth: 0 }}
-            />
-            <button onClick={saveSession} disabled={saving} title="Zapisz sesję"
-              style={{ background: saving ? "#ccc" : "#b8763a", color: "#fff", border: "none", borderRadius: 6, padding: "5px 8px", fontSize: 11, cursor: saving ? "default" : "pointer", fontWeight: 700 }}>
-              {saving ? "..." : "💾"}
-            </button>
+        {/* SIDEBAR — fixed lewa */}
+        <div style={{ width: 180, flexShrink: 0, position: "fixed", top: 0, left: 0, height: "100vh", background: "#ffffff", borderRight: "1px solid #e0dbd4", padding: "16px 12px", display: "flex", flexDirection: "column", gap: 4, overflowY: "auto", zIndex: 30, fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
+          <div style={{ padding: "0 0 12px 0", borderBottom: "1px solid #e0dbd4", marginBottom: 4 }}>
+            <h1 style={{ fontFamily: "var(--font-dm-serif), 'DM Serif Display', Georgia, serif", fontSize: 16, fontWeight: 400, color: "#1a1814", margin: 0, lineHeight: 1.2 }}>📧 Newsletter</h1>
           </div>
+          <div style={{ fontSize: 10, color: "#9a9590", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4, paddingLeft: 4 }}>Bloki</div>
+          {[
+            { id: "0", label: "Nagłówek" },
+            { id: "1", label: "Blok tekstowy" },
+            { id: "2", label: "Produkty" },
+            { id: "5", label: "Duo grafiki" },
+            { id: "6", label: "Blok promo" },
+          ].map(item => (
+            <button key={item.id} onClick={() => setActiveBlock(item.id)}
+              style={{ display: "block", width: "100%", textAlign: "left", background: activeBlock === item.id ? "#b8763a14" : "none", border: activeBlock === item.id ? "1px solid #b8763a40" : "1px solid transparent", borderRadius: 8, padding: "8px 10px", cursor: "pointer", fontFamily: "inherit", color: activeBlock === item.id ? "#b8763a" : "#7a7570", fontSize: 12, fontWeight: activeBlock === item.id ? 600 : 400 }}>
+              {item.label}
+            </button>
+          ))}
 
-          <button onClick={() => { setShowHistory(h => !h); if (!showHistory) fetchSessions(); }}
-            style={{ background: "none", border: "1px solid #e0dbd4", borderRadius: 6, padding: "5px 8px", fontSize: 11, cursor: "pointer", color: "#7a7570", textAlign: "left" }}>
-            {showHistory ? "▲ Ukryj historię" : "▼ Historia sesji"}
-          </button>
-
-          {showHistory && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 200, overflowY: "auto" }}>
-              {loadingHistory && <div style={{ fontSize: 11, color: "#aaa", padding: "4px 0" }}>Ładowanie...</div>}
-              {!loadingHistory && sessions.length === 0 && <div style={{ fontSize: 11, color: "#aaa", padding: "4px 0" }}>Brak zapisanych sesji</div>}
-              {sessions.map(s => (
-                <div key={s.id} style={{ background: "#fafaf8", border: "1px solid #e8e4de", borderRadius: 6, padding: "6px 8px", display: "flex", flexDirection: "column", gap: 3 }}>
-                  <div style={{ fontSize: 11, color: "#1a1a1a", fontWeight: 600, lineHeight: 1.3, wordBreak: "break-word" }}>{s.name}</div>
-                  <div style={{ fontSize: 10, color: "#aaa" }}>{new Date(s.created_at).toLocaleString("pl-PL")}</div>
-                  <div style={{ display: "flex", gap: 4, marginTop: 2 }}>
-                    <button onClick={() => loadSession(s.id)}
-                      style={{ flex: 1, background: "#1a1a1a", color: "#fff", border: "none", borderRadius: 4, padding: "3px 0", fontSize: 10, cursor: "pointer" }}>
-                      Wczytaj
-                    </button>
-                    <button onClick={() => deleteSession(s.id)}
-                      style={{ background: "none", border: "1px solid #f5c0c0", color: "#cc0000", borderRadius: 4, padding: "3px 6px", fontSize: 10, cursor: "pointer" }}>
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              ))}
+          {/* ZAPIS / HISTORIA */}
+          <div style={{ borderTop: "1px solid #e0dbd4", paddingTop: 12, marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ fontSize: 10, color: "#9a9590", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4, paddingLeft: 4 }}>Sesje</div>
+            {saveMsg && (
+              <div style={{ fontSize: 11, padding: "4px 8px", borderRadius: 6, background: saveMsg.type === "ok" ? "#e8f8ee" : "#fff0f0", color: saveMsg.type === "ok" ? "#2d7a4f" : "#cc0000", fontFamily: "sans-serif" }}>
+                {saveMsg.text}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 4 }}>
+              <input value={sessionName} onChange={e => setSessionName(e.target.value)} onKeyDown={e => e.key === "Enter" && saveSession()} placeholder="Nazwa sesji..."
+                style={{ flex: 1, fontSize: 11, padding: "5px 7px", border: "1px solid #e0dbd4", borderRadius: 6, fontFamily: "inherit", outline: "none", minWidth: 0 }} />
+              <button onClick={saveSession} disabled={saving} title="Zapisz sesję"
+                style={{ background: saving ? "#ccc" : "#b8763a", color: "#fff", border: "none", borderRadius: 6, padding: "5px 8px", fontSize: 11, cursor: saving ? "default" : "pointer", fontWeight: 700 }}>
+                {saving ? "..." : "💾"}
+              </button>
             </div>
-          )}
+            <button onClick={() => { setShowHistory(h => !h); if (!showHistory) fetchSessions(); }}
+              style={{ background: "none", border: "1px solid #e0dbd4", borderRadius: 6, padding: "5px 8px", fontSize: 11, cursor: "pointer", color: "#7a7570", textAlign: "left" }}>
+              {showHistory ? "▲ Ukryj" : "▼ Historia"}
+            </button>
+            {showHistory && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 200, overflowY: "auto" }}>
+                {loadingHistory && <div style={{ fontSize: 11, color: "#aaa" }}>Ładowanie...</div>}
+                {!loadingHistory && sessions.length === 0 && <div style={{ fontSize: 11, color: "#aaa" }}>Brak sesji</div>}
+                {sessions.map(s => (
+                  <div key={s.id} style={{ background: "#fafaf8", border: "1px solid #e8e4de", borderRadius: 6, padding: "6px 8px", display: "flex", flexDirection: "column", gap: 3 }}>
+                    <div style={{ fontSize: 11, color: "#1a1a1a", fontWeight: 600, lineHeight: 1.3, wordBreak: "break-word" }}>{s.name}</div>
+                    <div style={{ fontSize: 10, color: "#aaa" }}>{new Date(s.created_at).toLocaleString("pl-PL")}</div>
+                    <div style={{ display: "flex", gap: 4, marginTop: 2 }}>
+                      <button onClick={() => loadSession(s.id)} style={{ flex: 1, background: "#1a1a1a", color: "#fff", border: "none", borderRadius: 4, padding: "3px 0", fontSize: 10, cursor: "pointer" }}>Wczytaj</button>
+                      <button onClick={() => deleteSession(s.id)} style={{ background: "none", border: "1px solid #f5c0c0", color: "#cc0000", borderRadius: 4, padding: "3px 6px", fontSize: 10, cursor: "pointer" }}>✕</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-      </div>
+        {/* ŚRODEK — kontrolki, normalny scroll okna */}
+        <div style={{ marginLeft: 180, marginRight: "40%", minWidth: 0, padding: "24px 24px", display: "flex", flexDirection: "column", gap: "20px" }}>
 
-      {/* MAIN CONTENT */}
-      <div style={{ flex: 1, padding: "28px 24px", display: "flex", flexDirection: "column", gap: "20px", marginLeft: 180 }}>
+          {activeBlock === "0" && <Section title="Nagłówek" number="0" html={generateHeadingHTML(heading)} previewTitle="Nagłówek" previewWidth={720}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div><Label>Tekst nagłówka</Label><input value={heading.text} onChange={e => setH("text", e.target.value)} style={inputStyle} /></div>
+              <div><Label>Copy pod nagłówkiem (opcjonalne)</Label><input value={heading.subtext} onChange={e => setH("subtext", e.target.value)} style={inputStyle} placeholder="np. Odkryj wyjątkowe produkty..." /></div>
+              {heading.subtext && <StyleRow>
+                <StyleField label="Rozmiar copy"><SliderInput value={heading.subtextFontSize} onChange={v => setH("subtextFontSize", v)} min={10} max={30} /></StyleField>
+                <StyleField label="Grubość copy">
+                  <Select value={heading.subtextFontWeight} onChange={v => setH("subtextFontWeight", v)} options={[{ value: "300", label: "Light" }, { value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} />
+                </StyleField>
+                <StyleField label="Kolor copy"><ColorInput value={heading.subtextColor} onChange={v => setH("subtextColor", v)} /></StyleField>
+                <StyleField label="Odstęp od nagłówka"><SliderInput value={heading.subtextMarginTop} onChange={v => setH("subtextMarginTop", v)} min={0} max={40} /></StyleField>
+              </StyleRow>}
+              <StyleRow>
+                <StyleField label="Font">
+                  <Select value={heading.fontFamily} onChange={v => setH("fontFamily", v)} options={[
+                    { value: "'Playfair Display', serif", label: "Playfair Display" },
+                    { value: "'DM Serif Display', serif", label: "DM Serif Display" },
+                    { value: "'Open Sans', sans-serif", label: "Open Sans" },
+                    { value: "Georgia, serif", label: "Georgia" },
+                    { value: "arial, helvetica, sans-serif", label: "Arial" },
+                  ]} />
+                </StyleField>
+                <StyleField label="Rozmiar"><SliderInput value={heading.fontSize} onChange={v => setH("fontSize", v)} min={14} max={60} /></StyleField>
+                <StyleField label="Grubość">
+                  <Select value={heading.fontWeight} onChange={v => setH("fontWeight", v)} options={[{ value: "300", label: "Light" }, { value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} />
+                </StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Kolor"><ColorInput value={heading.color} onChange={v => setH("color", v)} /></StyleField>
+                <StyleField label="Wyrównanie">
+                  <Select value={heading.textAlign} onChange={v => setH("textAlign", v)} options={[{ value: "left", label: "Lewo" }, { value: "center", label: "Środek" }, { value: "right", label: "Prawo" }]} />
+                </StyleField>
+                <StyleField label="Letter spacing"><SliderInput value={heading.letterSpacing} onChange={v => setH("letterSpacing", v)} min={-2} max={10} step={0.5} /></StyleField>
+                <StyleField label="Line height"><SliderInput value={heading.lineHeight} onChange={v => setH("lineHeight", v)} min={1} max={3} step={0.1} unit="" /></StyleField>
+              </StyleRow>
+              <StyleRow>
+                <StyleField label="Padding góra"><SliderInput value={heading.paddingTop} onChange={v => setH("paddingTop", v)} min={0} max={60} /></StyleField>
+                <StyleField label="Padding dół"><SliderInput value={heading.paddingBottom} onChange={v => setH("paddingBottom", v)} min={0} max={60} /></StyleField>
+                <StyleField label="Padding boki"><SliderInput value={heading.paddingH} onChange={v => setH("paddingH", v)} min={0} max={60} /></StyleField>
+                <StyleField label="Margin dół"><SliderInput value={heading.marginBottom} onChange={v => setH("marginBottom", v)} min={-40} max={40} /></StyleField>
+              </StyleRow>
+            </div>
+          </Section>}
 
-        {activeBlock === "0" && <Section title="Nagłówek" number="0" html={generateHeadingHTML(heading)} previewTitle="Nagłówek" previewWidth={720}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            <div><Label>Tekst nagłówka</Label><input value={heading.text} onChange={e => setH("text", e.target.value)} style={inputStyle} /></div>
-            <div><Label>Copy pod nagłówkiem (opcjonalne)</Label><input value={heading.subtext} onChange={e => setH("subtext", e.target.value)} style={inputStyle} placeholder="np. Odkryj wyjątkowe produkty..." /></div>
-            {heading.subtext && <StyleRow>
-              <StyleField label="Rozmiar copy" flex={2}><SliderInput value={heading.subtextFontSize} onChange={v => setH("subtextFontSize", v)} min={10} max={30} /></StyleField>
-              <StyleField label="Grubość copy" flex={2}>
-                <Select value={heading.subtextFontWeight} onChange={v => setH("subtextFontWeight", v)} options={[{ value: "300", label: "Light" }, { value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} />
-              </StyleField>
-              <StyleField label="Kolor copy" flex={2}><ColorInput value={heading.subtextColor} onChange={v => setH("subtextColor", v)} /></StyleField>
-              <StyleField label="Odstęp od nagłówka" flex={2}><SliderInput value={heading.subtextMarginTop} onChange={v => setH("subtextMarginTop", v)} min={0} max={40} /></StyleField>
-            </StyleRow>}
-            <StyleRow>
-              <StyleField label="Font" flex={3}>
-                <Select value={heading.fontFamily} onChange={v => setH("fontFamily", v)} options={[
-                  { value: "'Playfair Display', serif", label: "Playfair Display" },
-                  { value: "'DM Serif Display', serif", label: "DM Serif Display" },
-                  { value: "'Open Sans', sans-serif", label: "Open Sans" },
-                  { value: "Georgia, serif", label: "Georgia" },
-                  { value: "arial, helvetica, sans-serif", label: "Arial" },
-                ]} />
-              </StyleField>
-              <StyleField label="Rozmiar" flex={2}><SliderInput value={heading.fontSize} onChange={v => setH("fontSize", v)} min={14} max={60} /></StyleField>
-              <StyleField label="Grubość" flex={2}>
-                <Select value={heading.fontWeight} onChange={v => setH("fontWeight", v)} options={[{ value: "300", label: "Light" }, { value: "400", label: "Regular" }, { value: "700", label: "Bold" }]} />
-              </StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Kolor" flex={2}><ColorInput value={heading.color} onChange={v => setH("color", v)} /></StyleField>
-              <StyleField label="Wyrównanie" flex={2}>
-                <Select value={heading.textAlign} onChange={v => setH("textAlign", v)} options={[{ value: "left", label: "Lewo" }, { value: "center", label: "Środek" }, { value: "right", label: "Prawo" }]} />
-              </StyleField>
-              <StyleField label="Letter spacing" flex={2}><SliderInput value={heading.letterSpacing} onChange={v => setH("letterSpacing", v)} min={-2} max={10} step={0.5} /></StyleField>
-              <StyleField label="Line height" flex={2}><SliderInput value={heading.lineHeight} onChange={v => setH("lineHeight", v)} min={1} max={3} step={0.1} unit="" /></StyleField>
-            </StyleRow>
-            <StyleRow>
-              <StyleField label="Padding góra" flex={2}><SliderInput value={heading.paddingTop} onChange={v => setH("paddingTop", v)} min={0} max={60} /></StyleField>
-              <StyleField label="Padding dół" flex={2}><SliderInput value={heading.paddingBottom} onChange={v => setH("paddingBottom", v)} min={0} max={60} /></StyleField>
-              <StyleField label="Padding boki" flex={2}><SliderInput value={heading.paddingH} onChange={v => setH("paddingH", v)} min={0} max={60} /></StyleField>
-              <StyleField label="Margin dół" flex={2}><SliderInput value={heading.marginBottom} onChange={v => setH("marginBottom", v)} min={-40} max={40} /></StyleField>
-            </StyleRow>
-          </div>
-        </Section>}
+          {activeBlock === "1" && <Section title="Blok tekstowy + przycisk" number="1" html={generateTextBlockHTML(text)} previewTitle="Blok tekstowy">
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div><Label>Nagłówek</Label><input value={text.headline} onChange={e => setText({ ...text, headline: e.target.value })} style={inputStyle} /></div>
+              <div><Label>Treść (pusta linia = odstęp)</Label><textarea value={text.body} onChange={e => setText({ ...text, body: e.target.value })} rows={5} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} /></div>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <div style={{ flex: 1 }}><Label>Tekst przycisku</Label><input value={text.buttonText} onChange={e => setText({ ...text, buttonText: e.target.value })} style={inputStyle} /></div>
+                <div style={{ flex: 1 }}><Label>Link przycisku</Label><input value={text.buttonLink} onChange={e => setText({ ...text, buttonLink: e.target.value })} style={inputStyle} /></div>
+              </div>
+            </div>
+          </Section>}
 
-        {activeBlock === "1" && <Section title="Blok tekstowy + przycisk" number="1" html={generateTextBlockHTML(text)} previewTitle="Blok tekstowy">
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            <div><Label>Nagłówek</Label><input value={text.headline} onChange={e => setText({ ...text, headline: e.target.value })} style={inputStyle} /></div>
-            <div><Label>Treść (pusta linia = odstęp)</Label><textarea value={text.body} onChange={e => setText({ ...text, body: e.target.value })} rows={5} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} /></div>
-            <div style={{ display: "flex", gap: "10px" }}>
-              <div style={{ flex: 1 }}><Label>Tekst przycisku</Label><input value={text.buttonText} onChange={e => setText({ ...text, buttonText: e.target.value })} style={inputStyle} /></div>
-              <div style={{ flex: 1 }}><Label>Link przycisku</Label><input value={text.buttonLink} onChange={e => setText({ ...text, buttonLink: e.target.value })} style={inputStyle} /></div>
+          {activeBlock === "2" && (
+            <>
+              <Block4FeedBrowser onAddToNewsletter={handleAddFromFeed} />
+              <div id="blok2">
+                <Section title="Blok produktów (ręczny)" number="2" html={generateProductsHTML(products)} previewTitle="Blok produktów" previewWidth={720}>
+                  <div style={{ background: "#f0f7ff", border: "1px solid #c8e0f8", borderRadius: "8px", padding: "10px 14px", fontSize: "12px", color: "#555", fontFamily: "sans-serif", lineHeight: 1.6 }}>
+                    💡 Wybierz produkty w Bloku 4 powyżej — trafią tutaj automatycznie. Możesz też edytować ręcznie.
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                    {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} onChange={updated => handleProductChange(i, updated)} />)}
+                  </div>
+                </Section>
+              </div>
+            </>
+          )}
+
+          {activeBlock === "5" && <Block5DuoImages duo={duo} setDuo={setDuo} />}
+          {activeBlock === "6" && <Block6Promo promo={promo} setPromo={setPromo} menu={promoMenu} setMenu={setPromoMenu} disclaimer={promoDisclaimer} setDisclaimer={setPromoDisclaimer} />}
+
+        </div>
+
+        {/* PRAWY PANEL — podgląd fixed */}
+        <div style={{ position: "fixed", top: 0, right: 0, width: "38%", height: "100vh", background: "#e8e4de", borderLeft: "1px solid #d8d4ce", display: "flex", flexDirection: "column", zIndex: 20 }}>
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid #d8d4ce", background: "#e0dbd4", fontSize: "12px", color: "#888", fontFamily: "sans-serif", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span>📧 Podgląd</span>
+            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+              <input type="color" defaultValue="#e8e4de"
+                onChange={e => {
+                  const iframe = document.querySelector("#preview-iframe");
+                  if (iframe) iframe.style.background = e.target.value;
+                }}
+                style={{ width: "22px", height: "22px", border: "1px solid #ccc", borderRadius: "4px", cursor: "pointer", padding: "1px" }} />
             </div>
           </div>
-        </Section>}
+          <div style={{ flex: 1, overflow: "hidden", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "16px" }}>
+            <PreviewIframe activeBlock={activeBlock} heading={heading} text={text} products={products} duo={duo} promo={promo} promoMenu={promoMenu} promoDisclaimer={promoDisclaimer} />
+          </div>
+        </div>
 
-        {activeBlock === "2" && (
-          <>
-            <Block4FeedBrowser onAddToNewsletter={handleAddFromFeed} />
-            <div id="blok2">
-              <Section title="Blok produktów (ręczny)" number="2" html={generateProductsHTML(products)} previewTitle="Blok produktów" previewWidth={720}>
-                <div style={{ background: "#f0f7ff", border: "1px solid #c8e0f8", borderRadius: "8px", padding: "10px 14px", fontSize: "12px", color: "#555", fontFamily: "sans-serif", lineHeight: 1.6 }}>
-                  💡 Wybierz produkty w Bloku 4 powyżej — trafią tutaj automatycznie. Możesz też edytować ręcznie.
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                  {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} onChange={updated => handleProductChange(i, updated)} />)}
-                </div>
-              </Section>
-            </div>
-          </>
-        )}
-
-        {activeBlock === "5" && <Block5DuoImages duo={duo} setDuo={setDuo} />}
-        {activeBlock === "6" && <Block6Promo promo={promo} setPromo={setPromo} menu={promoMenu} setMenu={setPromoMenu} disclaimer={promoDisclaimer} setDisclaimer={setPromoDisclaimer} />}
-
-      </div>
       </div>
     </div>
     </>
