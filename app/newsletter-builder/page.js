@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useCallback, useEffect, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -1217,7 +1218,10 @@ export default function NewsletterBuilder() {
   const [promo, setPromo] = useState(defaultPromo);
   const [promoMenu, setPromoMenu] = useState(defaultPromoMenu);
   const [promoDisclaimer, setPromoDisclaimer] = useState(defaultPromoDisclaimer);
-  const [activeBlock, setActiveBlock] = useState("0");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const activeBlock = searchParams.get("blok") || "0";
+  const setActiveBlock = (id) => router.push(`/newsletter-builder?blok=${id}`, { scroll: false });
   const [sessions, setSessions] = useState([]);
   const [sessionName, setSessionName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -1260,14 +1264,7 @@ export default function NewsletterBuilder() {
     }
   };
 
-  const autoSave = useCallback(async () => {
-    try {
-      await supabase.from("newsletter_sessions").insert({
-        name: "Auto-zapis " + new Date().toLocaleString("pl-PL"),
-        blocks: getCurrentBlocks(),
-      });
-    } catch (e) { console.error("Auto-zapis błąd:", e); }
-  }, [heading, text, products, duo, promo, promoMenu, promoDisclaimer]);
+
 
   const fetchSessions = async () => {
     setLoadingHistory(true);
@@ -1288,10 +1285,7 @@ export default function NewsletterBuilder() {
 
   useEffect(() => { fetchSessions(); }, []);
 
-  useEffect(() => {
-    const id = setInterval(autoSave, 5 * 60 * 1000);
-    return () => clearInterval(id);
-  }, [autoSave]);
+
   const setH = useCallback((key, value) => setHeading(prev => ({ ...prev, [key]: value })), []);
   const handleProductChange = useCallback((i, updated) => setProducts(prev => prev.map((p, idx) => idx === i ? updated : p)), []);
 
