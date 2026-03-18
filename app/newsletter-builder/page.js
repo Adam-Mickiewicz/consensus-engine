@@ -882,7 +882,7 @@ function generatePromoHTML(p) {
   const promoHTML = p.promoCodeShow ? `${promoLabel}<div style="margin:0 0 ${p.promoCodePaddingBottom}px 0;">${promoCodeWrapped}</div>` : "";
 
   const buttonHTML = p.buttonShow ? (p.buttonType === "button"
-    ? `<div style="padding-bottom:${p.buttonPaddingBottom}px;"><a href="${p.buttonLink}" style="display:inline-block;background-color:${p.buttonBg};color:${p.buttonColor};font-family:${p.buttonFontFamily};font-weight:${p.buttonFontWeight};font-size:${p.buttonFontSize}px;letter-spacing:${p.buttonLetterSpacing}px;padding:${p.buttonPaddingV}px ${p.buttonPaddingH}px;border-radius:${p.buttonRadius}px;border:${p.buttonBorder};text-decoration:none;">${p.buttonText}</a></div>`
+    ? `<table border="0" cellpadding="0" cellspacing="0" style="margin-bottom:${p.buttonPaddingBottom}px;"><tr><td align="center" bgcolor="${p.buttonBg}" style="border-radius:${p.buttonRadius}px;border:${p.buttonBorder};"><a href="${p.buttonLink}" style="display:inline-block;background-color:${p.buttonBg};color:${p.buttonColor};font-family:${p.buttonFontFamily};font-weight:${p.buttonFontWeight};font-size:${p.buttonFontSize}px;letter-spacing:${p.buttonLetterSpacing}px;padding:${p.buttonPaddingV}px ${p.buttonPaddingH}px;border-radius:${p.buttonRadius}px;border:${p.buttonBorder};text-decoration:none;mso-padding-alt:0px;">${p.buttonText}</a></td></tr></table>`
     : `<p style="margin:0 0 ${p.buttonPaddingBottom}px 0;"><a href="${p.buttonLink}" style="font-family:${p.buttonFontFamily};font-size:${p.buttonFontSize}px;font-weight:${p.buttonFontWeight};color:${p.buttonColor};letter-spacing:${p.buttonLetterSpacing}px;text-decoration:none;">${p.buttonText}</a></p>`
   ) : "";
 
