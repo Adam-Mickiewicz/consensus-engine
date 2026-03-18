@@ -987,7 +987,7 @@ function Block6Promo({ promo, setPromo, menu, setMenu, disclaimer, setDisclaimer
 
       <div style={{ display: "flex", alignItems: "flex-start" }}>
 
-        <div style={{ flex: "0 0 600px", minWidth: 0, padding: "20px", borderRight: "1px solid #f0ece6", display: "flex", flexDirection: "column", gap: "14px", overflowY: "auto", maxHeight: "calc(100vh - 150px)" }}>
+        <div style={{ flex: "0 0 600px", minWidth: 0, padding: "20px", borderRight: "1px solid #f0ece6", display: "flex", flexDirection: "column", gap: "14px" }}>
 
           <SectionCode title="Kod — główny blok" html={htmlMain} />
           <SectionCode title="Kod — menu kategorii" html={htmlMenu} />
