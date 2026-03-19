@@ -233,8 +233,14 @@ function Section({ title, number, html, children }) {
 }
 
 function PreviewIframe({ activeBlock, heading, text, products, duo, promo, promoMenu, promoDisclaimer }) {
-  const [mobile, setMobile] = React.useState(false);
+  const [previewWidth, setPreviewWidth] = React.useState(600);
   const [bg, setBg] = React.useState("#ffffff");
+
+  const WIDTHS = [
+    { label: "320", value: 320 },
+    { label: "600", value: 600 },
+    { label: "720", value: 720 },
+  ];
 
   const getHtml = () => {
     if (activeBlock === "0") return generateHeadingHTML(heading);
@@ -246,23 +252,28 @@ function PreviewIframe({ activeBlock, heading, text, products, duo, promo, promo
   };
 
   const html = getHtml();
-  const w = mobile ? 375 : 600;
-  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:${bg};}*{box-sizing:border-box;}.wrapper{max-width:${w}px;margin:0 auto;background:transparent;padding:16px;}@media only screen and (max-width:400px){.prod{width:50% !important;max-width:50% !important;}}</style></head><body><div class="wrapper">${html}</div></body></html>`;
+  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:${bg};}*{box-sizing:border-box;}.wrapper{max-width:${previewWidth}px;margin:0 auto;background:transparent;padding:16px;}@media only screen and (max-width:400px){.prod{width:50% !important;max-width:50% !important;}}</style></head><body><div class="wrapper">${html}</div></body></html>`;
 
   return (
     <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", gap: "8px" }}>
-      <div style={{ display: "flex", gap: "6px", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", gap: "4px" }}>
-          <button onClick={() => setMobile(false)} style={{ background: !mobile ? "#1a1a1a" : "transparent", color: !mobile ? "#fff" : "#888", border: "1px solid #ccc", borderRadius: "5px", padding: "4px 12px", fontSize: "11px", cursor: "pointer" }}>🖥 Desktop</button>
-          <button onClick={() => setMobile(true)} style={{ background: mobile ? "#1a1a1a" : "transparent", color: mobile ? "#fff" : "#888", border: "1px solid #ccc", borderRadius: "5px", padding: "4px 12px", fontSize: "11px", cursor: "pointer" }}>📱 Mobile</button>
+      <div style={{ display: "flex", gap: "6px", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "3px" }}>
+          {WIDTHS.map(w => (
+            <button key={w.value} onClick={() => setPreviewWidth(w.value)}
+              style={{ background: previewWidth === w.value ? "#1a1a1a" : "transparent", color: previewWidth === w.value ? "#fff" : "#888", border: "1px solid #ccc", borderRadius: "5px", padding: "4px 10px", fontSize: "11px", cursor: "pointer" }}>
+              {w.label}px
+            </button>
+          ))}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
           <span style={{ fontSize: "10px", color: "#999" }}>tło:</span>
           <input type="color" value={bg} onChange={e => setBg(e.target.value)} style={{ width: "22px", height: "22px", border: "1px solid #ccc", borderRadius: "4px", cursor: "pointer", padding: "1px" }} />
-          <input value={bg} onChange={e => setBg(e.target.value)} style={{ width: "70px", fontSize: "10px", padding: "2px 4px", border: "1px solid #ccc", borderRadius: "4px", fontFamily: "monospace" }} />
+          <input value={bg} onChange={e => setBg(e.target.value)} style={{ width: "64px", fontSize: "10px", padding: "2px 4px", border: "1px solid #ccc", borderRadius: "4px", fontFamily: "monospace" }} />
         </div>
       </div>
-      <iframe srcDoc={fullHtml} style={{ flex: 1, width: "100%", border: "none", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", background: bg }} title="Podgląd" />
+      <div style={{ flex: 1, overflowX: "auto", overflowY: "auto" }}>
+        <iframe srcDoc={fullHtml} style={{ width: `${previewWidth}px`, minWidth: `${previewWidth}px`, height: "100%", minHeight: "500px", border: "none", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", display: "block" }} title="Podgląd" />
+      </div>
     </div>
   );
 }
