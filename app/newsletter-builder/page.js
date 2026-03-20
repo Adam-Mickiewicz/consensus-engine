@@ -332,6 +332,19 @@ function StyleGroup({ title, children }) {
 }
 
 function ProductCard({ product, index, onChange }) {
+  const [optimizing, setOptimizing] = React.useState(false);
+  const [optimized, setOptimized] = React.useState(false);
+
+  async function handleOptimize() {
+    if (!product.imageUrl) return;
+    setOptimizing(true);
+    setOptimized(false);
+    const proxyUrl = `/api/img-proxy?url=${encodeURIComponent(product.imageUrl)}`;
+    onChange({ ...product, imageUrl: proxyUrl });
+    setOptimizing(false);
+    setOptimized(true);
+  }
+
   return (
     <div style={{ background: "#fafaf8", border: "1px solid #e8e4de", borderRadius: "10px", padding: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -344,8 +357,16 @@ function ProductCard({ product, index, onChange }) {
         </label>
       </div>
       {product.imageUrl && <img src={product.imageUrl} alt="" style={{ width: "100%", height: "90px", objectFit: "cover", borderRadius: "6px" }} />}
+      <div>
+        <Label>URL zdjęcia</Label>
+        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+          <input value={product.imageUrl} onChange={e => { onChange({ ...product, imageUrl: e.target.value }); setOptimized(false); }} placeholder="https://..." style={{ ...inputStyle, flex: 1 }} />
+          <button onClick={handleOptimize} disabled={optimizing || !product.imageUrl} style={{ whiteSpace: "nowrap", fontSize: "11px", padding: "6px 8px", border: "1px solid #ccc", borderRadius: "6px", background: optimized ? "#e6f4ea" : "#fff", color: optimized ? "#2a7a3b" : "#333", cursor: "pointer" }}>
+            {optimizing ? "⏳" : optimized ? "✓ Zoptymalizowane" : "🗜 Optymalizuj"}
+          </button>
+        </div>
+      </div>
       {[
-        { label: "URL zdjęcia", key: "imageUrl", placeholder: "https://..." },
         { label: "Nazwa", key: "name", placeholder: "Nadwyraz" },
         { label: "Link", key: "link", placeholder: "https://nadwyraz.com/..." },
         { label: "Cena", key: "price", placeholder: "133,00 zł" },
