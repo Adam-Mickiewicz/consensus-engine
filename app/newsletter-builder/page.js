@@ -54,7 +54,7 @@ function generateTextBlockHTML(text) {
 ${bodyLines}
 </div>
 <div style="text-align: center; padding-bottom: 24px;">
-  <a href="${text.buttonLink}" style="display: inline-block; background-color: #ffffff; color: #000000; font-family: 'Open Sans', sans-serif; font-weight: 700; font-size: 14px; padding: 12px 48px; border-radius: 12px; border: 1px solid #000000; text-decoration: none;">${text.buttonText}</a>
+  <table border="0" cellpadding="0" cellspacing="0"><tr><td align="center" style="border-radius: 12px; border: 1px solid #000000;"><a href="${text.buttonLink}" style="display: inline-block; padding: 12px 48px; font-family: 'Open Sans', sans-serif; font-weight: 700; font-size: 14px; color: #000000; text-decoration: none;">${text.buttonText}</a></td></tr></table>
 </div>`;
 }
 
@@ -72,7 +72,7 @@ function generateProductsHTML(products) {
           <a href="${p.link}"><img src="${p.imageUrl}" width="100%" style="display:block; max-width:100%; height:auto; border-radius:5px 5px 0 0;" alt=""></a>
           <div style="background:#ffffff; border-radius:0 0 5px 5px; padding:6px 6px 8px 6px;">
             <p style="font-family:'Playfair Display',serif; font-size:12px; color:#000; margin:0 0 4px 0; line-height:1.4;">${name}</p>
-            <div style="min-height:48px;">
+            <div style="min-height:60px;">
               <p style="font-family:'Open Sans',sans-serif; font-size:11px; font-weight:${p.isPromo ? '700' : '400'}; color:${priceColor}; margin:0 0 2px 0;">${formatPrice(p.price)}</p>${promoLine}
             </div>
           </div>
