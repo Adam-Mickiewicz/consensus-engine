@@ -53,8 +53,8 @@ function generateTextBlockHTML(text) {
   <p style="font-weight: 700; font-size: 18px; line-height: 1.2; margin: 0 0 16px 0;">${text.headline}</p>
 ${bodyLines}
 </div>
-<div style="text-align: center; padding-bottom: 24px;">
-  <table border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto;"><tr><td align="center" style="border-radius: 12px; border: 1px solid #000000;"><a href="${text.buttonLink}" style="display: inline-block; padding: 12px 48px; font-family: 'Open Sans', sans-serif; font-weight: 700; font-size: 14px; color: #000000; text-decoration: none;">${text.buttonText}</a></td></tr></table>
+<div style="text-align: ${text.buttonAlign || 'center'}; padding-bottom: 24px;">
+  <table border="0" cellpadding="0" cellspacing="0" align="${text.buttonAlign || 'center'}" style="${text.buttonAlign === 'right' ? 'margin-left: auto;' : text.buttonAlign === 'left' ? '' : 'margin: 0 auto;'}"><tr><td align="${text.buttonAlign || 'center'}" style="border-radius: 12px; border: 1px solid #000000;"><a href="${text.buttonLink}" style="display: inline-block; padding: 12px 48px; font-family: 'Open Sans', sans-serif; font-weight: 700; font-size: 14px; color: #000000; text-decoration: none;">${text.buttonText}</a></td></tr></table>
 </div>`;
 }
 
@@ -170,6 +170,7 @@ const defaultText = {
   body: "Słowa poetek nie tracą aktualności.\nZmienia się tylko to, gdzie je spotykamy.\n\nCzasem na kartkach książek.\nA czasem na koszulce. 👕\n\nDlatego wspólnie z Wydawnictwem Literackim stworzyliśmy kolekcję inspirowaną...",
   buttonText: "Odkryj teraz ➔",
   buttonLink: "#",
+  buttonAlign: "center",
 };
 
 const defaultProducts = [
@@ -1480,6 +1481,17 @@ function NewsletterBuilderInner() {
               <div style={{ display: "flex", gap: "10px" }}>
                 <div style={{ flex: 1 }}><Label>Tekst przycisku</Label><input value={text.buttonText} onChange={e => setText({ ...text, buttonText: e.target.value })} style={inputStyle} /></div>
                 <div style={{ flex: 1 }}><Label>Link przycisku</Label><input value={text.buttonLink} onChange={e => setText({ ...text, buttonLink: e.target.value })} style={inputStyle} /></div>
+              </div>
+              <div>
+                <Label>Pozycja przycisku</Label>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  {["left", "center", "right"].map(align => (
+                    <button key={align} onClick={() => setText({ ...text, buttonAlign: align })}
+                      style={{ flex: 1, padding: "7px 0", border: `1px solid ${text.buttonAlign === align ? "#1a1a1a" : "#ddd"}`, borderRadius: "7px", background: text.buttonAlign === align ? "#1a1a1a" : "transparent", color: text.buttonAlign === align ? "#fff" : "#888", fontSize: "12px", cursor: "pointer" }}>
+                      {align === "left" ? "← Lewo" : align === "center" ? "Środek" : "Prawo →"}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </Section>}
