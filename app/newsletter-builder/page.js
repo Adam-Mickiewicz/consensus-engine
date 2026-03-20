@@ -254,6 +254,7 @@ function Section({ title, number, html, children }) {
 
 function PreviewIframe({ activeBlock, heading, text, products, duo, promo, promoMenu, promoDisclaimer }) {
   const [previewWidth, setPreviewWidth] = React.useState(600);
+  const [gmail, setGmail] = React.useState(false);
   const [bg, setBg] = React.useState("#ffffff");
 
   const WIDTHS = [
@@ -261,6 +262,8 @@ function PreviewIframe({ activeBlock, heading, text, products, duo, promo, promo
     { label: "600", value: 600 },
     { label: "720", value: 720 },
   ];
+
+  const activeWidth = gmail ? 360 : previewWidth;
 
   const getHtml = () => {
     if (activeBlock === "0") return generateHeadingHTML(heading);
@@ -272,27 +275,39 @@ function PreviewIframe({ activeBlock, heading, text, products, duo, promo, promo
   };
 
   const html = getHtml();
-  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:${bg};}*{box-sizing:border-box;}.wrapper{max-width:${previewWidth}px;margin:0 auto;background:transparent;padding:16px;}@media only screen and (max-width:400px){.prod{width:50% !important;max-width:50% !important;}}</style></head><body><div class="wrapper">${html}</div></body></html>`;
+  const fullHtml = gmail
+    ? `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:#f1f3f4;font-size:16px;-webkit-text-size-adjust:100%;}*{box-sizing:border-box;}.wrapper{background:#fff;padding:8px;}</style></head><body><div class="wrapper">${html}</div></body></html>`
+    : `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:${bg};}*{box-sizing:border-box;}.wrapper{max-width:${activeWidth}px;margin:0 auto;background:transparent;padding:16px;}@media only screen and (max-width:400px){.prod{width:50% !important;max-width:50% !important;}}</style></head><body><div class="wrapper">${html}</div></body></html>`;
 
   return (
     <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", gap: "8px" }}>
       <div style={{ display: "flex", gap: "6px", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
-        <div style={{ display: "flex", gap: "3px" }}>
+        <div style={{ display: "flex", gap: "3px", alignItems: "center" }}>
           {WIDTHS.map(w => (
-            <button key={w.value} onClick={() => setPreviewWidth(w.value)}
-              style={{ background: previewWidth === w.value ? "#1a1a1a" : "transparent", color: previewWidth === w.value ? "#fff" : "#888", border: "1px solid #ccc", borderRadius: "5px", padding: "4px 10px", fontSize: "11px", cursor: "pointer" }}>
+            <button key={w.value} onClick={() => { setPreviewWidth(w.value); setGmail(false); }}
+              style={{ background: !gmail && previewWidth === w.value ? "#1a1a1a" : "transparent", color: !gmail && previewWidth === w.value ? "#fff" : "#888", border: "1px solid #ccc", borderRadius: "5px", padding: "4px 10px", fontSize: "11px", cursor: "pointer" }}>
               {w.label}px
             </button>
           ))}
+          <button onClick={() => setGmail(g => !g)}
+            style={{ background: gmail ? "#EA4335" : "transparent", color: gmail ? "#fff" : "#888", border: "1px solid #ccc", borderRadius: "5px", padding: "4px 10px", fontSize: "11px", cursor: "pointer", fontWeight: gmail ? 700 : 400 }}>
+            G Gmail
+          </button>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+        {!gmail && <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
           <span style={{ fontSize: "10px", color: "#999" }}>tło:</span>
           <input type="color" value={bg} onChange={e => setBg(e.target.value)} style={{ width: "22px", height: "22px", border: "1px solid #ccc", borderRadius: "4px", cursor: "pointer", padding: "1px" }} />
           <input value={bg} onChange={e => setBg(e.target.value)} style={{ width: "64px", fontSize: "10px", padding: "2px 4px", border: "1px solid #ccc", borderRadius: "4px", fontFamily: "monospace" }} />
-        </div>
+        </div>}
       </div>
-      <div style={{ flex: 1, overflowX: "auto", overflowY: "auto" }}>
-        <iframe srcDoc={fullHtml} style={{ width: `${previewWidth}px`, minWidth: `${previewWidth}px`, height: "100%", minHeight: "500px", border: "none", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", display: "block" }} title="Podgląd" />
+      {gmail && (
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "#5f6368", fontFamily: "sans-serif" }}>
+          <span style={{ background: "#fff", border: "1px solid #dadce0", borderRadius: "50%", width: "18px", height: "18px", display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "10px", color: "#EA4335" }}>G</span>
+          Gmail · Android · 360px
+        </div>
+      )}
+      <div style={{ flex: 1, overflowX: "auto", overflowY: "auto", background: gmail ? "#f1f3f4" : "transparent", borderRadius: gmail ? "8px" : 0 }}>
+        <iframe srcDoc={fullHtml} style={{ width: `${activeWidth}px`, minWidth: `${activeWidth}px`, height: "100%", minHeight: "500px", border: "none", borderRadius: gmail ? "0" : "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", display: "block" }} title="Podgląd" />
       </div>
     </div>
   );
