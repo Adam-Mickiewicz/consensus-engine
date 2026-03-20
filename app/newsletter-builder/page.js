@@ -289,15 +289,30 @@ function Section({ title, number, html, children }) {
   );
 }
 
+const IFRAME_EXTRA_WIDTHS = [
+  { label: "600", value: 600, hint: "Email desktop" },
+  { label: "720", value: 720, hint: "Email wide" },
+];
+
 function PreviewIframe({ activeBlock, heading, text, products, duo, promo, promoMenu, promoDisclaimer }) {
-  const [previewWidth, setPreviewWidth] = React.useState(600);
+  const [previewWidth, setPreviewWidth] = React.useState(getStoredWidth);
+  const [customInput, setCustomInput] = React.useState("");
   const [bg, setBg] = React.useState("#ffffff");
 
-  const WIDTHS = [
-    { label: "320", value: 320 },
-    { label: "600", value: 600 },
-    { label: "720", value: 720 },
-  ];
+  const allWidths = [...PREVIEW_WIDTHS, ...IFRAME_EXTRA_WIDTHS];
+
+  const applyWidth = (w) => {
+    setPreviewWidth(w);
+    try { localStorage.setItem("ce-preview-width", w); } catch {}
+  };
+
+  const handleCustom = (e) => {
+    setCustomInput(e.target.value);
+    const v = parseInt(e.target.value);
+    if (v > 0 && v < 2000) applyWidth(v);
+  };
+
+  const isPreset = allWidths.some(w => w.value === previewWidth);
 
   const getHtml = () => {
     if (activeBlock === "0") return generateHeadingHTML(heading);
@@ -309,18 +324,25 @@ function PreviewIframe({ activeBlock, heading, text, products, duo, promo, promo
   };
 
   const html = getHtml();
-  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:${bg};}*{box-sizing:border-box;}.wrapper{max-width:${previewWidth}px;margin:0 auto;background:transparent;padding:16px;}@media only screen and (max-width:400px){.prod{width:50% !important;max-width:50% !important;}}</style></head><body><div class="wrapper">${html}</div></body></html>`;
+  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:${bg};}*{box-sizing:border-box;}.wrapper{max-width:${previewWidth}px;margin:0 auto;background:transparent;padding:16px;}</style></head><body><div class="wrapper">${html}</div></body></html>`;
 
   return (
     <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", gap: "8px" }}>
       <div style={{ display: "flex", gap: "6px", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
-        <div style={{ display: "flex", gap: "3px" }}>
-          {WIDTHS.map(w => (
-            <button key={w.value} onClick={() => setPreviewWidth(w.value)}
-              style={{ background: previewWidth === w.value ? "#1a1a1a" : "transparent", color: previewWidth === w.value ? "#fff" : "#888", border: "1px solid #ccc", borderRadius: "5px", padding: "4px 10px", fontSize: "11px", cursor: "pointer" }}>
-              {w.label}px
+        <div style={{ display: "flex", gap: "3px", flexWrap: "wrap" }}>
+          {allWidths.map(w => (
+            <button key={w.value} onClick={() => { applyWidth(w.value); setCustomInput(""); }} title={w.hint}
+              style={{ background: previewWidth === w.value ? "#1a1a1a" : "transparent", color: previewWidth === w.value ? "#fff" : "#888", border: "1px solid #ccc", borderRadius: "5px", padding: "4px 8px", fontSize: "11px", cursor: "pointer" }}>
+              {w.label}
             </button>
           ))}
+          <input
+            type="number"
+            placeholder="własna…"
+            value={customInput}
+            onChange={handleCustom}
+            style={{ width: "66px", fontSize: "10px", padding: "3px 5px", border: `1px solid ${!isPreset ? "#1a1a1a" : "#ccc"}`, borderRadius: "5px", fontFamily: "monospace", outline: "none", background: "#fff" }}
+          />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
           <span style={{ fontSize: "10px", color: "#999" }}>tło:</span>
