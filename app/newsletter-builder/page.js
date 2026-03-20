@@ -54,7 +54,7 @@ function generateTextBlockHTML(text) {
 ${bodyLines}
 </div>
 <div style="text-align: center; padding-bottom: 24px;">
-  <table border="0" cellpadding="0" cellspacing="0"><tr><td align="center" style="border-radius: 12px; border: 1px solid #000000;"><a href="${text.buttonLink}" style="display: inline-block; padding: 12px 48px; font-family: 'Open Sans', sans-serif; font-weight: 700; font-size: 14px; color: #000000; text-decoration: none;">${text.buttonText}</a></td></tr></table>
+  <table border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto;"><tr><td align="center" style="border-radius: 12px; border: 1px solid #000000;"><a href="${text.buttonLink}" style="display: inline-block; padding: 12px 48px; font-family: 'Open Sans', sans-serif; font-weight: 700; font-size: 14px; color: #000000; text-decoration: none;">${text.buttonText}</a></td></tr></table>
 </div>`;
 }
 
