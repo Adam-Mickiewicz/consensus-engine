@@ -237,7 +237,7 @@ function PreviewIframe({ activeBlock, heading, text, products, duo, promo, promo
   const [bg, setBg] = React.useState("#ffffff");
 
   const WIDTHS = [
-    { label: "320", value: 320 },
+    { label: "360", value: 360 },
     { label: "600", value: 600 },
     { label: "720", value: 720 },
   ];
