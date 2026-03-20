@@ -66,8 +66,8 @@ function generateProductsHTML(products) {
       : "";
     const name = p.name.length > 30 ? p.name.substring(0, 30) + '...' : p.name;
     const formatPrice = (pr) => pr ? pr.replace('.', ',') : pr;
-    const isLastInRow = (i % 2 === 1) || (i === products.length - 1 && products.length % 2 === 1);
-    return `<table class="prod" border="0" cellpadding="0" cellspacing="0" width="46%" align="left" style="width:46%; max-width:46%; display:inline-block; vertical-align:top; ${isLastInRow ? 'margin-right:0;' : 'margin-right:1%;'}margin-bottom:8px;">
+    const isLastInRow = (i % 4 === 3) || (i === products.length - 1);
+    return `<table class="prod" border="0" cellpadding="0" cellspacing="0" width="23%" align="left" style="width:23%; max-width:23%; display:inline-block; vertical-align:top; ${isLastInRow ? 'margin-right:0;' : 'margin-right:1%;'}margin-bottom:8px;">
         <tr><td style="padding:0;">
           <a href="${p.link}"><img src="${p.imageUrl}" width="100%" style="display:block; max-width:100%; height:auto; border-radius:5px 5px 0 0;" alt=""></a>
           <div style="background:#ffffff; border-radius:0 0 5px 5px; padding:6px 6px 8px 6px;">
@@ -78,15 +78,15 @@ function generateProductsHTML(products) {
           </div>
         </td></tr>
       </table>`;
-  }).join('\n      ');
+  }).join('');
   return `<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Playfair+Display:wght@400&display=swap" rel="stylesheet">
 <style>
-  @media screen and (max-width: 400px) { .prod { width: 100% !important; max-width: 100% !important; margin-right: 0 !important; } }
+  @media screen and (max-width: 480px) { .prod { width: 46% !important; max-width: 46% !important; } }
 </style>
 <table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" align="center" style="max-width:600px; width:100%; text-align:center;">
   <tr><td align="center" style="padding:0;text-align:center;">
-      <!--[if (gte mso 9)|(IE)]><table width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td width="276" valign="top"><![endif]-->
-<center>      ${productsHTML}</center>
+      <!--[if (gte mso 9)|(IE)]><table width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td width="138" valign="top"><![endif]-->
+<center>${productsHTML}</center>
       <!--[if (gte mso 9)|(IE)]></td></tr></table><![endif]-->
   </td></tr>
 </table>`;
