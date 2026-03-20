@@ -67,7 +67,7 @@ function generateProductsHTML(products) {
       : "";
     const name = p.name.length > 30 ? p.name.substring(0, 30) + '...' : p.name;
     const formatPrice = (pr) => pr ? pr.replace('.', ',') : pr;
-    return `<table class="prod" border="0" cellpadding="0" cellspacing="0" width="150" align="left" style="width:150px; max-width:150px; display:inline-block; vertical-align:top; ${isLast ? '' : 'margin-right:13px;'}margin-bottom:8px;">
+    return `<table class="prod" border="0" cellpadding="0" cellspacing="0" width="140" align="left" style="width:140px; max-width:140px; display:inline-block; vertical-align:top; ${isLast ? '' : 'margin-right:13px;'}margin-bottom:8px;">
         <tr><td style="padding:0;">
           <a href="${p.link}"><img src="${p.imageUrl}" width="100%" style="display:block; max-width:100%; height:auto; border-radius:5px 5px 0 0;" alt=""></a>
           <div style="background:#ffffff; border-radius:0 0 5px 5px; padding:6px 6px 8px 6px;">
