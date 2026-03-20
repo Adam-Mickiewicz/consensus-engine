@@ -144,22 +144,41 @@ function generateEdronePreviewHTML(s) {
 }
 
 function PreviewFrame({ html, title, width = 360 }) {
-  const [mobile, setMobile] = React.useState(false);
-  const activeWidth = mobile ? 375 : width;
-  const mobileStyle = mobile ? `<style>table.prod { width: 46% !important; max-width: 46% !important; margin-right: 2% !important; margin-bottom: 8px !important; } </style>` : "";
-  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:#e8e4de;}*{box-sizing:border-box;}.wrapper{max-width:${activeWidth}px;margin:0 auto;background:#fff;padding:16px;}@media only screen and (max-width:400px){.prod{width:50% !important;max-width:50% !important;}}@media only screen and (max-width:400px){.prod{width:50% !important;max-width:50% !important;}}</style>${mobileStyle}</head><body><div class="wrapper">${html}</div></body></html>`;
+  const [mode, setMobile] = React.useState("desktop");
+  const isGmail = mode === "gmail";
+  const isMobile = mode === "mobile";
+  const activeWidth = isMobile ? 375 : isGmail ? 360 : width;
+
+  const fullHtml = isGmail
+    ? `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:#f1f3f4;font-size:16px;-webkit-text-size-adjust:100%;}*{box-sizing:border-box;}.gmail-wrap{background:#f1f3f4;padding:8px;}.wrapper{background:#fff;padding:16px;}</style></head><body><div class="gmail-wrap"><div class="wrapper">${html}</div></div></body></html>`
+    : `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:#e8e4de;}*{box-sizing:border-box;}.wrapper{max-width:${activeWidth}px;margin:0 auto;background:#fff;padding:16px;}@media only screen and (max-width:400px){.prod{width:50% !important;max-width:50% !important;}}</style></head><body><div class="wrapper">${html}</div></body></html>`;
+
+  const btn = (id, label) => (
+    <button onClick={() => setMobile(id)}
+      style={{ background: mode === id ? "#1a1a1a" : "transparent", color: mode === id ? "#fff" : "#aaa", border: "1px solid #ddd", borderRadius: "5px", padding: "3px 10px", fontSize: "11px", cursor: "pointer" }}>
+      {label}
+    </button>
+  );
+
   return (
     <div style={{ border: "1px solid #e8e4de", borderRadius: "10px", overflow: "hidden" }}>
       <div style={{ padding: "8px 14px", background: "#f5f2ee", borderBottom: "1px solid #e8e4de", fontSize: "11px", color: "#888", fontFamily: "sans-serif", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span>📧 Podgląd — {title}</span>
         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-          <span style={{ color: "#bbb", marginRight: 4 }}>{mobile ? "375px" : `${width}px`}</span>
-          <button onClick={() => setMobile(false)} style={{ background: mobile ? "transparent" : "#1a1a1a", color: mobile ? "#aaa" : "#fff", border: "1px solid #ddd", borderRadius: "5px", padding: "3px 10px", fontSize: "11px", cursor: "pointer" }}>🖥 Desktop</button>
-          <button onClick={() => setMobile(true)} style={{ background: mobile ? "#1a1a1a" : "transparent", color: mobile ? "#fff" : "#aaa", border: "1px solid #ddd", borderRadius: "5px", padding: "3px 10px", fontSize: "11px", cursor: "pointer" }}>📱 Mobile</button>
+          <span style={{ color: "#bbb", marginRight: 4 }}>{activeWidth}px</span>
+          {btn("desktop", "🖥 Desktop")}
+          {btn("mobile", "📱 Mobile")}
+          {btn("gmail", "G Gmail Android")}
         </div>
       </div>
-      <div style={{ padding: "16px", background: "#e8e4de", display: "flex", justifyContent: "center" }}>
-        <iframe srcDoc={fullHtml} style={{ width: `${activeWidth}px`, maxWidth: "100%", height: "400px", border: "none", display: "block", borderRadius: "4px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }} title={title} />
+      {isGmail && (
+        <div style={{ padding: "6px 14px", background: "#f1f3f4", borderBottom: "1px solid #e0e0e0", display: "flex", alignItems: "center", gap: "8px", fontFamily: "sans-serif", fontSize: "11px", color: "#5f6368" }}>
+          <span style={{ background: "#fff", border: "1px solid #dadce0", borderRadius: "50%", width: "18px", height: "18px", display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "10px", color: "#EA4335" }}>G</span>
+          Gmail · Android
+        </div>
+      )}
+      <div style={{ padding: "16px", background: isGmail ? "#f1f3f4" : "#e8e4de", display: "flex", justifyContent: "center" }}>
+        <iframe srcDoc={fullHtml} style={{ width: `${activeWidth}px`, maxWidth: "100%", height: "400px", border: "none", display: "block", borderRadius: isGmail ? "0" : "4px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }} title={title} />
       </div>
     </div>
   );
