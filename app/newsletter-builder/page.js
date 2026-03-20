@@ -143,54 +143,19 @@ function generateEdronePreviewHTML(s) {
 </table>`;
 }
 
-const PREVIEW_WIDTHS = [
-  { label: "320", value: 320, hint: "Android S" },
-  { label: "360", value: 360, hint: "Galaxy" },
-  { label: "375", value: 375, hint: "iPhone SE" },
-  { label: "390", value: 390, hint: "iPhone 15" },
-  { label: "768", value: 768, hint: "iPad mini" },
-];
-
-function getStoredWidth() {
-  try { const v = parseInt(localStorage.getItem("ce-preview-width")); return v > 0 ? v : 375; } catch { return 375; }
-}
-
-function PreviewFrame({ html, title }) {
-  const [activeWidth, setActiveWidth] = React.useState(getStoredWidth);
-  const [customInput, setCustomInput] = React.useState("");
-
-  const applyWidth = (w) => {
-    setActiveWidth(w);
-    try { localStorage.setItem("ce-preview-width", w); } catch {}
-  };
-
-  const handleCustom = (e) => {
-    setCustomInput(e.target.value);
-    const v = parseInt(e.target.value);
-    if (v > 0 && v < 2000) applyWidth(v);
-  };
-
-  const isPreset = PREVIEW_WIDTHS.some(w => w.value === activeWidth);
-  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:#e8e4de;}*{box-sizing:border-box;}.wrapper{max-width:${activeWidth}px;margin:0 auto;background:#fff;padding:16px;}</style></head><body><div class="wrapper">${html}</div></body></html>`;
-
+function PreviewFrame({ html, title, width = 360 }) {
+  const [mobile, setMobile] = React.useState(false);
+  const activeWidth = mobile ? 375 : width;
+  const mobileStyle = mobile ? `<style>table.prod { width: 46% !important; max-width: 46% !important; margin-right: 2% !important; margin-bottom: 8px !important; } </style>` : "";
+  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:#e8e4de;}*{box-sizing:border-box;}.wrapper{max-width:${activeWidth}px;margin:0 auto;background:#fff;padding:16px;}@media only screen and (max-width:400px){.prod{width:50% !important;max-width:50% !important;}}@media only screen and (max-width:400px){.prod{width:50% !important;max-width:50% !important;}}</style>${mobileStyle}</head><body><div class="wrapper">${html}</div></body></html>`;
   return (
     <div style={{ border: "1px solid #e8e4de", borderRadius: "10px", overflow: "hidden" }}>
-      <div style={{ padding: "8px 14px", background: "#f5f2ee", borderBottom: "1px solid #e8e4de", fontSize: "11px", color: "#888", fontFamily: "sans-serif", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
-        <span>📧 Podgląd — {title} <span style={{ color: "#bbb" }}>({activeWidth}px)</span></span>
-        <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap" }}>
-          {PREVIEW_WIDTHS.map(w => (
-            <button key={w.value} onClick={() => { applyWidth(w.value); setCustomInput(""); }} title={w.hint}
-              style={{ background: activeWidth === w.value ? "#1a1a1a" : "transparent", color: activeWidth === w.value ? "#fff" : "#888", border: "1px solid #ddd", borderRadius: "5px", padding: "3px 8px", fontSize: "10px", cursor: "pointer" }}>
-              {w.label}
-            </button>
-          ))}
-          <input
-            type="number"
-            placeholder="własna…"
-            value={customInput}
-            onChange={handleCustom}
-            style={{ width: "66px", fontSize: "10px", padding: "3px 5px", border: `1px solid ${!isPreset ? "#1a1a1a" : "#ddd"}`, borderRadius: "5px", fontFamily: "monospace", outline: "none", background: "#fff" }}
-          />
+      <div style={{ padding: "8px 14px", background: "#f5f2ee", borderBottom: "1px solid #e8e4de", fontSize: "11px", color: "#888", fontFamily: "sans-serif", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span>📧 Podgląd — {title}</span>
+        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+          <span style={{ color: "#bbb", marginRight: 4 }}>{mobile ? "375px" : `${width}px`}</span>
+          <button onClick={() => setMobile(false)} style={{ background: mobile ? "transparent" : "#1a1a1a", color: mobile ? "#aaa" : "#fff", border: "1px solid #ddd", borderRadius: "5px", padding: "3px 10px", fontSize: "11px", cursor: "pointer" }}>🖥 Desktop</button>
+          <button onClick={() => setMobile(true)} style={{ background: mobile ? "#1a1a1a" : "transparent", color: mobile ? "#fff" : "#aaa", border: "1px solid #ddd", borderRadius: "5px", padding: "3px 10px", fontSize: "11px", cursor: "pointer" }}>📱 Mobile</button>
         </div>
       </div>
       <div style={{ padding: "16px", background: "#e8e4de", display: "flex", justifyContent: "center" }}>
@@ -241,78 +206,41 @@ function CopyButton({ html }) {
 
 function Section({ title, number, html, children }) {
   const [showCode, setShowCode] = useState(false);
-  const [tab, setTab] = useState("edit");
-  const [pastedHtml, setPastedHtml] = useState("");
   return (
     <div style={{ background: "#fff", border: "1px solid #e8e4de", borderRadius: "14px", overflow: "hidden" }}>
-      <div style={{ padding: "14px 20px", borderBottom: "1px solid #f0ece6", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fafaf8", flexWrap: "wrap", gap: "8px" }}>
+      <div style={{ padding: "14px 20px", borderBottom: "1px solid #f0ece6", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fafaf8" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: "#1a1a1a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700 }}>{number}</div>
           <span style={{ fontFamily: "Georgia, serif", fontSize: "15px", fontWeight: 600 }}>{title}</span>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
-          <button onClick={() => setTab(t => t === "paste" ? "edit" : "paste")}
-            style={{ background: tab === "paste" ? "#1a1a1a" : "transparent", color: tab === "paste" ? "#fff" : "#888", border: "1px solid #ddd", borderRadius: "7px", padding: "6px 14px", fontSize: "11px", cursor: "pointer" }}>
-            {tab === "paste" ? "← Wróć" : "Wklej HTML"}
+          <button onClick={() => setShowCode(s => !s)} style={{ background: "transparent", border: "1px solid #ddd", color: "#888", borderRadius: "7px", padding: "6px 14px", fontSize: "11px", cursor: "pointer" }}>
+            {showCode ? "Ukryj kod" : "Pokaż kod"}
           </button>
-          {tab === "edit" && (
-            <button onClick={() => setShowCode(s => !s)} style={{ background: "transparent", border: "1px solid #ddd", color: "#888", borderRadius: "7px", padding: "6px 14px", fontSize: "11px", cursor: "pointer" }}>
-              {showCode ? "Ukryj kod" : "Pokaż kod"}
-            </button>
-          )}
-          <CopyButton html={tab === "paste" ? pastedHtml : html} />
+          <CopyButton html={html} />
         </div>
       </div>
       <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
-        {tab === "paste" ? (
-          <>
-            <textarea
-              value={pastedHtml}
-              onChange={e => setPastedHtml(e.target.value)}
-              placeholder="Wklej dowolny HTML tutaj…"
-              style={{ width: "100%", minHeight: "120px", padding: "10px", border: "1px solid #e8e4de", borderRadius: "8px", fontSize: "12px", fontFamily: "monospace", boxSizing: "border-box", resize: "vertical", outline: "none", background: "#fafaf8" }}
-            />
-            {pastedHtml && <PreviewFrame html={pastedHtml} title="Wklejony HTML" />}
-          </>
-        ) : (
-          <>
-            {children}
-            {showCode && (
-              <div style={{ background: "#1a1a1a", borderRadius: "8px", overflow: "hidden" }}>
-                <pre style={{ margin: 0, padding: "14px", color: "#a8d8a8", fontSize: "11px", lineHeight: 1.6, overflow: "auto", maxHeight: "200px", fontFamily: "monospace" }}>{html}</pre>
-              </div>
-            )}
-          </>
+        {children}
+        {showCode && (
+          <div style={{ background: "#1a1a1a", borderRadius: "8px", overflow: "hidden" }}>
+            <pre style={{ margin: 0, padding: "14px", color: "#a8d8a8", fontSize: "11px", lineHeight: 1.6, overflow: "auto", maxHeight: "200px", fontFamily: "monospace" }}>{html}</pre>
+          </div>
         )}
       </div>
     </div>
   );
 }
 
-const IFRAME_EXTRA_WIDTHS = [
-  { label: "600", value: 600, hint: "Email desktop" },
-  { label: "720", value: 720, hint: "Email wide" },
-];
-
 function PreviewIframe({ activeBlock, heading, text, products, duo, promo, promoMenu, promoDisclaimer }) {
-  const [previewWidth, setPreviewWidth] = React.useState(getStoredWidth);
-  const [customInput, setCustomInput] = React.useState("");
+  const [previewWidth, setPreviewWidth] = React.useState(600);
   const [bg, setBg] = React.useState("#ffffff");
 
-  const allWidths = [...PREVIEW_WIDTHS, ...IFRAME_EXTRA_WIDTHS];
-
-  const applyWidth = (w) => {
-    setPreviewWidth(w);
-    try { localStorage.setItem("ce-preview-width", w); } catch {}
-  };
-
-  const handleCustom = (e) => {
-    setCustomInput(e.target.value);
-    const v = parseInt(e.target.value);
-    if (v > 0 && v < 2000) applyWidth(v);
-  };
-
-  const isPreset = allWidths.some(w => w.value === previewWidth);
+  const WIDTHS = [
+    { label: "320", value: 320 },
+    { label: "600", value: 600 },
+    { label: "720", value: 720 },
+  ];
 
   const getHtml = () => {
     if (activeBlock === "0") return generateHeadingHTML(heading);
@@ -324,25 +252,18 @@ function PreviewIframe({ activeBlock, heading, text, products, duo, promo, promo
   };
 
   const html = getHtml();
-  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:${bg};}*{box-sizing:border-box;}.wrapper{max-width:${previewWidth}px;margin:0 auto;background:transparent;padding:16px;}</style></head><body><div class="wrapper">${html}</div></body></html>`;
+  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:${bg};}*{box-sizing:border-box;}.wrapper{max-width:${previewWidth}px;margin:0 auto;background:transparent;padding:16px;}@media only screen and (max-width:400px){.prod{width:50% !important;max-width:50% !important;}}</style></head><body><div class="wrapper">${html}</div></body></html>`;
 
   return (
     <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", gap: "8px" }}>
       <div style={{ display: "flex", gap: "6px", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
-        <div style={{ display: "flex", gap: "3px", flexWrap: "wrap" }}>
-          {allWidths.map(w => (
-            <button key={w.value} onClick={() => { applyWidth(w.value); setCustomInput(""); }} title={w.hint}
-              style={{ background: previewWidth === w.value ? "#1a1a1a" : "transparent", color: previewWidth === w.value ? "#fff" : "#888", border: "1px solid #ccc", borderRadius: "5px", padding: "4px 8px", fontSize: "11px", cursor: "pointer" }}>
-              {w.label}
+        <div style={{ display: "flex", gap: "3px" }}>
+          {WIDTHS.map(w => (
+            <button key={w.value} onClick={() => setPreviewWidth(w.value)}
+              style={{ background: previewWidth === w.value ? "#1a1a1a" : "transparent", color: previewWidth === w.value ? "#fff" : "#888", border: "1px solid #ccc", borderRadius: "5px", padding: "4px 10px", fontSize: "11px", cursor: "pointer" }}>
+              {w.label}px
             </button>
           ))}
-          <input
-            type="number"
-            placeholder="własna…"
-            value={customInput}
-            onChange={handleCustom}
-            style={{ width: "66px", fontSize: "10px", padding: "3px 5px", border: `1px solid ${!isPreset ? "#1a1a1a" : "#ccc"}`, borderRadius: "5px", fontFamily: "monospace", outline: "none", background: "#fff" }}
-          />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
           <span style={{ fontSize: "10px", color: "#999" }}>tło:</span>
