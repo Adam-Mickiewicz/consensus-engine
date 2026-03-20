@@ -1526,6 +1526,7 @@ function NewsletterBuilderInner() {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                     {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} onChange={updated => handleProductChange(i, updated)} />)}
                   </div>
+                  <PreviewFrame html={generateProductsHTML(products)} title="Produkty" />
                   <ProductsHtmlEditor products={products} />
                 </Section>
               </div>
