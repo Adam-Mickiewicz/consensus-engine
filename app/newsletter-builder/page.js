@@ -71,8 +71,8 @@ function generateProductsHTML(products) {
         <tr><td style="padding:0;">
           <a href="${p.link}"><img src="${p.imageUrl}" width="100%" style="display:block; max-width:100%; height:auto; border-radius:5px 5px 0 0;" alt=""></a>
           <div style="background:#ffffff; border-radius:0 0 5px 5px; padding:6px 6px 8px 6px;">
-            <p style="font-family:'Playfair Display',serif; font-size:12px; color:#000; margin:0 0 4px 0; line-height:1.4;">${name}</p>
-            <div style="min-height:60px;">
+            <p style="font-family:'Playfair Display',serif; font-size:12px; color:#000; margin:0 0 4px 0; line-height:1.4; height:50px; overflow:hidden;">${name}</p>
+            <div style="min-height:50px; max-height:50px; overflow:hidden;">
               <p style="font-family:'Open Sans',sans-serif; font-size:11px; font-weight:${p.isPromo ? '700' : '400'}; color:${priceColor}; margin:0 0 2px 0;">${formatPrice(p.price)}</p>${promoLine}
             </div>
           </div>
