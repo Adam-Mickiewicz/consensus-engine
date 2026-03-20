@@ -1335,9 +1335,7 @@ function NewsletterBuilderInner() {
             { id: "0", label: "Nagłówek" },
             { id: "1", label: "Blok tekstowy" },
             { id: "2", label: "Produkty" },
-            { id: "4", label: "Przeglądarka" },
             { id: "5", label: "Duo grafik" },
-            { id: "5", label: "Duo grafiki" },
             { id: "6", label: "Blok promo" },
           ].map(item => (
             <button key={item.id} onClick={() => setActiveBlock(item.id)}
@@ -1444,20 +1442,19 @@ function NewsletterBuilderInner() {
           </Section>}
 
           {activeBlock === "2" && (
-            <div id="blok2">
-              <Section title="Blok produktów (ręczny)" number="2" html={generateProductsHTML(products)} previewTitle="Blok produktów" previewWidth={720}>
-                <div style={{ background: "#f0f7ff", border: "1px solid #c8e0f8", borderRadius: "8px", padding: "10px 14px", fontSize: "12px", color: "#555", fontFamily: "sans-serif", lineHeight: 1.6 }}>
-                  💡 Wybierz produkty w Przeglądarce (blok 4) — trafią tutaj automatycznie.
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                  {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} onChange={updated => handleProductChange(i, updated)} />)}
-                </div>
-              </Section>
-            </div>
-          )}
-
-          {activeBlock === "4" && (
-            <Block4FeedBrowser onAddToNewsletter={handleAddFromFeed} />
+            <>
+              <Block4FeedBrowser onAddToNewsletter={handleAddFromFeed} />
+              <div id="blok2">
+                <Section title="Blok produktów (ręczny)" number="2" html={generateProductsHTML(products)} previewTitle="Blok produktów" previewWidth={720}>
+                  <div style={{ background: "#f0f7ff", border: "1px solid #c8e0f8", borderRadius: "8px", padding: "10px 14px", fontSize: "12px", color: "#555", fontFamily: "sans-serif", lineHeight: 1.6 }}>
+                    💡 Wybierz produkty w Bloku 4 powyżej — trafią tutaj automatycznie. Możesz też edytować ręcznie.
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                    {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} onChange={updated => handleProductChange(i, updated)} />)}
+                  </div>
+                </Section>
+              </div>
+            </>
           )}
 
           {activeBlock === "5" && <Section title="Dwie grafiki obok siebie" number="5" html={generateDuoImageHTML(duo)} previewTitle="Duo grafiki" previewWidth={720}><Block5DuoImages duo={duo} setDuo={setDuo} /></Section>}
