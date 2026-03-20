@@ -81,7 +81,7 @@ function generateProductsHTML(products) {
   }).join('\n      ');
   return `<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Playfair+Display:wght@400&display=swap" rel="stylesheet">
 <style>
-  @media screen and (max-width: 600px) { .prod { width: 50% !important; max-width: 50% !important; } }
+  @media screen and (max-width: 600px) { .prod { width: 46% !important; max-width: 46% !important; } }
 </style>
 <table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" align="center" style="text-align:center;">
   <tr><td align="center" style="padding:0;text-align:center;">
