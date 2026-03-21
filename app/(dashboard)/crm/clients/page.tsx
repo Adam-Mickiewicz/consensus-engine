@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getServiceClient } from "@/lib/supabase/server";
 import ClientsView from "./ClientsView";
 
@@ -35,14 +36,16 @@ export default async function CrmClientsPage({
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
-    <ClientsView
-      clients={data ?? []}
-      total={total}
-      page={page}
-      totalPages={totalPages}
-      search={search}
-      segment={segment}
-      risk={risk}
-    />
+    <Suspense>
+      <ClientsView
+        clients={data ?? []}
+        total={total}
+        page={page}
+        totalPages={totalPages}
+        search={search}
+        segment={segment}
+        risk={risk}
+      />
+    </Suspense>
   );
 }
