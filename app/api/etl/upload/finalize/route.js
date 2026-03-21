@@ -4,8 +4,10 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { assembleFiles, clearSession } from "../../../../../lib/crm/chunkBuffer";
-import { mergeMultipleCSVs } from "../../../../../lib/crm/csvParser";
+import { parseShoperCSV } from "../../../../../lib/crm/csvParser";
 import { runETLPipeline } from "../../../../../lib/crm/etl";
+
+export const maxDuration = 300; // 5 minut
 
 function getServiceClient() {
   return createClient(
@@ -81,51 +83,76 @@ export async function POST(request) {
     );
   }
 
-  // ── ETL pipeline ──────────────────────────────────────────────────────────────
+  // ── ETL pipeline — przetwarzaj każdy plik osobno ──────────────────────────────
   const supabase = getServiceClient();
 
-  let result;
-  try {
-    const mergedRows = mergeMultipleCSVs(filesArray);
+  let totalClients = 0;
+  let totalLineItems = 0;
+  let totalUnmapped = 0;
+  let processedFiles = 0;
 
-    if (mergedRows.length === 0) {
-      return Response.json({ error: "Pliki nie zawierają danych." }, { status: 400 });
+  for (const { name, content } of filesArray) {
+    let rows;
+    try {
+      rows = parseShoperCSV(content, name);
+    } catch (err) {
+      console.error(`[ETL finalize] Błąd parsowania ${name}:`, err.message);
+      continue;
     }
 
-    result = await runETLPipeline(mergedRows, supabase, filenames.join(", "));
+    if (rows.length === 0) {
+      console.warn(`[ETL finalize] Plik ${name} nie zawiera danych, pomijam.`);
+      continue;
+    }
 
-    await supabase.from("sync_log").insert({
-      source: "csv_upload",
-      status: "success",
-      rows_upserted: result.processed,
-      meta: {
-        files: filenames,
-        clients_upserted: result.clients,
-        unmapped: result.unmapped,
-        uploaded_by: user.id,
-      },
-    });
-  } catch (err) {
-    console.error("[ETL finalize] FULL ERROR:", err?.message);
-    console.error("[ETL finalize] STACK:", err?.stack);
+    try {
+      const result = await runETLPipeline(rows, supabase, name);
+      totalLineItems += result.processed ?? 0;
+      totalClients  += result.clients   ?? 0;
+      totalUnmapped += result.unmapped  ?? 0;
+      processedFiles++;
+    } catch (err) {
+      console.error(`[ETL finalize] FULL ERROR (${name}):`, err?.message);
+      console.error(`[ETL finalize] STACK:`, err?.stack);
 
-    await supabase.from("sync_log").insert({
-      source: "csv_upload",
-      status: "error",
-      rows_upserted: 0,
-      error_message: err.message?.slice(0, 1000),
-      meta: { files: filenames, uploaded_by: user.id },
-    });
+      await supabase.from("sync_log").insert({
+        source: "csv_upload",
+        status: "error",
+        rows_upserted: 0,
+        error_message: err.message?.slice(0, 1000),
+        meta: { file: name, uploaded_by: user.id },
+      });
 
-    return Response.json({ error: `ETL error: ${err.message}` }, { status: 500 });
+      return Response.json({ error: `ETL error (${name}): ${err.message}` }, { status: 500 });
+    }
+
+    // Odśwież widoki po każdym pliku
+    await supabase.rpc("refresh_crm_views");
   }
+
+  if (processedFiles === 0) {
+    return Response.json({ error: "Żaden plik nie zawierał danych." }, { status: 400 });
+  }
+
+  await supabase.from("sync_log").insert({
+    source: "csv_upload",
+    status: "success",
+    rows_upserted: totalLineItems,
+    meta: {
+      files: filenames,
+      processed_files: processedFiles,
+      clients_upserted: totalClients,
+      unmapped: totalUnmapped,
+      uploaded_by: user.id,
+    },
+  });
 
   return Response.json({
     ok: true,
-    processed: result.processed,
-    unmapped: result.unmapped,
-    clients: result.clients,
-    events: result.events,
+    processed_files: processedFiles,
+    total_clients: totalClients,
+    total_line_items: totalLineItems,
+    unmapped: totalUnmapped,
   });
 }
 
