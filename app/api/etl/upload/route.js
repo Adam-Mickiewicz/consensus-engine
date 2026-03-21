@@ -84,7 +84,7 @@ export async function POST(request) {
       return Response.json({ error: "Nieprawidłowe pola chunk." }, { status: 400 });
     }
 
-    storeChunk({
+    const chunkResult = await storeChunk({
       sessionId,
       filename: sourceFilename,
       chunkIndex,
@@ -93,7 +93,7 @@ export async function POST(request) {
       userId: user.id,
     });
 
-    return Response.json({ ok: true, buffered: true, received: chunkIndex + 1, total: totalChunks });
+    return Response.json({ ok: true, buffered: true, received: chunkResult.received, total: totalChunks });
   }
 
   // ── Tryb bezpośredni ──────────────────────────────────────────────────────────

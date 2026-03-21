@@ -72,7 +72,7 @@ export async function POST(request) {
   }
 
   // ── Składanie chunków ─────────────────────────────────────────────────────────
-  const filesArray = assembleFiles(session_id, filenames);
+  const filesArray = await assembleFiles(session_id, filenames);
 
   if (!filesArray) {
     return Response.json(
@@ -80,8 +80,6 @@ export async function POST(request) {
       { status: 400 }
     );
   }
-
-  clearSession(session_id);
 
   // ── ETL pipeline ──────────────────────────────────────────────────────────────
   const supabase = getServiceClient();
