@@ -76,6 +76,8 @@ export async function POST(request) {
   // ── Składanie chunków ─────────────────────────────────────────────────────────
   const filesArray = await assembleFiles(session_id, filenames);
 
+  console.log("[ETL finalize] assembleFiles result:", filesArray?.map(f => ({ name: f.name, contentLength: f.content?.length })));
+
   if (!filesArray) {
     return Response.json(
       { error: "Nie znaleziono zebranych chunków. Wyślij wszystkie chunki przed finalizacją." },
@@ -99,6 +101,8 @@ export async function POST(request) {
       console.error(`[ETL finalize] Błąd parsowania ${name}:`, err.message);
       continue;
     }
+
+    console.log("[ETL finalize] processing file:", name, "rows:", rows.length);
 
     if (rows.length === 0) {
       console.warn(`[ETL finalize] Plik ${name} nie zawiera danych, pomijam.`);
