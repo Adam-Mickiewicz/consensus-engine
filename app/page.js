@@ -3,6 +3,15 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
 
+const CATEGORIES = [
+  { href: "/crm",      icon: "👥", label: "CRM klientów",   desc: "Analityka 360°, baza klientów, winback i import danych." },
+  { href: "/products", icon: "📦", label: "CRM produktowy", desc: "Katalog produktów, oferty i zarządzanie asortymentem." },
+  { href: "/b2b",      icon: "🤝", label: "B2B",            desc: "Partnerzy handlowi, kontrakty i współpraca B2B." },
+  { href: "/tools",    icon: "🔧", label: "Narzędzia",      desc: "Newsletter Builder, Sock Designer i inne narzędzia." },
+  { href: "/reports",  icon: "📊", label: "Raporty",        desc: "Analizy, zestawienia sprzedaży i eksporty danych." },
+  { href: "/admin",    icon: "⚙️", label: "Admin",          desc: "Zarządzanie dostępem i ustawienia systemu." },
+];
+
 const TOOLS = [
   {
     href: "/debate",
@@ -104,6 +113,15 @@ export default function Home() {
         .ce-wide .ce-tile-name{font-size:22px;}
         .ce-tile-desc{font-size:12px;color:#7a7570;line-height:1.65;}
         @media(max-width:640px){.ce-grid{grid-template-columns:1fr;}.ce-wide{grid-column:span 1;}}
+        .ce-section-label{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#b8763a;font-weight:600;margin:0 0 14px;}
+        .ce-cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:40px;}
+        .ce-cat-tile{display:flex;flex-direction:column;gap:6px;padding:18px;background:#fff;border:1px solid #e8e4de;border-radius:12px;text-decoration:none;transition:border-color 0.15s,transform 0.15s;}
+        .ce-cat-tile:hover{border-color:#b8763a;transform:translateY(-1px);}
+        .ce-cat-icon{font-size:20px;}
+        .ce-cat-name{font-family:'DM Serif Display',serif;font-size:15px;color:#1a1814;}
+        .ce-cat-desc{font-size:11px;color:#7a7570;line-height:1.55;}
+        .ce-divider{height:1px;background:#e8e4de;margin:0 0 40px;}
+        @media(max-width:640px){.ce-cat-grid{grid-template-columns:1fr 1fr;}}
       `}</style>
 
       <div className="ce-page">
@@ -138,7 +156,22 @@ export default function Home() {
             <p>Narzędzia dla Nadwyraz.com i projektów towarzyszących — analityka, debaty, projekty, newslettery i więcej.</p>
           </div>
 
-          {/* Grid */}
+          {/* Kategorie platformy */}
+          <div className="ce-section-label">Platforma</div>
+          <div className="ce-cat-grid">
+            {CATEGORIES.map((c) => (
+              <Link key={c.href} href={c.href} className="ce-cat-tile">
+                <span className="ce-cat-icon">{c.icon}</span>
+                <span className="ce-cat-name">{c.label}</span>
+                <span className="ce-cat-desc">{c.desc}</span>
+              </Link>
+            ))}
+          </div>
+
+          <div className="ce-divider" />
+
+          {/* Narzędzia AI */}
+          <div className="ce-section-label">Narzędzia AI</div>
           <div className="ce-grid">
             {TOOLS.map((tool, i) => (
               <Link

@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import AppSidebar from "../../components/nav/AppSidebar";
 import { useDarkMode } from "../hooks/useDarkMode";
 
@@ -14,8 +13,9 @@ const DARK = {
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const [dark, toggleTheme] = useDarkMode();
+  const result = useDarkMode();
+  const dark = result[0] as boolean;
+  const toggleTheme = result[1] as () => void;
   const t = dark ? DARK : LIGHT;
 
   return (
@@ -40,7 +40,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </header>
 
       <div className="dl-body">
-        <AppSidebar current={pathname} />
+        <AppSidebar />
         <main className="dl-content">{children}</main>
       </div>
     </>

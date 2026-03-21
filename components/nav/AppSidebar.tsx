@@ -1,77 +1,128 @@
 "use client";
+import { useState, type ReactElement } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useDarkMode } from "../../app/hooks/useDarkMode";
 
 const LIGHT = {
-  bg: "#f5f4f0", surface: "#ffffff", border: "#ddd9d2",
+  surface: "#ffffff", border: "#ddd9d2",
   text: "#1a1814", textSub: "#7a7570", accent: "#b8763a",
-  toggleBg: "#eeecea",
+  hover: "#eeecea", badge: "#f0e8de",
 };
 const DARK = {
-  bg: "#0a0a0a", surface: "#111110", border: "#1e1e1e",
+  surface: "#111110", border: "#1e1e1e",
   text: "#e0ddd8", textSub: "#6a6560", accent: "#b8763a",
-  toggleBg: "#1a1a1a",
+  hover: "#1a1a1a", badge: "#2a1f14",
 };
 
-const CATEGORIES = [
-  {
-    href: "/crm", label: "CRM", icon: "👥",
-    sub: [
-      { href: "/crm/analytics", label: "Analityka" },
-      { href: "/crm/clients", label: "Klienci" },
-      { href: "/crm/winback", label: "Winback" },
-      { href: "/crm/import", label: "Import" },
-    ],
-  },
-  { href: "/products", label: "Produkty", icon: "📦" },
-  { href: "/b2b", label: "B2B", icon: "🤝" },
-  { href: "/tools", label: "Narzędzia", icon: "🔧" },
-  { href: "/reports", label: "Raporty", icon: "📊" },
-  { href: "/admin", label: "Admin", icon: "⚙️" },
-];
+interface SubItem {
+  href: string;
+  label: string;
+  admin?: boolean;
+}
 
-export default function AppSidebar({ current }: { current?: string }) {
-  const [dark] = useDarkMode();
+const SUBCATEGORIES: Record<string, SubItem[]> = {
+  crm: [
+    { href: "/crm/analytics", label: "Analityka 360°" },
+    { href: "/crm/clients",   label: "Baza klientów" },
+    { href: "/crm/winback",   label: "Winback" },
+    { href: "/crm/import",    label: "Import / ETL", admin: true },
+  ],
+  products: [],
+  b2b: [],
+  tools: [
+    { href: "/newsletter-builder", label: "Newsletter Builder" },
+    { href: "/sock-designer",      label: "Sock Designer" },
+  ],
+  reports: [],
+  admin: [],
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  crm:      "CRM klientów",
+  products: "CRM produktowy",
+  b2b:      "B2B",
+  tools:    "Narzędzia",
+  reports:  "Raporty",
+  admin:    "Admin",
+};
+
+// SVG icons
+const Icons: Record<string, ReactElement> = {
+  chevronLeft: (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+  ),
+  user: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+  ),
+};
+
+export default function AppSidebar() {
+  const pathname = usePathname();
+  const [darkRaw] = useDarkMode();
+  const dark = darkRaw as boolean;
   const t = dark ? DARK : LIGHT;
+
+  // Detect active root segment
+  const segment = pathname.split("/").filter(Boolean)[0] ?? "";
+  const subs = SUBCATEGORIES[segment] ?? null;
+
+  // Hide entirely on home or unknown segment
+  if (!segment || subs === null) return null;
+
+  const categoryLabel = CATEGORY_LABELS[segment] ?? segment;
 
   return (
     <>
       <style>{`
-        .as-sidebar { width: 220px; min-height: 100vh; background: ${t.surface}; border-right: 1px solid ${t.border}; padding: 8px 0; flex-shrink: 0; font-family: var(--font-geist-sans), system-ui, sans-serif; }
-        .as-header { padding: 10px 20px 6px; font-size: 10px; color: ${t.textSub}; letter-spacing: 0.12em; text-transform: uppercase; }
-        .as-sep { height: 1px; background: ${t.border}; margin: 6px 0; }
-        .as-item { display: flex; align-items: center; gap: 10px; padding: 9px 20px; text-decoration: none; color: ${t.textSub}; font-size: 13px; transition: background 0.1s; border-left: 2px solid transparent; }
-        .as-item:hover { background: ${t.toggleBg}; color: ${t.text}; }
-        .as-item.active { color: ${t.accent}; border-left-color: ${t.accent}; background: ${t.toggleBg}; }
-        .as-subitem { display: flex; align-items: center; padding: 7px 20px 7px 46px; text-decoration: none; color: ${t.textSub}; font-size: 12px; transition: background 0.1s; border-left: 2px solid transparent; }
-        .as-subitem:hover { background: ${t.toggleBg}; color: ${t.text}; }
-        .as-subitem.active { color: ${t.accent}; border-left-color: ${t.accent}; background: ${t.toggleBg}; }
-        @media (max-width: 768px) { .as-sidebar { display: none; } }
+        .as-wrap { width: 220px; min-height: 100%; background: ${t.surface}; border-right: 1px solid ${t.border}; display: flex; flex-direction: column; font-family: var(--font-geist-sans), system-ui, sans-serif; flex-shrink: 0; }
+        .as-back { display: flex; align-items: center; gap: 6px; padding: 12px 14px 10px; font-size: 11px; color: ${t.textSub}; text-decoration: none; transition: color 0.1s; border-bottom: 1px solid ${t.border}; }
+        .as-back:hover { color: ${t.accent}; }
+        .as-section-label { padding: 14px 14px 6px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: ${t.textSub}; }
+        .as-sep { height: 1px; background: ${t.border}; margin: 2px 0 4px; }
+        .as-item { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; text-decoration: none; color: ${t.textSub}; font-size: 13px; border-left: 2px solid transparent; transition: background 0.1s, color 0.1s; }
+        .as-item:hover { background: ${t.hover}; color: ${t.text}; }
+        .as-item.active { color: ${t.accent}; border-left-color: ${t.accent}; background: ${t.hover}; }
+        .as-badge { font-size: 9px; padding: 1px 5px; border-radius: 4px; background: ${t.badge}; color: ${t.accent}; letter-spacing: 0.04em; text-transform: uppercase; }
+        .as-empty { padding: 14px; font-size: 12px; color: ${t.textSub}; }
+        .as-footer { margin-top: auto; border-top: 1px solid ${t.border}; padding: 12px 14px; display: flex; align-items: center; gap: 9px; color: ${t.textSub}; font-size: 12px; }
+        .as-footer-avatar { width: 26px; height: 26px; border-radius: 50%; background: ${t.hover}; border: 1px solid ${t.border}; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        @media (max-width: 768px) { .as-wrap { display: none; } }
       `}</style>
-      <nav className="as-sidebar">
-        <div className="as-header">Menu</div>
+
+      <aside className="as-wrap">
+        <Link href="/" className="as-back">
+          {Icons.chevronLeft} Wszystkie kategorie
+        </Link>
+
+        <div className="as-section-label">{categoryLabel}</div>
         <div className="as-sep" />
-        {CATEGORIES.map((cat) => (
-          <div key={cat.href}>
+
+        {subs.length === 0 ? (
+          <div className="as-empty">Brak podkategorii</div>
+        ) : (
+          subs.map((s) => (
             <Link
-              href={cat.href}
-              className={"as-item" + (current === cat.href ? " active" : "")}
+              key={s.href}
+              href={s.href}
+              className={"as-item" + (pathname === s.href ? " active" : "")}
             >
-              <span style={{ fontSize: 15, width: 20, textAlign: "center" }}>{cat.icon}</span>
-              {cat.label}
+              <span>{s.label}</span>
+              {s.admin && <span className="as-badge">admin</span>}
             </Link>
-            {cat.sub && current?.startsWith(cat.href) && cat.sub.map((s) => (
-              <Link
-                key={s.href}
-                href={s.href}
-                className={"as-subitem" + (current === s.href ? " active" : "")}
-              >
-                {s.label}
-              </Link>
-            ))}
-          </div>
-        ))}
-      </nav>
+          ))
+        )}
+
+        <div className="as-footer">
+          <div className="as-footer-avatar">{Icons.user}</div>
+          <span>Użytkownik</span>
+        </div>
+      </aside>
     </>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useDarkMode } from "../hooks/useDarkMode";
+import { useDarkMode } from "../../hooks/useDarkMode";
 
 const LIGHT = {
   bg: "#f5f4f0", surface: "#ffffff", border: "#ddd9d2",
@@ -12,12 +12,12 @@ const DARK = {
 };
 
 const CARDS = [
-  { href: "/crm", label: "CRM", icon: "👥", desc: "Zarządzanie klientami, analityka, winback" },
-  { href: "/products", label: "Produkty", icon: "📦", desc: "Katalog produktów i zarządzanie ofertą" },
-  { href: "/b2b", label: "B2B", icon: "🤝", desc: "Partnerzy, kontrakty i współpraca B2B" },
-  { href: "/tools", label: "Narzędzia", icon: "🔧", desc: "Narzędzia marketingowe i operacyjne" },
-  { href: "/reports", label: "Raporty", icon: "📊", desc: "Analizy, zestawienia i eksporty" },
-  { href: "/admin", label: "Admin", icon: "⚙️", desc: "Ustawienia systemu i zarządzanie dostępem" },
+  { href: "/crm",      label: "CRM",       icon: "👥", desc: "Zarządzanie klientami, analityka, winback" },
+  { href: "/products", label: "Produkty",  icon: "📦", desc: "Katalog produktów i zarządzanie ofertą" },
+  { href: "/b2b",      label: "B2B",       icon: "🤝", desc: "Partnerzy, kontrakty i współpraca B2B" },
+  { href: "/tools",    label: "Narzędzia", icon: "🔧", desc: "Narzędzia marketingowe i operacyjne" },
+  { href: "/reports",  label: "Raporty",   icon: "📊", desc: "Analizy, zestawienia i eksporty" },
+  { href: "/admin",    label: "Admin",     icon: "⚙️", desc: "Ustawienia systemu i zarządzanie dostępem" },
 ];
 
 export default function DashboardHome() {
