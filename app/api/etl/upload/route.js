@@ -79,8 +79,21 @@ export async function POST(request) {
     }, { status: 400 });
   }
 
-  const filename = file.name ?? "upload.csv";
-  const content = await file.text();
+  const filename = (file.name ?? "upload.csv").replace(/\.gz$/, "");
+  const encoding = request.headers.get("X-Content-Encoding") ?? "";
+
+  let content;
+  if (encoding === "gzip") {
+    const { gunzip } = await import("zlib");
+    const { promisify } = await import("util");
+    const gunzipAsync = promisify(gunzip);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const decompressed = await gunzipAsync(buffer);
+    content = decompressed.toString("utf-8");
+  } else {
+    content = await file.text();
+  }
+
   const rows = parseShoperCSV(content, filename);
 
   console.log("[ETL upload] file:", filename, "rows:", rows.length);

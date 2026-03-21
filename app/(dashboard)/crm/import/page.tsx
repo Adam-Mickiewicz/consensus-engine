@@ -16,6 +16,12 @@ const DARK = {
 };
 
 
+async function compressFile(file: File): Promise<File> {
+  const stream = file.stream().pipeThrough(new CompressionStream("gzip"));
+  const blob = await new Response(stream).blob();
+  return new File([blob], file.name + ".gz", { type: "application/gzip" });
+}
+
 function fmtBytes(n: number) {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
@@ -122,13 +128,14 @@ export default function ImportPage() {
         const { file } = files[i];
         setProgressMsg(`Przetwarzanie plik ${i + 1}/${files.length}: ${file.name}…`);
 
+        const compressed = await compressFile(file);
         const fd = new FormData();
-        fd.append("file", file);
+        fd.append("file", compressed);
 
         try {
           const res = await fetch(`${window.location.origin}/api/etl/upload`, {
             method: "POST",
-            headers: { Authorization: `Bearer ${jwt}` },
+            headers: { Authorization: `Bearer ${jwt}`, "X-Content-Encoding": "gzip" },
             body: fd,
           });
 
