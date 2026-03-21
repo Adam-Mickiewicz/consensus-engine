@@ -1,13 +1,10 @@
 // app/api/etl/upload/route.js
-// Przyjmuje multipart/form-data z plikami CSV, parsuje i przepuszcza przez ETL.
-// Obsługuje dwa tryby:
-//   - Bezpośredni (pola "files"): jeden request z plikami ≤4MB
-//   - Chunked (pole "chunk_index"): kawałki po ≤3MB, scala /finalize
+// Przyjmuje jeden plik CSV jako multipart/form-data (pole "file").
+// Parsuje i przepuszcza przez pełny ETL pipeline. Jeden request = jeden plik.
 
 import { createClient } from "@supabase/supabase-js";
-import { mergeMultipleCSVs } from "../../../../lib/crm/csvParser";
+import { parseShoperCSV } from "../../../../lib/crm/csvParser";
 import { runETLPipeline } from "../../../../lib/crm/etl";
-import { storeChunk } from "../../../../lib/crm/chunkBuffer";
 
 export const maxDuration = 60;
 export const runtime = "nodejs";
@@ -59,13 +56,10 @@ export async function POST(request) {
   //   perms?.some((p) => p.category === "crm");
   //
   // if (!canImport) {
-  //   return Response.json(
-  //     { error: "Brak uprawnień do importu danych." },
-  //     { status: 403 }
-  //   );
+  //   return Response.json({ error: "Brak uprawnień do importu danych." }, { status: 403 });
   // }
 
-  // ── Odczyt multipart ─────────────────────────────────────────────────────────
+  // ── Odczyt pliku ─────────────────────────────────────────────────────────────
   let formData;
   try {
     formData = await request.formData();
@@ -73,53 +67,19 @@ export async function POST(request) {
     return Response.json({ error: "Nieprawidłowe multipart/form-data." }, { status: 400 });
   }
 
-  // ── Tryb chunked ──────────────────────────────────────────────────────────────
-  if (formData.has("chunk_index")) {
-    const chunkText = formData.get("chunk_text");
-    const chunkIndex = parseInt(formData.get("chunk_index") ?? "", 10);
-    const totalChunks = parseInt(formData.get("total_chunks") ?? "0", 10);
-    const sourceFilename = formData.get("source_filename") ?? "upload.csv";
-    const sessionId = formData.get("session_id");
-
-    if (!sessionId || chunkText === null || isNaN(chunkIndex) || totalChunks < 1) {
-      return Response.json({ error: "Nieprawidłowe pola chunk." }, { status: 400 });
-    }
-
-    const chunkResult = await storeChunk({
-      sessionId,
-      filename: sourceFilename,
-      chunkIndex,
-      totalChunks,
-      text: chunkText,
-      userId: user.id,
-    });
-
-    return Response.json({ ok: true, buffered: true, received: chunkResult.received, total: totalChunks });
+  const file = formData.get("file");
+  if (!file || typeof file === "string") {
+    return Response.json({ error: "Brak pliku w żądaniu (pole 'file')." }, { status: 400 });
   }
 
-  // ── Tryb bezpośredni ──────────────────────────────────────────────────────────
-  const files = formData.getAll("files");
-  if (!files || files.length === 0) {
-    return Response.json({ error: "Brak plików w żądaniu." }, { status: 400 });
-  }
+  const filename = file.name ?? "upload.csv";
+  const content = await file.text();
+  const rows = parseShoperCSV(content, filename);
 
-  // Sumuj rozmiar do logowania
-  let totalBytes = 0;
-  for (const file of files) {
-    if (typeof file === "string") continue;
-    totalBytes += file.size ?? 0;
-  }
+  console.log("[ETL upload] file:", filename, "rows:", rows.length);
 
-  // ── Czytaj pliki ──────────────────────────────────────────────────────────────
-  const filesArray = [];
-  for (const file of files) {
-    if (typeof file === "string") continue;
-    const content = await file.text();
-    filesArray.push({ name: file.name ?? "upload.csv", content });
-  }
-
-  if (filesArray.length === 0) {
-    return Response.json({ error: "Nie znaleziono plików CSV." }, { status: 400 });
+  if (rows.length === 0) {
+    return Response.json({ error: `Plik ${filename} nie zawiera danych.` }, { status: 400 });
   }
 
   // ── ETL pipeline ──────────────────────────────────────────────────────────────
@@ -127,39 +87,34 @@ export async function POST(request) {
 
   let result;
   try {
-    const mergedRows = mergeMultipleCSVs(filesArray);
+    result = await runETLPipeline(rows, supabase, filename);
 
-    if (mergedRows.length === 0) {
-      return Response.json({ error: "Pliki nie zawierają danych." }, { status: 400 });
-    }
-
-    result = await runETLPipeline(mergedRows, supabase, filesArray.map((f) => f.name).join(", "));
+    await supabase.rpc("refresh_crm_views");
 
     await supabase.from("sync_log").insert({
       source: "csv_upload",
       status: "success",
       rows_upserted: result.processed,
       meta: {
-        files: filesArray.map((f) => f.name),
-        total_bytes: totalBytes,
+        file: filename,
         clients_upserted: result.clients,
         unmapped: result.unmapped,
         uploaded_by: user.id,
       },
     }).catch(() => {});
   } catch (err) {
+    console.error(`[ETL upload] ERROR (${filename}):`, err?.message);
+    console.error(`[ETL upload] STACK:`, err?.stack);
+
     await supabase.from("sync_log").insert({
       source: "csv_upload",
       status: "error",
       rows_upserted: 0,
       error_message: err.message?.slice(0, 1000),
-      meta: { files: filesArray.map((f) => f.name), uploaded_by: user.id },
+      meta: { file: filename, uploaded_by: user.id },
     }).catch(() => {});
 
-    return Response.json(
-      { error: `ETL error: ${err.message}` },
-      { status: 500 }
-    );
+    return Response.json({ error: `ETL error: ${err.message}` }, { status: 500 });
   }
 
   return Response.json({

@@ -15,31 +15,6 @@ const DARK = {
   hover: "#1a1a1a", kpi: "#0d0d0c",
 };
 
-const CHUNK_MAX_BYTES = 3 * 1024 * 1024; // 3 MB — poniżej nginx 4 MB limit
-
-/** Dzieli tekst CSV na kawałki ≤maxBytes, nie przerywając w środku wiersza. */
-function splitIntoChunks(text: string, maxBytes = CHUNK_MAX_BYTES): string[] {
-  const chunks: string[] = [];
-  const lines = text.split("\n");
-  let chunk = "";
-  let chunkSize = 0;
-
-  for (const line of lines) {
-    const lineStr = line + "\n";
-    const lineSize = new Blob([lineStr]).size;
-    if (chunkSize + lineSize > maxBytes && chunk) {
-      chunks.push(chunk);
-      chunk = lineStr;
-      chunkSize = lineSize;
-    } else {
-      chunk += lineStr;
-      chunkSize += lineSize;
-    }
-  }
-  if (chunk.trim()) chunks.push(chunk);
-  if (chunks.length === 0) chunks.push(text);
-  return chunks;
-}
 
 function fmtBytes(n: number) {
   if (n < 1024) return `${n} B`;
@@ -137,86 +112,57 @@ export default function ImportPage() {
         return;
       }
 
-      const sessionId = crypto.randomUUID();
+      let totalProcessed = 0;
+      let totalClients = 0;
+      let totalEvents = 0;
+      let totalUnmapped = 0;
+      const errors: string[] = [];
 
-      // Wczytaj każdy plik i podziel na chunki ≤3 MB
-      type ChunkJob = { filename: string; chunkIndex: number; totalChunks: number; text: string };
-      const allChunks: ChunkJob[] = [];
-
-      for (const { file } of files) {
-        const text = await file.text();
-        const chunks = splitIntoChunks(text);
-        for (let i = 0; i < chunks.length; i++) {
-          allChunks.push({ filename: file.name, chunkIndex: i, totalChunks: chunks.length, text: chunks[i] });
-        }
-      }
-
-      // Wyślij każdy chunk osobno
-      for (let i = 0; i < allChunks.length; i++) {
-        const { filename, chunkIndex, totalChunks, text } = allChunks[i];
-        const label = totalChunks > 1 ? ` — ${filename}` : "";
-        setProgressMsg(`Wysyłanie część ${i + 1}/${allChunks.length}${label}…`);
+      for (let i = 0; i < files.length; i++) {
+        const { file } = files[i];
+        setProgressMsg(`Przetwarzanie plik ${i + 1}/${files.length}: ${file.name}…`);
 
         const fd = new FormData();
-        fd.append("chunk_text", text);
-        fd.append("chunk_index", String(chunkIndex));
-        fd.append("total_chunks", String(totalChunks));
-        fd.append("source_filename", filename);
-        fd.append("session_id", sessionId);
+        fd.append("file", file);
 
-        const res = await fetch(`${window.location.origin}/api/etl/upload`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${jwt}` },
-          body: fd,
-        });
+        try {
+          const res = await fetch(`${window.location.origin}/api/etl/upload`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${jwt}` },
+            body: fd,
+          });
 
-        if (!res.ok) {
           const ct = res.headers.get("content-type") ?? "";
-          if (ct.includes("application/json")) {
-            const json = await res.json();
-            setErrorMsg(json.error ?? `Błąd serwera (${res.status}).`);
-          } else {
+          if (!ct.includes("application/json")) {
             const errText = await res.text().catch(() => "");
-            setErrorMsg(`Serwer zwrócił nieoczekiwaną odpowiedź (${res.status}). Sprawdź logi dev servera.`);
-            console.error("[ETL upload chunk] non-JSON:", res.status, errText.slice(0, 300));
+            errors.push(`${file.name}: nieoczekiwana odpowiedź (${res.status})`);
+            console.error("[ETL upload] non-JSON:", res.status, errText.slice(0, 300));
+            continue;
           }
-          setStatus("error");
-          return;
+
+          const json = await res.json();
+          if (!res.ok) {
+            errors.push(`${file.name}: ${json.error ?? `błąd ${res.status}`}`);
+            continue;
+          }
+
+          totalProcessed += (json.processed as number) ?? 0;
+          totalClients   += (json.clients   as number) ?? 0;
+          totalEvents    += (json.events    as number) ?? 0;
+          totalUnmapped  += (json.unmapped  as number) ?? 0;
+        } catch (err) {
+          errors.push(`${file.name}: ${err instanceof Error ? err.message : "błąd połączenia"}`);
         }
       }
 
-      // Finalizacja — scala chunki i uruchamia ETL
-      setProgressMsg("Przetwarzanie ETL — normalizacja, vault, taksonomia, okazje, profile…");
-
-      const finalizeRes = await fetch(`${window.location.origin}/api/etl/upload/finalize`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          session_id: sessionId,
-          filenames: files.map(({ file }) => file.name),
-        }),
-      });
-
-      const ct = finalizeRes.headers.get("content-type") ?? "";
-      if (!ct.includes("application/json")) {
-        const errText = await finalizeRes.text().catch(() => "");
-        setErrorMsg(`Serwer zwrócił nieoczekiwaną odpowiedź (${finalizeRes.status}). Sprawdź logi dev servera.`);
-        setStatus("error");
-        console.error("[ETL finalize] non-JSON:", finalizeRes.status, errText.slice(0, 300));
-        return;
-      }
-
-      const json = await finalizeRes.json();
-      if (!finalizeRes.ok) {
-        setErrorMsg(json.error ?? `Błąd serwera (${finalizeRes.status}).`);
+      if (errors.length > 0 && totalProcessed === 0) {
+        setErrorMsg(errors.join("\n"));
         setStatus("error");
         return;
       }
 
-      setResult(json);
+      setResult({ processed: totalProcessed, clients: totalClients, events: totalEvents, unmapped: totalUnmapped });
+      if (errors.length > 0) setErrorMsg(`Ostrzeżenia (${errors.length} plik/ów):\n${errors.join("\n")}`);
       setStatus("done");
       loadSyncLog();
     } catch (err: unknown) {
