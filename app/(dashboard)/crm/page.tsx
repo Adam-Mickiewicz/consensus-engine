@@ -5,17 +5,71 @@ import { useDarkMode } from "../../hooks/useDarkMode";
 const LIGHT = {
   surface: "#ffffff", border: "#ddd9d2",
   text: "#1a1814", textSub: "#7a7570", accent: "#b8763a",
+  hover: "#eeecea", badge: "#f0e8de",
 };
 const DARK = {
   surface: "#111110", border: "#1e1e1e",
   text: "#e0ddd8", textSub: "#6a6560", accent: "#b8763a",
+  hover: "#1a1a1a", badge: "#2a1f14",
 };
 
-const SECTIONS = [
-  { href: "/crm/analytics", label: "Analityka", icon: "📈", desc: "Statystyki i trendy klientów" },
-  { href: "/crm/clients", label: "Klienci", icon: "👤", desc: "Baza klientów i historia zamówień" },
-  { href: "/crm/winback", label: "Winback", icon: "🔄", desc: "Kampanie reaktywacyjne" },
-  { href: "/crm/import", label: "Import", icon: "📥", desc: "Import danych (tylko admin)" },
+const MODULES = [
+  {
+    href: "/crm/analytics",
+    label: "Overview 360°",
+    icon: "📊",
+    desc: "KPI, segmenty, risk levels, top światy",
+    badge: null,
+  },
+  {
+    href: "/crm/analytics/worlds",
+    label: "Mapa Zainteresowań",
+    icon: "🗺️",
+    desc: "Tagi granularne, filary marki, heatmapa segment × świat",
+    badge: null,
+  },
+  {
+    href: "/crm/analytics/behavior",
+    label: "Zachowania Zakupowe",
+    icon: "🛍️",
+    desc: "Promo vs full price, Early Adopters, Promo Hunters, Occasion Buyers",
+    badge: null,
+  },
+  {
+    href: "/crm/analytics/occasions",
+    label: "Kalendarz Okazji",
+    icon: "📅",
+    desc: "Sezonowość, okazje cykliczne, kampanie personalizowane",
+    badge: null,
+  },
+  {
+    href: "/crm/analytics/cohorts",
+    label: "Kohorty Retencji",
+    icon: "🔁",
+    desc: "Macierz kohort, czas do 2. zakupu, retention per segment",
+    badge: null,
+  },
+  {
+    href: "/crm/clients/NZ-DEMO001",
+    label: "Profil Klienta",
+    icon: "👤",
+    desc: "DNA taksonomiczne, timeline zakupów, Next Best Action",
+    badge: "demo",
+  },
+  {
+    href: "/crm/winback",
+    label: "Winback",
+    icon: "⚡",
+    desc: "Kampanie reaktywacyjne dla VIP Lost / HighRisk",
+    badge: null,
+  },
+  {
+    href: "/crm/import",
+    label: "Import / ETL",
+    icon: "📥",
+    desc: "Import danych z arkuszy i zewnętrznych źródeł",
+    badge: "admin",
+  },
 ];
 
 export default function CrmPage() {
@@ -25,22 +79,28 @@ export default function CrmPage() {
   return (
     <>
       <style>{`
-        .crm-title { font-family: var(--font-dm-serif), serif; font-size: 24px; color: ${t.text}; margin: 0 0 20px; }
-        .crm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
-        .crm-card { display: flex; flex-direction: column; gap: 6px; padding: 18px; background: ${t.surface}; border: 1px solid ${t.border}; border-radius: 10px; text-decoration: none; transition: border-color 0.15s; }
-        .crm-card:hover { border-color: ${t.accent}; }
-        .crm-icon { font-size: 22px; }
-        .crm-label { font-size: 14px; font-weight: 600; color: ${t.text}; }
-        .crm-desc { font-size: 12px; color: ${t.textSub}; }
+        .crm-title { font-family: var(--font-dm-serif), serif; font-size: 26px; color: ${t.text}; margin: 0 0 4px; }
+        .crm-sub { font-size: 13px; color: ${t.textSub}; margin: 0 0 28px; }
+        .crm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+        .crm-card { display: flex; flex-direction: column; gap: 7px; padding: 20px; background: ${t.surface}; border: 1px solid ${t.border}; border-radius: 10px; text-decoration: none; transition: border-color 0.15s, box-shadow 0.15s; position: relative; }
+        .crm-card:hover { border-color: ${t.accent}; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+        .crm-icon { font-size: 24px; }
+        .crm-label { font-size: 14px; font-weight: 700; color: ${t.text}; }
+        .crm-desc { font-size: 12px; color: ${t.textSub}; line-height: 1.5; }
+        .crm-badge { position: absolute; top: 14px; right: 14px; font-size: 9px; padding: 2px 7px; border-radius: 4px; background: ${t.badge}; color: ${t.accent}; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+        .crm-divider { grid-column: 1 / -1; border-top: 1px solid ${t.border}; margin: 4px 0; }
       `}</style>
 
-      <h1 className="crm-title">CRM</h1>
+      <h1 className="crm-title">CRM Klientów</h1>
+      <p className="crm-sub">Platforma analityki klientów Nadwyraz.com — 1 200 rekordów, 6 modułów analitycznych</p>
+
       <div className="crm-grid">
-        {SECTIONS.map((s) => (
-          <Link key={s.href} href={s.href} className="crm-card">
-            <span className="crm-icon">{s.icon}</span>
-            <span className="crm-label">{s.label}</span>
-            <span className="crm-desc">{s.desc}</span>
+        {MODULES.map((m, i) => (
+          <Link key={m.href} href={m.href} className="crm-card">
+            {m.badge && <span className="crm-badge">{m.badge}</span>}
+            <span className="crm-icon">{m.icon}</span>
+            <span className="crm-label">{m.label}</span>
+            <span className="crm-desc">{m.desc}</span>
           </Link>
         ))}
       </div>

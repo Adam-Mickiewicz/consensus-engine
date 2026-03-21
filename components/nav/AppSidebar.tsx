@@ -23,10 +23,14 @@ interface SubItem {
 
 const SUBCATEGORIES: Record<string, SubItem[]> = {
   crm: [
-    { href: "/crm/analytics", label: "Analityka 360°" },
-    { href: "/crm/clients",   label: "Baza klientów" },
-    { href: "/crm/winback",   label: "Winback" },
-    { href: "/crm/import",    label: "Import / ETL", admin: true },
+    { href: "/crm/analytics",          label: "Overview 360°" },
+    { href: "/crm/analytics/worlds",   label: "Zainteresowania" },
+    { href: "/crm/analytics/behavior", label: "Zachowania" },
+    { href: "/crm/analytics/occasions",label: "Okazje" },
+    { href: "/crm/analytics/cohorts",  label: "Kohorty" },
+    { href: "/crm/clients",            label: "Klienci" },
+    { href: "/crm/winback",            label: "Winback" },
+    { href: "/crm/import",             label: "Import / ETL", admin: true },
   ],
   products: [],
   b2b: [],
@@ -110,7 +114,7 @@ export default function AppSidebar() {
             <Link
               key={s.href}
               href={s.href}
-              className={"as-item" + (pathname === s.href ? " active" : "")}
+              className={"as-item" + (pathname === s.href || (s.href !== "/crm/analytics" && pathname.startsWith(s.href)) ? " active" : "")}
             >
               <span>{s.label}</span>
               {s.admin && <span className="as-badge">admin</span>}
