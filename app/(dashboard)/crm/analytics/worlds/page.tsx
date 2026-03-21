@@ -4,24 +4,28 @@ import WorldsView from "./WorldsView";
 export default async function WorldsPage() {
   const supabase = getServiceClient();
 
-  const [taxonomyResult, clientsResult] = await Promise.all([
+  const [taxonomyResult, worldsResult, segWorldsResult, segmentsResult] = await Promise.all([
     supabase
       .from("client_taxonomy_summary")
-      .select("client_id, top_tags_granularne, top_tags_domenowe, top_filary_marki"),
+      .select("top_tags_granularne, top_tags_domenowe, top_filary_marki")
+      .limit(500000),
     supabase
-      .from("clients_360")
-      .select("client_id, legacy_segment, ulubiony_swiat"),
+      .from("crm_worlds")
+      .select("*")
+      .order("count", { ascending: false })
+      .limit(10),
+    supabase.from("crm_segment_worlds").select("*"),
+    supabase.from("crm_segments").select("legacy_segment, count"),
   ]);
 
-  if (
-    (taxonomyResult.error && clientsResult.error) ||
-    (!taxonomyResult.data?.length && !clientsResult.data?.length)
-  ) {
+  if (taxonomyResult.error && worldsResult.error) {
     return <WorldsView data={null} />;
   }
 
   const taxonomy = taxonomyResult.data ?? [];
-  const clients = clientsResult.data ?? [];
+  const worldsRaw = worldsResult.data ?? [];
+  const segWorlds = segWorldsResult.data ?? [];
+  const segmentCounts = segmentsResult.data ?? [];
 
   if (taxonomy.length === 0) {
     return <WorldsView data={null} />;
@@ -72,30 +76,23 @@ export default async function WorldsPage() {
       pct: Math.round((count / totalDomainCount) * 100),
     }));
 
-  // Build a map: client_id → segment
-  const segmentMap = new Map(clients.map(c => [c.client_id, c.legacy_segment]));
+  // Top worlds list z widoku crm_worlds
+  const topWorldsList = worldsRaw.map(w => w.ulubiony_swiat);
 
-  // Top 10 worlds from clients_360.ulubiony_swiat
-  const worldFreqAll = new Map<string, number>();
-  for (const c of clients) {
-    if (c.ulubiony_swiat)
-      worldFreqAll.set(c.ulubiony_swiat, (worldFreqAll.get(c.ulubiony_swiat) ?? 0) + 1);
-  }
-  const topWorldsList = [...worldFreqAll.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([w]) => w);
+  // Mapa: segment → łączna liczba klientów (z crm_segments)
+  const segTotalMap = new Map(segmentCounts.map(s => [s.legacy_segment, Number(s.count)]));
 
-  // Heatmap: segment × world
+  // Heatmap: segment × świat z crm_segment_worlds (bez ładowania wszystkich rekordów)
   const segOrder = ["Diamond", "Platinum", "Gold", "Returning", "New"];
   const heatmap = segOrder
     .map(seg => {
-      const segClients = clients.filter(c => c.legacy_segment === seg);
-      const segTotal = segClients.length || 1;
+      const segTotal = segTotalMap.get(seg);
+      if (!segTotal) return null;
       const worldCountInSeg = new Map<string, number>();
-      for (const c of segClients) {
-        if (c.ulubiony_swiat)
-          worldCountInSeg.set(c.ulubiony_swiat, (worldCountInSeg.get(c.ulubiony_swiat) ?? 0) + 1);
+      for (const sw of segWorlds) {
+        if (sw.legacy_segment === seg) {
+          worldCountInSeg.set(sw.ulubiony_swiat, Number(sw.count));
+        }
       }
       return {
         segment: seg,
@@ -105,10 +102,7 @@ export default async function WorldsPage() {
         })),
       };
     })
-    .filter(row => {
-      const segClients = clients.filter(c => c.legacy_segment === row.segment);
-      return segClients.length > 0;
-    });
+    .filter(Boolean) as { segment: string; topWorlds: { world: string; pct: number }[] }[];
 
   return (
     <WorldsView

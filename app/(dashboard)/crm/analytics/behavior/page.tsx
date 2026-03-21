@@ -4,74 +4,62 @@ import BehaviorView from "./BehaviorView";
 export default async function BehaviorPage() {
   const supabase = getServiceClient();
 
-  const [clientsResult, eventsResult] = await Promise.all([
+  const [segmentsRes, occasionsRes] = await Promise.all([
+    supabase.from("crm_behavior_segments").select("*"),
     supabase
-      .from("clients_360")
-      .select("legacy_segment, orders_count, purchase_frequency_yearly"),
-    supabase
-      .from("client_product_events")
-      .select("client_id, season")
-      .not("season", "is", null),
+      .from("crm_occasions")
+      .select("*")
+      .order("client_count", { ascending: false })
+      .limit(10),
   ]);
 
-  if (
-    (clientsResult.error && eventsResult.error) ||
-    (!clientsResult.data?.length && !eventsResult.data?.length)
-  ) {
+  if (segmentsRes.error && occasionsRes.error) {
     return <BehaviorView data={null} />;
   }
 
-  const clients = clientsResult.data ?? [];
-  const events = eventsResult.data ?? [];
+  const segments = segmentsRes.data ?? [];
+  const occasions = occasionsRes.data ?? [];
 
-  if (clients.length === 0) {
+  if (segments.length === 0) {
     return <BehaviorView data={null} />;
   }
 
-  const totalCustomers = clients.length;
+  const totalCustomers = segments.reduce((s, r) => s + Number(r.count), 0);
 
-  // Orders per year per segment
   const segOrder = ["Diamond", "Platinum", "Gold", "Returning", "New"];
+
   const ordersPerYear = segOrder
     .map(seg => {
-      const segClients = clients.filter(c => c.legacy_segment === seg);
-      if (segClients.length === 0) return null;
-      const avg =
-        segClients.reduce((s, c) => s + (parseFloat(c.purchase_frequency_yearly) || 0), 0) /
-        segClients.length;
-      return { segment: seg, avgOrdersPerYear: Math.round(avg * 10) / 10 };
+      const row = segments.find(r => r.legacy_segment === seg);
+      if (!row) return null;
+      return {
+        segment: seg,
+        avgOrdersPerYear: Math.round(Number(row.avg_frequency) * 10) / 10,
+      };
     })
     .filter(Boolean) as { segment: string; avgOrdersPerYear: number }[];
 
-  // Retention per segment (orders_count >= 2)
   const retentionBySegment = segOrder
     .map(seg => {
-      const segClients = clients.filter(c => c.legacy_segment === seg);
-      if (segClients.length === 0) return null;
-      const repeat = segClients.filter(c => (c.orders_count ?? 0) >= 2).length;
+      const row = segments.find(r => r.legacy_segment === seg);
+      if (!row) return null;
+      const total = Number(row.count);
+      const repeat = Number(row.repeat_count);
       return {
         segment: seg,
-        total: segClients.length,
+        total,
         repeat,
-        rate: Math.round((repeat / segClients.length) * 100),
+        rate: Math.round((repeat / total) * 100),
       };
     })
     .filter(Boolean) as { segment: string; total: number; repeat: number; rate: number }[];
 
-  // Top seasons from client_product_events
-  const seasonFreq = new Map<string, number>();
-  for (const e of events) {
-    if (e.season) seasonFreq.set(e.season, (seasonFreq.get(e.season) ?? 0) + 1);
-  }
-  const totalEvents = events.length || 1;
-  const topSeasons = [...seasonFreq.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([season, count]) => ({
-      season,
-      count,
-      pct: Math.round((count / totalEvents) * 100),
-    }));
+  const totalEvents = occasions.reduce((s, r) => s + Number(r.event_count), 0) || 1;
+  const topSeasons = occasions.map(r => ({
+    season: r.season,
+    count: Number(r.event_count),
+    pct: Math.round((Number(r.event_count) / totalEvents) * 100),
+  }));
 
   return (
     <BehaviorView

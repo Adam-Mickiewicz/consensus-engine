@@ -4,61 +4,59 @@ import CohortsView from "./CohortsView";
 export default async function CohortsPage() {
   const supabase = getServiceClient();
 
-  const { data: clients, error } = await supabase
-    .from("clients_360")
-    .select("client_id, first_order, last_order, orders_count, legacy_segment")
-    .not("first_order", "is", null);
+  const { data: rows, error } = await supabase
+    .from("crm_cohorts")
+    .select("*")
+    .order("cohort");
 
-  if (error || !clients || clients.length === 0) {
+  if (error || !rows || rows.length === 0) {
     return <CohortsView data={null} />;
   }
 
   const segOrder = ["Diamond", "Platinum", "Gold", "Returning", "New"];
 
-  // Retention by segment
+  // Agreguj per segment (suma po wszystkich kohortach)
+  const segMap = new Map<string, { total: number; repeat: number; weightedDays: number; weightedCount: number }>();
+  for (const r of rows) {
+    const seg = r.legacy_segment ?? "Unknown";
+    const cur = segMap.get(seg) ?? { total: 0, repeat: 0, weightedDays: 0, weightedCount: 0 };
+    cur.total += Number(r.total);
+    cur.repeat += Number(r.repeat_count);
+    if (r.avg_days_to_second != null) {
+      cur.weightedDays += Number(r.avg_days_to_second) * Number(r.repeat_count);
+      cur.weightedCount += Number(r.repeat_count);
+    }
+    segMap.set(seg, cur);
+  }
+
   const retentionBySegment = segOrder
     .map(seg => {
-      const segClients = clients.filter(c => c.legacy_segment === seg);
-      if (segClients.length === 0) return null;
-      const repeat = segClients.filter(c => (c.orders_count ?? 0) >= 2).length;
+      const d = segMap.get(seg);
+      if (!d) return null;
       return {
         segment: seg,
-        total: segClients.length,
-        repeat,
-        rate: Math.round((repeat / segClients.length) * 100),
+        total: d.total,
+        repeat: d.repeat,
+        rate: Math.round((d.repeat / d.total) * 100),
       };
     })
     .filter(Boolean) as { segment: string; total: number; repeat: number; rate: number }[];
 
-  // Avg time to second purchase — approximate from (last_order - first_order) / (orders_count - 1)
-  // Only meaningful for clients with orders_count >= 2
   const avgTimeToSecond = segOrder
     .map(seg => {
-      const segClients = clients.filter(
-        c => c.legacy_segment === seg && (c.orders_count ?? 0) >= 2 && c.first_order && c.last_order
-      );
-      if (segClients.length === 0) return { segment: seg, days: null };
-      const avgDays =
-        segClients.reduce((sum, c) => {
-          const span =
-            (new Date(c.last_order!).getTime() - new Date(c.first_order!).getTime()) /
-            (86400 * 1000);
-          const intervals = (c.orders_count ?? 2) - 1;
-          return sum + (intervals > 0 ? span / intervals : span);
-        }, 0) / segClients.length;
-      return { segment: seg, days: Math.round(avgDays) };
+      const d = segMap.get(seg);
+      if (!d || d.weightedCount === 0) return { segment: seg, days: null };
+      return { segment: seg, days: Math.round(d.weightedDays / d.weightedCount) };
     })
     .filter(Boolean) as { segment: string; days: number | null }[];
 
-  // Cohort matrix: group by first_order month → YYYY-MM
+  // Agreguj per kohortę (suma po wszystkich segmentach)
   const cohortMap = new Map<string, { total: number; repeat: number }>();
-  for (const c of clients) {
-    if (!c.first_order) continue;
-    const key = c.first_order.slice(0, 7); // "YYYY-MM"
-    const cur = cohortMap.get(key) ?? { total: 0, repeat: 0 };
-    cur.total++;
-    if ((c.orders_count ?? 0) >= 2) cur.repeat++;
-    cohortMap.set(key, cur);
+  for (const r of rows) {
+    const c = cohortMap.get(r.cohort) ?? { total: 0, repeat: 0 };
+    c.total += Number(r.total);
+    c.repeat += Number(r.repeat_count);
+    cohortMap.set(r.cohort, c);
   }
 
   const matrix = [...cohortMap.entries()]
@@ -69,7 +67,5 @@ export default async function CohortsPage() {
       m1ret: total > 0 ? Math.round((repeat / total) * 100) : 0,
     }));
 
-  return (
-    <CohortsView data={{ matrix, avgTimeToSecond, retentionBySegment }} />
-  );
+  return <CohortsView data={{ matrix, avgTimeToSecond, retentionBySegment }} />;
 }
