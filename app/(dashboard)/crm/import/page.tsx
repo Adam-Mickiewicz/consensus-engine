@@ -102,22 +102,39 @@ export default function ImportPage() {
       const { data: { session } } = await supabase.auth.getSession();
       const jwt = session?.access_token ?? null;
 
+      if (!jwt) {
+        setErrorMsg("Zaloguj się, aby importować dane.");
+        setStatus("error");
+        return;
+      }
+
       const fd = new FormData();
       for (const { file } of files) fd.append("files", file);
 
       const res = await fetch("/api/etl/upload", {
         method: "POST",
-        headers: jwt ? { Authorization: `Bearer ${jwt}` } : {},
+        headers: { Authorization: `Bearer ${jwt}` },
         body: fd,
       });
 
+      // Sprawdź content-type zanim spróbujesz parsować JSON.
+      // Serwer może zwrócić HTML (błąd kompilacji, 404, crash) — obsłuż to czytelnie.
+      const ct = res.headers.get("content-type") ?? "";
+      if (!ct.includes("application/json")) {
+        const text = await res.text().catch(() => "");
+        setErrorMsg(`Serwer zwrócił nieoczekiwaną odpowiedź (${res.status}). Sprawdź logi dev servera.`);
+        setStatus("error");
+        console.error("[ETL upload] non-JSON response:", res.status, text.slice(0, 300));
+        return;
+      }
+
       const json = await res.json();
-      if (!res.ok) { setErrorMsg(json.error ?? "Błąd serwera."); setStatus("error"); return; }
+      if (!res.ok) { setErrorMsg(json.error ?? `Błąd serwera (${res.status}).`); setStatus("error"); return; }
       setResult(json);
       setStatus("done");
       loadSyncLog();
     } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : "Błąd połączenia.");
+      setErrorMsg(err instanceof Error ? err.message : "Błąd połączenia z serwerem.");
       setStatus("error");
     }
   }
@@ -132,11 +149,17 @@ export default function ImportPage() {
       const { data: { session } } = await supabase.auth.getSession();
       const jwt = session?.access_token ?? null;
 
+      if (!jwt) {
+        setLiveError("Zaloguj się, aby uruchomić synchronizację.");
+        setLiveRunning(false);
+        return;
+      }
+
       const res = await fetch("/api/etl/run", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
+          Authorization: `Bearer ${jwt}`,
         },
       });
 
