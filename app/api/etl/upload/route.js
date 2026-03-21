@@ -1,10 +1,13 @@
 // app/api/etl/upload/route.js
 // Przyjmuje multipart/form-data z plikami CSV, parsuje i przepuszcza przez ETL.
+// Obsługuje dwa tryby:
+//   - Bezpośredni (pola "files"): jeden request z plikami ≤4MB
+//   - Chunked (pole "chunk_index"): kawałki po ≤3MB, scala /finalize
 
 import { createClient } from "@supabase/supabase-js";
 import { mergeMultipleCSVs } from "../../../../lib/crm/csvParser";
-import { flattenShoperCSV, runETLPipeline } from "../../../../lib/crm/etl";
-import { NextRequest } from "next/server";
+import { runETLPipeline } from "../../../../lib/crm/etl";
+import { storeChunk } from "../../../../lib/crm/chunkBuffer";
 
 const MAX_TOTAL_BYTES = 50 * 1024 * 1024; // 50 MB
 
@@ -69,6 +72,31 @@ export async function POST(request) {
     return Response.json({ error: "Nieprawidłowe multipart/form-data." }, { status: 400 });
   }
 
+  // ── Tryb chunked ──────────────────────────────────────────────────────────────
+  if (formData.has("chunk_index")) {
+    const chunkText = formData.get("chunk_text");
+    const chunkIndex = parseInt(formData.get("chunk_index") ?? "", 10);
+    const totalChunks = parseInt(formData.get("total_chunks") ?? "0", 10);
+    const sourceFilename = formData.get("source_filename") ?? "upload.csv";
+    const sessionId = formData.get("session_id");
+
+    if (!sessionId || chunkText === null || isNaN(chunkIndex) || totalChunks < 1) {
+      return Response.json({ error: "Nieprawidłowe pola chunk." }, { status: 400 });
+    }
+
+    storeChunk({
+      sessionId,
+      filename: sourceFilename,
+      chunkIndex,
+      totalChunks,
+      text: chunkText,
+      userId: user.id,
+    });
+
+    return Response.json({ ok: true, buffered: true, received: chunkIndex + 1, total: totalChunks });
+  }
+
+  // ── Tryb bezpośredni ──────────────────────────────────────────────────────────
   const files = formData.getAll("files");
   if (!files || files.length === 0) {
     return Response.json({ error: "Brak plików w żądaniu." }, { status: 400 });
@@ -104,17 +132,14 @@ export async function POST(request) {
 
   let result;
   try {
-    // Scal i zdeduplikuj wszystkie pliki
     const mergedRows = mergeMultipleCSVs(filesArray);
 
     if (mergedRows.length === 0) {
       return Response.json({ error: "Pliki nie zawierają danych." }, { status: 400 });
     }
 
-    // Uruchom pipeline ETL (flattenShoperCSV jest pierwszym krokiem wewnątrz)
     result = await runETLPipeline(mergedRows, supabase, filesArray.map((f) => f.name).join(", "));
 
-    // Zapisz do sync_log
     await supabase.from("sync_log").insert({
       source: "csv_upload",
       status: "success",

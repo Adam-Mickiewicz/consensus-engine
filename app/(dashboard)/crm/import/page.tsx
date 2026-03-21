@@ -14,6 +14,32 @@ const DARK = {
   hover: "#1a1a1a", kpi: "#0d0d0c",
 };
 
+const CHUNK_MAX_BYTES = 3 * 1024 * 1024; // 3 MB — poniżej nginx 4 MB limit
+
+/** Dzieli tekst CSV na kawałki ≤maxBytes, nie przerywając w środku wiersza. */
+function splitIntoChunks(text: string, maxBytes = CHUNK_MAX_BYTES): string[] {
+  const chunks: string[] = [];
+  const lines = text.split("\n");
+  let chunk = "";
+  let chunkSize = 0;
+
+  for (const line of lines) {
+    const lineStr = line + "\n";
+    const lineSize = new Blob([lineStr]).size;
+    if (chunkSize + lineSize > maxBytes && chunk) {
+      chunks.push(chunk);
+      chunk = lineStr;
+      chunkSize = lineSize;
+    } else {
+      chunk += lineStr;
+      chunkSize += lineSize;
+    }
+  }
+  if (chunk.trim()) chunks.push(chunk);
+  if (chunks.length === 0) chunks.push(text);
+  return chunks;
+}
+
 function fmtBytes(n: number) {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
@@ -48,6 +74,7 @@ export default function ImportPage() {
   const [status, setStatus] = useState<RunStatus>("idle");
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [progressMsg, setProgressMsg] = useState<string>("");
   const [syncLogs, setSyncLogs] = useState<SyncLogRow[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
   const [liveRunning, setLiveRunning] = useState(false);
@@ -97,6 +124,7 @@ export default function ImportPage() {
     setStatus("running");
     setResult(null);
     setErrorMsg(null);
+    setProgressMsg("");
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -108,28 +136,85 @@ export default function ImportPage() {
         return;
       }
 
-      const fd = new FormData();
-      for (const { file } of files) fd.append("files", file);
+      const sessionId = crypto.randomUUID();
 
-      const res = await fetch("/api/etl/upload", {
+      // Wczytaj każdy plik i podziel na chunki ≤3 MB
+      type ChunkJob = { filename: string; chunkIndex: number; totalChunks: number; text: string };
+      const allChunks: ChunkJob[] = [];
+
+      for (const { file } of files) {
+        const text = await file.text();
+        const chunks = splitIntoChunks(text);
+        for (let i = 0; i < chunks.length; i++) {
+          allChunks.push({ filename: file.name, chunkIndex: i, totalChunks: chunks.length, text: chunks[i] });
+        }
+      }
+
+      // Wyślij każdy chunk osobno
+      for (let i = 0; i < allChunks.length; i++) {
+        const { filename, chunkIndex, totalChunks, text } = allChunks[i];
+        const label = totalChunks > 1 ? ` — ${filename}` : "";
+        setProgressMsg(`Wysyłanie część ${i + 1}/${allChunks.length}${label}…`);
+
+        const fd = new FormData();
+        fd.append("chunk_text", text);
+        fd.append("chunk_index", String(chunkIndex));
+        fd.append("total_chunks", String(totalChunks));
+        fd.append("source_filename", filename);
+        fd.append("session_id", sessionId);
+
+        const res = await fetch("/api/etl/upload", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${jwt}` },
+          body: fd,
+        });
+
+        if (!res.ok) {
+          const ct = res.headers.get("content-type") ?? "";
+          if (ct.includes("application/json")) {
+            const json = await res.json();
+            setErrorMsg(json.error ?? `Błąd serwera (${res.status}).`);
+          } else {
+            const errText = await res.text().catch(() => "");
+            setErrorMsg(`Serwer zwrócił nieoczekiwaną odpowiedź (${res.status}). Sprawdź logi dev servera.`);
+            console.error("[ETL upload chunk] non-JSON:", res.status, errText.slice(0, 300));
+          }
+          setStatus("error");
+          return;
+        }
+      }
+
+      // Finalizacja — scala chunki i uruchamia ETL
+      setProgressMsg("Przetwarzanie ETL — normalizacja, vault, taksonomia, okazje, profile…");
+
+      const finalizeRes = await fetch("/api/etl/upload/finalize", {
         method: "POST",
-        headers: { Authorization: `Bearer ${jwt}` },
-        body: fd,
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          filenames: files.map(({ file }) => file.name),
+        }),
       });
 
-      // Sprawdź content-type zanim spróbujesz parsować JSON.
-      // Serwer może zwrócić HTML (błąd kompilacji, 404, crash) — obsłuż to czytelnie.
-      const ct = res.headers.get("content-type") ?? "";
+      const ct = finalizeRes.headers.get("content-type") ?? "";
       if (!ct.includes("application/json")) {
-        const text = await res.text().catch(() => "");
-        setErrorMsg(`Serwer zwrócił nieoczekiwaną odpowiedź (${res.status}). Sprawdź logi dev servera.`);
+        const errText = await finalizeRes.text().catch(() => "");
+        setErrorMsg(`Serwer zwrócił nieoczekiwaną odpowiedź (${finalizeRes.status}). Sprawdź logi dev servera.`);
         setStatus("error");
-        console.error("[ETL upload] non-JSON response:", res.status, text.slice(0, 300));
+        console.error("[ETL finalize] non-JSON:", finalizeRes.status, errText.slice(0, 300));
         return;
       }
 
-      const json = await res.json();
-      if (!res.ok) { setErrorMsg(json.error ?? `Błąd serwera (${res.status}).`); setStatus("error"); return; }
+      const json = await finalizeRes.json();
+      if (!finalizeRes.ok) {
+        setErrorMsg(json.error ?? `Błąd serwera (${finalizeRes.status}).`);
+        setStatus("error");
+        return;
+      }
+
       setResult(json);
       setStatus("done");
       loadSyncLog();
@@ -289,7 +374,7 @@ export default function ImportPage() {
           {status === "running" && (
             <div className="imp-progress">
               <span className="imp-spinner" />
-              Trwa ETL — normalizacja, vault, taksonomia, okazje, profile, upsert…
+              {progressMsg || "Przygotowywanie…"}
             </div>
           )}
 

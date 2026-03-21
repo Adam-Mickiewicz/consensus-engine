@@ -32,7 +32,6 @@ const MODELS = {
   gemini: {
     id: "gemini", label: "Gemini", emoji: "🌐", color: "#2563eb",
     options: [
-      { id: "gemini-2.0-flash", label: "2.0 Flash", desc: "Sprawdzony i tani", price: "$0.10/1M" },
       { id: "gemini-2.5-flash", label: "2.5 Flash", desc: "Hybrid reasoning, 1M kontekst", price: "$0.30/1M" },
       { id: "gemini-2.5-pro", label: "2.5 Pro", desc: "Stabilny, świetny do kodowania", price: "$1.25/1M" },
       { id: "gemini-3-flash-preview", label: "3 Flash", desc: "Szybki Gemini 3 z myśleniem", price: "$0.50/1M" },
