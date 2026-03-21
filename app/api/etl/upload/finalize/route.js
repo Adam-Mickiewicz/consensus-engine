@@ -108,6 +108,9 @@ export async function POST(request) {
       },
     }).catch(() => {});
   } catch (err) {
+    console.error("[ETL finalize] FULL ERROR:", err?.message);
+    console.error("[ETL finalize] STACK:", err?.stack);
+
     await supabase.from("sync_log").insert({
       source: "csv_upload",
       status: "error",
