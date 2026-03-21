@@ -67,9 +67,16 @@ export async function POST(request) {
     return Response.json({ error: "Nieprawidłowe multipart/form-data." }, { status: 400 });
   }
 
+  const keys = [...formData.keys()];
+  console.log("[ETL upload] formData keys:", keys);
+
   const file = formData.get("file");
+  console.log("[ETL upload] file type:", typeof file, "value:", file === null ? "null" : file?.constructor?.name);
+
   if (!file || typeof file === "string") {
-    return Response.json({ error: "Brak pliku w żądaniu (pole 'file')." }, { status: 400 });
+    return Response.json({
+      error: `Brak pliku w żądaniu (pole 'file'). Otrzymane pola: ${keys.join(", ") || "(brak)"}`,
+    }, { status: 400 });
   }
 
   const filename = file.name ?? "upload.csv";
