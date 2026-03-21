@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useCallback, useEffect } from "react";
+import Link from "next/link";
 import { useDarkMode } from "../../../hooks/useDarkMode";
 import { supabase } from "../../../../lib/supabase";
 
@@ -396,6 +397,16 @@ export default function ImportPage() {
                   </div>
                 ))}
               </div>
+              {(result.unmapped as number) > 0 && (
+                <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid #f9731633` }}>
+                  <Link
+                    href="/crm/import/unmapped"
+                    style={{ fontSize: 13, color: "#f97316", textDecoration: "none", fontWeight: 600 }}
+                  >
+                    Zobacz {(result.unmapped as number).toLocaleString("pl-PL")} produktów bez mapowania →
+                  </Link>
+                </div>
+              )}
             </div>
           )}
 
