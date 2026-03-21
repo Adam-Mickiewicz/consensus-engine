@@ -13,7 +13,7 @@ const MAX_TOTAL_BYTES = 50 * 1024 * 1024; // 50 MB
 
 function getServiceClient() {
   return createClient(
-    process.env.SUPABASE_URL,
+    process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY,
     { auth: { persistSession: false } }
   );
