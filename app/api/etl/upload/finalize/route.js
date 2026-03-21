@@ -7,7 +7,8 @@ import { assembleFiles, clearSession } from "../../../../../lib/crm/chunkBuffer"
 import { parseShoperCSV } from "../../../../../lib/crm/csvParser";
 import { runETLPipeline } from "../../../../../lib/crm/etl";
 
-export const maxDuration = 300; // 5 minut
+export const maxDuration = 60;
+export const runtime = "nodejs";
 
 function getServiceClient() {
   return createClient(

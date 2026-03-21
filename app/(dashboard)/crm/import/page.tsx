@@ -164,7 +164,7 @@ export default function ImportPage() {
         fd.append("source_filename", filename);
         fd.append("session_id", sessionId);
 
-        const res = await fetch("/api/etl/upload", {
+        const res = await fetch(`${window.location.origin}/api/etl/upload`, {
           method: "POST",
           headers: { Authorization: `Bearer ${jwt}` },
           body: fd,
@@ -188,7 +188,7 @@ export default function ImportPage() {
       // Finalizacja — scala chunki i uruchamia ETL
       setProgressMsg("Przetwarzanie ETL — normalizacja, vault, taksonomia, okazje, profile…");
 
-      const finalizeRes = await fetch("/api/etl/upload/finalize", {
+      const finalizeRes = await fetch(`${window.location.origin}/api/etl/upload/finalize`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${jwt}`,
@@ -241,7 +241,7 @@ export default function ImportPage() {
         return;
       }
 
-      const res = await fetch("/api/etl/run", {
+      const res = await fetch(`${window.location.origin}/api/etl/run`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -328,7 +328,7 @@ export default function ImportPage() {
             <div className="imp-drop-icon">📂</div>
             <div className="imp-drop-title">Przeciągnij pliki CSV tutaj</div>
             <div className="imp-drop-hint">
-              lub <span className="imp-drop-link">kliknij, aby wybrać</span> — obsługuje wiele plików jednocześnie (max 50 MB łącznie)
+              lub <span className="imp-drop-link">kliknij, aby wybrać</span> — obsługuje wiele plików jednocześnie
             </div>
             <input
               ref={fileInputRef}

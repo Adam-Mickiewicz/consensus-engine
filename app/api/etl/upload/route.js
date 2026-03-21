@@ -9,7 +9,8 @@ import { mergeMultipleCSVs } from "../../../../lib/crm/csvParser";
 import { runETLPipeline } from "../../../../lib/crm/etl";
 import { storeChunk } from "../../../../lib/crm/chunkBuffer";
 
-const MAX_TOTAL_BYTES = 50 * 1024 * 1024; // 50 MB
+export const maxDuration = 60;
+export const runtime = "nodejs";
 
 function getServiceClient() {
   return createClient(
@@ -102,17 +103,11 @@ export async function POST(request) {
     return Response.json({ error: "Brak plików w żądaniu." }, { status: 400 });
   }
 
-  // Sprawdź łączny rozmiar
+  // Sumuj rozmiar do logowania
   let totalBytes = 0;
   for (const file of files) {
     if (typeof file === "string") continue;
     totalBytes += file.size ?? 0;
-  }
-  if (totalBytes > MAX_TOTAL_BYTES) {
-    return Response.json(
-      { error: `Pliki przekraczają limit 50 MB (${(totalBytes / 1024 / 1024).toFixed(1)} MB).` },
-      { status: 413 }
-    );
   }
 
   // ── Czytaj pliki ──────────────────────────────────────────────────────────────
