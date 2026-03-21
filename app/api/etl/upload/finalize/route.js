@@ -106,7 +106,7 @@ export async function POST(request) {
         unmapped: result.unmapped,
         uploaded_by: user.id,
       },
-    }).catch(() => {});
+    });
   } catch (err) {
     console.error("[ETL finalize] FULL ERROR:", err?.message);
     console.error("[ETL finalize] STACK:", err?.stack);
@@ -117,7 +117,7 @@ export async function POST(request) {
       rows_upserted: 0,
       error_message: err.message?.slice(0, 1000),
       meta: { files: filenames, uploaded_by: user.id },
-    }).catch(() => {});
+    });
 
     return Response.json({ error: `ETL error: ${err.message}` }, { status: 500 });
   }
