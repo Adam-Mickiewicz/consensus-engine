@@ -429,6 +429,7 @@ export default function ImportPage() {
                     <th>Data</th>
                     <th>Źródło</th>
                     <th>Status</th>
+                    <th>Plik</th>
                     <th style={{ textAlign: "right" }}>Wiersze</th>
                     <th>Klienci / Szczegóły</th>
                   </tr>
@@ -452,6 +453,9 @@ export default function ImportPage() {
                         }}>
                           {row.status}
                         </span>
+                      </td>
+                      <td style={{ color: t.textSub, fontSize: 11, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {row.meta?.file ? String(row.meta.file) : "—"}
                       </td>
                       <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                         {row.rows_upserted.toLocaleString("pl-PL")}
