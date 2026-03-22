@@ -111,28 +111,32 @@ export async function POST(request) {
 
     await supabase.rpc("refresh_crm_views");
 
-    await supabase.from("sync_log").insert({
-      source: "csv_upload",
-      status: "success",
-      rows_upserted: result.processed,
-      meta: {
-        file: filename,
-        clients_upserted: result.clients,
-        unmapped: result.unmapped,
-        uploaded_by: user.id,
-      },
-    }).catch(() => {});
+    try {
+      await supabase.from("sync_log").insert({
+        source: "csv_upload",
+        status: "success",
+        rows_upserted: result.processed,
+        meta: {
+          file: filename,
+          clients_upserted: result.clients,
+          unmapped: result.unmapped,
+          uploaded_by: user.id,
+        },
+      });
+    } catch (_) {}
   } catch (err) {
     console.error(`[ETL upload] ERROR (${filename}):`, err?.message);
     console.error(`[ETL upload] STACK:`, err?.stack);
 
-    await supabase.from("sync_log").insert({
-      source: "csv_upload",
-      status: "error",
-      rows_upserted: 0,
-      error_message: err.message?.slice(0, 1000),
-      meta: { file: filename, uploaded_by: user.id },
-    }).catch(() => {});
+    try {
+      await supabase.from("sync_log").insert({
+        source: "csv_upload",
+        status: "error",
+        rows_upserted: 0,
+        error_message: err.message?.slice(0, 1000),
+        meta: { file: filename, uploaded_by: user.id },
+      });
+    } catch (_) {}
 
     return Response.json({ error: `ETL error: ${err.message}` }, { status: 500 });
   }
