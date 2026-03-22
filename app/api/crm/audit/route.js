@@ -207,6 +207,78 @@ export async function GET() {
       },
     });
 
+    // 8. Historia importów
+    const { data: syncRuns, error: syncErr } = await sb
+      .from('sync_log')
+      .select('id,source,status,rows_upserted,triggered_at,meta,error_message')
+      .eq('source', 'csv_upload')
+      .order('triggered_at', { ascending: false })
+      .limit(50);
+
+    if (!syncErr && syncRuns) {
+      const runs = syncRuns.map(r => ({
+        id: r.id,
+        status: r.status,
+        rows_upserted: r.rows_upserted ?? 0,
+        triggered_at: r.triggered_at,
+        error_message: r.error_message ?? null,
+        filename: r.meta?.file ?? r.meta?.filename ?? r.meta?.file_name ?? null,
+        clients_count: r.meta?.clients_upserted ?? r.meta?.clients ?? null,
+        unmapped_count: r.meta?.unmapped ?? null,
+      }));
+
+      const validRuns = runs.filter(r => r.rows_upserted > 0);
+      const avg_rows     = validRuns.length > 0 ? validRuns.reduce((s, r) => s + r.rows_upserted, 0) / validRuns.length : 0;
+      const unmappedRuns = runs.filter(r => r.unmapped_count != null);
+      const avg_unmapped = unmappedRuns.length > 0 ? unmappedRuns.reduce((s, r) => s + (r.unmapped_count ?? 0), 0) / unmappedRuns.length : 0;
+
+      const anomalies = runs
+        .filter(r => (avg_unmapped > 0 && (r.unmapped_count ?? 0) > avg_unmapped * 3) || (avg_rows > 0 && r.rows_upserted < avg_rows * 0.1))
+        .map(r => r.id);
+
+      const histStatus = anomalies.length === 0 ? 'ok' : anomalies.length <= 2 ? 'warn' : 'danger';
+      checks.push({
+        id: 'import_history',
+        label: 'Historia importów & jakość plików',
+        status: histStatus,
+        message: anomalies.length === 0
+          ? `${runs.length} importów CSV · śr. ${Math.round(avg_rows).toLocaleString('pl-PL')} wierszy/run · śr. ${Math.round(avg_unmapped).toLocaleString('pl-PL')} unmapped/run`
+          : `${anomalies.length} anomalii (${anomalies.length <= 2 ? 'ostrzeżenie' : 'krytyczne'}) · ${runs.length} runów łącznie`,
+        data: { runs, avg_rows: Math.round(avg_rows), avg_unmapped: Math.round(avg_unmapped), anomalies },
+      });
+    }
+
+    // 9. Jakość EAN per miesiąc — fetch all events (already have allEvents)
+    const eanByMonth = {};
+    for (const r of allEvents) {
+      if (!r.order_date) continue;
+      const m = r.order_date.slice(0, 7);
+      if (!eanByMonth[m]) eanByMonth[m] = { eventy: 0, klienci: new Set(), null_ean: 0 };
+      eanByMonth[m].eventy++;
+      if (r.client_id) eanByMonth[m].klienci.add(r.client_id);
+      if (r.ean == null || r.ean === '') eanByMonth[m].null_ean++;
+    }
+    const eanMonths = Object.keys(eanByMonth).sort().map(m => ({
+      month: m,
+      eventy: eanByMonth[m].eventy,
+      klienci: eanByMonth[m].klienci.size,
+      null_ean: eanByMonth[m].null_ean,
+      pct_null_ean: parseFloat((eanByMonth[m].null_ean * 100 / eanByMonth[m].eventy).toFixed(1)),
+    }));
+
+    const maxEanPct = eanMonths.reduce((mx, m) => Math.max(mx, m.pct_null_ean), 0);
+    const eanStatus = maxEanPct > 50 ? 'danger' : maxEanPct > 15 ? 'warn' : 'ok';
+    const badMonths = eanMonths.filter(m => m.pct_null_ean > 15).length;
+    checks.push({
+      id: 'monthly_ean_quality',
+      label: 'Jakość EAN per miesiąc',
+      status: eanStatus,
+      message: eanStatus === 'ok'
+        ? `Wszystkie miesiące poniżej 15% null EAN`
+        : `${badMonths} miesięcy z >15% null EAN · maks: ${maxEanPct.toFixed(1)}%`,
+      data: { eanMonths },
+    });
+
     return NextResponse.json({ checks, generatedAt: new Date().toISOString() });
   } catch (err) {
     console.error('[audit] Error:', err);

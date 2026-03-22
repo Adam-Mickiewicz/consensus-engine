@@ -12,6 +12,12 @@ type CheckStatus = "ok" | "warn" | "danger" | "error" | "na";
 
 interface MonthData { month: string; count: number; }
 interface SegRow { legacy_segment: string; count: number; sum_ltv: string; avg_ltv: string; pct: string; }
+interface ImportRun {
+  id: number; status: string; rows_upserted: number; triggered_at: string;
+  error_message: string | null; filename: string | null;
+  clients_count: number | null; unmapped_count: number | null;
+}
+interface EanMonthData { month: string; eventy: number; klienci: number; null_ean: number; pct_null_ean: number; }
 
 interface AuditCheck {
   id: string;
@@ -26,6 +32,8 @@ interface AuditCheck {
     total360?: number; distinctInEvents?: number; withoutEvents?: number; eventsWithoutProfile?: number;
     unmappedCount?: number; unmappedPurchases?: number;
     segments?: SegRow[];
+    runs?: ImportRun[]; avg_rows?: number; avg_unmapped?: number; anomalies?: number[];
+    eanMonths?: EanMonthData[];
   };
 }
 
@@ -156,10 +164,12 @@ function computeSandboxChecks(items: FlatItem[]): AuditCheck[] {
     data: { nullClient: nullEmail, nullDate, nullEan: nullProduct, eanNullPct: pct.toFixed(1) },
   });
 
-  // 5–7: N/A
-  checks.push({ id: "consistency", label: "Spójność klientów",           status: "na", message: "Niedostępne w trybie piaskownicy — wymaga połączenia z bazą danych" });
-  checks.push({ id: "unmapped",    label: "Produkty bez mapowania EAN",   status: "na", message: "Niedostępne w trybie piaskownicy — mapowanie EAN wymaga katalogu produktów" });
-  checks.push({ id: "segments",    label: "Segmenty klientów",            status: "na", message: "Niedostępne w trybie piaskownicy — segmentacja odbywa się po ETL" });
+  // 5–9: N/A
+  checks.push({ id: "consistency",        label: "Spójność klientów",                   status: "na", message: "Niedostępne w trybie piaskownicy — wymaga połączenia z bazą danych" });
+  checks.push({ id: "unmapped",           label: "Produkty bez mapowania EAN",           status: "na", message: "Niedostępne w trybie piaskownicy — mapowanie EAN wymaga katalogu produktów" });
+  checks.push({ id: "segments",           label: "Segmenty klientów",                   status: "na", message: "Niedostępne w trybie piaskownicy — segmentacja odbywa się po ETL" });
+  checks.push({ id: "import_history",     label: "Historia importów & jakość plików",   status: "na", message: "Niedostępne w trybie piaskownicy — dane sync_log są tylko w bazie" });
+  checks.push({ id: "monthly_ean_quality",label: "Jakość EAN per miesiąc",              status: "na", message: "Niedostępne w trybie piaskownicy — wymaga danych z client_product_events" });
 
   return checks;
 }
@@ -239,6 +249,108 @@ function SegmentTable({ segments, t }: { segments: SegRow[]; t: typeof DARK }) {
         ))}
       </tbody>
     </table>
+  );
+}
+
+function eanCellColor(pct: number): string {
+  if (pct > 15) return "#ef4444";
+  if (pct >= 5)  return "#f59e0b";
+  return "#22c55e";
+}
+
+function EanGrid({ months }: { months: EanMonthData[] }) {
+  if (!months.length) return null;
+  return (
+    <div style={{ marginTop: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 3 }}>
+        {months.map(m => {
+          const [yr, mo] = m.month.split("-");
+          const label = `${mo}/${yr.slice(2)}`;
+          const color = eanCellColor(m.pct_null_ean);
+          return (
+            <div
+              key={m.month}
+              title={`${m.month}\n${m.eventy} eventów · ${m.klienci} klientów\nnull EAN: ${m.null_ean} (${m.pct_null_ean}%)`}
+              style={{ background: color, borderRadius: 3, aspectRatio: "1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontSize: 7, color: "#0f1117", fontWeight: 700, lineHeight: 1.2 }}
+            >
+              <span>{label}</span>
+              <span style={{ fontSize: 6, opacity: 0.85 }}>{m.pct_null_ean}%</span>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ display: "flex", gap: 12, marginTop: 8, flexWrap: "wrap" }}>
+        {[{ color: "#22c55e", label: "<5% null EAN" }, { color: "#f59e0b", label: "5–15%" }, { color: "#ef4444", label: ">15%" }].map(({ color, label }) => (
+          <span key={label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "#8892a4" }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: color, display: "inline-block" }} />
+            {label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ImportHistoryTable({ runs, avg_rows, avg_unmapped, anomalies, t }: {
+  runs: ImportRun[]; avg_rows: number; avg_unmapped: number; anomalies: number[]; t: typeof DARK;
+}) {
+  if (!runs.length) return null;
+  const anomalySet = new Set(anomalies);
+  const maxUnmapped = Math.max(...runs.map(r => r.unmapped_count ?? 0), 1);
+
+  return (
+    <div style={{ marginTop: 12 }}>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+          <thead>
+            <tr>
+              {["Data", "Plik", "Wiersze", "Klienci", "Unmapped", "Status"].map(h => (
+                <th key={h} style={{ padding: "6px 10px", color: t.textSub, fontWeight: 500, fontSize: 10, borderBottom: `1px solid ${t.border}`, textAlign: h === "Plik" || h === "Data" ? "left" : "right", whiteSpace: "nowrap" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {runs.map(r => {
+              const isAnomaly = anomalySet.has(r.id);
+              const unmapped = r.unmapped_count ?? 0;
+              const barPct = Math.round((unmapped / maxUnmapped) * 100);
+              return (
+                <tr key={r.id} style={{ background: isAnomaly ? "#ef444410" : "transparent" }}>
+                  <td style={{ padding: "7px 10px", color: t.textSub, borderBottom: `1px solid ${t.border}`, whiteSpace: "nowrap", fontSize: 11 }}>
+                    {new Date(r.triggered_at).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                  </td>
+                  <td style={{ padding: "7px 10px", color: t.text, borderBottom: `1px solid ${t.border}`, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={r.filename ?? ""}>
+                    {r.filename ?? "—"}
+                  </td>
+                  <td style={{ padding: "7px 10px", color: t.text, borderBottom: `1px solid ${t.border}`, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+                    {r.rows_upserted.toLocaleString("pl-PL")}
+                  </td>
+                  <td style={{ padding: "7px 10px", color: t.textSub, borderBottom: `1px solid ${t.border}`, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+                    {r.clients_count != null ? r.clients_count.toLocaleString("pl-PL") : "—"}
+                  </td>
+                  <td style={{ padding: "7px 10px", borderBottom: `1px solid ${t.border}`, textAlign: "right", minWidth: 120 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-end" }}>
+                      <span style={{ color: unmapped > avg_unmapped * 3 ? "#ef4444" : t.textSub, fontVariantNumeric: "tabular-nums" }}>
+                        {unmapped.toLocaleString("pl-PL")}
+                      </span>
+                      <div style={{ width: 50, height: 6, background: t.border, borderRadius: 3, flexShrink: 0 }}>
+                        <div style={{ width: `${barPct}%`, height: "100%", background: unmapped > avg_unmapped * 3 ? "#ef4444" : "#6366f1", borderRadius: 3 }} />
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: "7px 10px", borderBottom: `1px solid ${t.border}`, textAlign: "right" }}>
+                    <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: isAnomaly ? "#ef4444" : "#22c55e" }} />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ fontSize: 11, color: t.textSub, marginTop: 10 }}>
+        Średnia: <strong style={{ color: t.text }}>{avg_rows.toLocaleString("pl-PL")}</strong> wierszy / run &nbsp;·&nbsp; <strong style={{ color: t.text }}>{avg_unmapped.toLocaleString("pl-PL")}</strong> unmapped / run
+      </div>
+    </div>
   );
 }
 
@@ -336,6 +448,22 @@ function CheckCard({ check, t }: { check: AuditCheck; t: typeof DARK }) {
           <div style={{ fontSize: 10, color: t.textSub }}>grup duplikatów (client_id · ean · order_date)</div>
         </div>
       );
+    }
+
+    if (check.id === "import_history" && d.runs) {
+      return (
+        <ImportHistoryTable
+          runs={d.runs}
+          avg_rows={d.avg_rows ?? 0}
+          avg_unmapped={d.avg_unmapped ?? 0}
+          anomalies={d.anomalies ?? []}
+          t={t}
+        />
+      );
+    }
+
+    if (check.id === "monthly_ean_quality" && d.eanMonths) {
+      return <EanGrid months={d.eanMonths} />;
     }
 
     return null;
