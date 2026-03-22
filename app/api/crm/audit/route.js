@@ -302,24 +302,26 @@ export async function GET() {
 
     // 10. LTV Consistency
     try {
-      const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+      const PAGE = 1000;
+      let ltv360 = 0;
+      let from = 0;
+      while (true) {
+        const { data, error } = await sb.from('clients_360').select('ltv').range(from, from + PAGE - 1);
+        if (error || !data?.length) break;
+        ltv360 += data.reduce((s, r) => s + (parseFloat(r.ltv) || 0), 0);
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
 
-      const [ltvRes, evRes] = await Promise.all([
-        fetch(`${supabaseUrl}/rest/v1/clients_360?select=ltv.sum()`, { headers }),
-        fetch(`${supabaseUrl}/rest/v1/client_product_events?select=line_total.sum()`, { headers }),
-      ]);
-      if (!ltvRes.ok) throw new Error(`clients_360 sum HTTP ${ltvRes.status}`);
-      if (!evRes.ok)  throw new Error(`client_product_events sum HTTP ${evRes.status}`);
-
-      // PostgREST zwraca: [{"sum": "14923523.36"}] — wartość jako string
-      const ltvJson = await ltvRes.json();
-      const evJson  = await evRes.json();
-      console.log('[audit] ltv_consistency raw:', JSON.stringify(ltvJson), JSON.stringify(evJson));
-
-      const ltv360    = parseFloat(ltvJson?.[0]?.sum ?? 0) || 0;
-      const ltvEvents = parseFloat(evJson?.[0]?.sum  ?? 0) || 0;
+      let ltvEvents = 0;
+      from = 0;
+      while (true) {
+        const { data, error } = await sb.from('client_product_events').select('line_total').range(from, from + PAGE - 1);
+        if (error || !data?.length) break;
+        ltvEvents += data.reduce((s, r) => s + (parseFloat(r.line_total) || 0), 0);
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
 
       const diffPct = ltv360 > 0 ? Math.abs(ltv360 - ltvEvents) / ltv360 * 100 : 0;
       let status = 'ok';
