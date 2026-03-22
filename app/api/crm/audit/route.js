@@ -302,26 +302,10 @@ export async function GET() {
 
     // 10. LTV Consistency
     try {
-      const PAGE = 1000;
-      let ltv360 = 0;
-      let from = 0;
-      while (true) {
-        const { data, error } = await sb.from('clients_360').select('ltv').range(from, from + PAGE - 1);
-        if (error || !data?.length) break;
-        ltv360 += data.reduce((s, r) => s + (parseFloat(r.ltv) || 0), 0);
-        if (data.length < PAGE) break;
-        from += PAGE;
-      }
-
-      let ltvEvents = 0;
-      from = 0;
-      while (true) {
-        const { data, error } = await sb.from('client_product_events').select('line_total').range(from, from + PAGE - 1);
-        if (error || !data?.length) break;
-        ltvEvents += data.reduce((s, r) => s + (parseFloat(r.line_total) || 0), 0);
-        if (data.length < PAGE) break;
-        from += PAGE;
-      }
+      const { data: rpcData, error: rpcErr } = await sb.rpc('get_ltv_sums');
+      if (rpcErr) throw new Error(rpcErr.message);
+      const ltv360    = parseFloat(rpcData?.ltv_360    ?? 0);
+      const ltvEvents = parseFloat(rpcData?.ltv_events ?? 0);
 
       const diffPct = ltv360 > 0 ? Math.abs(ltv360 - ltvEvents) / ltv360 * 100 : 0;
       let status = 'ok';
