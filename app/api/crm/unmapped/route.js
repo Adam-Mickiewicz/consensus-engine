@@ -54,5 +54,11 @@ export async function GET(request) {
     });
   }
 
-  return NextResponse.json({ rows, total: rows.length });
+  return NextResponse.json({ rows, total: rows.length }, {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      'CDN-Cache-Control': 'no-store',
+      'Vercel-CDN-Cache-Control': 'no-store',
+    },
+  });
 }

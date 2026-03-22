@@ -1,10 +1,12 @@
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
+import { headers } from 'next/headers'
 import { getServiceClient } from "@/lib/supabase/server";
 import UnmappedView from "./UnmappedView";
 
 export default async function UnmappedPage() {
+  headers() // wymusza dynamic rendering, blokuje CDN cache
   const supabase = getServiceClient();
 
   const { data, error } = await supabase
