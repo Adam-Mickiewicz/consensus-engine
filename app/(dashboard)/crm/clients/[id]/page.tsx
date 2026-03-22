@@ -1,18 +1,22 @@
 "use client";
+import { use, useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import { useDarkMode } from "../../../../hooks/useDarkMode";
-import { getCustomer } from "../../../../../lib/crm/mockData";
-import { use, useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../../../../../lib/supabase";
 
-const LIGHT = {
-  surface: "#ffffff", border: "#ddd9d2",
-  text: "#1a1814", textSub: "#7a7570", accent: "#b8763a",
-  hover: "#eeecea", kpi: "#faf9f7",
-};
+// ─── Theme ────────────────────────────────────────────────────────────────────
+
 const DARK = {
-  surface: "#111110", border: "#1e1e1e",
-  text: "#e0ddd8", textSub: "#6a6560", accent: "#b8763a",
-  hover: "#1a1a1a", kpi: "#0d0d0c",
+  bg: "#0f1117", card: "#1a1f2e", border: "#2a3050",
+  text: "#e2e8f0", textSub: "#8892a4",
+  accent: "#6366f1", accentHover: "#4f46e5",
+  hover: "#1e2438",
+};
+const LIGHT = {
+  bg: "#f1f5f9", card: "#ffffff", border: "#e2e8f0",
+  text: "#0f172a", textSub: "#64748b",
+  accent: "#6366f1", accentHover: "#4f46e5",
+  hover: "#f8fafc",
 };
 
 const SEG_COLORS: Record<string, string> = {
@@ -20,216 +24,118 @@ const SEG_COLORS: Record<string, string> = {
   Returning: "#34d399", New: "#f87171",
 };
 const RISK_COLORS: Record<string, string> = {
-  OK: "#34d399", Risk: "#fbbf24", HighRisk: "#f97316", Lost: "#f87171",
+  OK: "#22c55e", Risk: "#f59e0b", HighRisk: "#f97316", Lost: "#ef4444",
+};
+const SEASON_COLORS: Record<string, string> = {
+  wiosna: "#22c55e", spring: "#22c55e",
+  lato: "#fbbf24", summer: "#fbbf24",
+  "jesień": "#f97316", autumn: "#f97316", fall: "#f97316",
+  zima: "#60a5fa", winter: "#60a5fa",
 };
 
-const MONTHS_PL: Record<string, string> = {
-  '01': 'stycznia', '02': 'lutego', '03': 'marca', '04': 'kwietnia', '05': 'maja',
-  '06': 'czerwca', '07': 'lipca', '08': 'sierpnia', '09': 'września', '10': 'października',
-  '11': 'listopada', '12': 'grudnia',
-};
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-function fmtDate(d: string) {
-  const [y, m, day] = d.split('-');
-  return `${parseInt(day)} ${MONTHS_PL[m]} ${y}`;
+interface Profile {
+  client_id: string;
+  legacy_segment: string | null;
+  risk_level: string | null;
+  ltv: number | null;
+  orders_count: number | null;
+  first_order: string | null;
+  last_order: string | null;
+  ulubiony_swiat: string | null;
+  winback_priority: string | null;
 }
-
-function buildNextBestAction(customer: NonNullable<ReturnType<typeof getCustomer>>) {
-  if (customer.risk_level === 'Lost') {
-    return `Klient nieaktywny od ponad roku. Wyślij spersonalizowaną ofertę powitalną z 15% rabatem na produkty z kategorii "${customer.ulubiony_swiat}". Użyj tematu nawiązującego do ostatnio przeglądanych tagów.`;
-  }
-  if (customer.risk_level === 'HighRisk') {
-    return `Klient wykazuje oznaki rezygnacji. Zaproponuj limitowaną edycję z obszaru "${customer.ulubiony_swiat}" lub wyślij newsletter z kuratowaną listą nowości zgodnych z jego DNA zakupowym.`;
-  }
-  if (customer.is_early_adopter) {
-    return `Early Adopter — powiadom o nadchodzących premierach produktowych z wyprzedzeniem 7 dni. Zaoferuj przedsprzedaż dla stałych klientów.`;
-  }
-  if (customer.top_okazje.includes('Dzień Matki') && new Date().getMonth() >= 3 && new Date().getMonth() <= 4) {
-    return `Zbliża się Dzień Matki — historycznie kupuje prezenty w tym okresie. Wyślij personalizowaną ofertę min. 3 tygodnie przed 26 maja.`;
-  }
-  if (customer.buyer_type === 'promo_hunter') {
-    return `Klient reaguje głównie na promocje. Zaproponuj bundle produktowy z progiem darmowej dostawy lub flash sale na produkty z segmentu "${customer.ulubiony_swiat}".`;
-  }
-  return `Klient lojalny i aktywny. Rozważ zaproszenie do programu ambasadorskiego lub early-access na nowe kolekcje z kategorii "${customer.ulubiony_swiat}".`;
+interface EventRow {
+  id: number;
+  client_id: string;
+  ean: string | null;
+  product_name: string | null;
+  order_date: string | null;
+  season: string | null;
+  occasion: string | null;
+}
+interface Taxonomy {
+  top_tags_granularne: string[] | null;
+  top_tags_domenowe: string[] | null;
+  top_filary_marki: string[] | null;
+  top_okazje: string[] | null;
 }
 
 // ─── Reveal Modal ─────────────────────────────────────────────────────────────
-// Email nigdy nie trafia do stanu rodzica — istnieje wyłącznie w tym komponencie
-// przez czas otwarcia modala. Po zamknięciu ref jest zerowany.
-function RevealModal({
-  clientId,
-  onClose,
-  dark,
-}: {
-  clientId: string;
-  onClose: () => void;
-  dark: boolean;
-}) {
-  const t = dark ? DARK : LIGHT;
 
-  // reason to pole kontrolowane
+function RevealModal({ clientId, onClose, dark }: { clientId: string; onClose: () => void; dark: boolean }) {
+  const t = dark ? DARK : LIGHT;
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<"form" | "revealed">("form");
-
-  // Email przechowywany w ref (nie w state) — React nie re-renderuje po zmianie,
-  // a zawartość znika razem z komponentem przy odmontowaniu/zamknięciu.
   const emailRef = useRef<string | null>(null);
-  // Osobny state tylko do wymuszenia jednego re-renderu przy ujawnieniu
   const [revealed, setRevealed] = useState(false);
 
-  // Zeruj ref przy odmontowaniu
-  useEffect(() => {
-    return () => {
-      emailRef.current = null;
-    };
-  }, []);
+  useEffect(() => () => { emailRef.current = null; }, []);
 
   const handleReveal = useCallback(async () => {
-    if (!reason.trim()) {
-      setError("Powód odkrycia jest wymagany.");
-      return;
-    }
-    setError(null);
-    setLoading(true);
-
+    if (!reason.trim()) { setError("Powód odkrycia jest wymagany."); return; }
+    setError(null); setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const jwt = session?.access_token ?? null;
-
       const res = await fetch("/api/crm/reveal", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(jwt ? { "Authorization": `Bearer ${jwt}` } : {}),
-        },
+        headers: { "Content-Type": "application/json", ...(jwt ? { "Authorization": `Bearer ${jwt}` } : {}) },
         body: JSON.stringify({ client_id: clientId, reason: reason.trim() }),
-        // Blokuj cache po stronie przeglądarki
         cache: "no-store",
       });
-
       const json = await res.json();
-
-      if (!res.ok) {
-        setError(json.error ?? "Nieznany błąd serwera.");
-        return;
-      }
-
-      // Zapisz do ref, nie do state — nie pojawi się w React DevTools ani snapshots
+      if (!res.ok) { setError(json.error ?? "Nieznany błąd."); return; }
       emailRef.current = json.email;
       setRevealed(true);
       setStep("revealed");
-    } catch {
-      setError("Błąd połączenia z serwerem.");
-    } finally {
-      setLoading(false);
-    }
+    } catch { setError("Błąd połączenia."); }
+    finally { setLoading(false); }
   }, [clientId, reason]);
 
-  const handleClose = useCallback(() => {
-    // Jawne wyzerowanie przed zamknięciem
-    emailRef.current = null;
-    setRevealed(false);
-    onClose();
-  }, [onClose]);
+  const handleClose = useCallback(() => { emailRef.current = null; setRevealed(false); onClose(); }, [onClose]);
 
   return (
     <>
       <style>{`
-        .rv-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .rv-modal { background: ${t.surface}; border: 1px solid ${t.border}; border-radius: 14px; padding: 28px 32px; width: 100%; max-width: 460px; font-family: var(--font-geist-sans), system-ui, sans-serif; box-shadow: 0 8px 40px rgba(0,0,0,0.18); }
-        .rv-title { font-family: var(--font-dm-serif), serif; font-size: 20px; color: ${t.text}; margin: 0 0 6px; }
-        .rv-desc { font-size: 13px; color: ${t.textSub}; margin: 0 0 22px; line-height: 1.5; }
-        .rv-label { font-size: 11px; color: ${t.textSub}; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; display: block; }
-        .rv-textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid ${t.border}; border-radius: 8px; background: ${t.kpi}; color: ${t.text}; font-size: 13px; font-family: var(--font-geist-sans), system-ui, sans-serif; resize: vertical; min-height: 80px; outline: none; }
-        .rv-textarea:focus { border-color: ${t.accent}; }
-        .rv-error { margin-top: 10px; padding: 8px 12px; background: #f8717122; border: 1px solid #f8717144; border-radius: 6px; font-size: 12px; color: #f87171; }
-        .rv-footer { display: flex; align-items: center; gap: 10px; margin-top: 20px; }
-        .rv-btn { padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: opacity 0.15s; }
-        .rv-btn-primary { background: ${t.accent}; color: #fff; }
-        .rv-btn-primary:hover { opacity: 0.87; }
-        .rv-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .rv-btn-ghost { background: transparent; color: ${t.textSub}; border: 1px solid ${t.border}; }
-        .rv-btn-ghost:hover { background: ${t.hover}; color: ${t.text}; }
-        .rv-audit-note { margin-top: 14px; font-size: 11px; color: ${t.textSub}; display: flex; align-items: center; gap: 6px; }
-        .rv-revealed-box { background: ${t.kpi}; border: 1px solid ${t.border}; border-radius: 8px; padding: 14px 16px; margin: 16px 0; }
-        .rv-revealed-label { font-size: 10px; color: ${t.textSub}; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
-        .rv-revealed-value { font-size: 14px; color: ${t.text}; font-family: var(--font-geist-mono), monospace; word-break: break-all; }
-        .rv-once-note { font-size: 11px; color: #f97316; margin-top: 8px; }
+        .rv-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+        .rv-modal{background:${t.card};border:1px solid ${t.border};border-radius:14px;padding:28px 32px;width:100%;max-width:460px;font-family:var(--font-geist-sans),system-ui,sans-serif;box-shadow:0 8px 40px rgba(0,0,0,0.3)}
       `}</style>
-
       <div className="rv-backdrop" onClick={handleClose} role="dialog" aria-modal="true">
         <div className="rv-modal" onClick={e => e.stopPropagation()}>
           {step === "form" ? (
             <>
-              <div className="rv-title">Odkryj tożsamość klienta</div>
-              <div className="rv-desc">
-                Identyfikator: <strong>{clientId}</strong>
-                <br />
-                Odkrycie tożsamości jest operacją audytowaną. Podaj uzasadnienie,
-                które zostanie zapisane w logu systemowym.
-              </div>
-
-              <label className="rv-label" htmlFor="rv-reason">Powód odkrycia *</label>
+              <div style={{ fontFamily: "var(--font-dm-serif), serif", fontSize: 20, color: t.text, marginBottom: 8 }}>Odkryj tożsamość klienta</div>
+              <div style={{ fontSize: 13, color: t.textSub, marginBottom: 20 }}>ID: <strong>{clientId}</strong> · Operacja audytowana</div>
+              <label style={{ fontSize: 11, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Powód odkrycia *</label>
               <textarea
-                id="rv-reason"
-                className="rv-textarea"
-                placeholder="np. Weryfikacja zamówienia zwrotnego, kontakt z klientem ws. reklamacji..."
-                value={reason}
-                onChange={e => setReason(e.target.value)}
-                maxLength={500}
-                autoFocus
+                style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: `1px solid ${t.border}`, borderRadius: 8, background: t.bg, color: t.text, fontSize: 13, fontFamily: "var(--font-geist-sans)", resize: "vertical", minHeight: 80, outline: "none" }}
+                placeholder="np. Weryfikacja zamówienia, kontakt ws. reklamacji…"
+                value={reason} onChange={e => setReason(e.target.value)} maxLength={500} autoFocus
               />
-
-              {error && <div className="rv-error">⚠ {error}</div>}
-
-              <div className="rv-footer">
-                <button
-                  className="rv-btn rv-btn-primary"
-                  onClick={handleReveal}
-                  disabled={loading || !reason.trim()}
-                >
-                  {loading ? "Weryfikuję…" : "Odkryj tożsamość"}
+              {error && <div style={{ marginTop: 10, padding: "8px 12px", background: "#ef444422", border: "1px solid #ef444444", borderRadius: 6, fontSize: 12, color: "#ef4444" }}>⚠ {error}</div>}
+              <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+                <button onClick={handleReveal} disabled={loading || !reason.trim()} style={{ padding: "9px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", border: "none", background: t.accent, color: "#fff", opacity: (loading || !reason.trim()) ? 0.5 : 1 }}>
+                  {loading ? "Weryfikuję…" : "Odkryj"}
                 </button>
-                <button className="rv-btn rv-btn-ghost" onClick={handleClose}>
-                  Anuluj
-                </button>
-              </div>
-
-              <div className="rv-audit-note">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
-                Każde odkrycie jest logowane z Twoim ID użytkownika i datą.
+                <button onClick={handleClose} style={{ padding: "9px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", background: "none", border: `1px solid ${t.border}`, color: t.textSub }}>Anuluj</button>
               </div>
             </>
           ) : (
             <>
-              <div className="rv-title">Tożsamość odkryta</div>
-              <div className="rv-desc">
-                Akcja zarejestrowana w logu audytu. Dane widoczne jednorazowo —
-                po zamknięciu tego okna nie są możliwe do odtworzenia bez ponownej akcji.
+              <div style={{ fontFamily: "var(--font-dm-serif), serif", fontSize: 20, color: t.text, marginBottom: 8 }}>Tożsamość odkryta</div>
+              <div style={{ padding: "14px 16px", background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8, margin: "16px 0" }}>
+                <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Identyfikator (vault)</div>
+                {revealed && emailRef.current
+                  ? <div style={{ fontSize: 14, color: t.text, fontFamily: "var(--font-geist-mono), monospace", wordBreak: "break-all" }}>{emailRef.current}</div>
+                  : <div style={{ color: t.textSub, fontSize: 13 }}>Brak danych w vault.</div>
+                }
               </div>
-
-              <div className="rv-revealed-box">
-                <div className="rv-revealed-label">Identyfikator tożsamości (vault)</div>
-                {revealed && emailRef.current ? (
-                  <div className="rv-revealed-value">{emailRef.current}</div>
-                ) : (
-                  <div style={{ color: LIGHT.textSub, fontSize: 13 }}>Brak danych w vault dla tego klienta.</div>
-                )}
-              </div>
-
-              <div className="rv-once-note">
-                ⚠ Ten identyfikator jest widoczny tylko teraz. Nie jest zapisany w przeglądarce.
-              </div>
-
-              <div className="rv-footer">
-                <button className="rv-btn rv-btn-ghost" onClick={handleClose}>
-                  Zamknij
-                </button>
-              </div>
+              <div style={{ fontSize: 11, color: "#f97316", marginBottom: 16 }}>⚠ Widoczne jednorazowo — zniknie po zamknięciu.</div>
+              <button onClick={handleClose} style={{ padding: "9px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", background: "none", border: `1px solid ${t.border}`, color: t.textSub }}>Zamknij</button>
             </>
           )}
         </div>
@@ -238,281 +144,355 @@ function RevealModal({
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+// ─── SVG Timeline ─────────────────────────────────────────────────────────────
+
+function ActivityTimeline({ events, t }: { events: EventRow[]; t: typeof DARK }) {
+  const dated = events.filter(e => e.order_date).map(e => ({ ...e, d: new Date(e.order_date!) }));
+  if (!dated.length) return <div style={{ color: t.textSub, fontSize: 13 }}>Brak danych</div>;
+
+  const W = 560, H = 72, PAD = { l: 8, r: 8, t: 10, b: 22 };
+  const innerW = W - PAD.l - PAD.r;
+  const minT = Math.min(...dated.map(e => e.d.getTime()));
+  const maxT = Math.max(...dated.map(e => e.d.getTime()));
+  const range = maxT - minT || 1;
+
+  // Year ticks
+  const minYear = dated[0] ? dated[0].d.getFullYear() : new Date().getFullYear();
+  const maxYear = dated[dated.length - 1] ? dated[dated.length - 1].d.getFullYear() : minYear;
+  const years: number[] = [];
+  for (let y = minYear; y <= maxYear; y++) years.push(y);
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", display: "block" }}>
+      <line x1={PAD.l} x2={W - PAD.r} y1={H - PAD.b} y2={H - PAD.b} stroke={t.border} strokeWidth={1} />
+      {years.map(yr => {
+        const xPct = (new Date(yr, 0, 1).getTime() - minT) / range;
+        const x = PAD.l + xPct * innerW;
+        if (x < PAD.l || x > W - PAD.r) return null;
+        return (
+          <g key={yr}>
+            <line x1={x} x2={x} y1={H - PAD.b} y2={H - PAD.b + 4} stroke={t.border} strokeWidth={1} />
+            <text x={x} y={H - 2} fontSize={8} fill={t.textSub} textAnchor="middle">{yr}</text>
+          </g>
+        );
+      })}
+      {dated.map((ev, i) => {
+        const x = PAD.l + ((ev.d.getTime() - minT) / range) * innerW;
+        const color = SEASON_COLORS[ev.season?.toLowerCase() ?? ""] ?? t.accent;
+        return (
+          <circle key={i} cx={x} cy={H - PAD.b - 12} r={4} fill={color} opacity={0.85}>
+            <title>{ev.order_date?.slice(0, 10)}: {ev.product_name ?? "—"} ({ev.season ?? "—"})</title>
+          </circle>
+        );
+      })}
+    </svg>
+  );
+}
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function ProfileSkeleton({ t }: { t: typeof DARK }) {
+  return (
+    <>
+      <style>{`@keyframes pulse-sk{0%,100%{opacity:0.3}50%{opacity:0.7}}`}</style>
+      <div style={{ fontFamily: "var(--font-geist-sans)" }}>
+        {[200, 100, 120].map((w, i) => (
+          <div key={i} style={{ height: 18, width: w, background: t.border, borderRadius: 6, marginBottom: 12, animation: "pulse-sk 1.4s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+        ))}
+        <div style={{ height: 100, background: t.card, border: `1px solid ${t.border}`, borderRadius: 10, marginTop: 16 }} />
+      </div>
+    </>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
 export default function ClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [dark] = useDarkMode();
-  const t = (dark ? DARK : LIGHT) as typeof LIGHT;
+  const [darkRaw] = useDarkMode();
+  const dark = darkRaw as boolean;
+  const t = dark ? DARK : LIGHT;
 
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [events, setEvents] = useState<EventRow[]>([]);
+  const [taxonomy, setTaxonomy] = useState<Taxonomy | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const [showReveal, setShowReveal] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Sprawdź uprawnienia admin po stronie klienta (readonly — nie ujawnia nic wrażliwego)
   useEffect(() => {
-    async function checkAdminPermission() {
-      try {
-        const { data, error } = await supabase
-          .from("user_permissions")
-          .select("access_level")
-          .eq("category", "admin")
-          .eq("access_level", "write")
-          .limit(1);
-        if (!error && data && data.length > 0) {
-          setIsAdmin(true);
-        }
-      } catch {
-        // Brak połączenia z Supabase — ukryj przycisk (fail-safe)
-        setIsAdmin(false);
-      }
-    }
-    checkAdminPermission();
+    fetch(`/api/crm/clients/${id}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) throw new Error(d.error);
+        setProfile(d.profile);
+        setEvents(d.events ?? []);
+        setTaxonomy(d.taxonomy ?? null);
+        setLoading(false);
+      })
+      .catch((e: Error) => { setError(e.message); setLoading(false); });
+  }, [id]);
+
+  useEffect(() => {
+    supabase.from("user_permissions").select("access_level").eq("category", "admin").eq("access_level", "write").limit(1)
+      .then(({ data, error }) => { if (!error && data?.length) setIsAdmin(true); });
   }, []);
 
-  const customer = getCustomer(id) || getCustomer('NZ-DEMO001');
+  if (loading) return <ProfileSkeleton t={t} />;
+  if (error) return (
+    <div style={{ fontFamily: "var(--font-geist-sans)", color: t.text }}>
+      <Link href="/crm/clients" style={{ color: t.accent, fontSize: 13, textDecoration: "none" }}>← Wróć do listy</Link>
+      <div style={{ marginTop: 16, padding: "14px 18px", background: "#ef444411", border: "1px solid #ef444444", borderRadius: 8, color: "#ef4444" }}>⚠ {error}</div>
+    </div>
+  );
+  if (!profile) return null;
 
-  if (!customer) {
-    return (
-      <div style={{ fontFamily: "var(--font-geist-sans)", color: t.text, padding: 24 }}>
-        <h1 style={{ fontFamily: "var(--font-dm-serif), serif", fontSize: 24, marginBottom: 8 }}>Klient nie znaleziony</h1>
-        <p style={{ color: t.textSub, fontSize: 14 }}>ID: {id}</p>
-      </div>
-    );
+  const seg = profile.legacy_segment ?? "";
+  const risk = profile.risk_level ?? "";
+  const isVipReanimacja = profile.winback_priority?.includes("VIP") || profile.winback_priority?.includes("REANIMACJA");
+
+  // Mini stats from events
+  const productCounts: Record<string, number> = {};
+  const monthCounts: Record<string, number> = {};
+  const seasonCounts: Record<string, number> = {};
+  for (const ev of events) {
+    if (ev.product_name) productCounts[ev.product_name] = (productCounts[ev.product_name] || 0) + 1;
+    if (ev.order_date) {
+      const m = ev.order_date.slice(0, 7);
+      monthCounts[m] = (monthCounts[m] || 0) + 1;
+    }
+    if (ev.season) seasonCounts[ev.season] = (seasonCounts[ev.season] || 0) + 1;
   }
+  const topProduct = Object.entries(productCounts).sort((a, b) => b[1] - a[1])[0];
+  const topMonth   = Object.entries(monthCounts).sort((a, b) => b[1] - a[1])[0];
+  const topSeason  = Object.entries(seasonCounts).sort((a, b) => b[1] - a[1])[0];
 
-  const totalOrders = customer.orders.length;
-  const sortedOrders = [...customer.orders].sort((a, b) => b.date.localeCompare(a.date));
-  const cyclicOccasions = customer.top_okazje.filter(occ => {
-    const years = [...new Set(customer.orders.filter(o => o.occasion === occ).map(o => o.date.slice(0, 4)))];
-    return years.length >= 2;
-  });
-  const nextBestAction = buildNextBestAction(customer);
+  // Occasions
+  const occasionCounts: Record<string, number> = {};
+  for (const ev of events) {
+    if (ev.occasion) occasionCounts[ev.occasion] = (occasionCounts[ev.occasion] || 0) + 1;
+  }
+  const occasions = Object.entries(occasionCounts).sort((a, b) => b[1] - a[1]);
+
+  const visibleEvents = showAll ? events : events.slice(0, 20);
 
   return (
     <>
       <style>{`
-        .cp-wrap { font-family: var(--font-geist-sans), system-ui, sans-serif; max-width: 900px; }
-        .cp-section { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: ${t.textSub}; margin: 0 0 12px; padding-bottom: 6px; border-bottom: 1px solid ${t.border}; }
-        .cp-block { margin-bottom: 28px; }
-        .cp-card { background: ${t.surface}; border: 1px solid ${t.border}; border-radius: 10px; overflow: hidden; }
-        .cp-header { background: ${t.kpi}; border: 1px solid ${t.border}; border-radius: 10px; padding: 24px 28px; display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
-        .cp-header-name { font-family: var(--font-dm-serif), serif; font-size: 28px; color: ${t.text}; margin: 0 0 4px; }
-        .cp-identity { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
-        .cp-id-pill { font-family: var(--font-geist-mono), monospace; font-size: 12px; color: ${t.textSub}; background: ${t.hover}; border: 1px solid ${t.border}; border-radius: 6px; padding: 3px 9px; letter-spacing: 0.04em; }
-        .cp-reveal-btn { display: flex; align-items: center; gap: 6px; padding: 5px 13px; border-radius: 6px; background: transparent; border: 1px solid ${t.accent}; color: ${t.accent}; font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font-geist-sans), system-ui, sans-serif; transition: background 0.12s; }
-        .cp-reveal-btn:hover { background: ${t.accent}22; }
-        .cp-audit-hint { font-size: 10px; color: ${t.textSub}; margin-top: 2px; }
-        .cp-header-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+        .cp-wrap { font-family: var(--font-geist-sans), system-ui, sans-serif; max-width: 960px; }
+        .cp-card { background: ${t.card}; border: 1px solid ${t.border}; border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; }
+        .cp-section-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: ${t.textSub}; margin-bottom: 12px; }
         .cp-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .cp-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-        .cp-kpi { text-align: center; padding: 14px; background: ${t.surface}; border: 1px solid ${t.border}; border-radius: 8px; }
-        .cp-kpi-val { font-family: var(--font-dm-serif), serif; font-size: 22px; color: ${t.text}; }
-        .cp-kpi-label { font-size: 11px; color: ${t.textSub}; margin-top: 2px; }
-        .cp-pill { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; background: ${t.hover}; color: ${t.text}; border: 1px solid ${t.border}; margin: 3px; }
-        .cp-pillar { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; background: ${t.accent}22; color: ${t.accent}; border: 1px solid ${t.accent}44; margin: 3px; }
-        .cp-order-row { padding: 14px 18px; border-bottom: 1px solid ${t.border}; }
-        .cp-order-row:last-child { border-bottom: none; }
-        .cp-order-head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap; }
-        .cp-order-date { font-size: 12px; color: ${t.textSub}; min-width: 120px; }
-        .cp-order-amount { font-weight: 700; color: ${t.text}; font-size: 14px; }
-        .cp-flag { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; }
-        .cp-order-products { font-size: 12px; color: ${t.textSub}; }
-        .cp-nba { background: ${t.accent}11; border: 1px solid ${t.accent}44; border-radius: 10px; padding: 20px 24px; }
-        .cp-nba-title { font-size: 12px; color: ${t.accent}; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
-        .cp-nba-text { font-size: 14px; color: ${t.text}; line-height: 1.6; }
-        .cp-cyclic-row { padding: 12px 18px; border-bottom: 1px solid ${t.border}; display: flex; align-items: center; gap: 12px; font-size: 13px; }
-        .cp-cyclic-row:last-child { border-bottom: none; }
-        @media (max-width: 640px) { .cp-header { flex-direction: column; } }
+        .cp-pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; background: ${t.hover}; color: ${t.text}; border: 1px solid ${t.border}; margin: 3px; }
+        .cp-pillar { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; background: ${t.accent}22; color: ${t.accent}; border: 1px solid ${t.accent}44; margin: 3px; }
+        .cp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .cp-table th { padding: 7px 12px; color: ${t.textSub}; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid ${t.border}; text-align: left; }
+        .cp-table td { padding: 8px 12px; border-bottom: 1px solid ${t.border}; color: ${t.text}; }
+        .cp-table tr:last-child td { border-bottom: none; }
+        @media (max-width: 768px) { .cp-cols { flex-direction: column !important; } }
       `}</style>
 
-      {showReveal && (
-        <RevealModal
-          clientId={customer.id}
-          onClose={() => setShowReveal(false)}
-          dark={dark as boolean}
-        />
-      )}
+      {showReveal && <RevealModal clientId={id} onClose={() => setShowReveal(false)} dark={dark} />}
 
       <div className="cp-wrap">
-        {/* Header */}
-        <div className="cp-header">
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="cp-header-name">{customer.name}</div>
-
-            {/* Identyfikator — email zawsze zamaskowany */}
-            <div className="cp-identity">
-              <span className="cp-id-pill">{customer.id}</span>
-              {isAdmin ? (
-                <div>
-                  <button
-                    className="cp-reveal-btn"
-                    onClick={() => setShowReveal(true)}
-                    aria-label="Odkryj tożsamość klienta"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    </svg>
-                    Odkryj tożsamość
-                  </button>
-                  <div className="cp-audit-hint">Każde odkrycie jest logowane</div>
-                </div>
-              ) : (
-                <span style={{ fontSize: 12, color: t.textSub }}>
-                  Tożsamość chroniona — tylko admin
-                </span>
-              )}
-            </div>
-
-            <div className="cp-header-badges">
-              <span className="cp-badge" style={{
-                background: SEG_COLORS[customer.segment] + "22",
-                color: SEG_COLORS[customer.segment],
-                border: `1px solid ${SEG_COLORS[customer.segment]}44`,
-              }}>{customer.segment}</span>
-              <span className="cp-badge" style={{
-                background: RISK_COLORS[customer.risk_level] + "22",
-                color: RISK_COLORS[customer.risk_level],
-                border: `1px solid ${RISK_COLORS[customer.risk_level]}44`,
-              }}>{customer.risk_level}</span>
-              {customer.is_early_adopter && (
-                <span className="cp-badge" style={{ background: "#60a5fa22", color: "#60a5fa", border: "1px solid #60a5fa44" }}>Early Adopter</span>
-              )}
-              {customer.buyer_type === 'promo_hunter' && (
-                <span className="cp-badge" style={{ background: "#f8717122", color: "#f87171", border: "1px solid #f8717144" }}>Promo Hunter</span>
-              )}
-              {customer.winback_priority && (
-                <span className="cp-badge" style={{ background: "#f9731622", color: "#f97316", border: "1px solid #f9731644" }}>⚡ Winback Priority</span>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <div className="cp-kpis">
-              <div className="cp-kpi">
-                <div className="cp-kpi-val" style={{ color: t.accent }}>{customer.ltv.toLocaleString('pl-PL')} zł</div>
-                <div className="cp-kpi-label">LTV</div>
-              </div>
-              <div className="cp-kpi">
-                <div className="cp-kpi-val">{totalOrders}</div>
-                <div className="cp-kpi-label">Zamówień</div>
-              </div>
-              <div className="cp-kpi">
-                <div className="cp-kpi-val" style={{ fontSize: 14 }}>{customer.first_purchase_date.slice(0, 7)}</div>
-                <div className="cp-kpi-label">Pierwszy zakup</div>
-              </div>
-              <div className="cp-kpi">
-                <div className="cp-kpi-val" style={{ fontSize: 14 }}>{customer.last_purchase_date.slice(0, 7)}</div>
-                <div className="cp-kpi-label">Ostatni zakup</div>
-              </div>
-            </div>
-          </div>
+        {/* Back */}
+        <div style={{ marginBottom: 16 }}>
+          <Link href="/crm/clients" style={{ color: t.accent, fontSize: 13, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}>
+            ← Wróć do listy
+          </Link>
         </div>
 
-        {/* DNA taksonomiczne */}
-        <div className="cp-block">
-          <div className="cp-section">DNA Taksonomiczne</div>
-          <div className="cp-card" style={{ padding: "18px 20px" }}>
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 11, color: t.textSub, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                Ulubiony świat
-              </div>
-              <span className="cp-pillar" style={{ fontSize: 14, padding: "6px 14px" }}>
-                {customer.ulubiony_swiat}
-              </span>
-            </div>
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 11, color: t.textSub, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                Tagi granularne
-              </div>
-              <div>
-                {customer.top_tags_granularne.map(tag => (
-                  <span key={tag} className="cp-pill">{tag}</span>
-                ))}
-              </div>
-            </div>
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 11, color: t.textSub, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                Filary marki
-              </div>
-              <div>
-                {customer.top_filary_marki.map(p => (
-                  <span key={p} className="cp-pillar">{p}</span>
-                ))}
-              </div>
-            </div>
-            {customer.top_okazje.length > 0 && (
-              <div>
-                <div style={{ fontSize: 11, color: t.textSub, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                  Okazje zakupowe
-                </div>
-                <div>
-                  {customer.top_okazje.map(occ => (
-                    <span key={occ} className="cp-pill">{occ}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Cykliczne okazje */}
-        {cyclicOccasions.length > 0 && (
-          <div className="cp-block">
-            <div className="cp-section">Okazje Cykliczne</div>
-            <div className="cp-card">
-              {cyclicOccasions.map(occ => {
-                const years = [...new Set(customer.orders.filter(o => o.occasion === occ).map(o => o.date.slice(0, 4)))].sort();
-                return (
-                  <div key={occ} className="cp-cyclic-row">
-                    <span style={{ fontSize: 18 }}>🔁</span>
-                    <div>
-                      <div style={{ color: t.text, fontWeight: 600, fontSize: 13 }}>
-                        Kupuje <span style={{ color: t.accent }}>{occ}</span> co roku
-                      </div>
-                      <div style={{ fontSize: 11, color: t.textSub }}>
-                        Aktywny od {years[0]} — lata: {years.join(', ')}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+        {/* VIP Banner */}
+        {isVipReanimacja && (
+          <div style={{ background: "#ef444418", border: "1px solid #ef444466", borderRadius: 10, padding: "12px 20px", marginBottom: 16, color: "#ef4444", fontWeight: 700, fontSize: 14 }}>
+            🚨 VIP REANIMACJA — priorytet winback
           </div>
         )}
 
-        {/* Next best action */}
-        <div className="cp-block">
-          <div className="cp-nba">
-            <div className="cp-nba-title">⚡ Next Best Action</div>
-            <div className="cp-nba-text">{nextBestAction}</div>
+        {/* ── SEKCJA 1: Hero ──────────────────────────────────────────── */}
+        <div className="cp-card" style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", gap: 24, flexWrap: "wrap", alignItems: "flex-start" }}>
+            <div style={{ flex: 1, minWidth: 240 }}>
+              {/* ID */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+                <span style={{ fontFamily: "var(--font-geist-mono), monospace", fontSize: 13, color: t.textSub, background: t.hover, border: `1px solid ${t.border}`, borderRadius: 6, padding: "3px 10px", letterSpacing: "0.04em" }}>
+                  {profile.client_id}
+                </span>
+                {isAdmin ? (
+                  <button onClick={() => setShowReveal(true)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 6, background: "transparent", border: `1px solid ${t.accent}`, color: t.accent, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    🔓 Odkryj tożsamość
+                  </button>
+                ) : (
+                  <span style={{ fontSize: 11, color: t.textSub }}>Tożsamość chroniona</span>
+                )}
+              </div>
+              {/* Badges */}
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+                {seg && <span className="cp-badge" style={{ background: (SEG_COLORS[seg] ?? "#6366f1") + "22", color: SEG_COLORS[seg] ?? "#6366f1" }}>{seg}</span>}
+                {risk && <span className="cp-badge" style={{ background: (RISK_COLORS[risk] ?? "#475569") + "22", color: RISK_COLORS[risk] ?? "#475569" }}>{risk}</span>}
+                {profile.winback_priority && (
+                  <span className="cp-badge" style={{ background: "#f9731622", color: "#f97316" }}>⚡ Winback</span>
+                )}
+              </div>
+            </div>
+
+            {/* KPIs */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(110px, 1fr))", gap: 10 }}>
+              {[
+                { label: "LTV", val: profile.ltv != null ? `${Number(profile.ltv).toLocaleString("pl-PL")} zł` : "—", color: t.accent },
+                { label: "Zamówienia", val: profile.orders_count ?? "—", color: t.text },
+                { label: "Pierwszy zakup", val: profile.first_order?.slice(0, 10) ?? "—", color: t.text },
+                { label: "Ostatni zakup", val: profile.last_order?.slice(0, 10) ?? "—", color: t.text },
+              ].map(({ label, val, color }) => (
+                <div key={label} style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8, padding: "10px 14px", textAlign: "center" }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color, fontVariantNumeric: "tabular-nums" }}>{String(val)}</div>
+                  <div style={{ fontSize: 10, color: t.textSub, marginTop: 2 }}>{label}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Purchase timeline */}
-        <div className="cp-block">
-          <div className="cp-section">Timeline zakupów ({totalOrders} zamówień)</div>
-          <div className="cp-card">
-            {sortedOrders.map(order => (
-              <div key={order.id} className="cp-order-row">
-                <div className="cp-order-head">
-                  <span className="cp-order-date">{fmtDate(order.date)}</span>
-                  <span className="cp-order-amount">{order.amount.toLocaleString('pl-PL')} zł</span>
-                  {order.is_promo && (
-                    <span className="cp-flag" style={{ background: "#f8717122", color: "#f87171" }}>PROMO</span>
+        {/* ── SEKCJA 2: Dwie kolumny ───────────────────────────────────── */}
+        <div className="cp-cols" style={{ display: "flex", gap: 16, marginBottom: 16 }}>
+
+          {/* Lewa 2/3 */}
+          <div style={{ flex: 2, minWidth: 0 }}>
+            <div className="cp-card">
+              <div className="cp-section-label">Historia zakupów ({events.length})</div>
+              {events.length === 0 ? (
+                <div style={{ color: t.textSub, fontSize: 13 }}>Brak eventów zakupowych</div>
+              ) : (
+                <>
+                  <div style={{ overflowX: "auto" }}>
+                    <table className="cp-table">
+                      <thead>
+                        <tr>
+                          <th>Data</th>
+                          <th>Produkt</th>
+                          <th>EAN</th>
+                          <th>Sezon</th>
+                          <th>Okazja</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visibleEvents.map((ev, i) => (
+                          <tr key={i}>
+                            <td style={{ color: t.textSub, whiteSpace: "nowrap" }}>{ev.order_date?.slice(0, 10) ?? "—"}</td>
+                            <td style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ev.product_name ?? "—"}</td>
+                            <td style={{ fontFamily: "var(--font-geist-mono), monospace", fontSize: 11, color: ev.ean ? t.textSub : "#475569" }}>
+                              {ev.ean ?? <span style={{ color: "#475569", fontStyle: "italic" }}>brak EAN</span>}
+                            </td>
+                            <td style={{ color: ev.season ? SEASON_COLORS[ev.season.toLowerCase()] ?? t.textSub : t.textSub }}>
+                              {ev.season ?? "—"}
+                            </td>
+                            <td style={{ color: t.textSub, fontSize: 11, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {ev.occasion ?? "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {events.length > 20 && !showAll && (
+                    <button onClick={() => setShowAll(true)} style={{ marginTop: 10, background: "none", border: `1px solid ${t.border}`, borderRadius: 6, color: t.accent, fontSize: 12, padding: "6px 14px", cursor: "pointer" }}>
+                      Pokaż wszystkie ({events.length}) ↓
+                    </button>
                   )}
-                  {order.is_new_product && (
-                    <span className="cp-flag" style={{ background: "#60a5fa22", color: "#60a5fa" }}>NOWOŚĆ</span>
-                  )}
-                  {order.occasion && (
-                    <span className="cp-flag" style={{ background: `${t.accent}22`, color: t.accent }}>
-                      🎁 {order.occasion}
-                    </span>
-                  )}
+
+                  {/* Mini stats */}
+                  <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${t.border}`, display: "flex", gap: 20, flexWrap: "wrap" }}>
+                    {topProduct && (
+                      <div>
+                        <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>Najczęściej kupowany</div>
+                        <div style={{ fontSize: 12, color: t.text, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{topProduct[0]} <span style={{ color: t.textSub }}>×{topProduct[1]}</span></div>
+                      </div>
+                    )}
+                    {topMonth && (
+                      <div>
+                        <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>Najaktywniejszy miesiąc</div>
+                        <div style={{ fontSize: 12, color: t.text }}>{topMonth[0]} <span style={{ color: t.textSub }}>({topMonth[1]} eventów)</span></div>
+                      </div>
+                    )}
+                    {topSeason && (
+                      <div>
+                        <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>Ulubiona pora roku</div>
+                        <div style={{ fontSize: 12, color: SEASON_COLORS[topSeason[0].toLowerCase()] ?? t.text }}>{topSeason[0]}</div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Prawa 1/3 */}
+          <div style={{ flex: 1, minWidth: 220 }}>
+            {/* Profil zainteresowań */}
+            <div className="cp-card" style={{ marginBottom: 16 }}>
+              <div className="cp-section-label">Profil zainteresowań</div>
+              {profile.ulubiony_swiat && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Ulubiony świat</div>
+                  <span className="cp-pillar" style={{ fontSize: 14, padding: "6px 14px" }}>{profile.ulubiony_swiat}</span>
                 </div>
-                <div className="cp-order-products">{order.products.join(', ')}</div>
+              )}
+              {taxonomy?.top_tags_granularne?.length ? (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Tagi granularne</div>
+                  <div>{taxonomy.top_tags_granularne.slice(0, 5).map(tag => <span key={tag} className="cp-pill">{tag}</span>)}</div>
+                </div>
+              ) : null}
+              {taxonomy?.top_tags_domenowe?.length ? (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Domeny</div>
+                  <div>{taxonomy.top_tags_domenowe.slice(0, 3).map(d => <span key={d} className="cp-badge" style={{ background: t.hover, color: t.text, marginRight: 4, border: `1px solid ${t.border}` }}>{d}</span>)}</div>
+                </div>
+              ) : null}
+              {taxonomy?.top_filary_marki?.length ? (
+                <div>
+                  <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Filary marki</div>
+                  <div>{taxonomy.top_filary_marki.map(p => <span key={p} className="cp-pillar">{p}</span>)}</div>
+                </div>
+              ) : null}
+              {!profile.ulubiony_swiat && !taxonomy && (
+                <div style={{ color: t.textSub, fontSize: 13 }}>Brak danych taksonomicznych</div>
+              )}
+            </div>
+
+            {/* Timeline */}
+            <div className="cp-card">
+              <div className="cp-section-label">Timeline aktywności</div>
+              <ActivityTimeline events={events} t={t} />
+              {/* Legend */}
+              <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+                {[["wiosna", "#22c55e"], ["lato", "#fbbf24"], ["jesień", "#f97316"], ["zima", "#60a5fa"]].map(([s, c]) => (
+                  <span key={s} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: t.textSub }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: c, display: "inline-block" }} />
+                    {s}
+                  </span>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
+
+        {/* ── SEKCJA 3: Okazje ─────────────────────────────────────────── */}
+        {occasions.length > 0 && (
+          <div className="cp-card">
+            <div className="cp-section-label">Okazje zakupowe</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {occasions.map(([occ, cnt]) => (
+                <span key={occ} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 20, background: t.accent + "18", border: `1px solid ${t.accent}44`, color: t.accent, fontSize: 12, fontWeight: 500 }}>
+                  🎁 {occ}
+                  <span style={{ background: t.accent + "33", borderRadius: 10, padding: "1px 6px", fontSize: 10, fontWeight: 700 }}>×{cnt}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
