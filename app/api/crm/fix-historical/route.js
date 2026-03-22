@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServiceClient } from "../../../../lib/supabase/server";
-import { recalculateAllLTV, segmentClients } from "../../../../lib/crm/etl";
+import { segmentClients } from "../../../../lib/crm/etl";
 
 export const maxDuration = 60;
 
@@ -67,10 +67,11 @@ export async function POST() {
     report.step1 = { ok: false, error: err.message };
   }
 
-  // STEP 2: Recalculate LTV
+  // STEP 2: Recalculate LTV via SQL function
   try {
-    const ltvResult = await recalculateAllLTV(supabase);
-    report.step2 = { ok: true, ...ltvResult };
+    const { data: ltvData, error: ltvErr } = await supabase.rpc('recalculate_all_ltv');
+    if (ltvErr) throw new Error(ltvErr.message);
+    report.step2 = { ok: true, ...ltvData };
   } catch (err) {
     report.step2 = { ok: false, error: err.message };
   }
