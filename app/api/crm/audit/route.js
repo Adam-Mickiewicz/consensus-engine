@@ -304,17 +304,19 @@ export async function GET() {
     try {
       const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
       const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Prefer': 'count=exact' };
+      const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
 
       const [ltvRes, evRes] = await Promise.all([
         fetch(`${supabaseUrl}/rest/v1/clients_360?select=ltv.sum()`, { headers }),
         fetch(`${supabaseUrl}/rest/v1/client_product_events?select=line_total.sum()`, { headers }),
       ]);
-      if (!ltvRes.ok) throw new Error(`clients_360 sum: ${ltvRes.status}`);
-      if (!evRes.ok)  throw new Error(`client_product_events sum: ${evRes.status}`);
+      if (!ltvRes.ok) throw new Error(`clients_360 sum HTTP ${ltvRes.status}`);
+      if (!evRes.ok)  throw new Error(`client_product_events sum HTTP ${evRes.status}`);
 
+      // PostgREST zwraca: [{"sum": "14923523.36"}] — wartość jako string
       const ltvJson = await ltvRes.json();
       const evJson  = await evRes.json();
+      console.log('[audit] ltv_consistency raw:', JSON.stringify(ltvJson), JSON.stringify(evJson));
 
       const ltv360    = parseFloat(ltvJson?.[0]?.sum ?? 0) || 0;
       const ltvEvents = parseFloat(evJson?.[0]?.sum  ?? 0) || 0;
