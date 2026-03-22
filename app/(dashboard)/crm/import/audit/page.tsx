@@ -39,6 +39,10 @@ interface AuditCheck {
     segments?: SegRow[];
     runs?: ImportRun[]; avg_rows?: number; avg_unmapped?: number; anomalies?: number[];
     eanMonths?: EanMonthData[];
+    // ltv_consistency
+    ltv_360?: number; ltv_events?: number; diff_pct?: number;
+    // first_last_order_sanity
+    invertedCount?: number; nullCount?: number;
   };
 }
 
@@ -471,6 +475,39 @@ function CheckCard({ check, t }: { check: AuditCheck; t: typeof DARK }) {
       return <EanGrid months={d.eanMonths} />;
     }
 
+    if (check.id === "ltv_consistency") {
+      return (
+        <div style={{ display: "flex", gap: 16, marginTop: 12, flexWrap: "wrap" }}>
+          {[
+            { label: "LTV clients_360", val: d.ltv_360?.toLocaleString("pl-PL", { maximumFractionDigits: 2 }) + " zł" },
+            { label: "LTV z eventów", val: d.ltv_events?.toLocaleString("pl-PL", { maximumFractionDigits: 2 }) + " zł" },
+            { label: "Różnica", val: `${d.diff_pct?.toFixed(2)}%` },
+          ].map(({ label, val }) => (
+            <div key={label} style={{ minWidth: 130 }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: t.text, fontVariantNumeric: "tabular-nums" }}>{val ?? "—"}</div>
+              <div style={{ fontSize: 10, color: t.textSub }}>{label}</div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (check.id === "first_last_order_sanity") {
+      return (
+        <div style={{ display: "flex", gap: 16, marginTop: 12, flexWrap: "wrap" }}>
+          {[
+            { label: "first_order > last_order", val: d.invertedCount },
+            { label: "Klienci z null datami", val: d.nullCount },
+          ].map(({ label, val }) => (
+            <div key={label} style={{ minWidth: 130 }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: (val ?? 0) > 0 ? STATUS_COLOR.danger : t.text, fontVariantNumeric: "tabular-nums" }}>{val ?? 0}</div>
+              <div style={{ fontSize: 10, color: t.textSub }}>{label}</div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
     return null;
   };
 
@@ -823,6 +860,49 @@ export default function AuditPage() {
   const [ltvResult, setLtvResult]     = useState<{ updated: number; total_ltv: number } | null>(null);
   const [ltvError, setLtvError]       = useState<string | null>(null);
 
+  const [dedupState, setDedupState]   = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [dedupResult, setDedupResult] = useState<{ deleted: number; remaining: number; ltv_after: number } | null>(null);
+  const [dedupError, setDedupError]   = useState<string | null>(null);
+
+  const [fixState, setFixState]       = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [fixResult, setFixResult]     = useState<{ report: Record<string, unknown> } | null>(null);
+  const [fixError, setFixError]       = useState<string | null>(null);
+
+  async function runDeduplicate() {
+    setDedupState("loading");
+    setDedupResult(null);
+    setDedupError(null);
+    try {
+      const res = await fetch("/api/crm/deduplicate", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Błąd serwera");
+      setDedupResult(data);
+      setDedupState("done");
+      runProductionAudit();
+    } catch (e) {
+      setDedupError(e instanceof Error ? e.message : "Błąd połączenia");
+      setDedupState("error");
+    }
+  }
+
+  async function runFixHistorical() {
+    if (!window.confirm("Operacja naprawi daty zamówień, przeliczy LTV i ponownie posegmentuje wszystkich klientów. Może potrwać kilkadziesiąt sekund. Kontynuować?")) return;
+    setFixState("loading");
+    setFixResult(null);
+    setFixError(null);
+    try {
+      const res = await fetch("/api/crm/fix-historical", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Błąd serwera");
+      setFixResult(data);
+      setFixState("done");
+      runProductionAudit();
+    } catch (e) {
+      setFixError(e instanceof Error ? e.message : "Błąd połączenia");
+      setFixState("error");
+    }
+  }
+
   async function runRecalculateLTV() {
     setLtvState("loading");
     setLtvResult(null);
@@ -1050,36 +1130,107 @@ export default function AuditPage() {
             <SummaryBar checks={activeSubs} t={t} />
 
             {mode === "production" && (
-              <div style={{ margin: "12px 0 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                {ltvState === "idle" && (
-                  <button className="aud-btn aud-btn-ghost" onClick={runRecalculateLTV}>
-                    🔄 Przelicz LTV z eventów
-                  </button>
-                )}
-                {ltvState === "loading" && (
-                  <div className="aud-loading" style={{ margin: 0 }}>
-                    <span className="aud-spinner" />
-                    <span>Przeliczam LTV dla wszystkich klientów…</span>
+              <div style={{ margin: "12px 0 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+                {/* LTV Recalculate */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  {ltvState === "idle" && (
+                    <button className="aud-btn aud-btn-ghost" onClick={runRecalculateLTV}>
+                      Przelicz LTV z eventów
+                    </button>
+                  )}
+                  {ltvState === "loading" && (
+                    <div className="aud-loading" style={{ margin: 0 }}>
+                      <span className="aud-spinner" />
+                      <span>Przeliczam LTV dla wszystkich klientów…</span>
+                    </div>
+                  )}
+                  {ltvState === "done" && ltvResult && (
+                    <>
+                      <span style={{ color: "#22c55e", fontSize: 13 }}>
+                        ✓ Przeliczono LTV dla {ltvResult.updated} klientów · suma: {ltvResult.total_ltv.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł
+                      </span>
+                      <button className="aud-btn aud-btn-ghost" style={{ fontSize: 12, padding: "4px 10px" }} onClick={() => setLtvState("idle")}>
+                        Resetuj
+                      </button>
+                    </>
+                  )}
+                  {ltvState === "error" && (
+                    <>
+                      <span style={{ color: "#ef4444", fontSize: 13 }}>⚠ {ltvError}</span>
+                      <button className="aud-btn aud-btn-ghost" style={{ fontSize: 12, padding: "4px 10px" }} onClick={runRecalculateLTV}>
+                        Spróbuj ponownie
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Deduplicate button — visible when duplicates check is warn/danger */}
+                {(checks.find(c => c.id === "duplicates")?.status === "warn" || checks.find(c => c.id === "duplicates")?.status === "danger") && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    {dedupState === "idle" && (
+                      <button className="aud-btn aud-btn-ghost" onClick={runDeduplicate} style={{ borderColor: "#f59e0b", color: "#f59e0b" }}>
+                        Usuń duplikaty eventów
+                      </button>
+                    )}
+                    {dedupState === "loading" && (
+                      <div className="aud-loading" style={{ margin: 0 }}>
+                        <span className="aud-spinner" />
+                        <span>Usuwam duplikaty…</span>
+                      </div>
+                    )}
+                    {dedupState === "done" && dedupResult && (
+                      <>
+                        <span style={{ color: "#22c55e", fontSize: 13 }}>
+                          ✓ Usunięto {dedupResult.deleted} duplikatów · pozostało {dedupResult.remaining.toLocaleString("pl-PL")} eventów
+                        </span>
+                        <button className="aud-btn aud-btn-ghost" style={{ fontSize: 12, padding: "4px 10px" }} onClick={() => setDedupState("idle")}>
+                          Resetuj
+                        </button>
+                      </>
+                    )}
+                    {dedupState === "error" && (
+                      <>
+                        <span style={{ color: "#ef4444", fontSize: 13 }}>⚠ {dedupError}</span>
+                        <button className="aud-btn aud-btn-ghost" style={{ fontSize: 12, padding: "4px 10px" }} onClick={runDeduplicate}>
+                          Spróbuj ponownie
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
-                {ltvState === "done" && ltvResult && (
-                  <>
-                    <span style={{ color: "#22c55e", fontSize: 13 }}>
-                      ✓ Przeliczono LTV dla {ltvResult.updated} klientów · suma: {ltvResult.total_ltv.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł
-                    </span>
-                    <button className="aud-btn aud-btn-ghost" style={{ fontSize: 12, padding: "4px 10px" }} onClick={() => setLtvState("idle")}>
-                      Resetuj
+
+                {/* Fix historical — always visible */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  {fixState === "idle" && (
+                    <button className="aud-btn aud-btn-ghost" onClick={runFixHistorical} style={{ borderColor: "#ef4444", color: "#ef4444" }}>
+                      Napraw historyczne dane (daty + LTV + segmenty)
                     </button>
-                  </>
-                )}
-                {ltvState === "error" && (
-                  <>
-                    <span style={{ color: "#ef4444", fontSize: 13 }}>⚠ {ltvError}</span>
-                    <button className="aud-btn aud-btn-ghost" style={{ fontSize: 12, padding: "4px 10px" }} onClick={runRecalculateLTV}>
-                      Spróbuj ponownie
-                    </button>
-                  </>
-                )}
+                  )}
+                  {fixState === "loading" && (
+                    <div className="aud-loading" style={{ margin: 0 }}>
+                      <span className="aud-spinner" />
+                      <span>Naprawiam dane historyczne…</span>
+                    </div>
+                  )}
+                  {fixState === "done" && fixResult && (
+                    <>
+                      <span style={{ color: "#22c55e", fontSize: 13 }}>
+                        ✓ Naprawa zakończona · krok1: {fixResult.report.step1 && (fixResult.report.step1 as { ok: boolean; fixed?: number }).ok ? `${(fixResult.report.step1 as { fixed?: number }).fixed ?? 0} klientów` : "błąd"} · krok2 LTV: {fixResult.report.step2 && (fixResult.report.step2 as { ok: boolean }).ok ? "OK" : "błąd"}
+                      </span>
+                      <button className="aud-btn aud-btn-ghost" style={{ fontSize: 12, padding: "4px 10px" }} onClick={() => setFixState("idle")}>
+                        Resetuj
+                      </button>
+                    </>
+                  )}
+                  {fixState === "error" && (
+                    <>
+                      <span style={{ color: "#ef4444", fontSize: 13 }}>⚠ {fixError}</span>
+                      <button className="aud-btn aud-btn-ghost" style={{ fontSize: 12, padding: "4px 10px" }} onClick={runFixHistorical}>
+                        Spróbuj ponownie
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             )}
 

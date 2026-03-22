@@ -279,6 +279,51 @@ export async function GET() {
       data: { eanMonths },
     });
 
+    // 10. LTV Consistency
+    {
+      const { data: ltvData } = await sb.from('clients_360').select('ltv');
+      const ltv360 = (ltvData ?? []).reduce((s, r) => s + (parseFloat(r.ltv) || 0), 0);
+
+      const { data: evData } = await sb.from('client_product_events').select('line_total');
+      const ltvEvents = (evData ?? []).reduce((s, r) => s + (parseFloat(r.line_total) || 0), 0);
+
+      const diffPct = ltv360 > 0 ? Math.abs(ltv360 - ltvEvents) / ltv360 * 100 : 0;
+      let status = 'ok';
+      if (diffPct > 5) status = 'danger';
+      else if (diffPct > 1) status = 'warn';
+
+      checks.push({
+        id: 'ltv_consistency',
+        label: 'Spójność LTV',
+        status,
+        message: status === 'ok'
+          ? `LTV zgadza się (różnica ${diffPct.toFixed(2)}%)`
+          : `Różnica LTV: ${diffPct.toFixed(2)}% — ${status === 'danger' ? 'kliknij Przelicz LTV' : 'nieznaczna rozbieżność'}`,
+        data: {
+          ltv_360: Math.round(ltv360 * 100) / 100,
+          ltv_events: Math.round(ltvEvents * 100) / 100,
+          diff_pct: Math.round(diffPct * 100) / 100,
+        },
+      });
+    }
+
+    // 11. First/Last order sanity
+    {
+      const { data: allClients } = await sb.from('clients_360').select('client_id, first_order, last_order');
+      const invertedCount = (allClients ?? []).filter(r => r.first_order && r.last_order && r.first_order > r.last_order).length;
+      const nullCount = (allClients ?? []).filter(r => !r.first_order || !r.last_order).length;
+
+      checks.push({
+        id: 'first_last_order_sanity',
+        label: 'Daty zamówień',
+        status: (invertedCount > 0 || nullCount > 0) ? 'danger' : 'ok',
+        message: invertedCount === 0 && nullCount === 0
+          ? 'Daty first_order/last_order są poprawne'
+          : `${invertedCount} klientów z first_order > last_order, ${nullCount} z null datami`,
+        data: { invertedCount, nullCount },
+      });
+    }
+
     return NextResponse.json({ checks, generatedAt: new Date().toISOString() });
   } catch (err) {
     console.error('[audit] Error:', err);
