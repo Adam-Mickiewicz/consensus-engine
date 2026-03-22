@@ -819,6 +819,27 @@ export default function AuditPage() {
   const [dragOver, setDragOver] = useState(false);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [parseInfo, setParseInfo]     = useState<string | null>(null);
+  const [ltvState, setLtvState]       = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [ltvResult, setLtvResult]     = useState<{ updated: number; total_ltv: number } | null>(null);
+  const [ltvError, setLtvError]       = useState<string | null>(null);
+
+  async function runRecalculateLTV() {
+    setLtvState("loading");
+    setLtvResult(null);
+    setLtvError(null);
+    try {
+      const res = await fetch("/api/crm/recalculate-ltv", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Błąd serwera");
+      setLtvResult(data);
+      setLtvState("done");
+      // Odśwież audit po przeliczeniu
+      runProductionAudit();
+    } catch (e) {
+      setLtvError(e instanceof Error ? e.message : "Błąd połączenia");
+      setLtvState("error");
+    }
+  }
 
   // Production audit
   async function runProductionAudit() {
@@ -1027,6 +1048,40 @@ export default function AuditPage() {
             )}
 
             <SummaryBar checks={activeSubs} t={t} />
+
+            {mode === "production" && (
+              <div style={{ margin: "12px 0 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                {ltvState === "idle" && (
+                  <button className="aud-btn aud-btn-ghost" onClick={runRecalculateLTV}>
+                    🔄 Przelicz LTV z eventów
+                  </button>
+                )}
+                {ltvState === "loading" && (
+                  <div className="aud-loading" style={{ margin: 0 }}>
+                    <span className="aud-spinner" />
+                    <span>Przeliczam LTV dla wszystkich klientów…</span>
+                  </div>
+                )}
+                {ltvState === "done" && ltvResult && (
+                  <>
+                    <span style={{ color: "#22c55e", fontSize: 13 }}>
+                      ✓ Przeliczono LTV dla {ltvResult.updated} klientów · suma: {ltvResult.total_ltv.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} zł
+                    </span>
+                    <button className="aud-btn aud-btn-ghost" style={{ fontSize: 12, padding: "4px 10px" }} onClick={() => setLtvState("idle")}>
+                      Resetuj
+                    </button>
+                  </>
+                )}
+                {ltvState === "error" && (
+                  <>
+                    <span style={{ color: "#ef4444", fontSize: 13 }}>⚠ {ltvError}</span>
+                    <button className="aud-btn aud-btn-ghost" style={{ fontSize: 12, padding: "4px 10px" }} onClick={runRecalculateLTV}>
+                      Spróbuj ponownie
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
 
             {checks.map(check => (
               <CheckCard key={check.id} check={check} t={t} />
