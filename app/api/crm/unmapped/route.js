@@ -15,30 +15,18 @@ export async function GET(request) {
 
   const supabase = getServiceClient();
 
-  // Fetch all unmapped product events (ean IS NULL)
-  // We need to count occurrences per product_name
+  // Use SQL view that does GROUP BY in DB — avoids PostgREST 1000-row default limit
   const { data, error } = await supabase
-    .from("client_product_events")
-    .select("product_name")
-    .is("ean", null)
-    .not("product_name", "is", null);
+    .from("unmapped_products")
+    .select("product_name, purchase_count");
 
-  console.log('[unmapped] query result: rows=', data?.length ?? 0, 'error=', error?.message ?? null);
+  console.log('[unmapped] count:', data?.length ?? 0, 'error=', error?.message ?? null);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Aggregate counts
-  const freq = new Map();
-  for (const row of data ?? []) {
-    if (!row.product_name) continue;
-    freq.set(row.product_name, (freq.get(row.product_name) ?? 0) + 1);
-  }
-
-  const rows = [...freq.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([product_name, count]) => ({ product_name, count }));
+  const rows = (data ?? []).map(r => ({ product_name: r.product_name, count: r.purchase_count }));
 
   if (format === "csv") {
     const header = "product_name,count,suggested_world\n";
