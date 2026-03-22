@@ -929,11 +929,17 @@ export default function AuditPage() {
     setGeneratedAt(null);
     try {
       const res = await fetch("/api/crm/audit");
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        throw new Error(body.error || `HTTP ${res.status}`);
+      const text = await res.text();
+      let data: { checks: AuditCheck[]; generatedAt?: string; error?: string };
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error("Raw audit response:", text.substring(0, 500));
+        throw new Error("Invalid JSON from server: " + text.substring(0, 200));
       }
-      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
       setChecks(data.checks);
       setGeneratedAt(data.generatedAt);
       setRunState("done");

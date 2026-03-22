@@ -302,13 +302,22 @@ export async function GET() {
 
     // 10. LTV Consistency
     try {
-      const { data: ltvData, error: ltvErr } = await sb.from('clients_360').select('ltv');
-      if (ltvErr) throw new Error(ltvErr.message);
-      const ltv360 = (ltvData ?? []).reduce((s, r) => s + (parseFloat(r.ltv) || 0), 0);
+      const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Prefer': 'count=exact' };
 
-      const { data: evData, error: evErr } = await sb.from('client_product_events').select('line_total');
-      if (evErr) throw new Error(evErr.message);
-      const ltvEvents = (evData ?? []).reduce((s, r) => s + (parseFloat(r.line_total) || 0), 0);
+      const [ltvRes, evRes] = await Promise.all([
+        fetch(`${supabaseUrl}/rest/v1/clients_360?select=ltv.sum()`, { headers }),
+        fetch(`${supabaseUrl}/rest/v1/client_product_events?select=line_total.sum()`, { headers }),
+      ]);
+      if (!ltvRes.ok) throw new Error(`clients_360 sum: ${ltvRes.status}`);
+      if (!evRes.ok)  throw new Error(`client_product_events sum: ${evRes.status}`);
+
+      const ltvJson = await ltvRes.json();
+      const evJson  = await evRes.json();
+
+      const ltv360    = parseFloat(ltvJson?.[0]?.sum ?? 0) || 0;
+      const ltvEvents = parseFloat(evJson?.[0]?.sum  ?? 0) || 0;
 
       const diffPct = ltv360 > 0 ? Math.abs(ltv360 - ltvEvents) / ltv360 * 100 : 0;
       let status = 'ok';
