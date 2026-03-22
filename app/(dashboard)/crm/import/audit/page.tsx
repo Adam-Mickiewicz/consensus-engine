@@ -1,12 +1,12 @@
 "use client";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useDarkMode } from "../../../../hooks/useDarkMode";
 import { parseShoperCSV } from "../../../../../lib/crm/csvParser";
 import { flattenShoperCSV } from "../../../../../lib/crm/csvFlatten";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Mode = "production" | "sandbox";
+type Mode = "production" | "sandbox" | "ltv";
 type RunState = "idle" | "loading" | "done" | "error";
 type CheckStatus = "ok" | "warn" | "danger" | "error" | "na";
 
@@ -18,6 +18,11 @@ interface ImportRun {
   clients_count: number | null; unmapped_count: number | null;
 }
 interface EanMonthData { month: string; eventy: number; klienci: number; null_ean: number; pct_null_ean: number; }
+
+type Gran = "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
+interface LtvEventRow { okres: string; klienci: number; eventy: number; null_ean: number; pct_null_ean: number; }
+interface LtvClientRow { okres: string; klienci: number; ltv_suma: number; ltv_avg: number; }
+interface MergedRow { okres: string; eventy: number; ev_klienci: number; null_ean: number; pct_null_ean: number; ltv_klienci: number; ltv_suma: number; ltv_avg: number; }
 
 interface AuditCheck {
   id: string;
@@ -561,6 +566,244 @@ function DropZone({ onFile, dragOver, setDragOver, t }: {
   );
 }
 
+// ─── LTV Timeline ─────────────────────────────────────────────────────────────
+
+function formatXLabel(okres: string, gran: Gran): string {
+  if (gran === "monthly" && okres.length === 7) {
+    const [yr, mo] = okres.split("-");
+    return `${mo}/${yr.slice(2)}`;
+  }
+  if (gran === "quarterly") return okres.replace(/^\d{4}-/, "").replace("Q", "Q") + " " + okres.slice(0, 4).slice(2);
+  if (gran === "yearly") return okres;
+  if (gran === "weekly") return okres.replace(/^\d{4}-/, "");
+  // daily: show MM-DD
+  return okres.slice(5);
+}
+
+function BarChart({ rows, metric, gran, t }: { rows: MergedRow[]; metric: "eventy" | "ltv_avg"; gran: Gran; t: typeof DARK }) {
+  if (!rows.length) return null;
+  const W = 800, H = 200;
+  const PAD = { top: 10, right: 10, bottom: 32, left: 58 };
+  const innerW = W - PAD.left - PAD.right;
+  const innerH = H - PAD.top - PAD.bottom;
+  const vals = rows.map(r => metric === "eventy" ? r.eventy : r.ltv_avg);
+  const maxVal = Math.max(...vals, 1);
+  const barW = innerW / rows.length;
+  const step = Math.pow(10, Math.floor(Math.log10(maxVal))) * (maxVal / Math.pow(10, Math.floor(Math.log10(maxVal))) > 5 ? 2 : maxVal / Math.pow(10, Math.floor(Math.log10(maxVal))) > 2 ? 1 : 0.5);
+  const yTicks = Array.from({ length: 5 }, (_, i) => Math.round((maxVal / 4) * i));
+  const labelEvery = Math.max(1, Math.ceil(rows.length / 12));
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", maxHeight: H, display: "block" }}>
+      {/* Y grid + labels */}
+      {yTicks.map((v, i) => {
+        const y = PAD.top + innerH - (v / maxVal) * innerH;
+        return (
+          <g key={i}>
+            <line x1={PAD.left} x2={PAD.left + innerW} y1={y} y2={y} stroke={t.border} strokeWidth={0.5} />
+            <text x={PAD.left - 6} y={y + 4} fontSize={9} fill={t.textSub} textAnchor="end">
+              {metric === "ltv_avg" ? v.toLocaleString("pl-PL", { maximumFractionDigits: 0 }) : v >= 1000 ? `${Math.round(v / 1000)}k` : v}
+            </text>
+          </g>
+        );
+      })}
+      {/* Bars */}
+      {rows.map((r, i) => {
+        const val = metric === "eventy" ? r.eventy : r.ltv_avg;
+        const barH = (val / maxVal) * innerH;
+        const x = PAD.left + i * barW;
+        const y = PAD.top + innerH - barH;
+        const color = metric === "eventy" ? "#6366f1" : "#22c55e";
+        return (
+          <g key={r.okres}>
+            <rect x={x + 1} y={y} width={Math.max(barW - 2, 1)} height={barH} fill={color} opacity={0.85} rx={1} />
+            {i % labelEvery === 0 && (
+              <text x={x + barW / 2} y={H - PAD.bottom + 12} fontSize={8} fill={t.textSub} textAnchor="middle">
+                {formatXLabel(r.okres, gran)}
+              </text>
+            )}
+          </g>
+        );
+      })}
+      {/* Axes */}
+      <line x1={PAD.left} x2={PAD.left} y1={PAD.top} y2={PAD.top + innerH} stroke={t.border} strokeWidth={1} />
+      <line x1={PAD.left} x2={PAD.left + innerW} y1={PAD.top + innerH} y2={PAD.top + innerH} stroke={t.border} strokeWidth={1} />
+    </svg>
+  );
+}
+
+function LtvTable({ rows, t }: { rows: MergedRow[]; t: typeof DARK }) {
+  if (!rows.length) return null;
+  return (
+    <div style={{ overflowX: "auto", marginTop: 16 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+        <thead>
+          <tr>
+            {["Okres", "Eventy", "Klientów (ev.)", "% null EAN", "Klientów (LTV)", "LTV suma", "LTV średnia"].map(h => (
+              <th key={h} style={{ padding: "6px 10px", color: t.textSub, fontWeight: 500, fontSize: 10, borderBottom: `1px solid ${t.border}`, textAlign: h === "Okres" ? "left" : "right", whiteSpace: "nowrap" }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(r => (
+            <tr key={r.okres}>
+              <td style={{ padding: "6px 10px", color: t.text, borderBottom: `1px solid ${t.border}`, fontVariantNumeric: "tabular-nums" }}>{r.okres}</td>
+              <td style={{ padding: "6px 10px", color: t.text, borderBottom: `1px solid ${t.border}`, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.eventy.toLocaleString("pl-PL")}</td>
+              <td style={{ padding: "6px 10px", color: t.textSub, borderBottom: `1px solid ${t.border}`, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.ev_klienci.toLocaleString("pl-PL")}</td>
+              <td style={{ padding: "6px 10px", borderBottom: `1px solid ${t.border}`, textAlign: "right" }}>
+                <span style={{ color: r.pct_null_ean > 15 ? "#ef4444" : r.pct_null_ean > 5 ? "#f59e0b" : t.textSub }}>{r.pct_null_ean}%</span>
+              </td>
+              <td style={{ padding: "6px 10px", color: t.textSub, borderBottom: `1px solid ${t.border}`, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.ltv_klienci.toLocaleString("pl-PL")}</td>
+              <td style={{ padding: "6px 10px", color: t.textSub, borderBottom: `1px solid ${t.border}`, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.ltv_suma.toLocaleString("pl-PL", { maximumFractionDigits: 0 })} zł</td>
+              <td style={{ padding: "6px 10px", color: t.textSub, borderBottom: `1px solid ${t.border}`, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.ltv_avg.toLocaleString("pl-PL", { maximumFractionDigits: 0 })} zł</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const GRAN_OPTIONS: { value: Gran; label: string }[] = [
+  { value: "daily",     label: "Dzień" },
+  { value: "weekly",    label: "Tydzień" },
+  { value: "monthly",   label: "Miesiąc" },
+  { value: "quarterly", label: "Kwartał" },
+  { value: "yearly",    label: "Rok" },
+];
+
+function LtvTab({ t }: { t: typeof DARK }) {
+  const [gran, setGran] = useState<Gran>("monthly");
+  const [metric, setMetric] = useState<"eventy" | "ltv_avg">("eventy");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [evRows, setEvRows] = useState<LtvEventRow[]>([]);
+  const [clRows, setClRows] = useState<LtvClientRow[]>([]);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    fetch(`/api/crm/audit/ltv-timeline?gran=${gran}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) throw new Error(d.error);
+        setEvRows(d.events_by_month ?? []);
+        setClRows(d.ltv_by_month ?? []);
+        setLoading(false);
+      })
+      .catch((e: Error) => { setError(e.message); setLoading(false); });
+  }, [gran]);
+
+  // Merge event rows and client rows by okres
+  const allOkres = Array.from(new Set([...evRows.map(r => r.okres), ...clRows.map(r => r.okres)])).sort();
+  const evMap: Record<string, LtvEventRow> = {};
+  for (const r of evRows) evMap[r.okres] = r;
+  const clMap: Record<string, LtvClientRow> = {};
+  for (const r of clRows) clMap[r.okres] = r;
+  const merged: MergedRow[] = allOkres.map(o => ({
+    okres: o,
+    eventy:       evMap[o]?.eventy       ?? 0,
+    ev_klienci:   evMap[o]?.klienci      ?? 0,
+    null_ean:     evMap[o]?.null_ean     ?? 0,
+    pct_null_ean: evMap[o]?.pct_null_ean ?? 0,
+    ltv_klienci:  clMap[o]?.klienci      ?? 0,
+    ltv_suma:     clMap[o]?.ltv_suma     ?? 0,
+    ltv_avg:      clMap[o]?.ltv_avg      ?? 0,
+  }));
+
+  const totalEvents   = evRows.reduce((s, r) => s + r.eventy, 0);
+  const totalClients  = evRows.reduce((s, r) => s + r.klienci, 0);
+  const totalLtv      = clRows.reduce((s, r) => s + r.ltv_suma, 0);
+  const totalLtvClients = clRows.reduce((s, r) => s + r.klienci, 0);
+  const avgLtv        = totalLtvClients > 0 ? totalLtv / totalLtvClients : 0;
+
+  return (
+    <div>
+      {/* Granularity toggle */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 20, background: t.card, border: `1px solid ${t.border}`, borderRadius: 8, padding: 4, width: "fit-content" }}>
+        {GRAN_OPTIONS.map(g => (
+          <button
+            key={g.value}
+            onClick={() => setGran(g.value)}
+            style={{
+              padding: "6px 14px", borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: "pointer", border: "none",
+              background: gran === g.value ? t.accent : "none",
+              color: gran === g.value ? "#fff" : t.textSub,
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+              transition: "background 0.15s, color 0.15s",
+            }}
+          >
+            {g.label}
+          </button>
+        ))}
+      </div>
+
+      {loading && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "40px 0", color: t.textSub, fontSize: 14 }}>
+          <span style={{ width: 16, height: 16, border: `2px solid ${t.accent}44`, borderTopColor: t.accent, borderRadius: "50%", animation: "aud-spin 0.7s linear infinite", display: "inline-block" }} />
+          Pobieranie danych…
+        </div>
+      )}
+
+      {error && (
+        <div style={{ padding: "14px 18px", background: "#ef444411", border: "1px solid #ef444444", borderRadius: 8, color: "#ef4444", fontSize: 13, marginBottom: 16 }}>
+          ⚠ {error}
+        </div>
+      )}
+
+      {!loading && !error && merged.length > 0 && (
+        <>
+          {/* KPI cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10, marginBottom: 20 }}>
+            {[
+              { label: "Eventy łącznie", val: totalEvents.toLocaleString("pl-PL"), color: "#6366f1" },
+              { label: "Klientów (ev.)", val: totalClients.toLocaleString("pl-PL"), color: t.text },
+              { label: "LTV suma", val: totalLtv.toLocaleString("pl-PL", { maximumFractionDigits: 0 }) + " zł", color: "#22c55e" },
+              { label: "LTV średnia", val: avgLtv.toLocaleString("pl-PL", { maximumFractionDigits: 0 }) + " zł", color: "#f59e0b" },
+            ].map(({ label, val, color }) => (
+              <div key={label} style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 9, padding: "12px 14px" }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color, fontVariantNumeric: "tabular-nums" }}>{val}</div>
+                <div style={{ fontSize: 11, color: t.textSub, marginTop: 2 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Chart metric toggle */}
+          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+            {([["eventy", "Eventy"], ["ltv_avg", "LTV średnia"]] as const).map(([v, label]) => (
+              <button
+                key={v}
+                onClick={() => setMetric(v)}
+                style={{
+                  padding: "4px 12px", borderRadius: 5, fontSize: 11, fontWeight: 500, cursor: "pointer",
+                  border: `1px solid ${metric === v ? t.accent : t.border}`,
+                  background: metric === v ? t.accent + "22" : "none",
+                  color: metric === v ? t.accent : t.textSub,
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* SVG Bar chart */}
+          <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 10, padding: "16px 12px", marginBottom: 20 }}>
+            <BarChart rows={merged} metric={metric} gran={gran} t={t} />
+          </div>
+
+          {/* Data table */}
+          <LtvTable rows={merged} t={t} />
+        </>
+      )}
+
+      {!loading && !error && merged.length === 0 && (
+        <div style={{ padding: 32, color: t.textSub, fontSize: 13, textAlign: "center" }}>Brak danych</div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AuditPage() {
@@ -678,6 +921,9 @@ export default function AuditPage() {
           <button className={"aud-tab" + (mode === "sandbox" ? " active" : "")} onClick={() => switchMode("sandbox")}>
             🧪 Piaskownica CSV
           </button>
+          <button className={"aud-tab" + (mode === "ltv" ? " active" : "")} onClick={() => switchMode("ltv")}>
+            📈 LTV Timeline
+          </button>
         </div>
 
         {/* ── Production mode ─────────────────────────────────────────── */}
@@ -767,8 +1013,11 @@ export default function AuditPage() {
           </div>
         )}
 
+        {/* ── LTV Timeline mode ────────────────────────────────────────── */}
+        {mode === "ltv" && <LtvTab t={t} />}
+
         {/* ── Results ──────────────────────────────────────────────────── */}
-        {checks.length > 0 && (
+        {mode !== "ltv" && checks.length > 0 && (
           <>
             {generatedAt && (
               <div className="aud-ts">
