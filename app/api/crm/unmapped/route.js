@@ -21,6 +21,8 @@ export async function GET(request) {
     .is("ean", null)
     .not("product_name", "is", null);
 
+  console.log('[unmapped] query result: rows=', data?.length ?? 0, 'error=', error?.message ?? null);
+
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
