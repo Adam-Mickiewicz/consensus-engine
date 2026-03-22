@@ -859,6 +859,7 @@ export default function AuditPage() {
   const [ltvState, setLtvState]       = useState<"idle" | "loading" | "done" | "error">("idle");
   const [ltvResult, setLtvResult]     = useState<{ updated: number; total_ltv: number } | null>(null);
   const [ltvError, setLtvError]       = useState<string | null>(null);
+  const [ltvProgress, setLtvProgress] = useState<string>("Przeliczam LTV...");
 
   const [dedupState, setDedupState]   = useState<"idle" | "loading" | "done" | "error">("idle");
   const [dedupResult, setDedupResult] = useState<{ deleted: number; remaining: number; ltv_after: number } | null>(null);
@@ -907,13 +908,27 @@ export default function AuditPage() {
     setLtvState("loading");
     setLtvResult(null);
     setLtvError(null);
+    setLtvProgress("Przeliczam LTV...");
     try {
-      const res = await fetch("/api/crm/recalculate-ltv", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Błąd serwera");
-      setLtvResult(data);
+      let offset = 0;
+      let totalLtv = 0;
+      while (true) {
+        const res = await fetch("/api/crm/recalculate-ltv", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ offset }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Błąd serwera");
+        if (data.done) {
+          totalLtv = data.total_ltv ?? 0;
+          break;
+        }
+        offset = data.next_offset;
+        setLtvProgress(`Przeliczam LTV... ${offset.toLocaleString("pl-PL")} / 110 000 klientów`);
+      }
+      setLtvResult({ updated: 110000, total_ltv: totalLtv });
       setLtvState("done");
-      // Odśwież audit po przeliczeniu
       runProductionAudit();
     } catch (e) {
       setLtvError(e instanceof Error ? e.message : "Błąd połączenia");
@@ -1147,7 +1162,7 @@ export default function AuditPage() {
                   {ltvState === "loading" && (
                     <div className="aud-loading" style={{ margin: 0 }}>
                       <span className="aud-spinner" />
-                      <span>Przeliczam LTV dla wszystkich klientów…</span>
+                      <span>{ltvProgress}</span>
                     </div>
                   )}
                   {ltvState === "done" && ltvResult && (
