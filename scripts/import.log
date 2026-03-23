@@ -337,3 +337,46 @@ rpc error: "crm_behavior_segments" is not a table or materialized view
 [ETL step 9] runSanityChecks OK
 [2023-09] ✅ zamówień: 2190, klientów: 2100, eventów: 4618, niezmapowanych: 657
 [2023-10] Pobieram zamówienia...
+[ETL] start — 5408 line-items, source: shoper-2023-10
+[ETL step 2] anonymizeAndVault OK — 5408 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 5408 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 682
+[ETL step 5] buildClientProfiles OK — 2386 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 2386, events: 5408
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2023-10] ✅ zamówień: 2496, klientów: 2386, eventów: 5408, niezmapowanych: 682
+[2023-11] Pobieram zamówienia...
+[ETL] start — 11473 line-items, source: shoper-2023-11
+[ETL step 2] anonymizeAndVault OK — 11473 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 11473 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 1933
+[ETL step 5] buildClientProfiles OK — 3994 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 3994, events: 11473
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2023-11] ✅ zamówień: 4210, klientów: 3994, eventów: 11473, niezmapowanych: 1933
+[2023-12] Pobieram zamówienia...
+    ⚠ order-products 126522 — próba 1/3, retry za 5000ms: order-products 126522 (429): {"error":"temporarily_unavailable","error_description":"You have reached requests limit: 10\/10"}
+    ⚠ order-products 132096 — próba 1/3, retry za 5000ms: order-products 132096 (429): {"error":"temporarily_unavailable","error_description":"You have reached requests limit: 10\/10"}
+[ETL] start — 19511 line-items, source: shoper-2023-12
+[ETL step 2] anonymizeAndVault OK — 19511 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 19511 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 2934
+[ETL step 5] buildClientProfiles OK — 7652 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 7652, events: 19511
+[ETL step 8] refresh_crm_views OK
+[ETL step 9] runSanityChecks OK
+[2023-12] ✅ zamówień: 8071, klientów: 7652, eventów: 19511, niezmapowanych: 2934
+[2024-01] Pobieram zamówienia...

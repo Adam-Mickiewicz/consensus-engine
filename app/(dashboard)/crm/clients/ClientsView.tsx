@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useDarkMode } from "../../../hooks/useDarkMode";
+import EdroneExportDocs from "@/components/crm/EdroneExportDocs";
 
 const DARK = {
   bg: "#0f1117", card: "#1a1f2e", border: "#2a3050",
@@ -90,6 +91,10 @@ export default function ClientsView() {
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState<string | null>(null);
 
+  // Edrone export modal
+  const [edroneModal,   setEdroneModal]   = useState(false);
+  const [edroneLoading, setEdroneLoading] = useState(false);
+
   function setParam(key: string, value: string) {
     const p = new URLSearchParams(searchParams.toString());
     if (value) p.set(key, value); else p.delete(key);
@@ -149,6 +154,28 @@ export default function ClientsView() {
 
   function exportCSV() {
     window.location.href = `/api/crm/clients/export?${searchParams.toString()}`;
+  }
+
+  async function exportEdrone() {
+    setEdroneLoading(true);
+    setEdroneModal(false);
+    try {
+      const res = await fetch(`/api/crm/clients/export-edrone?${searchParams.toString()}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob  = await res.blob();
+      const url   = URL.createObjectURL(blob);
+      const a     = document.createElement("a");
+      const count = res.headers.get("X-Export-Count") ?? "";
+      a.href     = url;
+      a.download = `edrone_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      if (count) alert(`✓ Wyeksportowano ${Number(count).toLocaleString("pl-PL")} klientów.`);
+    } catch (e: unknown) {
+      alert("Błąd eksportu: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setEdroneLoading(false);
+    }
   }
 
   const hasFilters = !!(segment || risk || world || ltv_min || ltv_max || searchInput || date_from || date_to || occasion);
@@ -333,6 +360,70 @@ export default function ClientsView() {
             <button className="cl-page-btn" disabled={page === 1} onClick={() => setParam("page", String(page - 1))}>← Poprzednia</button>
             <span>Strona {page} z {totalPages} ({total.toLocaleString("pl-PL")} klientów)</span>
             <button className="cl-page-btn" disabled={page >= totalPages} onClick={() => setParam("page", String(page + 1))}>Następna →</button>
+          </div>
+        )}
+
+        {/* ── Eksport do edrone ─────────────────────────────────────── */}
+        <div style={{ marginTop: 32, paddingTop: 24, borderTop: `1px solid ${t.border}` }}>
+          <EdroneExportDocs />
+          <div style={{
+            display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
+            padding: "14px 16px", background: t.card, border: `1px solid ${t.border}`,
+            borderRadius: 10,
+          }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: t.text, marginBottom: 2 }}>
+                📧 Eksport do edrone
+              </div>
+              <div style={{ fontSize: 12, color: t.textSub }}>
+                {loading ? "Ładowanie…" : `Eksport obejmie ${total.toLocaleString("pl-PL")} klientów z aktualnych filtrów`}
+              </div>
+            </div>
+            <button
+              className="cl-btn cl-btn-primary"
+              onClick={() => setEdroneModal(true)}
+              disabled={edroneLoading || loading || total === 0}
+              style={{ opacity: (edroneLoading || loading || total === 0) ? 0.5 : 1 }}
+            >
+              {edroneLoading ? "Generowanie…" : "📧 Eksport do edrone"}
+            </button>
+          </div>
+        </div>
+
+        {/* ── Modal potwierdzenia ───────────────────────────────────── */}
+        {edroneModal && (
+          <div style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
+          }}>
+            <div style={{
+              background: t.card, border: `1px solid ${t.border}`, borderRadius: 14,
+              padding: "28px 32px", maxWidth: 420, width: "90%",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+            }}>
+              <div style={{ fontSize: 17, fontWeight: 700, color: t.text, marginBottom: 12 }}>
+                Potwierdzenie eksportu
+              </div>
+              <div style={{ fontSize: 13, color: t.textSub, lineHeight: 1.7, marginBottom: 20 }}>
+                Eksport odkryje adresy email <strong style={{ color: t.text }}>{total.toLocaleString("pl-PL")} klientów</strong>.
+                <br />
+                Operacja zostanie zalogowana w systemie bezpieczeństwa CRM.
+              </div>
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                <button
+                  className="cl-btn cl-btn-ghost"
+                  onClick={() => setEdroneModal(false)}
+                >
+                  Anuluj
+                </button>
+                <button
+                  className="cl-btn cl-btn-primary"
+                  onClick={exportEdrone}
+                >
+                  Pobierz CSV
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
