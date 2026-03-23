@@ -1,9 +1,8 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useDarkMode } from "../../../hooks/useDarkMode";
-
-// ─── Theme ────────────────────────────────────────────────────────────────────
 
 const DARK = {
   bg: "#0f1117", card: "#1a1f2e", border: "#2a3050",
@@ -26,8 +25,6 @@ const RISK_COLORS: Record<string, string> = {
   OK: "#22c55e", Risk: "#f59e0b", HighRisk: "#f97316", Lost: "#ef4444",
 };
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface ClientRow {
   client_id: string;
   legacy_segment: string | null;
@@ -39,20 +36,6 @@ interface ClientRow {
   ulubiony_swiat: string | null;
   winback_priority: string | null;
 }
-
-interface Filters {
-  segment: string;
-  risk: string;
-  world: string;
-  ltv_min: string;
-  ltv_max: string;
-  search: string;
-  sort: string;
-  page: number;
-  per_page: number;
-}
-
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function Skeleton({ t }: { t: typeof DARK }) {
   return (
@@ -68,46 +51,87 @@ function Skeleton({ t }: { t: typeof DARK }) {
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+const SORT_COLS = [
+  { key: "ltv",         asc: "ltv_asc",          desc: "ltv_desc" },
+  { key: "orders",      asc: "orders_asc",        desc: "orders_desc" },
+  { key: "last_order",  asc: "last_order_asc",    desc: "last_order_desc" },
+  { key: "first_order", asc: "first_order_asc",   desc: "first_order_desc" },
+];
 
 export default function ClientsView() {
   const [darkRaw] = useDarkMode();
   const dark = darkRaw as boolean;
   const t = dark ? DARK : LIGHT;
 
-  const [filters, setFilters] = useState<Filters>({
-    segment: "", risk: "", world: "", ltv_min: "", ltv_max: "",
-    search: "", sort: "ltv_desc", page: 1, per_page: 50,
-  });
-  const [clients, setClients] = useState<ClientRow[]>([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [worlds, setWorlds] = useState<string[]>([]);
-  const [worldsLoaded, setWorldsLoaded] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const router     = useRouter();
+  const pathname   = usePathname();
+  const searchParams = useSearchParams();
 
-  const buildQS = useCallback((f: Filters, extras?: Record<string, string>) => {
-    const p = new URLSearchParams();
-    if (f.segment)  p.set("segment", f.segment);
-    if (f.risk)     p.set("risk", f.risk);
-    if (f.world)    p.set("world", f.world);
-    if (f.ltv_min)  p.set("ltv_min", f.ltv_min);
-    if (f.ltv_max)  p.set("ltv_max", f.ltv_max);
-    if (f.search)   p.set("search", f.search);
-    p.set("sort", f.sort);
-    p.set("page", String(f.page));
-    p.set("per_page", String(f.per_page));
-    if (extras) for (const [k, v] of Object.entries(extras)) p.set(k, v);
-    return p.toString();
-  }, []);
+  // URL-synced state
+  const segment  = searchParams.get("segment")   || "";
+  const risk     = searchParams.get("risk")       || "";
+  const world    = searchParams.get("world")      || "";
+  const ltv_min  = searchParams.get("ltv_min")    || "";
+  const ltv_max  = searchParams.get("ltv_max")    || "";
+  const sort     = searchParams.get("sort")       || "ltv_desc";
+  const page     = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
+  const date_from = searchParams.get("date_from") || "";
+  const date_to  = searchParams.get("date_to")    || "";
+  const occasion = searchParams.get("occasion")   || "";
+
+  // Local-only (debounced) state for search
+  const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
+
+  const [clients,    setClients]    = useState<ClientRow[]>([]);
+  const [total,      setTotal]      = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [worlds,     setWorlds]     = useState<string[]>([]);
+  const [worldsLoaded, setWorldsLoaded] = useState(false);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState<string | null>(null);
+
+  function setParam(key: string, value: string) {
+    const p = new URLSearchParams(searchParams.toString());
+    if (value) p.set(key, value); else p.delete(key);
+    if (key !== "page") p.delete("page");
+    router.push(`${pathname}?${p.toString()}`);
+  }
+
+  function setSort(col: string) {
+    const entry = SORT_COLS.find(c => c.key === col);
+    if (!entry) return;
+    const next = sort === entry.desc ? entry.asc : entry.desc;
+    setParam("sort", next);
+  }
+
+  function sortIcon(col: string) {
+    const entry = SORT_COLS.find(c => c.key === col);
+    if (!entry) return null;
+    if (sort === entry.desc) return " ↓";
+    if (sort === entry.asc)  return " ↑";
+    return " ↕";
+  }
+
+  function resetFilters() {
+    const p = new URLSearchParams(searchParams.toString());
+    ["segment","risk","world","ltv_min","ltv_max","search","date_from","date_to","occasion","page","sort"].forEach(k => p.delete(k));
+    setSearchInput("");
+    router.push(`${pathname}?${p.toString()}`);
+  }
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => setParam("search", searchInput), 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
 
-    fetch(`/api/crm/clients/list?${buildQS(filters)}`)
+    const qs = searchParams.toString();
+    fetch(`/api/crm/clients/list?${qs}`)
       .then(r => r.json())
       .then(d => {
         if (cancelled) return;
@@ -115,35 +139,25 @@ export default function ClientsView() {
         setClients(d.clients ?? []);
         setTotal(d.total ?? 0);
         setTotalPages(d.total_pages ?? 1);
-        if (!worldsLoaded && d.worlds?.length) {
-          setWorlds(d.worlds);
-          setWorldsLoaded(true);
-        }
+        if (!worldsLoaded && d.worlds?.length) { setWorlds(d.worlds); setWorldsLoaded(true); }
         setLoading(false);
       })
-      .catch((e: Error) => {
-        if (cancelled) return;
-        setError(e.message);
-        setLoading(false);
-      });
+      .catch((e: Error) => { if (cancelled) return; setError(e.message); setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [filters, buildQS, worldsLoaded]);
-
-  function update(patch: Partial<Filters>) {
-    setFilters(f => ({ ...f, ...patch, page: "page" in patch ? (patch.page ?? 1) : 1 }));
-  }
-
-  function resetFilters() {
-    setFilters(f => ({ ...f, segment: "", risk: "", world: "", ltv_min: "", ltv_max: "", search: "", sort: "ltv_desc", page: 1 }));
-  }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function exportCSV() {
-    const qs = buildQS(filters);
-    window.location.href = `/api/crm/clients/export?${qs}`;
+    window.location.href = `/api/crm/clients/export?${searchParams.toString()}`;
   }
 
-  const hasFilters = !!(filters.segment || filters.risk || filters.world || filters.ltv_min || filters.ltv_max || filters.search);
+  const hasFilters = !!(segment || risk || world || ltv_min || ltv_max || searchInput || date_from || date_to || occasion);
+
+  const thStyle = (col: string) => ({
+    cursor: SORT_COLS.find(c => c.key === col) ? "pointer" : "default",
+    userSelect: "none" as const,
+    whiteSpace: "nowrap" as const,
+  });
 
   return (
     <>
@@ -164,11 +178,13 @@ export default function ClientsView() {
         .cl-input { padding: 7px 10px; border: 1px solid ${t.border}; border-radius: 6px; background: ${t.bg}; color: ${t.text}; font-size: 13px; font-family: var(--font-geist-sans), system-ui, sans-serif; outline: none; width: 140px; }
         .cl-input:focus { border-color: ${t.accent}; }
         .cl-input-sm { width: 90px; }
+        .cl-input-date { width: 130px; }
         .cl-select { padding: 7px 10px; border: 1px solid ${t.border}; border-radius: 6px; background: ${t.bg}; color: ${t.text}; font-size: 13px; font-family: var(--font-geist-sans), system-ui, sans-serif; outline: none; cursor: pointer; }
         .cl-select:focus { border-color: ${t.accent}; }
         .cl-table-wrap { background: ${t.card}; border: 1px solid ${t.border}; border-radius: 10px; overflow: hidden; overflow-x: auto; }
         .cl-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .cl-table th { padding: 9px 14px; color: ${t.textSub}; font-size: 10px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 1px solid ${t.border}; text-align: left; white-space: nowrap; background: ${t.bg}; }
+        .cl-table th:hover { color: ${t.text}; }
         .cl-table td { padding: 10px 14px; border-bottom: 1px solid ${t.border}; color: ${t.text}; white-space: nowrap; }
         .cl-table tr:last-child td { border-bottom: none; }
         .cl-table tr:hover td { background: ${t.hover}; }
@@ -184,7 +200,6 @@ export default function ClientsView() {
       `}</style>
 
       <div className="cl-wrap">
-        {/* Top bar */}
         <div className="cl-topbar">
           <h1 className="cl-title">
             Klienci 360°
@@ -199,73 +214,67 @@ export default function ClientsView() {
         <div className="cl-filters">
           <div className="cl-filter-group">
             <span className="cl-filter-label">Szukaj</span>
-            <input
-              className="cl-input"
-              placeholder="ID klienta…"
-              value={filters.search}
-              onChange={e => update({ search: e.target.value })}
-            />
+            <input className="cl-input" placeholder="ID klienta…" value={searchInput} onChange={e => setSearchInput(e.target.value)} />
           </div>
           <div className="cl-filter-group">
             <span className="cl-filter-label">Segment</span>
-            <select className="cl-select" value={filters.segment} onChange={e => update({ segment: e.target.value })}>
+            <select className="cl-select" value={segment} onChange={e => setParam("segment", e.target.value)}>
               <option value="">Wszystkie</option>
-              {["Diamond", "Platinum", "Gold", "Returning", "New"].map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
+              {["Diamond","Platinum","Gold","Returning","New"].map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
           <div className="cl-filter-group">
             <span className="cl-filter-label">Risk</span>
-            <select className="cl-select" value={filters.risk} onChange={e => update({ risk: e.target.value })}>
+            <select className="cl-select" value={risk} onChange={e => setParam("risk", e.target.value)}>
               <option value="">Wszystkie</option>
-              {["OK", "Risk", "HighRisk", "Lost"].map(r => (
-                <option key={r} value={r}>{r}</option>
-              ))}
+              {["OK","Risk","HighRisk","Lost"].map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
           <div className="cl-filter-group">
             <span className="cl-filter-label">Świat</span>
-            <select className="cl-select" value={filters.world} onChange={e => update({ world: e.target.value })}>
+            <select className="cl-select" value={world} onChange={e => setParam("world", e.target.value)}>
               <option value="">Wszystkie</option>
               {worlds.map(w => <option key={w} value={w}>{w}</option>)}
             </select>
           </div>
           <div className="cl-filter-group">
+            <span className="cl-filter-label">Ostatni zakup od</span>
+            <input className="cl-input cl-input-date" type="date" value={date_from} onChange={e => setParam("date_from", e.target.value)} />
+          </div>
+          <div className="cl-filter-group">
+            <span className="cl-filter-label">Ostatni zakup do</span>
+            <input className="cl-input cl-input-date" type="date" value={date_to} onChange={e => setParam("date_to", e.target.value)} />
+          </div>
+          <div className="cl-filter-group">
             <span className="cl-filter-label">LTV od</span>
-            <input className="cl-input cl-input-sm" placeholder="0" type="number" value={filters.ltv_min} onChange={e => update({ ltv_min: e.target.value })} />
+            <input className="cl-input cl-input-sm" placeholder="0" type="number" value={ltv_min} onChange={e => setParam("ltv_min", e.target.value)} />
           </div>
           <div className="cl-filter-group">
             <span className="cl-filter-label">LTV do</span>
-            <input className="cl-input cl-input-sm" placeholder="∞" type="number" value={filters.ltv_max} onChange={e => update({ ltv_max: e.target.value })} />
+            <input className="cl-input cl-input-sm" placeholder="∞" type="number" value={ltv_max} onChange={e => setParam("ltv_max", e.target.value)} />
           </div>
           <div className="cl-filter-group">
             <span className="cl-filter-label">Sortuj</span>
-            <select className="cl-select" value={filters.sort} onChange={e => update({ sort: e.target.value })}>
+            <select className="cl-select" value={sort} onChange={e => setParam("sort", e.target.value)}>
               <option value="ltv_desc">LTV malejąco</option>
               <option value="ltv_asc">LTV rosnąco</option>
               <option value="last_order_desc">Ostatni zakup ↓</option>
               <option value="last_order_asc">Ostatni zakup ↑</option>
               <option value="orders_desc">Zamówienia ↓</option>
+              <option value="orders_asc">Zamówienia ↑</option>
             </select>
           </div>
           {hasFilters && (
-            <button className="cl-btn cl-btn-ghost" onClick={resetFilters} style={{ alignSelf: "flex-end" }}>
-              Resetuj
-            </button>
+            <button className="cl-btn cl-btn-ghost" onClick={resetFilters} style={{ alignSelf: "flex-end" }}>Resetuj</button>
           )}
         </div>
 
-        {/* Error */}
         {error && <div className="cl-error">⚠ {error}</div>}
 
-        {/* Table */}
         {loading ? (
           <Skeleton t={t} />
         ) : clients.length === 0 ? (
-          <div className="cl-empty">
-            {hasFilters ? "Brak klientów spełniających kryteria" : "Brak danych — wgraj CSV w zakładce Import"}
-          </div>
+          <div className="cl-empty">{hasFilters ? "Brak klientów spełniających kryteria" : "Brak danych — wgraj CSV w zakładce Import"}</div>
         ) : (
           <div className="cl-table-wrap">
             <table className="cl-table">
@@ -274,9 +283,10 @@ export default function ClientsView() {
                   <th>ID klienta</th>
                   <th>Segment</th>
                   <th>Risk</th>
-                  <th style={{ textAlign: "right" }}>LTV</th>
-                  <th style={{ textAlign: "right" }}>Zamówienia</th>
-                  <th>Ostatni zakup</th>
+                  <th style={{ textAlign: "right", ...thStyle("ltv") }} onClick={() => setSort("ltv")}>LTV{sortIcon("ltv")}</th>
+                  <th style={{ textAlign: "right", ...thStyle("orders") }} onClick={() => setSort("orders")}>Zamówienia{sortIcon("orders")}</th>
+                  <th style={thStyle("last_order")} onClick={() => setSort("last_order")}>Ostatni zakup{sortIcon("last_order")}</th>
+                  <th style={thStyle("first_order")} onClick={() => setSort("first_order")}>Pierwszy zakup{sortIcon("first_order")}</th>
                   <th>Ulubiony świat</th>
                   <th>Winback</th>
                   <th></th>
@@ -285,39 +295,24 @@ export default function ClientsView() {
               <tbody>
                 {clients.map(c => (
                   <tr key={c.client_id}>
-                    <td>
-                      <Link href={`/crm/clients/${c.client_id}`} className="cl-link">
-                        {c.client_id}
-                      </Link>
-                    </td>
+                    <td><Link href={`/crm/clients/${c.client_id}`} className="cl-link">{c.client_id}</Link></td>
                     <td>
                       {c.legacy_segment ? (
-                        <span className="cl-badge" style={{
-                          background: (SEG_COLORS[c.legacy_segment] ?? "#6366f1") + "22",
-                          color: SEG_COLORS[c.legacy_segment] ?? "#6366f1",
-                        }}>{c.legacy_segment}</span>
+                        <span className="cl-badge" style={{ background: (SEG_COLORS[c.legacy_segment] ?? "#6366f1") + "22", color: SEG_COLORS[c.legacy_segment] ?? "#6366f1" }}>{c.legacy_segment}</span>
                       ) : "—"}
                     </td>
                     <td>
                       {c.risk_level ? (
-                        <span className="cl-badge" style={{
-                          background: (RISK_COLORS[c.risk_level] ?? "#475569") + "22",
-                          color: RISK_COLORS[c.risk_level] ?? "#475569",
-                        }}>{c.risk_level}</span>
+                        <span className="cl-badge" style={{ background: (RISK_COLORS[c.risk_level] ?? "#475569") + "22", color: RISK_COLORS[c.risk_level] ?? "#475569" }}>{c.risk_level}</span>
                       ) : "—"}
                     </td>
                     <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: t.accent, fontWeight: 600 }}>
                       {c.ltv != null ? `${Number(c.ltv).toLocaleString("pl-PL")} zł` : "—"}
                     </td>
-                    <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: t.textSub }}>
-                      {c.orders_count ?? "—"}
-                    </td>
-                    <td style={{ color: t.textSub, fontSize: 12 }}>
-                      {c.last_order ? c.last_order.slice(0, 10) : "—"}
-                    </td>
-                    <td style={{ color: t.textSub, fontSize: 12, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {c.ulubiony_swiat ?? "—"}
-                    </td>
+                    <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: t.textSub }}>{c.orders_count ?? "—"}</td>
+                    <td style={{ color: t.textSub, fontSize: 12 }}>{c.last_order ? c.last_order.slice(0, 10) : "—"}</td>
+                    <td style={{ color: t.textSub, fontSize: 12 }}>{c.first_order ? c.first_order.slice(0, 10) : "—"}</td>
+                    <td style={{ color: t.textSub, fontSize: 12, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis" }}>{c.ulubiony_swiat ?? "—"}</td>
                     <td>
                       {c.winback_priority ? (
                         <span className="cl-badge" style={{ background: "#ef444422", color: "#ef4444", fontSize: 10 }}>
@@ -325,11 +320,7 @@ export default function ClientsView() {
                         </span>
                       ) : null}
                     </td>
-                    <td>
-                      <Link href={`/crm/clients/${c.client_id}`} style={{ color: t.accent, fontSize: 12, textDecoration: "none" }}>
-                        →
-                      </Link>
-                    </td>
+                    <td><Link href={`/crm/clients/${c.client_id}`} style={{ color: t.accent, fontSize: 12, textDecoration: "none" }}>→</Link></td>
                   </tr>
                 ))}
               </tbody>
@@ -337,16 +328,11 @@ export default function ClientsView() {
           </div>
         )}
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="cl-pagination">
-            <button className="cl-page-btn" disabled={filters.page === 1} onClick={() => update({ page: filters.page - 1 })}>
-              ← Poprzednia
-            </button>
-            <span>Strona {filters.page} z {totalPages} ({total.toLocaleString("pl-PL")} klientów)</span>
-            <button className="cl-page-btn" disabled={filters.page >= totalPages} onClick={() => update({ page: filters.page + 1 })}>
-              Następna →
-            </button>
+            <button className="cl-page-btn" disabled={page === 1} onClick={() => setParam("page", String(page - 1))}>← Poprzednia</button>
+            <span>Strona {page} z {totalPages} ({total.toLocaleString("pl-PL")} klientów)</span>
+            <button className="cl-page-btn" disabled={page >= totalPages} onClick={() => setParam("page", String(page + 1))}>Następna →</button>
           </div>
         )}
       </div>

@@ -10,7 +10,13 @@ const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
 export async function POST(request) {
   try {
     const body = await request.json().catch(() => ({}));
-    const model = body.model ?? DEFAULT_MODEL;
+    const model      = body.model      ?? DEFAULT_MODEL;
+    const date_from  = body.date_from  ?? null;
+    const date_to    = body.date_to    ?? null;
+    const segment    = body.segment    ?? null;
+    const risk       = body.risk       ?? null;
+    const world      = body.world      ?? null;
+    const occasion   = body.occasion   ?? null;
 
     const sb = getServiceClient();
 
@@ -31,7 +37,21 @@ export async function POST(request) {
       segment_summary: segSummaryRes.data ?? {},
     };
 
-    const prompt = `Jesteś analitykiem CRM dla Nadwyraz.com — polskiej marki e-commerce produkującej narracyjne skarpetki i produkty z motywami literackimi/kulturowymi.
+    // Build active filter context
+    const activeFilters = [
+      date_from  && `zakres dat: od ${date_from}`,
+      date_to    && `do ${date_to}`,
+      segment    && `segment: ${segment}`,
+      risk       && `poziom ryzyka: ${risk}`,
+      world      && `świat: ${world}`,
+      occasion   && `okazja: ${occasion}`,
+    ].filter(Boolean);
+
+    const filterContext = activeFilters.length > 0
+      ? `\n\nUWAGA: Analiza dotyczy filtrowanego podzbioru danych (${activeFilters.join(', ')}).`
+      : '';
+
+    const prompt = `Jesteś analitykiem CRM dla Nadwyraz.com — polskiej marki e-commerce produkującej narracyjne skarpetki i produkty z motywami literackimi/kulturowymi.${filterContext}
 
 Oto dane z bazy CRM:
 ${JSON.stringify(crmData, null, 2)}

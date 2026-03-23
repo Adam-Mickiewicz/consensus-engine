@@ -13,21 +13,19 @@ function daysSince(dateStr) {
 
 function applyTierFilter(q, tier) {
   switch (tier) {
-    case 'vip':
-      return q
-        .in('legacy_segment', ['Diamond', 'Platinum'])
-        .in('risk_level', ['Lost', 'HighRisk']);
-    case 'lost':
-      return q.eq('risk_level', 'Lost');
-    case 'highrisk':
-      return q.eq('risk_level', 'HighRisk');
-    default: // 'all'
-      return q.in('risk_level', ['Lost', 'HighRisk']);
+    case 'vip':      return q.in('legacy_segment', ['Diamond','Platinum']).in('risk_level', ['Lost','HighRisk']);
+    case 'lost':     return q.eq('risk_level', 'Lost');
+    case 'highrisk': return q.eq('risk_level', 'HighRisk');
+    default:         return q.in('risk_level', ['Lost','HighRisk']);
   }
 }
 
-function applyWorldFilter(q, world) {
-  return world ? q.eq('ulubiony_swiat', world) : q;
+function applyFilters(q, { world, segment, date_from, date_to }) {
+  if (world)     q = q.eq('ulubiony_swiat', world);
+  if (segment)   q = q.eq('legacy_segment', segment);
+  if (date_from) q = q.gte('last_order', date_from);
+  if (date_to)   q = q.lte('last_order', date_to);
+  return q;
 }
 
 function applySort(q, sort) {
@@ -38,11 +36,10 @@ function applySort(q, sort) {
   }
 }
 
-async function fetchAllStats(sb, tier, world) {
-  // Count query
+async function fetchAllStats(sb, tier, filters) {
   let countQ = sb.from('clients_360').select('*', { count: 'exact', head: true });
   countQ = applyTierFilter(countQ, tier);
-  countQ = applyWorldFilter(countQ, world);
+  countQ = applyFilters(countQ, filters);
   const { count } = await countQ;
   const total = Math.min(count ?? 0, 10000);
 
@@ -58,7 +55,7 @@ async function fetchAllStats(sb, tier, world) {
         .select('ltv,last_order,legacy_segment,risk_level')
         .range(idx * PAGE, (idx + 1) * PAGE - 1);
       q = applyTierFilter(q, tier);
-      q = applyWorldFilter(q, world);
+      q = applyFilters(q, filters);
       promises.push(q);
     }
     const results = await Promise.all(promises);
@@ -73,7 +70,7 @@ async function fetchAllStats(sb, tier, world) {
   const avg_days_inactive = withDates.length > 0
     ? Math.round(withDates.reduce((s, r) => s + daysSince(r.last_order), 0) / withDates.length)
     : null;
-  const vipRows = rows.filter(r => ['Diamond', 'Platinum'].includes(r.legacy_segment) && ['Lost', 'HighRisk'].includes(r.risk_level));
+  const vipRows   = rows.filter(r => ['Diamond','Platinum'].includes(r.legacy_segment) && ['Lost','HighRisk'].includes(r.risk_level));
   const vip_count = vipRows.length;
   const vip_ltv   = vipRows.reduce((s, r) => s + (Number(r.ltv) || 0), 0);
 
@@ -83,27 +80,30 @@ async function fetchAllStats(sb, tier, world) {
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const tier     = searchParams.get('tier') || 'vip';
-    const world    = searchParams.get('world') || '';
-    const sort     = searchParams.get('sort') || 'ltv_desc';
+    const tier     = searchParams.get('tier')      || 'vip';
+    const world    = searchParams.get('world')     || '';
+    const segment  = searchParams.get('segment')   || '';
+    const date_from = searchParams.get('date_from') || '';
+    const date_to  = searchParams.get('date_to')   || '';
+    const sort     = searchParams.get('sort')      || 'ltv_desc';
     const page     = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);
     const per_page = Math.min(200, Math.max(1, parseInt(searchParams.get('per_page') || '50') || 50));
     const offset   = (page - 1) * per_page;
 
+    const filters = { world, segment, date_from, date_to };
     const sb = getServiceClient();
 
-    // Parallel: paginated clients + stats + worlds
     let clientsQ = sb.from('clients_360')
       .select('client_id,legacy_segment,risk_level,ltv,orders_count,last_order,ulubiony_swiat,winback_priority', { count: 'exact' });
     clientsQ = applyTierFilter(clientsQ, tier);
-    clientsQ = applyWorldFilter(clientsQ, world);
+    clientsQ = applyFilters(clientsQ, filters);
     clientsQ = applySort(clientsQ, sort);
     clientsQ = clientsQ.range(offset, offset + per_page - 1);
 
     const [clientsRes, worldsRes, statsData] = await Promise.all([
       clientsQ,
       sb.from('crm_worlds').select('*').limit(25),
-      fetchAllStats(sb, tier, world),
+      fetchAllStats(sb, tier, filters),
     ]);
 
     if (clientsRes.error) throw new Error(clientsRes.error.message);

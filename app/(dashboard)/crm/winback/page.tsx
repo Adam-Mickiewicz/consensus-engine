@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useDarkMode } from "../../../hooks/useDarkMode";
-
-// ─── Theme ────────────────────────────────────────────────────────────────────
+import { Suspense } from "react";
+import GlobalCRMFilters from "@/components/crm/GlobalCRMFilters";
 
 const DARK = {
   bg: "#0f1117", card: "#1a1f2e", border: "#2a3050",
@@ -25,8 +26,6 @@ const SEG_COLORS: Record<string, string> = {
 const RISK_COLORS: Record<string, string> = {
   OK: "#22c55e", Risk: "#f59e0b", HighRisk: "#f97316", Lost: "#ef4444",
 };
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 type Tier = "vip" | "all" | "lost" | "highrisk";
 
@@ -50,15 +49,6 @@ interface Stats {
   vip_ltv: number;
 }
 
-interface Filters {
-  tier: Tier;
-  world: string;
-  sort: string;
-  page: number;
-}
-
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
 function Skeleton({ t }: { t: typeof DARK }) {
   return (
     <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 10, overflow: "hidden" }}>
@@ -73,42 +63,60 @@ function Skeleton({ t }: { t: typeof DARK }) {
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 const PER_PAGE = 50;
 
-export default function WinbackPage() {
+function WinbackContent() {
   const [darkRaw] = useDarkMode();
   const dark = darkRaw as boolean;
   const t = dark ? DARK : LIGHT;
 
-  const [filters, setFilters] = useState<Filters>({ tier: "vip", world: "", sort: "ltv_desc", page: 1 });
-  const [clients, setClients] = useState<WinbackClient[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [worlds, setWorlds] = useState<string[]>([]);
-  const [worldsLoaded, setWorldsLoaded] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const router     = useRouter();
+  const pathname   = usePathname();
+  const searchParams = useSearchParams();
 
-  const buildQS = useCallback((f: Filters, extras?: Record<string, string>) => {
-    const p = new URLSearchParams();
-    p.set("tier", f.tier);
-    if (f.world) p.set("world", f.world);
-    p.set("sort", f.sort);
-    p.set("page", String(f.page));
+  // Local state for tier/sort/page (winback-specific)
+  const [tier, setTier]   = useState<Tier>((searchParams.get("tier") as Tier) || "vip");
+  const [sort, setSort]   = useState(searchParams.get("sort") || "ltv_desc");
+  const [page, setPage]   = useState(Math.max(1, parseInt(searchParams.get("page") || "1") || 1));
+
+  const [clients,    setClients]    = useState<WinbackClient[]>([]);
+  const [stats,      setStats]      = useState<Stats | null>(null);
+  const [total,      setTotal]      = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [worlds,     setWorlds]     = useState<string[]>([]);
+  const [worldsLoaded, setWorldsLoaded] = useState(false);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState<string | null>(null);
+
+  // Sync tier/sort/page with URL
+  useEffect(() => {
+    setTier((searchParams.get("tier") as Tier) || "vip");
+    setSort(searchParams.get("sort") || "ltv_desc");
+    setPage(Math.max(1, parseInt(searchParams.get("page") || "1") || 1));
+  }, [searchParams]);
+
+  function setParam(key: string, value: string) {
+    const p = new URLSearchParams(searchParams.toString());
+    if (value) p.set(key, value); else p.delete(key);
+    if (key !== "page") p.delete("page");
+    router.push(`${pathname}?${p.toString()}`);
+  }
+
+  const buildQS = useCallback(() => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.set("tier", tier);
+    p.set("sort", sort);
+    p.set("page", String(page));
     p.set("per_page", String(PER_PAGE));
-    if (extras) for (const [k, v] of Object.entries(extras)) p.set(k, v);
     return p.toString();
-  }, []);
+  }, [searchParams, tier, sort, page]);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
 
-    fetch(`/api/crm/winback?${buildQS(filters)}`)
+    fetch(`/api/crm/winback?${buildQS()}`)
       .then(r => r.json())
       .then(d => {
         if (cancelled) return;
@@ -117,27 +125,16 @@ export default function WinbackPage() {
         setStats(d.stats ?? null);
         setTotal(d.total ?? 0);
         setTotalPages(d.total_pages ?? 1);
-        if (!worldsLoaded && d.worlds?.length) {
-          setWorlds(d.worlds);
-          setWorldsLoaded(true);
-        }
+        if (!worldsLoaded && d.worlds?.length) { setWorlds(d.worlds); setWorldsLoaded(true); }
         setLoading(false);
       })
-      .catch((e: Error) => {
-        if (cancelled) return;
-        setError(e.message);
-        setLoading(false);
-      });
+      .catch((e: Error) => { if (cancelled) return; setError(e.message); setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [filters, buildQS, worldsLoaded]);
-
-  function update(patch: Partial<Filters>) {
-    setFilters(f => ({ ...f, ...patch, page: "page" in patch ? (patch.page ?? 1) : 1 }));
-  }
+  }, [buildQS, worldsLoaded]);
 
   function exportCSV() {
-    window.location.href = `/api/crm/winback/export?${buildQS(filters)}`;
+    window.location.href = `/api/crm/winback/export?${buildQS()}`;
   }
 
   const TIER_OPTS: { value: Tier; label: string }[] = [
@@ -169,7 +166,8 @@ export default function WinbackPage() {
         .wb-btn-ghost:hover { color: ${t.text}; background: ${t.hover}; }
         .wb-table-wrap { background: ${t.card}; border: 1px solid ${t.border}; border-radius: 10px; overflow: hidden; overflow-x: auto; }
         .wb-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .wb-table th { padding: 9px 14px; color: ${t.textSub}; font-size: 10px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 1px solid ${t.border}; text-align: left; white-space: nowrap; background: ${t.bg}; }
+        .wb-table th { padding: 9px 14px; color: ${t.textSub}; font-size: 10px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 1px solid ${t.border}; text-align: left; white-space: nowrap; background: ${t.bg}; cursor: pointer; }
+        .wb-table th:hover { color: ${t.text}; }
         .wb-table td { padding: 10px 14px; border-bottom: 1px solid ${t.border}; color: ${t.text}; white-space: nowrap; }
         .wb-table tr:last-child td { border-bottom: none; }
         .wb-table tr:hover td { background: ${t.hover}; }
@@ -188,94 +186,53 @@ export default function WinbackPage() {
         <h1 className="wb-title">Winback</h1>
         <p className="wb-sub">Klienci wymagający reaktywacji — Lost i High Risk</p>
 
-        {/* VIP Banner */}
         {stats && stats.vip_count > 0 && (
           <div style={{ background: "#ef444418", border: "1px solid #ef444466", borderRadius: 10, padding: "12px 20px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <span style={{ color: "#ef4444", fontWeight: 700, fontSize: 14 }}>
-              🚨 VIP REANIMACJA: {stats.vip_count.toLocaleString("pl-PL")} klientów
-            </span>
-            <span style={{ color: "#ef4444", fontSize: 13 }}>
-              · LTV do odzyskania: <strong>{stats.vip_ltv.toLocaleString("pl-PL", { maximumFractionDigits: 0 })} zł</strong>
-            </span>
+            <span style={{ color: "#ef4444", fontWeight: 700, fontSize: 14 }}>🚨 VIP REANIMACJA: {stats.vip_count.toLocaleString("pl-PL")} klientów</span>
+            <span style={{ color: "#ef4444", fontSize: 13 }}>· LTV do odzyskania: <strong>{stats.vip_ltv.toLocaleString("pl-PL", { maximumFractionDigits: 0 })} zł</strong></span>
           </div>
         )}
 
-        {/* KPI Cards */}
         <div className="wb-kpis">
-          <div className="wb-kpi">
-            <div className="wb-kpi-val">{stats ? stats.total.toLocaleString("pl-PL") : "—"}</div>
-            <div className="wb-kpi-label">Łącznie do winback</div>
-          </div>
-          <div className="wb-kpi">
-            <div className="wb-kpi-val" style={{ color: "#ef4444" }}>
-              {stats ? stats.total_ltv.toLocaleString("pl-PL", { maximumFractionDigits: 0 }) + " zł" : "—"}
-            </div>
-            <div className="wb-kpi-label">Łączne LTV zagrożone</div>
-          </div>
-          <div className="wb-kpi">
-            <div className="wb-kpi-val" style={{ color: "#f59e0b" }}>
-              {stats?.avg_days_inactive != null ? `${stats.avg_days_inactive} dni` : "—"}
-            </div>
-            <div className="wb-kpi-label">Średnia nieaktywności</div>
-          </div>
-          <div className="wb-kpi">
-            <div className="wb-kpi-val" style={{ color: "#a78bfa" }}>
-              {stats ? stats.vip_count.toLocaleString("pl-PL") : "—"}
-            </div>
-            <div className="wb-kpi-label">VIP REANIMACJA</div>
-          </div>
+          <div className="wb-kpi"><div className="wb-kpi-val">{stats ? stats.total.toLocaleString("pl-PL") : "—"}</div><div className="wb-kpi-label">Łącznie do winback</div></div>
+          <div className="wb-kpi"><div className="wb-kpi-val" style={{ color: "#ef4444" }}>{stats ? stats.total_ltv.toLocaleString("pl-PL", { maximumFractionDigits: 0 }) + " zł" : "—"}</div><div className="wb-kpi-label">Łączne LTV zagrożone</div></div>
+          <div className="wb-kpi"><div className="wb-kpi-val" style={{ color: "#f59e0b" }}>{stats?.avg_days_inactive != null ? `${stats.avg_days_inactive} dni` : "—"}</div><div className="wb-kpi-label">Średnia nieaktywności</div></div>
+          <div className="wb-kpi"><div className="wb-kpi-val" style={{ color: "#a78bfa" }}>{stats ? stats.vip_count.toLocaleString("pl-PL") : "—"}</div><div className="wb-kpi-label">VIP REANIMACJA</div></div>
         </div>
 
-        {/* Filters */}
         <div className="wb-filters">
           <div className="wb-filter-group">
             <span className="wb-filter-label">Tryb</span>
             <div className="wb-tier-group">
               {TIER_OPTS.map(opt => (
-                <button
-                  key={opt.value}
-                  className="wb-tier-btn"
-                  onClick={() => update({ tier: opt.value })}
-                  style={{
-                    background: filters.tier === opt.value ? t.accent : "none",
-                    color: filters.tier === opt.value ? "#fff" : t.textSub,
-                  }}
-                >
+                <button key={opt.value} className="wb-tier-btn" onClick={() => setParam("tier", opt.value)}
+                  style={{ background: tier === opt.value ? t.accent : "none", color: tier === opt.value ? "#fff" : t.textSub }}>
                   {opt.label}
                 </button>
               ))}
             </div>
           </div>
-
           <div className="wb-filter-group">
             <span className="wb-filter-label">Świat</span>
-            <select className="wb-select" value={filters.world} onChange={e => update({ world: e.target.value })}>
+            <select className="wb-select" value={searchParams.get("world") || ""} onChange={e => setParam("world", e.target.value)}>
               <option value="">Wszystkie</option>
               {worlds.map(w => <option key={w} value={w}>{w}</option>)}
             </select>
           </div>
-
           <div className="wb-filter-group">
             <span className="wb-filter-label">Sortuj</span>
-            <select className="wb-select" value={filters.sort} onChange={e => update({ sort: e.target.value })}>
+            <select className="wb-select" value={sort} onChange={e => setParam("sort", e.target.value)}>
               <option value="ltv_desc">LTV malejąco</option>
               <option value="ltv_asc">LTV rosnąco</option>
               <option value="last_order_asc">Najdłużej nieaktywni</option>
             </select>
           </div>
-
-          <button className="wb-btn wb-btn-ghost" onClick={exportCSV} style={{ alignSelf: "flex-end" }}>
-            📥 Eksportuj CSV
-          </button>
+          <button className="wb-btn wb-btn-ghost" onClick={exportCSV} style={{ alignSelf: "flex-end" }}>📥 Eksportuj CSV</button>
         </div>
 
-        {/* Error */}
         {error && <div className="wb-error">⚠ {error}</div>}
 
-        {/* Table */}
-        {loading ? (
-          <Skeleton t={t} />
-        ) : clients.length === 0 ? (
+        {loading ? <Skeleton t={t} /> : clients.length === 0 ? (
           <div className="wb-empty">Brak klientów w tym segmencie</div>
         ) : (
           <div className="wb-table-wrap">
@@ -285,9 +242,9 @@ export default function WinbackPage() {
                   <th>ID klienta</th>
                   <th>Segment</th>
                   <th>Risk</th>
-                  <th style={{ textAlign: "right" }}>LTV</th>
+                  <th style={{ textAlign: "right" }} onClick={() => setParam("sort", sort === "ltv_desc" ? "ltv_asc" : "ltv_desc")}>LTV {sort === "ltv_desc" ? "↓" : sort === "ltv_asc" ? "↑" : "↕"}</th>
                   <th style={{ textAlign: "right" }}>Zamówień</th>
-                  <th>Ostatni zakup</th>
+                  <th onClick={() => setParam("sort", sort === "last_order_asc" ? "ltv_desc" : "last_order_asc")}>Ostatni zakup {sort === "last_order_asc" ? "↑" : "↕"}</th>
                   <th style={{ textAlign: "right" }}>Dni nieaktywności</th>
                   <th>Ulubiony świat</th>
                   <th>Winback</th>
@@ -300,49 +257,15 @@ export default function WinbackPage() {
                   const isVip = c.winback_priority?.includes("VIP") || c.winback_priority?.includes("REANIMACJA");
                   return (
                     <tr key={c.client_id}>
-                      <td>
-                        <Link href={`/crm/clients/${c.client_id}`} className="wb-link">
-                          {c.client_id}
-                        </Link>
-                      </td>
-                      <td>
-                        {c.legacy_segment ? (
-                          <span className="wb-badge" style={{
-                            background: (SEG_COLORS[c.legacy_segment] ?? "#6366f1") + "22",
-                            color: SEG_COLORS[c.legacy_segment] ?? "#6366f1",
-                          }}>{c.legacy_segment}</span>
-                        ) : "—"}
-                      </td>
-                      <td>
-                        {c.risk_level ? (
-                          <span className="wb-badge" style={{
-                            background: (RISK_COLORS[c.risk_level] ?? "#475569") + "22",
-                            color: RISK_COLORS[c.risk_level] ?? "#475569",
-                          }}>{c.risk_level}</span>
-                        ) : "—"}
-                      </td>
-                      <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600, color: t.accent }}>
-                        {c.ltv != null ? `${Number(c.ltv).toLocaleString("pl-PL")} zł` : "—"}
-                      </td>
-                      <td style={{ textAlign: "right", color: t.textSub, fontVariantNumeric: "tabular-nums" }}>
-                        {c.orders_count ?? "—"}
-                      </td>
-                      <td style={{ color: t.textSub, fontSize: 12 }}>
-                        {c.last_order ? c.last_order.slice(0, 10) : "—"}
-                      </td>
-                      <td style={{ textAlign: "right", color: daysColor, fontWeight: days != null && days > 365 ? 600 : 400, fontVariantNumeric: "tabular-nums" }}>
-                        {days != null ? `${days.toLocaleString("pl-PL")} dni` : "—"}
-                      </td>
-                      <td style={{ color: t.textSub, fontSize: 12, maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {c.ulubiony_swiat ?? "—"}
-                      </td>
-                      <td>
-                        {isVip ? (
-                          <span className="wb-badge" style={{ background: "#ef444422", color: "#ef4444", fontSize: 10 }}>VIP</span>
-                        ) : c.winback_priority ? (
-                          <span className="wb-badge" style={{ background: "#f9731622", color: "#f97316", fontSize: 10 }}>⚡</span>
-                        ) : null}
-                      </td>
+                      <td><Link href={`/crm/clients/${c.client_id}`} className="wb-link">{c.client_id}</Link></td>
+                      <td>{c.legacy_segment ? <span className="wb-badge" style={{ background: (SEG_COLORS[c.legacy_segment] ?? "#6366f1") + "22", color: SEG_COLORS[c.legacy_segment] ?? "#6366f1" }}>{c.legacy_segment}</span> : "—"}</td>
+                      <td>{c.risk_level ? <span className="wb-badge" style={{ background: (RISK_COLORS[c.risk_level] ?? "#475569") + "22", color: RISK_COLORS[c.risk_level] ?? "#475569" }}>{c.risk_level}</span> : "—"}</td>
+                      <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600, color: t.accent }}>{c.ltv != null ? `${Number(c.ltv).toLocaleString("pl-PL")} zł` : "—"}</td>
+                      <td style={{ textAlign: "right", color: t.textSub, fontVariantNumeric: "tabular-nums" }}>{c.orders_count ?? "—"}</td>
+                      <td style={{ color: t.textSub, fontSize: 12 }}>{c.last_order ? c.last_order.slice(0, 10) : "—"}</td>
+                      <td style={{ textAlign: "right", color: daysColor, fontWeight: days != null && days > 365 ? 600 : 400, fontVariantNumeric: "tabular-nums" }}>{days != null ? `${days.toLocaleString("pl-PL")} dni` : "—"}</td>
+                      <td style={{ color: t.textSub, fontSize: 12, maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis" }}>{c.ulubiony_swiat ?? "—"}</td>
+                      <td>{isVip ? <span className="wb-badge" style={{ background: "#ef444422", color: "#ef4444", fontSize: 10 }}>VIP</span> : c.winback_priority ? <span className="wb-badge" style={{ background: "#f9731622", color: "#f97316", fontSize: 10 }}>⚡</span> : null}</td>
                     </tr>
                   );
                 })}
@@ -351,19 +274,23 @@ export default function WinbackPage() {
           </div>
         )}
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="wb-pagination">
-            <button className="wb-page-btn" disabled={filters.page === 1} onClick={() => update({ page: filters.page - 1 })}>
-              ← Poprzednia
-            </button>
-            <span>Strona {filters.page} z {totalPages} ({total.toLocaleString("pl-PL")} klientów)</span>
-            <button className="wb-page-btn" disabled={filters.page >= totalPages} onClick={() => update({ page: filters.page + 1 })}>
-              Następna →
-            </button>
+            <button className="wb-page-btn" disabled={page === 1} onClick={() => setParam("page", String(page - 1))}>← Poprzednia</button>
+            <span>Strona {page} z {totalPages} ({total.toLocaleString("pl-PL")} klientów)</span>
+            <button className="wb-page-btn" disabled={page >= totalPages} onClick={() => setParam("page", String(page + 1))}>Następna →</button>
           </div>
         )}
       </div>
     </>
+  );
+}
+
+export default function WinbackPage() {
+  return (
+    <Suspense fallback={null}>
+      <GlobalCRMFilters />
+      <WinbackContent />
+    </Suspense>
   );
 }

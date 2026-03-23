@@ -1,8 +1,10 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+import { Suspense } from 'react';
 import { getServiceClient } from '@/lib/supabase/server';
 import BehaviorView from './BehaviorView';
+import GlobalCRMFilters from '@/components/crm/GlobalCRMFilters';
 
 export default async function BehaviorPage() {
   const sb = getServiceClient();
@@ -16,9 +18,14 @@ export default async function BehaviorPage() {
   ]);
 
   return (
-    <BehaviorView
-      segments={segRes.data ?? null}
-      cobuying={cobuyRes.data ?? []}
-    />
+    <>
+      <Suspense fallback={null}>
+        <GlobalCRMFilters />
+      </Suspense>
+      <BehaviorView
+        segments={segRes.data ?? null}
+        cobuying={cobuyRes.data ?? []}
+      />
+    </>
   );
 }
