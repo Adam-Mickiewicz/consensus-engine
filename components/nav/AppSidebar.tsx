@@ -28,6 +28,7 @@ const SUBCATEGORIES: Record<string, SubItem[]> = {
     { href: "/crm/analytics/behavior", label: "Zachowania" },
     { href: "/crm/analytics/occasions",label: "Analityka okazji" },
     { href: "/crm/analytics/cohorts",  label: "Kohorty" },
+    { href: "/crm/analytics/segments", label: "Segmentacja zaawansowana" },
     { href: "/crm/clients",            label: "Klienci" },
     { href: "/crm/winback",            label: "Winback" },
     { href: "/crm/import",             label: "Import / ETL", admin: true },
