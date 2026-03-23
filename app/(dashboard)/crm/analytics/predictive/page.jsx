@@ -227,12 +227,12 @@ function ClientTable({ clients, mode, t }) {
   const thS = {
     padding: "8px 14px", color: t.textSub, fontSize: 10, fontWeight: 500,
     letterSpacing: "0.05em", textTransform: "uppercase",
-    borderBottom: `1px solid ${t.border}`, textAlign: "left" as const,
-    background: t.kpi, whiteSpace: "nowrap" as const,
+    borderBottom: `1px solid ${t.border}`, textAlign: "left",
+    background: t.kpi, whiteSpace: "nowrap",
   };
   const tdS = {
     padding: "9px 14px", borderBottom: `1px solid ${t.border}`,
-    color: t.text, fontSize: 13, whiteSpace: "nowrap" as const,
+    color: t.text, fontSize: 13, whiteSpace: "nowrap",
   };
   const tdL = { ...tdS, borderBottom: "none" };
 
@@ -245,17 +245,17 @@ function ClientTable({ clients, mode, t }) {
             <th style={thS}>Segment</th>
             {mode === "top_ltv" ? (
               <>
-                <th style={{ ...thS, textAlign: "right" as const }}>Bieżący LTV</th>
-                <th style={{ ...thS, textAlign: "right" as const }}>Przewidywany LTV 12m</th>
-                <th style={{ ...thS, textAlign: "right" as const }}>Wzrost</th>
-                <th style={{ ...thS, textAlign: "right" as const }}>Śr. zamówienie</th>
+                <th style={{ ...thS, textAlign: "right" }}>Bieżący LTV</th>
+                <th style={{ ...thS, textAlign: "right" }}>Przewidywany LTV 12m</th>
+                <th style={{ ...thS, textAlign: "right" }}>Wzrost</th>
+                <th style={{ ...thS, textAlign: "right" }}>Śr. zamówienie</th>
               </>
             ) : (
               <>
                 <th style={thS}>{mode === "overdue" ? "Miał kupić" : "Przewidywana data"}</th>
                 <th style={thS}>{mode === "overdue" ? "Spóźnienie" : "Dni do zakupu"}</th>
                 <th style={thS}>Prawdopodobieństwo</th>
-                <th style={{ ...thS, textAlign: "right" as const }}>Śr. zamówienie</th>
+                <th style={{ ...thS, textAlign: "right" }}>Śr. zamówienie</th>
               </>
             )}
             <th style={thS}></th>
@@ -271,8 +271,8 @@ function ClientTable({ clients, mode, t }) {
 
             return (
               <tr key={c.client_id} style={{ cursor: "default" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = t.hover; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ""; }}>
+                  onMouseEnter={e => { e.currentTarget.style.background = t.hover; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = ""; }}>
                 <td style={{ ...td, fontFamily: "var(--font-geist-mono), monospace", fontSize: 12 }}>
                   {c.client_id}
                 </td>
