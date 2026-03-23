@@ -8,12 +8,14 @@ export async function POST() {
   try {
     const sb = getServiceClient();
     const { error } = await sb.rpc('refresh_crm_views');
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error('[refresh-views] RPC error:', error);
+      throw new Error(`${error.message} (code: ${error.code})`);
+    }
     return NextResponse.json({ success: true });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Błąd serwera' },
-      { status: 500 }
-    );
+    const msg = err instanceof Error ? err.message : 'Błąd serwera';
+    console.error('[refresh-views] caught:', msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
