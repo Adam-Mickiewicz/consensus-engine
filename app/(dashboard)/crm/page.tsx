@@ -57,6 +57,13 @@ const MODULES = [
     badge: "demo",
   },
   {
+    href: "/crm/analytics/predictive",
+    label: "Predykcje AI",
+    icon: "🔮",
+    desc: "Przewidywany LTV, kolejny zakup, kalendarz przychodów",
+    badge: null,
+  },
+  {
     href: "/crm/winback",
     label: "Winback",
     icon: "⚡",
