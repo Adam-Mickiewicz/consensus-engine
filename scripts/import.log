@@ -380,3 +380,17 @@ rpc error: "crm_behavior_segments" is not a table or materialized view
 [ETL step 9] runSanityChecks OK
 [2023-12] ✅ zamówień: 8071, klientów: 7652, eventów: 19511, niezmapowanych: 2934
 [2024-01] Pobieram zamówienia...
+[ETL] start — 4955 line-items, source: shoper-2024-01
+[ETL step 2] anonymizeAndVault OK — 4955 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 4955 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 748
+[ETL step 5] buildClientProfiles OK — 2245 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 2245, events: 4955
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2024-01] ✅ zamówień: 2344, klientów: 2245, eventów: 4955, niezmapowanych: 748
+[2024-02] Pobieram zamówienia...

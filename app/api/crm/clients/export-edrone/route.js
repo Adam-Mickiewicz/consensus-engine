@@ -276,22 +276,27 @@ async function fetchEventAggregates(sb, clientIds) {
 
 /**
  * Pobiera emaile z tabeli master_key (service_role) dla listy client_id.
- * Zwraca mapę: client_id → email
+ * Zwraca: { emailMap: Map<client_id, email>, missing: number }
  *
- * master_key przechowuje: email_hash (MD5), email (plain), client_id
+ * WAŻNE: Kolumna email w master_key została dodana migracją 038.
+ * Historyczne rekordy (przed re-importem) mają email = NULL.
+ * Emaile są uzupełniane przez ETL przy każdym imporcie zamówień.
+ *
  * Dostęp wymaga service_role — nigdy nie eksponuj przez publiczne API.
  */
 async function fetchEmails(sb, clientIds) {
   const emailMap = new Map();
+
   for (let i = 0; i < clientIds.length; i += EVENT_BATCH) {
     const batch = clientIds.slice(i, i + EVENT_BATCH);
     const { data, error } = await sb
       .from('master_key')
       .select('client_id,email')
-      .in('client_id', batch);
+      .in('client_id', batch)
+      .not('email', 'is', null); // pobierz tylko rekordy z emailem — NULL = przed re-importem
 
     if (error) {
-      // Loguj błąd ale nie przerywaj eksportu — klienci bez emaila zostaną pominięci
+      // Kolumna email może nie istnieć jeszcze (przed migracją 038) — kontynuuj bez emaili
       console.error('[edrone-export] master_key fetch error:', error.message);
       continue;
     }
@@ -299,23 +304,43 @@ async function fetchEmails(sb, clientIds) {
       if (row.email) emailMap.set(row.client_id, row.email);
     }
   }
-  return emailMap;
+
+  const missing = clientIds.length - emailMap.size;
+  return { emailMap, missing };
 }
 
 /**
  * Loguje operację eksportu do vault_access_log.
- * Tabela musi istnieć w Supabase: (id, created_at, reason, meta jsonb)
- * Jeśli tabela nie istnieje — operacja jest ignorowana (soft fail).
+ *
+ * Schemat vault_access_log: (id, accessed_by uuid, client_id text NOT NULL,
+ *   accessed_at timestamptz, reason text)
+ *
+ * Eksport masowy używa client_id = 'BULK_EXPORT' i accessed_by = null
+ * (service_role bypass RLS — brak user context podczas eksportu server-side).
  */
-async function logExport(sb, { count, filters, scope }) {
+async function logExport(sb, { count, filters, scope, missing }) {
   try {
+    const reason = [
+      `edrone_export`,
+      `scope=${scope}`,
+      `exported=${count}`,
+      `missing_email=${missing}`,
+      filters.segment  ? `segment=${filters.segment}`   : null,
+      filters.risk     ? `risk=${filters.risk}`          : null,
+      filters.world    ? `world=${filters.world}`        : null,
+      filters.date_from ? `from=${filters.date_from}`    : null,
+      filters.date_to   ? `to=${filters.date_to}`        : null,
+    ].filter(Boolean).join(' ');
+
     await sb.from('vault_access_log').insert({
-      reason:     'edrone_export',
-      meta:       { count, filters, scope },
-      created_at: new Date().toISOString(),
+      accessed_by:  null,          // service_role bulk export — brak user context
+      client_id:    'BULK_EXPORT', // wymagane NOT NULL — oznaczamy eksport masowy
+      accessed_at:  new Date().toISOString(),
+      reason,
     });
-  } catch {
-    // Ignoruj — tabela może nie istnieć jeszcze
+  } catch (e) {
+    // Soft fail — nie przerywaj eksportu jeśli log się nie powiedzie
+    console.warn('[edrone-export] vault_access_log insert failed:', e?.message);
   }
 }
 
@@ -397,7 +422,7 @@ export async function GET(request) {
     const clientIds = clients.map(c => c.client_id);
 
     // 2. Pobierz agregaty eventów + emaile równolegle
-    const [eventAggMap, emailMap] = await Promise.all([
+    const [eventAggMap, { emailMap, missing }] = await Promise.all([
       fetchEventAggregates(sb, clientIds),
       fetchEmails(sb, clientIds),
     ]);
@@ -406,7 +431,15 @@ export async function GET(request) {
     const { csv, exported } = buildCSV(clients, emailMap, eventAggMap);
 
     // 4. Zaloguj eksport (async, nie blokuj odpowiedzi)
-    logExport(sb, { count: exported, filters, scope });
+    logExport(sb, { count: exported, filters, scope, missing });
+
+    // Ostrzeżenie w logach serwera jeśli brakuje emaili
+    if (missing > 0) {
+      console.warn(
+        `[edrone-export] ${missing}/${clients.length} klientów bez emaila w master_key. ` +
+        'Wymagany re-import ETL żeby uzupełnić kolumnę email (migracja 038).'
+      );
+    }
 
     const filename = `edrone_export_${new Date().toISOString().slice(0,10)}.csv`;
     return new Response(csv, {
@@ -414,6 +447,7 @@ export async function GET(request) {
         'Content-Type':        'text/csv; charset=utf-8',
         'Content-Disposition': `attachment; filename="${filename}"`,
         'X-Export-Count':      String(exported),
+        'X-Missing-Emails':    String(missing), // ile klientów pominiętych (brak emaila)
       },
     });
 

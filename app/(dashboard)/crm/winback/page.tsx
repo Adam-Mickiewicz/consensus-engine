@@ -90,6 +90,7 @@ function WinbackContent() {
   // Edrone export modal
   const [edroneModal,   setEdroneModal]   = useState(false);
   const [edroneLoading, setEdroneLoading] = useState(false);
+  const [edroneResult,  setEdroneResult]  = useState<{ exported: number; missing: number } | null>(null);
 
   // Sync tier/sort/page with URL
   useEffect(() => {
@@ -143,18 +144,20 @@ function WinbackContent() {
   async function exportEdrone() {
     setEdroneLoading(true);
     setEdroneModal(false);
+    setEdroneResult(null);
     try {
       const res  = await fetch(`/api/crm/clients/export-edrone?scope=winback`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const exported = Number(res.headers.get("X-Export-Count") ?? "0");
+      const missing  = Number(res.headers.get("X-Missing-Emails") ?? "0");
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement("a");
-      const count = res.headers.get("X-Export-Count") ?? "";
       a.href     = url;
       a.download = `edrone_winback_${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
-      if (count) alert(`✓ Wyeksportowano ${Number(count).toLocaleString("pl-PL")} klientów winback.`);
+      setEdroneResult({ exported, missing });
     } catch (e: unknown) {
       alert("Błąd eksportu: " + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -339,6 +342,24 @@ function WinbackContent() {
               {edroneLoading ? "Generowanie…" : "📧 Eksport do edrone (Winback)"}
             </button>
           </div>
+          {edroneResult && (
+            <div style={{
+              marginTop: 10, padding: "10px 14px", borderRadius: 8, fontSize: 13,
+              background: edroneResult.missing > 0 ? "#f59e0b18" : "#22c55e18",
+              border: `1px solid ${edroneResult.missing > 0 ? "#f59e0b44" : "#22c55e44"}`,
+              color: t.text,
+            }}>
+              {edroneResult.exported > 0
+                ? <>✓ Pobrano <strong>{edroneResult.exported.toLocaleString("pl-PL")}</strong> rekordów.</>
+                : <>⚠ Brak rekordów z emailem.</>
+              }
+              {edroneResult.missing > 0 && (
+                <span style={{ color: "#f59e0b", marginLeft: 8 }}>
+                  ⚠ {edroneResult.missing.toLocaleString("pl-PL")} klientów bez emaila — wymagany <strong>re-import ETL</strong>.
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── Modal potwierdzenia ───────────────────────────────────── */}
