@@ -70,6 +70,14 @@ const MODULES = [
     desc: "Import danych z arkuszy i zewnętrznych źródeł",
     badge: "admin",
   },
+  {
+    href: "https://subiekt-sync-buddy.lovable.app/",
+    label: "CRM Produktowy",
+    icon: "📦",
+    desc: "Synchronizacja produktów i zarządzanie katalogiem w Subiekcie",
+    badge: null,
+    external: true,
+  },
 ];
 
 export default function CrmPage() {
@@ -95,14 +103,36 @@ export default function CrmPage() {
       <p className="crm-sub">Platforma analityki klientów Nadwyraz.com — 1 200 rekordów, 6 modułów analitycznych</p>
 
       <div className="crm-grid">
-        {MODULES.map((m, i) => (
-          <Link key={m.href} href={m.href} className="crm-card">
-            {m.badge && <span className="crm-badge">{m.badge}</span>}
-            <span className="crm-icon">{m.icon}</span>
-            <span className="crm-label">{m.label}</span>
-            <span className="crm-desc">{m.desc}</span>
-          </Link>
-        ))}
+        {MODULES.map((m) =>
+          m.external ? (
+            <a
+              key={m.href}
+              href={m.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="crm-card"
+            >
+              {m.badge && <span className="crm-badge">{m.badge}</span>}
+              <span className="crm-icon">{m.icon}</span>
+              <span className="crm-label" style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                {m.label}
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, flexShrink: 0 }}>
+                  <path d="M5 2H2a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7" />
+                  <path d="M8 1h3v3" />
+                  <path d="M11 1 5.5 6.5" />
+                </svg>
+              </span>
+              <span className="crm-desc">{m.desc}</span>
+            </a>
+          ) : (
+            <Link key={m.href} href={m.href} className="crm-card">
+              {m.badge && <span className="crm-badge">{m.badge}</span>}
+              <span className="crm-icon">{m.icon}</span>
+              <span className="crm-label">{m.label}</span>
+              <span className="crm-desc">{m.desc}</span>
+            </Link>
+          )
+        )}
       </div>
     </>
   );
