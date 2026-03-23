@@ -161,11 +161,11 @@ function PIICard({ clientId, dark, t }: { clientId: string; dark: boolean; t: ty
         <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
           <div>
             <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 3 }}>Email</div>
-            <PIIMasked clientId={clientId} type="email" sessionId={sessionId} />
+            <PIIMasked clientId={clientId} type="email" sessionId={sessionId} masked="—" />
           </div>
           <div>
             <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 3 }}>Imię i nazwisko</div>
-            <PIIMasked clientId={clientId} type="name" sessionId={sessionId} />
+            <PIIMasked clientId={clientId} type="name" sessionId={sessionId} masked="—" />
           </div>
         </div>
       )}
