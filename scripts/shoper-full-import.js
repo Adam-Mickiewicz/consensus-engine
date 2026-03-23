@@ -367,9 +367,7 @@ async function main() {
       // 4. ETL
       const result = await runETLPipeline(normalized, supabase, `shoper-${month}`);
 
-      // 5. Przelicz LTV + odśwież widoki
-      const { error: ltvErr } = await supabase.rpc("recalculate_all_ltv");
-      if (ltvErr) console.error("rpc error:", ltvErr.message);
+      // 5. Odśwież widoki (bez LTV — wywoływane raz na końcu)
       const { error: viewErr } = await supabase.rpc("refresh_crm_views");
       if (viewErr) console.error("rpc error:", viewErr.message);
 
@@ -389,6 +387,27 @@ async function main() {
       // Kontynuuj do następnego miesiąca
     }
   }
+
+  // ── Przelicz LTV raz na końcu całego importu ──
+  console.log("Przeliczam LTV dla całej bazy...");
+  const { error: ltvErr } = await supabase.rpc("recalculate_all_ltv");
+  if (ltvErr) console.error("LTV error:", ltvErr.message);
+  else console.log("LTV przeliczone ✅");
+
+  // ── Uruchom import historyczny 2017-2021 w tle ──
+  console.log('\n=== Import 2022-2026 zakończony ===');
+  console.log('Startuje import historyczny 2017-2021...');
+  const { spawn } = require('child_process');
+  const historical = spawn('node', ['scripts/shoper-historical-import.js'], {
+    detached: true,
+    stdio: [
+      'ignore',
+      fs.openSync('scripts/import.log', 'a'),
+      fs.openSync('scripts/import.log', 'a'),
+    ],
+  });
+  historical.unref();
+  console.log('Import historyczny uruchomiony w tle (PID: ' + historical.pid + ')');
 
   // ── Podsumowanie ──
   const { data: ltvData } = await supabase.from("clients_360").select("count");
