@@ -47,6 +47,9 @@ const SUBCATEGORIES: Record<string, SubItem[]> = {
   reports: [],
   admin: [
     { href: "/admin/ai-monitoring", label: "Monitoring AI" },
+    { href: "/admin/users",         label: "Użytkownicy",   admin: true },
+    { href: "/admin/security",      label: "Bezpieczeństwo", admin: true },
+    { href: "/admin/2fa-setup",     label: "Konfiguracja 2FA" },
   ],
 };
 

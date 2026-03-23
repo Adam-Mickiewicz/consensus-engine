@@ -1,8 +1,9 @@
 "use client";
-import { use, useState, useEffect, useRef, useCallback } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { useDarkMode } from "../../../../hooks/useDarkMode";
-import { supabase } from "../../../../../lib/supabase";
+import PIIAccessButton from "../../../../../components/auth/PIIAccessButton";
+import PIIMasked from "../../../../../components/crm/PIIMasked";
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 
@@ -138,85 +139,37 @@ function buildOrderGroups(events: EventRow[]): OrderGroup[] {
   }).reverse(); // newest first for display
 }
 
-// ─── RevealModal ──────────────────────────────────────────────────────────────
+// ─── PIICard ───────────────────────────────────────────────────────────────────
 
-function RevealModal({ clientId, onClose, dark }: { clientId: string; onClose: () => void; dark: boolean }) {
-  const t = dark ? DARK : LIGHT;
-  const [reason, setReason] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<"form" | "revealed">("form");
-  const emailRef = useRef<string | null>(null);
-  const [revealed, setRevealed] = useState(false);
-
-  useEffect(() => () => { emailRef.current = null; }, []);
-
-  const handleReveal = useCallback(async () => {
-    if (!reason.trim()) { setError("Powód odkrycia jest wymagany."); return; }
-    setError(null); setLoading(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const jwt = session?.access_token ?? null;
-      const res = await fetch("/api/crm/reveal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(jwt ? { "Authorization": `Bearer ${jwt}` } : {}) },
-        body: JSON.stringify({ client_id: clientId, reason: reason.trim() }),
-        cache: "no-store",
-      });
-      const json = await res.json();
-      if (!res.ok) { setError(json.error ?? "Nieznany błąd."); return; }
-      emailRef.current = json.email;
-      setRevealed(true);
-      setStep("revealed");
-    } catch { setError("Błąd połączenia."); }
-    finally { setLoading(false); }
-  }, [clientId, reason]);
-
-  const handleClose = useCallback(() => { emailRef.current = null; setRevealed(false); onClose(); }, [onClose]);
+function PIICard({ clientId, dark, t }: { clientId: string; dark: boolean; t: typeof DARK }) {
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   return (
-    <>
-      <style>{`
-        .rv-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
-        .rv-modal{background:${t.card};border:1px solid ${t.border};border-radius:14px;padding:28px 32px;width:100%;max-width:460px;font-family:var(--font-geist-sans),system-ui,sans-serif;box-shadow:0 8px 40px rgba(0,0,0,0.3)}
-      `}</style>
-      <div className="rv-backdrop" onClick={handleClose} role="dialog" aria-modal="true">
-        <div className="rv-modal" onClick={e => e.stopPropagation()}>
-          {step === "form" ? (
-            <>
-              <div style={{ fontFamily: "var(--font-dm-serif), serif", fontSize: 20, color: t.text, marginBottom: 8 }}>Odkryj tożsamość klienta</div>
-              <div style={{ fontSize: 13, color: t.textSub, marginBottom: 20 }}>ID: <strong>{clientId}</strong> · Operacja audytowana</div>
-              <label style={{ fontSize: 11, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Powód odkrycia *</label>
-              <textarea
-                style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: `1px solid ${t.border}`, borderRadius: 8, background: t.bg, color: t.text, fontSize: 13, fontFamily: "var(--font-geist-sans)", resize: "vertical", minHeight: 80, outline: "none" }}
-                placeholder="np. Weryfikacja zamówienia, kontakt ws. reklamacji…"
-                value={reason} onChange={e => setReason(e.target.value)} maxLength={500} autoFocus
-              />
-              {error && <div style={{ marginTop: 10, padding: "8px 12px", background: "#ef444422", border: "1px solid #ef444444", borderRadius: 6, fontSize: 12, color: "#ef4444" }}>⚠ {error}</div>}
-              <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-                <button onClick={handleReveal} disabled={loading || !reason.trim()} style={{ padding: "9px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", border: "none", background: t.accent, color: "#fff", opacity: (loading || !reason.trim()) ? 0.5 : 1 }}>
-                  {loading ? "Weryfikuję…" : "Odkryj"}
-                </button>
-                <button onClick={handleClose} style={{ padding: "9px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", background: "none", border: `1px solid ${t.border}`, color: t.textSub }}>Anuluj</button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div style={{ fontFamily: "var(--font-dm-serif), serif", fontSize: 20, color: t.text, marginBottom: 8 }}>Tożsamość odkryta</div>
-              <div style={{ padding: "14px 16px", background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8, margin: "16px 0" }}>
-                <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Identyfikator (vault)</div>
-                {revealed && emailRef.current
-                  ? <div style={{ fontSize: 14, color: t.text, fontFamily: "var(--font-geist-mono), monospace", wordBreak: "break-all" }}>{emailRef.current}</div>
-                  : <div style={{ color: t.textSub, fontSize: 13 }}>Brak danych w vault.</div>
-                }
-              </div>
-              <div style={{ fontSize: 11, color: "#f97316", marginBottom: 16 }}>⚠ Widoczne jednorazowo — zniknie po zamknięciu.</div>
-              <button onClick={handleClose} style={{ padding: "9px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", background: "none", border: `1px solid ${t.border}`, color: t.textSub }}>Zamknij</button>
-            </>
-          )}
-        </div>
+    <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 10, padding: "16px 18px", marginBottom: 14 }}>
+      <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: t.textSub, marginBottom: 10 }}>
+        Dane osobowe
       </div>
-    </>
+
+      <PIIAccessButton
+        dark={dark}
+        onUnlocked={(sid: string | null) => setSessionId(sid)}
+        label="Odblokuj dane osobowe"
+        size="sm"
+      />
+
+      {sessionId && (
+        <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+          <div>
+            <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 3 }}>Email</div>
+            <PIIMasked clientId={clientId} type="email" sessionId={sessionId} />
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 3 }}>Imię i nazwisko</div>
+            <PIIMasked clientId={clientId} type="name" sessionId={sessionId} />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -584,8 +537,8 @@ function PredictionCard({ pred, t }: { pred: Prediction; t: typeof DARK }) {
 
 // ─── ActionsPanel ──────────────────────────────────────────────────────────────
 
-function ActionsPanel({ clientId, onReveal, isAdmin, t }: {
-  clientId: string; onReveal: () => void; isAdmin: boolean; t: typeof DARK
+function ActionsPanel({ clientId, t }: {
+  clientId: string; t: typeof DARK
 }) {
   const [copying, setCopying] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -635,12 +588,6 @@ function ActionsPanel({ clientId, onReveal, isAdmin, t }: {
       <button style={btnStyle} onClick={copyId}>
         {copying ? "✓ Skopiowano!" : "📋 Kopiuj client_id"}
       </button>
-
-      {isAdmin && (
-        <button style={{ ...btnStyle, color: t.accent, borderColor: t.accent + "44", background: t.accent + "0d" }} onClick={onReveal}>
-          🔓 Odkryj tożsamość
-        </button>
-      )}
     </div>
   );
 }
@@ -675,8 +622,6 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState<string | null>(null);
-  const [showReveal, setShowReveal] = useState(false);
-  const [isAdmin, setIsAdmin]     = useState(false);
 
   useEffect(() => {
     fetch(`/api/crm/clients/${id}`)
@@ -691,11 +636,6 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
       })
       .catch((e: Error) => { setError(e.message); setLoading(false); });
   }, [id]);
-
-  useEffect(() => {
-    supabase.from("user_permissions").select("access_level").eq("category", "admin").eq("access_level", "write").limit(1)
-      .then(({ data, error }) => { if (!error && data?.length) setIsAdmin(true); });
-  }, []);
 
   if (loading) return <ProfileSkeleton t={t} />;
   if (error) return (
@@ -729,8 +669,6 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
         .cp-pillar { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; background: ${t.accent}22; color: ${t.accent}; border: 1px solid ${t.accent}44; margin: 3px; }
         @media (max-width: 768px) { .cp-cols { flex-direction: column !important; } }
       `}</style>
-
-      {showReveal && <RevealModal clientId={id} onClose={() => setShowReveal(false)} dark={dark} />}
 
       <div className="cp-wrap">
         {/* Back */}
@@ -803,8 +741,11 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
               )}
             </div>
 
+            {/* PII Data */}
+            <PIICard clientId={id} dark={dark} t={t} />
+
             {/* Actions */}
-            <ActionsPanel clientId={id} onReveal={() => setShowReveal(true)} isAdmin={isAdmin} t={t} />
+            <ActionsPanel clientId={id} t={t} />
 
             {/* Prediction */}
             {prediction && <div style={{ marginBottom: 14 }}><PredictionCard pred={prediction} t={t} /></div>}
