@@ -4,11 +4,18 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { getServiceClient } from '../../../../lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
+
+async function getAuthUser(request) {
+  const authHeader = request.headers.get('Authorization') ?? '';
+  const jwt = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!jwt) return null;
+  const sb = getServiceClient();
+  const { data: { user }, error } = await sb.auth.getUser(jwt);
+  return (error || !user) ? null : user;
+}
 
 async function requireAdmin(sb, userId) {
   const [r, p] = await Promise.all([
@@ -20,12 +27,11 @@ async function requireAdmin(sb, userId) {
 
 export async function GET(request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const user = await getAuthUser(request);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const sb = getServiceClient();
-    if (!await requireAdmin(sb, session.user.id)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (!await requireAdmin(sb, user.id)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const [auditRes, sessionsRes] = await Promise.all([
       sb.from('vault_access_log')
@@ -49,12 +55,11 @@ export async function GET(request) {
 
 export async function DELETE(request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const user = await getAuthUser(request);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const sb = getServiceClient();
-    if (!await requireAdmin(sb, session.user.id)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (!await requireAdmin(sb, user.id)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const { session_id } = await request.json();
     await sb.from('pii_sessions').delete().eq('id', session_id);

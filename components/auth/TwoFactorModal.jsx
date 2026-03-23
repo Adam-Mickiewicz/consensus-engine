@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import { supabase } from "../../lib/supabase";
 
 const ACCENT = "#6366f1";
 
@@ -30,6 +31,9 @@ export default function TwoFactorModal({ dark, onSuccess, onClose }) {
     setLoading(true);
     setError(null);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const jwt = session?.access_token;
+
       const endpoint = tab === "totp"
         ? "/api/auth/totp/verify"
         : "/api/auth/totp/email-otp";
@@ -39,7 +43,7 @@ export default function TwoFactorModal({ dark, onSuccess, onClose }) {
 
       const res  = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}) },
         body: JSON.stringify(body),
       });
       const json = await res.json();
@@ -64,9 +68,11 @@ export default function TwoFactorModal({ dark, onSuccess, onClose }) {
     setEmailLoading(true);
     setError(null);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const jwt = session?.access_token;
       const res = await fetch("/api/auth/totp/email-otp", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}) },
         body: JSON.stringify({ action: "send" }),
       });
       const json = await res.json();

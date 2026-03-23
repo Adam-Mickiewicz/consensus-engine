@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useDarkMode } from "../../../hooks/useDarkMode";
+import { supabase } from "../../../../lib/supabase";
 
 export default function AdminUsersPage() {
   const [dark] = useDarkMode();
@@ -23,7 +24,11 @@ export default function AdminUsersPage() {
 
   const load = async () => {
     setLoading(true);
-    const res  = await fetch("/api/admin/users");
+    const { data: { session } } = await supabase.auth.getSession();
+    const jwt = session?.access_token;
+    const res  = await fetch("/api/admin/users", {
+      headers: jwt ? { Authorization: `Bearer ${jwt}` } : {},
+    });
     const json = await res.json();
     setLoading(false);
     if (!res.ok) { setError(json.error); return; }
@@ -33,9 +38,11 @@ export default function AdminUsersPage() {
   useEffect(() => { load(); }, []);
 
   const setRole = async (userId, role) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const jwt = session?.access_token;
     await fetch("/api/admin/users", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}) },
       body: JSON.stringify({ action: "set_role", user_id: userId, role }),
     });
     load();
@@ -44,9 +51,11 @@ export default function AdminUsersPage() {
   const invite = async () => {
     if (!inviteEmail) return;
     setInviting(true); setInviteMsg(null);
+    const { data: { session } } = await supabase.auth.getSession();
+    const jwt = session?.access_token;
     const res  = await fetch("/api/admin/users", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}) },
       body: JSON.stringify({ action: "invite", email: inviteEmail }),
     });
     const json = await res.json();

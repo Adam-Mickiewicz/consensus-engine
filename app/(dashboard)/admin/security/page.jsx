@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useDarkMode } from "../../../hooks/useDarkMode";
-import { getServiceClient } from "../../../../lib/supabase/server";
+import { supabase } from "../../../../lib/supabase";
 
 // This page fetches directly from Supabase client-side via the API route
 export default function SecurityPage() {
@@ -25,7 +25,11 @@ export default function SecurityPage() {
 
   const loadAudit = useCallback(async () => {
     setLoading(true);
-    const res  = await fetch("/api/admin/security?type=audit");
+    const { data: { session } } = await supabase.auth.getSession();
+    const jwt = session?.access_token;
+    const res  = await fetch("/api/admin/security?type=audit", {
+      headers: jwt ? { Authorization: `Bearer ${jwt}` } : {},
+    });
     const json = await res.json();
     setLoading(false);
     if (!res.ok) { setError(json.error); return; }
@@ -36,9 +40,11 @@ export default function SecurityPage() {
   useEffect(() => { loadAudit(); }, [loadAudit]);
 
   const revokeSession = async (id) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const jwt = session?.access_token;
     await fetch("/api/admin/security", {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}) },
       body: JSON.stringify({ session_id: id }),
     });
     loadAudit();

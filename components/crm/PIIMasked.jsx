@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabase";
 
 /**
  * PIIMasked
@@ -39,8 +40,12 @@ export default function PIIMasked({ clientId, type, sessionId, masked }) {
     }
 
     setLoading(true);
-    fetch(`/api/crm/pii?client_ids=${encodeURIComponent(clientId)}&session_id=${encodeURIComponent(sessionId)}`)
-      .then(r => r.json())
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const jwt = session?.access_token;
+      return fetch(`/api/crm/pii?client_ids=${encodeURIComponent(clientId)}&session_id=${encodeURIComponent(sessionId)}`, {
+        headers: jwt ? { Authorization: `Bearer ${jwt}` } : {},
+      });
+    }).then(r => r.json())
       .then(d => {
         const row = d.pii?.[0];
         if (row) {

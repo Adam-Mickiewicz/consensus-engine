@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useDarkMode } from "../../../hooks/useDarkMode";
+import { supabase } from "../../../../lib/supabase";
 
 export default function TwoFASetupPage() {
   const [dark] = useDarkMode();
@@ -23,7 +24,12 @@ export default function TwoFASetupPage() {
 
   const fetchQR = async () => {
     setLoading(true); setError(null);
-    const res  = await fetch("/api/auth/totp/setup", { method: "POST" });
+    const { data: { session } } = await supabase.auth.getSession();
+    const jwt = session?.access_token;
+    const res  = await fetch("/api/auth/totp/setup", {
+      method: "POST",
+      headers: jwt ? { Authorization: `Bearer ${jwt}` } : {},
+    });
     const json = await res.json();
     setLoading(false);
     if (!res.ok) { setError(json.error); return; }
@@ -35,9 +41,11 @@ export default function TwoFASetupPage() {
   const verifyCode = async () => {
     if (code.length !== 6) return;
     setLoading(true); setError(null);
+    const { data: { session } } = await supabase.auth.getSession();
+    const jwt = session?.access_token;
     const res  = await fetch("/api/auth/totp/verify", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}) },
       body: JSON.stringify({ code }),
     });
     const json = await res.json();
