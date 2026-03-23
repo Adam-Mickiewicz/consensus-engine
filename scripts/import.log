@@ -251,3 +251,75 @@ rpc error: "crm_behavior_segments" is not a table or materialized view
 [ETL step 9] runSanityChecks OK
 [2023-03] ✅ zamówień: 1710, klientów: 1644, eventów: 3597, niezmapowanych: 780
 [2023-04] Pobieram zamówienia...
+[ETL] start — 3740 line-items, source: shoper-2023-04
+[ETL step 2] anonymizeAndVault OK — 3740 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 3740 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 673
+[ETL step 5] buildClientProfiles OK — 1526 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1526, events: 3740
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2023-04] ✅ zamówień: 1578, klientów: 1526, eventów: 3740, niezmapowanych: 673
+[2023-05] Pobieram zamówienia...
+[ETL] start — 4089 line-items, source: shoper-2023-05
+[ETL step 2] anonymizeAndVault OK — 4089 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 4089 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 716
+[ETL step 5] buildClientProfiles OK — 1832 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1832, events: 4089
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2023-05] ✅ zamówień: 1885, klientów: 1832, eventów: 4089, niezmapowanych: 716
+[2023-06] Pobieram zamówienia...
+    ⚠ order-products 111001 — próba 1/3, retry za 5000ms: order-products 111001 (429): {"error":"temporarily_unavailable","error_description":"You have reached requests limit: 10\/10"}
+[ETL] start — 4538 line-items, source: shoper-2023-06
+[ETL step 2] anonymizeAndVault OK — 4538 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 4538 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 630
+[ETL step 5] buildClientProfiles OK — 2197 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 2197, events: 4538
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2023-06] ✅ zamówień: 2286, klientów: 2197, eventów: 4538, niezmapowanych: 630
+[2023-07] Pobieram zamówienia...
+[ETL] start — 4677 line-items, source: shoper-2023-07
+[ETL step 2] anonymizeAndVault OK — 4677 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 4677 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 784
+[ETL step 5] buildClientProfiles OK — 1866 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1866, events: 4677
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2023-07] ✅ zamówień: 1945, klientów: 1866, eventów: 4677, niezmapowanych: 784
+[2023-08] Pobieram zamówienia...
+[ETL] start — 3943 line-items, source: shoper-2023-08
+[ETL step 2] anonymizeAndVault OK — 3943 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 3943 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 565
+[ETL step 5] buildClientProfiles OK — 1763 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1763, events: 3943
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2023-08] ✅ zamówień: 1841, klientów: 1763, eventów: 3943, niezmapowanych: 565
+[2023-09] Pobieram zamówienia...
+    ⚠ order-products 116312 — próba 1/3, retry za 5000ms: order-products 116312 (429): {"error":"temporarily_unavailable","error_description":"You have reached requests limit: 10\/10"}

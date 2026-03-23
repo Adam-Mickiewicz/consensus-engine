@@ -1,8 +1,6 @@
 "use client";
-import { useState, useEffect, useCallback, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
 import { useDarkMode } from "../../../../hooks/useDarkMode";
-import GlobalCRMFilters from "@/components/crm/GlobalCRMFilters";
 
 // ── Theme ────────────────────────────────────────────────────────────────────
 const LIGHT = {
@@ -334,7 +332,6 @@ function SegmentTool({ t }) {
 function AIInsightsContent() {
   const [dark] = useDarkMode();
   const t = (dark ? DARK : LIGHT);
-  const searchParams = useSearchParams();
 
   // Tool 1: Base analysis
   const [baseModel, setBaseModel]     = useState("claude-sonnet-4-20250514");
@@ -362,15 +359,7 @@ function AIInsightsContent() {
       const res = await fetch("/api/crm/ai-insights", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model:     baseModel,
-          date_from: searchParams.get("date_from") || undefined,
-          date_to:   searchParams.get("date_to")   || undefined,
-          segment:   searchParams.get("segment")   || undefined,
-          risk:      searchParams.get("risk")      || undefined,
-          world:     searchParams.get("world")     || undefined,
-          occasion:  searchParams.get("occasion")  || undefined,
-        }),
+        body: JSON.stringify({ model: baseModel }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -407,9 +396,6 @@ function AIInsightsContent() {
 
   const errorStyle = { fontSize: 12, color: "#ef4444", marginTop: 8 };
 
-  const activeFilters = ["date_from","date_to","segment","risk","world","occasion"]
-    .map(k => searchParams.get(k)).filter(Boolean);
-
   return (
     <>
       <style>{`
@@ -427,11 +413,10 @@ function AIInsightsContent() {
         <div className="ai-badge">
           <svg width="10" height="10" viewBox="0 0 24 24" fill={t.accent}><circle cx="12" cy="12" r="10"/></svg>
           Multi-model · Nadwyraz CRM
-          {activeFilters.length > 0 && ` · ${activeFilters.length} filtr${activeFilters.length === 1 ? "" : "y"} aktywne`}
         </div>
 
         {/* ── 1. Analiza bazy ───────────────────────────────────── */}
-        <Section num="1" title="Analiza bazy klientów" desc="AI przeanalizuje segmenty, światy, okazje i zaawansowane metryki — i wskaże co wymaga uwagi. Uwzględnia aktywne filtry globalne." t={t}>
+        <Section num="1" title="Analiza bazy klientów" desc="AI przeanalizuje segmenty, światy, okazje i zaawansowane metryki — i wskaże co wymaga uwagi." t={t}>
           <div className="ai-model-row">
             <span className="ai-model-label">Model:</span>
             <ModelSelect value={baseModel} onChange={setBaseModel} t={t} />
@@ -476,10 +461,5 @@ function AIInsightsContent() {
 }
 
 export default function AIInsightsPage() {
-  return (
-    <Suspense fallback={null}>
-      <GlobalCRMFilters />
-      <AIInsightsContent />
-    </Suspense>
-  );
+  return <AIInsightsContent />;
 }

@@ -1,4 +1,6 @@
 "use client";
+import { useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useDarkMode } from "../../../../hooks/useDarkMode";
 
 // ── Theme ────────────────────────────────────────────────────────────────────
@@ -47,13 +49,65 @@ type Segments = {
 
 type CobuyRow = { product_a: string; product_b: string; co_purchases: number };
 
+// ── Date Filter ──────────────────────────────────────────────────────────────
+function BehaviorDateFilter({ initFrom, initTo }: { initFrom: string; initTo: string }) {
+  const router      = useRouter();
+  const pathname    = usePathname();
+  const searchParams = useSearchParams();
+  const [dark]      = useDarkMode();
+  const t = (dark ? DARK : LIGHT) as typeof LIGHT;
+  const [dateFrom, setDateFrom] = useState(initFrom);
+  const [dateTo,   setDateTo]   = useState(initTo);
+
+  function apply() {
+    const p = new URLSearchParams(searchParams.toString());
+    if (dateFrom) p.set("date_from", dateFrom); else p.delete("date_from");
+    if (dateTo)   p.set("date_to",   dateTo);   else p.delete("date_to");
+    router.push(`${pathname}?${p.toString()}`);
+  }
+
+  const inp = {
+    padding: "6px 9px", border: `1px solid ${t.border}`, borderRadius: 6,
+    background: t.surface, color: t.text, fontSize: 12,
+    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+    outline: "none", cursor: "text", width: 130,
+  } as React.CSSProperties;
+
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8,
+      padding: "10px 14px", background: t.surface, border: `1px solid ${t.border}`,
+      borderRadius: 10, marginBottom: 20,
+      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+    }}>
+      <span style={{ fontSize: 11, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.07em" }}>Od</span>
+      <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={inp} />
+      <span style={{ fontSize: 11, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.07em" }}>Do</span>
+      <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={inp} />
+      <button
+        onClick={apply}
+        style={{
+          padding: "6px 16px", fontSize: 12, fontWeight: 600, borderRadius: 6,
+          background: t.accent, color: "#fff", border: "none", cursor: "pointer",
+        }}
+      >
+        Zastosuj
+      </button>
+    </div>
+  );
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 export default function BehaviorView({
   segments,
   cobuying,
+  dateFrom = "",
+  dateTo = "",
 }: {
   segments: Segments;
   cobuying: CobuyRow[];
+  dateFrom?: string;
+  dateTo?: string;
 }) {
   const [dark] = useDarkMode();
   const t = (dark ? DARK : LIGHT) as typeof LIGHT;
@@ -162,6 +216,8 @@ export default function BehaviorView({
       <div className="bha-wrap">
         <h1 className="bha-title">Analiza Zachowań Zakupowych</h1>
         <p className="bha-sub">Koszyki, timing, promo, lojalność i powiązania produktów</p>
+
+        <BehaviorDateFilter initFrom={dateFrom} initTo={dateTo} />
 
         {/* ── A: KPI HERO ─────────────────────────────────────────── */}
         <div className="bha-kpi-grid">

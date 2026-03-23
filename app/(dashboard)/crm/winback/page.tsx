@@ -3,8 +3,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useDarkMode } from "../../../hooks/useDarkMode";
-import { Suspense } from "react";
-import GlobalCRMFilters from "@/components/crm/GlobalCRMFilters";
 
 const DARK = {
   bg: "#0f1117", card: "#1a1f2e", border: "#2a3050",
@@ -287,10 +285,5 @@ function WinbackContent() {
 }
 
 export default function WinbackPage() {
-  return (
-    <Suspense fallback={null}>
-      <GlobalCRMFilters />
-      <WinbackContent />
-    </Suspense>
-  );
+  return <WinbackContent />;
 }

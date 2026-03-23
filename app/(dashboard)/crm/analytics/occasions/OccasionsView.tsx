@@ -68,6 +68,7 @@ export default function OccasionsView({ data }: { data: OccasionsData }) {
   const [dark] = useDarkMode();
   const t = (dark ? DARK : LIGHT) as typeof LIGHT;
   const [tab, setTab] = useState<"loyal" | "drift">("loyal");
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
   if (!data) {
     return (
@@ -151,6 +152,25 @@ export default function OccasionsView({ data }: { data: OccasionsData }) {
         <h1 className="oca-title">Analityka Okazji</h1>
         <p className="oca-sub">Retencja, LTV, pierwsze zakupy i lojalność per okazja</p>
 
+        {/* ── Year pills ──────────────────────────────────────────── */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 24, flexWrap: "wrap" }}>
+          {([null, ...data.retentionYears] as (number | null)[]).map(y => (
+            <button
+              key={y ?? "all"}
+              onClick={() => setSelectedYear(y)}
+              style={{
+                padding: "5px 14px", fontSize: 12, fontWeight: 600,
+                borderRadius: 20, border: `1px solid ${selectedYear === y ? t.accent : t.border}`,
+                background: selectedYear === y ? `${t.accent}18` : "none",
+                color: selectedYear === y ? t.accent : t.textSub,
+                cursor: "pointer", transition: "all 0.15s",
+              }}
+            >
+              {y ?? "Wszystkie lata"}
+            </button>
+          ))}
+        </div>
+
         {/* ── A: KPI HERO ─────────────────────────────────────────── */}
         <div className="oca-kpi-grid">
           <div className="oca-kpi">
@@ -192,7 +212,7 @@ export default function OccasionsView({ data }: { data: OccasionsData }) {
                 <thead>
                   <tr>
                     <th style={{ minWidth: 140 }}>Okazja</th>
-                    {data.retentionYears.map(y => (
+                    {(selectedYear ? [selectedYear] : data.retentionYears).map(y => (
                       <th key={y}>{y}→{y + 1}</th>
                     ))}
                   </tr>
@@ -203,7 +223,7 @@ export default function OccasionsView({ data }: { data: OccasionsData }) {
                       <td style={{ textAlign: "left", color: t.text, fontWeight: 500, fontSize: 12 }}>
                         {occ(occasion)}
                       </td>
-                      {data.retentionYears.map(y => {
+                      {(selectedYear ? [selectedYear] : data.retentionYears).map(y => {
                         const pct = data.retentionMap[occasion]?.[y] ?? null;
                         return (
                           <td key={y}>

@@ -1,13 +1,16 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import { Suspense } from 'react';
 import { getServiceClient } from '@/lib/supabase/server';
 import BehaviorView from './BehaviorView';
-import GlobalCRMFilters from '@/components/crm/GlobalCRMFilters';
 
-export default async function BehaviorPage() {
+type SP = Record<string, string | string[] | undefined>;
+function str(v: SP[string]) { return typeof v === 'string' ? v : undefined; }
+
+export default async function BehaviorPage({ searchParams }: { searchParams: SP }) {
   const sb = getServiceClient();
+  const dateFrom = str(searchParams.date_from) ?? '';
+  const dateTo   = str(searchParams.date_to)   ?? '';
 
   const [segRes, cobuyRes] = await Promise.all([
     sb.from('crm_behavior_segments').select('*').single(),
@@ -18,14 +21,11 @@ export default async function BehaviorPage() {
   ]);
 
   return (
-    <>
-      <Suspense fallback={null}>
-        <GlobalCRMFilters />
-      </Suspense>
-      <BehaviorView
-        segments={segRes.data ?? null}
-        cobuying={cobuyRes.data ?? []}
-      />
-    </>
+    <BehaviorView
+      segments={segRes.data ?? null}
+      cobuying={cobuyRes.data ?? []}
+      dateFrom={dateFrom}
+      dateTo={dateTo}
+    />
   );
 }
