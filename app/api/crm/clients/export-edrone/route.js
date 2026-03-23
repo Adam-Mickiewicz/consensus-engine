@@ -189,7 +189,17 @@ function buildTags(client, events) {
  * Pobiera wszystkich klientów pasujących do filtrów (do MAX_CLIENTS rekordów).
  * Używa paginacji batchami BATCH_SIZE żeby uniknąć timeoutu.
  */
-async function fetchClients(sb, { segment, risk, world, date_from, date_to, scope }) {
+async function fetchClients(sb, { segment, risk, world, date_from, date_to, scope, client_ids }) {
+  // Single-client or explicit ID list — bypass pagination
+  if (client_ids && client_ids.length > 0) {
+    let q = sb.from('clients_360')
+      .select('client_id,legacy_segment,risk_level,ltv,orders_count,last_order,first_order,ulubiony_swiat,winback_priority')
+      .in('client_id', client_ids);
+    const { data, error } = await q;
+    if (error) throw new Error(`clients_360 fetch error: ${error.message}`);
+    return data ?? [];
+  }
+
   const rows = [];
 
   // Zlicz najpierw żeby wiedzieć ile stron
@@ -200,7 +210,6 @@ async function fetchClients(sb, { segment, risk, world, date_from, date_to, scop
   if (date_from) countQ = countQ.gte('last_order', date_from);
   if (date_to)   countQ = countQ.lte('last_order', date_to);
   if (scope === 'winback') {
-    // Tylko klienci z oznaczonym winback_priority (VIP REANIMACJA, Lost, HighRisk)
     countQ = countQ.not('winback_priority', 'is', null);
   }
   const { count } = await countQ;
@@ -404,12 +413,14 @@ export async function GET(request) {
     const date_from = searchParams.get('date_from')  || '';
     const date_to   = searchParams.get('date_to')    || '';
     const scope     = searchParams.get('scope') === 'winback' ? 'winback' : 'all';
+    const rawIds    = searchParams.get('client_ids') || '';
+    const client_ids = rawIds ? rawIds.split(',').map(s => s.trim()).filter(Boolean) : null;
 
     const filters = { segment, risk, world, date_from, date_to };
     const sb = getServiceClient(); // service_role — wymagany do odczytu master_key
 
     // 1. Pobierz klientów
-    const clients = await fetchClients(sb, { ...filters, scope });
+    const clients = await fetchClients(sb, { ...filters, scope, client_ids });
     if (clients.length === 0) {
       return new Response('email,first_name,last_name,status,subscription_date,gender,tags\n', {
         headers: {

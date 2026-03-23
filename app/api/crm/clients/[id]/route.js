@@ -10,13 +10,20 @@ export async function GET(_request, { params }) {
 
     const sb = getServiceClient();
 
-    const [profileRes, eventsRes, taxonomyRes] = await Promise.all([
+    const [profileRes, eventsRes, taxonomyRes, predictionRes] = await Promise.all([
       sb.from('clients_360').select('*').eq('client_id', id).single(),
+
       sb.from('client_product_events')
-        .select('id,client_id,ean,product_name,order_date,season,occasion')
+        .select('id,client_id,ean,product_name,order_date,season,occasion,order_id,order_sum,is_promo,is_new_product,price_category_id')
         .eq('client_id', id)
         .order('order_date', { ascending: false }),
+
       sb.from('client_taxonomy_summary').select('*').eq('client_id', id).maybeSingle(),
+
+      sb.from('crm_predictive_ltv')
+        .select('predicted_next_order,days_to_next_order,purchase_probability_30d,predicted_ltv_12m,avg_order_value,avg_days_between_orders,orders_count')
+        .eq('client_id', id)
+        .maybeSingle(),
     ]);
 
     if (profileRes.error) {
@@ -27,9 +34,10 @@ export async function GET(_request, { params }) {
     }
 
     return NextResponse.json({
-      profile:  profileRes.data,
-      events:   eventsRes.data ?? [],
-      taxonomy: taxonomyRes.data ?? null,
+      profile:    profileRes.data,
+      events:     eventsRes.data   ?? [],
+      taxonomy:   taxonomyRes.data ?? null,
+      prediction: predictionRes.data ?? null,
     });
   } catch (err) {
     return NextResponse.json(
