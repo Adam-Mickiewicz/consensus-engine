@@ -3,7 +3,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { authenticator } from 'otplib/preset-default';
+import { generateSecret, generateURI } from 'otplib';
 import QRCode from 'qrcode';
 import { encrypt } from '../../../../../lib/crypto/pii';
 import { getServiceClient } from '../../../../../lib/supabase/server';
@@ -23,8 +23,8 @@ export async function POST(request) {
     const userId    = user.id;
     const userEmail = user.email ?? userId;
 
-    const secret = authenticator.generateSecret();
-    const otpauthUrl = authenticator.keyuri(userEmail, 'Consensus CRM', secret);
+    const secret = generateSecret();
+    const otpauthUrl = generateURI({ strategy: 'totp', issuer: 'Consensus CRM', label: userEmail, secret });
     const qrcode = await QRCode.toDataURL(otpauthUrl);
 
     const encrypted = encrypt(secret);

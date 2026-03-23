@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { authenticator } from 'otplib/preset-default';
+import { verify as totpVerify } from 'otplib';
 import { decrypt } from '../../../../../lib/crypto/pii';
 import { getServiceClient } from '../../../../../lib/supabase/server';
 
@@ -42,8 +42,8 @@ export async function POST(request) {
     const secret = decrypt(totpRow.secret);
     if (!secret) return NextResponse.json({ error: 'Błąd deszyfrowania sekretu' }, { status: 500 });
 
-    const valid = authenticator.verify({ token: code, secret });
-    if (!valid) return NextResponse.json({ error: 'Nieprawidłowy kod' }, { status: 400 });
+    const result = await totpVerify({ secret, token: code });
+    if (!result?.valid) return NextResponse.json({ error: 'Nieprawidłowy kod' }, { status: 400 });
 
     if (!totpRow.verified) {
       await sb.from('totp_secrets').update({ verified: true }).eq('user_id', userId);
