@@ -52,7 +52,7 @@ Przeanalizuj wzorzec zakupów i odpowiedz po polsku:
 
 Uwaga: Nadwyraz.com produkuje narracyjne skarpetki z motywami literackimi, artystycznymi i kulturowymi. Odpowiedz w formacie markdown.`;
 
-    const text = await callAI(model, prompt, 1500);
+    const text = await callAI(model, prompt, 1500, 'ai-insights-winback');
     return NextResponse.json({ text, client_id: clientId });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Błąd serwera';

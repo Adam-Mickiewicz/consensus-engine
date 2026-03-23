@@ -65,7 +65,7 @@ Przeanalizuj bazę i odpowiedz po polsku na pytania:
 
 Odpowiedz w formacie markdown z nagłówkami dla każdego pytania.`;
 
-    const text = await callAI(model, prompt, 2048);
+    const text = await callAI(model, prompt, 2048, 'ai-insights-base');
     return NextResponse.json({ text });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Błąd serwera';

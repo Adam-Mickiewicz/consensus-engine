@@ -45,7 +45,9 @@ const SUBCATEGORIES: Record<string, SubItem[]> = {
     { href: "/sock-designer",      label: "Sock Designer" },
   ],
   reports: [],
-  admin: [],
+  admin: [
+    { href: "/admin/ai-monitoring", label: "Monitoring AI" },
+  ],
 };
 
 const CATEGORY_LABELS: Record<string, string> = {

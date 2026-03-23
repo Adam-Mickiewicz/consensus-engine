@@ -140,7 +140,7 @@ Konkretna rekomendacja kampanii emailowej dla tej grupy:
 ## 5. QUICK WINS
 2-3 rzeczy które można zrobić natychmiast żeby poprawić wyniki tej grupy.`;
 
-    const text = await callAI(model, prompt, 2000);
+    const text = await callAI(model, prompt, 2000, 'ai-insights-segment');
     return NextResponse.json({ text, count: totalCount });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Błąd serwera';

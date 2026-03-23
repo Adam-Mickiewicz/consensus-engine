@@ -46,7 +46,7 @@ Zaproponuj po polsku:
 
 Uwaga: Nadwyraz.com produkuje narracyjne skarpetki i produkty inspirowane literaturą, kulturą i sztuką. Odpowiedz w formacie markdown.`;
 
-    const text = await callAI(model, prompt, 1500);
+    const text = await callAI(model, prompt, 1500, 'ai-insights-recommendations');
     return NextResponse.json({ text, client_id: clientId });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Błąd serwera';
