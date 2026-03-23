@@ -68,7 +68,7 @@ export async function POST(request) {
     ]);
 
     // Aggregate top products
-    const productCounts: Record<string, number> = {};
+    const productCounts = {};
     for (const row of productsRes.data ?? []) {
       if (row.product_name) {
         productCounts[row.product_name] = (productCounts[row.product_name] || 0) + (Number(row.quantity) || 1);
