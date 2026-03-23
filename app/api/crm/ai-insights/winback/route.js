@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
 import { getServiceClient } from '../../../../../lib/supabase/server';
+import { callAI } from '../../../../../lib/ai/callAI';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
-const MODEL = 'claude-sonnet-4-20250514';
+const DEFAULT_MODEL = 'gemini-3-flash';
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const clientId = searchParams.get('client_id');
+    const model = searchParams.get('model') ?? DEFAULT_MODEL;
+
     if (!clientId) {
       return NextResponse.json({ error: 'Brak parametru client_id' }, { status: 400 });
     }
@@ -33,16 +35,13 @@ export async function GET(request) {
       return NextResponse.json({ error: `Klient ${clientId} nie znaleziony` }, { status: 404 });
     }
 
-    const profile = profileRes.data;
-    const history = historyRes.data ?? [];
-
     const prompt = `Jesteś specjalistą ds. retencji klientów dla Nadwyraz.com — polskiej marki narracyjnych skarpetek i produktów kulturowych.
 
 Profil klienta:
-${JSON.stringify(profile, null, 2)}
+${JSON.stringify(profileRes.data, null, 2)}
 
 Historia zakupów (ostatnie 30):
-${JSON.stringify(history, null, 2)}
+${JSON.stringify(historyRes.data ?? [], null, 2)}
 
 Przeanalizuj wzorzec zakupów i odpowiedz po polsku:
 
@@ -53,15 +52,7 @@ Przeanalizuj wzorzec zakupów i odpowiedz po polsku:
 
 Uwaga: Nadwyraz.com produkuje narracyjne skarpetki z motywami literackimi, artystycznymi i kulturowymi. Odpowiedz w formacie markdown.`;
 
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-    const response = await client.messages.create({
-      model: MODEL,
-      max_tokens: 1500,
-      messages: [{ role: 'user', content: prompt }],
-    });
-
-    const text = response.content.find(b => b.type === 'text')?.text ?? '';
+    const text = await callAI(model, prompt, 1500);
     return NextResponse.json({ text, client_id: clientId });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Błąd serwera';

@@ -14,6 +14,33 @@ const DARK = {
   hover: "#1a1a1a", kpi: "#0d0d0c", codeBg: "#1a1a18",
 };
 
+// ── Model catalogue ──────────────────────────────────────────────────────────
+const MODEL_GROUPS = [
+  {
+    label: "Anthropic",
+    models: [
+      { value: "claude-sonnet-4-20250514", label: "claude-sonnet-4 ⭐" },
+      { value: "claude-opus-4-20250514",   label: "claude-opus-4" },
+    ],
+  },
+  {
+    label: "OpenAI",
+    models: [
+      { value: "gpt-5.4",       label: "gpt-5.4 ⭐" },
+      { value: "gpt-5.3-instant", label: "gpt-5.3-instant" },
+      { value: "gpt-5.4-mini",  label: "gpt-5.4-mini" },
+    ],
+  },
+  {
+    label: "Gemini",
+    models: [
+      { value: "gemini-3-flash",         label: "gemini-3-flash ⭐" },
+      { value: "gemini-3.1-pro-preview", label: "gemini-3.1-pro-preview" },
+      { value: "gemini-3.1-flash-lite",  label: "gemini-3.1-flash-lite" },
+    ],
+  },
+];
+
 // ── Simple Markdown Renderer ─────────────────────────────────────────────────
 function renderMarkdown(md, t) {
   if (!md) return null;
@@ -26,10 +53,8 @@ function renderMarkdown(md, t) {
   while (i < lines.length) {
     const line = lines[i];
 
-    // Blank line
     if (line.trim() === "") { i++; continue; }
 
-    // H2
     if (line.startsWith("## ")) {
       elements.push(
         <h3 key={key++} style={{ fontSize: 15, fontWeight: 700, color: t.accent, margin: "18px 0 6px", borderBottom: `1px solid ${t.border}`, paddingBottom: 4 }}>
@@ -39,7 +64,6 @@ function renderMarkdown(md, t) {
       i++; continue;
     }
 
-    // H3
     if (line.startsWith("### ")) {
       elements.push(
         <h4 key={key++} style={{ fontSize: 13, fontWeight: 700, color: t.text, margin: "12px 0 4px" }}>
@@ -49,7 +73,6 @@ function renderMarkdown(md, t) {
       i++; continue;
     }
 
-    // H4
     if (line.startsWith("#### ")) {
       elements.push(
         <h5 key={key++} style={{ fontSize: 12, fontWeight: 700, color: t.text, margin: "10px 0 3px" }}>
@@ -59,13 +82,11 @@ function renderMarkdown(md, t) {
       i++; continue;
     }
 
-    // Horizontal rule
     if (/^---+$/.test(line.trim())) {
       elements.push(<hr key={key++} style={{ border: "none", borderTop: `1px solid ${t.border}`, margin: "12px 0" }} />);
       i++; continue;
     }
 
-    // Unordered list block
     if (/^[\-\*] /.test(line)) {
       const items = [];
       while (i < lines.length && /^[\-\*] /.test(lines[i])) {
@@ -76,7 +97,6 @@ function renderMarkdown(md, t) {
       continue;
     }
 
-    // Ordered list block
     if (/^\d+\. /.test(line)) {
       const items = [];
       while (i < lines.length && /^\d+\. /.test(lines[i])) {
@@ -88,7 +108,6 @@ function renderMarkdown(md, t) {
       continue;
     }
 
-    // Regular paragraph
     elements.push(
       <p key={key++} style={{ fontSize: 13, color: t.text, lineHeight: 1.7, margin: "5px 0" }}>
         {inlineMarkdown(line, t)}
@@ -101,7 +120,6 @@ function renderMarkdown(md, t) {
 }
 
 function inlineMarkdown(text, t) {
-  // Parse bold (**text**), italic (*text*), and inline code (`code`)
   const parts = [];
   const regex = /(\*\*(.+?)\*\*)|(\*(.+?)\*)|(`(.+?)`)/g;
   let last = 0;
@@ -119,6 +137,30 @@ function inlineMarkdown(text, t) {
   return parts.length > 0 ? parts : text;
 }
 
+// ── Model Select ─────────────────────────────────────────────────────────────
+function ModelSelect({ value, onChange, t }) {
+  return (
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      style={{
+        padding: "6px 10px", fontSize: 12, borderRadius: 7,
+        border: `1px solid ${t.border}`, background: t.surface,
+        color: t.textSub, outline: "none", cursor: "pointer",
+        marginBottom: 12,
+      }}
+    >
+      {MODEL_GROUPS.map(g => (
+        <optgroup key={g.label} label={g.label}>
+          {g.models.map(m => (
+            <option key={m.value} value={m.value}>{m.label}</option>
+          ))}
+        </optgroup>
+      ))}
+    </select>
+  );
+}
+
 // ── Copy Button ──────────────────────────────────────────────────────────────
 function CopyButton({ text, t }) {
   const [copied, setCopied] = useState(false);
@@ -128,7 +170,6 @@ function CopyButton({ text, t }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // fallback for non-https
       const el = document.createElement("textarea");
       el.value = text;
       document.body.appendChild(el);
@@ -178,7 +219,7 @@ function Spinner({ t }) {
           <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.9s" repeatCount="indefinite" />
         </path>
       </svg>
-      Claude analizuje…
+      Generuję odpowiedź…
     </div>
   );
 }
@@ -248,17 +289,20 @@ export default function AIInsightsPage() {
   const t = (dark ? DARK : LIGHT);
 
   // Tool 1: Base analysis
+  const [baseModel, setBaseModel]     = useState("claude-sonnet-4-20250514");
   const [baseLoading, setBaseLoading] = useState(false);
   const [baseText, setBaseText]       = useState("");
   const [baseError, setBaseError]     = useState("");
 
   // Tool 2: Recommendations
+  const [recModel, setRecModel]       = useState("gpt-5.4");
   const [recClientId, setRecClientId] = useState("");
   const [recLoading, setRecLoading]   = useState(false);
   const [recText, setRecText]         = useState("");
   const [recError, setRecError]       = useState("");
 
   // Tool 3: Winback
+  const [wbModel, setWbModel]         = useState("gemini-3-flash");
   const [wbClientId, setWbClientId]   = useState("");
   const [wbLoading, setWbLoading]     = useState(false);
   const [wbText, setWbText]           = useState("");
@@ -267,7 +311,11 @@ export default function AIInsightsPage() {
   async function analyzeBase() {
     setBaseLoading(true); setBaseError(""); setBaseText("");
     try {
-      const res = await fetch("/api/crm/ai-insights", { method: "POST" });
+      const res = await fetch("/api/crm/ai-insights", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: baseModel }),
+      });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setBaseText(data.text);
@@ -282,7 +330,8 @@ export default function AIInsightsPage() {
     if (!recClientId.trim()) { setRecError("Podaj ID klienta"); return; }
     setRecLoading(true); setRecError(""); setRecText("");
     try {
-      const res = await fetch(`/api/crm/ai-insights/recommendations?client_id=${encodeURIComponent(recClientId.trim())}`);
+      const params = new URLSearchParams({ client_id: recClientId.trim(), model: recModel });
+      const res = await fetch(`/api/crm/ai-insights/recommendations?${params}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setRecText(data.text);
@@ -297,7 +346,8 @@ export default function AIInsightsPage() {
     if (!wbClientId.trim()) { setWbError("Podaj ID klienta"); return; }
     setWbLoading(true); setWbError(""); setWbText("");
     try {
-      const res = await fetch(`/api/crm/ai-insights/winback?client_id=${encodeURIComponent(wbClientId.trim())}`);
+      const params = new URLSearchParams({ client_id: wbClientId.trim(), model: wbModel });
+      const res = await fetch(`/api/crm/ai-insights/winback?${params}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setWbText(data.text);
@@ -317,18 +367,24 @@ export default function AIInsightsPage() {
         .ai-title { font-family: var(--font-dm-serif), serif; font-size: 26px; color: ${t.text}; margin: 0 0 4px; }
         .ai-sub   { font-size: 13px; color: ${t.textSub}; margin: 0 0 28px; }
         .ai-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; background: ${t.accent}18; border: 1px solid ${t.accent}44; border-radius: 20px; font-size: 11px; color: ${t.accent}; font-weight: 600; margin-bottom: 20px; }
+        .ai-model-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+        .ai-model-label { font-size: 11px; color: ${t.textSub}; }
       `}</style>
 
       <div className="ai-wrap">
         <h1 className="ai-title">AI Insights</h1>
-        <p className="ai-sub">Analityka i rekomendacje napędzane Claude AI</p>
+        <p className="ai-sub">Analityka i rekomendacje napędzane przez AI</p>
         <div className="ai-badge">
           <svg width="10" height="10" viewBox="0 0 24 24" fill={t.accent}><circle cx="12" cy="12" r="10"/></svg>
-          claude-sonnet-4 · Nadwyraz CRM
+          Multi-model · Nadwyraz CRM
         </div>
 
         {/* ── NARZĘDZIE 1: Analiza bazy ─────────────────────────── */}
-        <Section num="1" title="Analiza bazy klientów" desc="Claude przeanalizuje segmenty, światy, okazje i zaawansowane metryki — i wskaże co wymaga uwagi." t={t}>
+        <Section num="1" title="Analiza bazy klientów" desc="AI przeanalizuje segmenty, światy, okazje i zaawansowane metryki — i wskaże co wymaga uwagi." t={t}>
+          <div className="ai-model-row">
+            <span className="ai-model-label">Model:</span>
+            <ModelSelect value={baseModel} onChange={setBaseModel} t={t} />
+          </div>
           <ActionButton onClick={analyzeBase} loading={baseLoading} label="Analizuj bazę" t={t} />
           {baseLoading && <Spinner t={t} />}
           {baseError && <div style={errorStyle}>⚠ {baseError}</div>}
@@ -336,7 +392,11 @@ export default function AIInsightsPage() {
         </Section>
 
         {/* ── NARZĘDZIE 2: Rekomendacje produktowe ──────────────── */}
-        <Section num="2" title="Rekomendacje produktowe" desc="Wpisz ID klienta — Claude przeanalizuje jego historię zakupów i zaproponuje następne produkty oraz optymalny moment kontaktu." t={t}>
+        <Section num="2" title="Rekomendacje produktowe" desc="Wpisz ID klienta — AI przeanalizuje jego historię zakupów i zaproponuje następne produkty oraz optymalny moment kontaktu." t={t}>
+          <div className="ai-model-row">
+            <span className="ai-model-label">Model:</span>
+            <ModelSelect value={recModel} onChange={setRecModel} t={t} />
+          </div>
           <ClientInput value={recClientId} onChange={setRecClientId} t={t} />
           <ActionButton onClick={generateRec} loading={recLoading} label="Generuj rekomendacje" t={t} />
           {recLoading && <Spinner t={t} />}
@@ -345,7 +405,11 @@ export default function AIInsightsPage() {
         </Section>
 
         {/* ── NARZĘDZIE 3: Analiza winback ──────────────────────── */}
-        <Section num="3" title="Najlepszy moment na winback" desc="Wpisz ID klienta — Claude przeanalizuje wzorzec zakupów i zaproponuje optymalny czas, temat emaila i kluczowe punkty wiadomości." t={t}>
+        <Section num="3" title="Najlepszy moment na winback" desc="Wpisz ID klienta — AI przeanalizuje wzorzec zakupów i zaproponuje optymalny czas, temat emaila i kluczowe punkty wiadomości." t={t}>
+          <div className="ai-model-row">
+            <span className="ai-model-label">Model:</span>
+            <ModelSelect value={wbModel} onChange={setWbModel} t={t} />
+          </div>
           <ClientInput value={wbClientId} onChange={setWbClientId} t={t} />
           <ActionButton onClick={analyzeWinback} loading={wbLoading} label="Analizuj winback" t={t} />
           {wbLoading && <Spinner t={t} />}

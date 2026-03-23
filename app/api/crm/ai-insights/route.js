@@ -1,14 +1,17 @@
 import { NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
 import { getServiceClient } from '../../../../lib/supabase/server';
+import { callAI } from '../../../../lib/ai/callAI';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
-const MODEL = 'claude-sonnet-4-20250514';
+const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
 
-export async function POST() {
+export async function POST(request) {
   try {
+    const body = await request.json().catch(() => ({}));
+    const model = body.model ?? DEFAULT_MODEL;
+
     const sb = getServiceClient();
 
     const [overviewRes, segmentsRes, worldsRes, occasionLtvRes, segSummaryRes] =
@@ -42,15 +45,7 @@ Przeanalizuj bazę i odpowiedz po polsku na pytania:
 
 Odpowiedz w formacie markdown z nagłówkami dla każdego pytania.`;
 
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-    const response = await client.messages.create({
-      model: MODEL,
-      max_tokens: 2048,
-      messages: [{ role: 'user', content: prompt }],
-    });
-
-    const text = response.content.find(b => b.type === 'text')?.text ?? '';
+    const text = await callAI(model, prompt, 2048);
     return NextResponse.json({ text });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Błąd serwera';
