@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { useDarkMode } from "../../../hooks/useDarkMode";
 
 const LIGHT = {
@@ -41,6 +42,23 @@ export type OverviewData = {
 export default function OverviewView({ data }: { data: OverviewData }) {
   const [dark] = useDarkMode();
   const t = (dark ? DARK : LIGHT) as typeof LIGHT;
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshErr, setRefreshErr] = useState("");
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    setRefreshErr("");
+    try {
+      const r1 = await fetch("/api/crm/recalculate-ltv", { method: "POST" });
+      if (!r1.ok) throw new Error("Błąd recalculate-ltv");
+      const r2 = await fetch("/api/crm/refresh-views", { method: "POST" });
+      if (!r2.ok) throw new Error("Błąd refresh-views");
+      window.location.reload();
+    } catch (e) {
+      setRefreshErr(e instanceof Error ? e.message : "Błąd");
+      setRefreshing(false);
+    }
+  }
 
   if (!data) {
     return (
@@ -84,7 +102,28 @@ export default function OverviewView({ data }: { data: OverviewData }) {
       `}</style>
 
       <div className="oa-wrap">
-        <h1 className="oa-title">Analityka CRM — Overview 360°</h1>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 4 }}>
+          <h1 className="oa-title">Analityka CRM — Overview 360°</h1>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "6px 13px", fontSize: 12, fontWeight: 500,
+                borderRadius: 7, cursor: refreshing ? "not-allowed" : "pointer",
+                background: t.kpi, border: `1px solid ${t.border}`,
+                color: refreshing ? t.textSub : t.text,
+                opacity: refreshing ? 0.7 : 1, transition: "opacity 0.15s",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span style={{ display: "inline-block", transition: "transform 0.6s", transform: refreshing ? "rotate(360deg)" : "none" }}>🔄</span>
+              {refreshing ? "Odświeżam…" : "Odśwież dane"}
+            </button>
+            {refreshErr && <span style={{ fontSize: 11, color: "#ef4444" }}>{refreshErr}</span>}
+          </div>
+        </div>
         <p className="oa-sub">Kompletny przegląd bazy klientów Nadwyraz.com</p>
 
         <div className="oa-kpis">
