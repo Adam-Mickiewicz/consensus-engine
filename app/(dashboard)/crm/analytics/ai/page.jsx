@@ -26,17 +26,17 @@ const MODEL_GROUPS = [
   {
     label: "OpenAI",
     models: [
-      { value: "gpt-5.4",         label: "gpt-5.4 ⭐" },
-      { value: "gpt-5.3-instant", label: "gpt-5.3-instant" },
-      { value: "gpt-5.4-mini",    label: "gpt-5.4-mini" },
+      { value: "gpt-5.4",      label: "gpt-5.4 ⭐" },
+      { value: "gpt-4o-mini",  label: "gpt-4o-mini" },
+      { value: "gpt-5.4-mini", label: "gpt-5.4-mini" },
     ],
   },
   {
     label: "Gemini",
     models: [
-      { value: "gemini-3-flash",         label: "gemini-3-flash ⭐" },
+      { value: "gemini-2.5-flash",       label: "gemini-2.5-flash ⭐" },
       { value: "gemini-3.1-pro-preview", label: "gemini-3.1-pro-preview" },
-      { value: "gemini-3.1-flash-lite",  label: "gemini-3.1-flash-lite" },
+      { value: "gemini-2.5-flash-lite",  label: "gemini-2.5-flash-lite" },
     ],
   },
 ];
@@ -347,7 +347,7 @@ function AIInsightsContent() {
   const [recError, setRecError]       = useState("");
 
   // Tool 4: Winback
-  const [wbModel, setWbModel]         = useState("gemini-3-flash");
+  const [wbModel, setWbModel]         = useState("gemini-2.5-flash");
   const [wbClientId, setWbClientId]   = useState("");
   const [wbLoading, setWbLoading]     = useState(false);
   const [wbText, setWbText]           = useState("");

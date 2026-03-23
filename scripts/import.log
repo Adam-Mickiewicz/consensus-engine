@@ -323,3 +323,17 @@ rpc error: "crm_behavior_segments" is not a table or materialized view
 [2023-08] ✅ zamówień: 1841, klientów: 1763, eventów: 3943, niezmapowanych: 565
 [2023-09] Pobieram zamówienia...
     ⚠ order-products 116312 — próba 1/3, retry za 5000ms: order-products 116312 (429): {"error":"temporarily_unavailable","error_description":"You have reached requests limit: 10\/10"}
+[ETL] start — 4618 line-items, source: shoper-2023-09
+[ETL step 2] anonymizeAndVault OK — 4618 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 4618 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 657
+[ETL step 5] buildClientProfiles OK — 2100 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 2100, events: 4618
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2023-09] ✅ zamówień: 2190, klientów: 2100, eventów: 4618, niezmapowanych: 657
+[2023-10] Pobieram zamówienia...
