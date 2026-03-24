@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import React from "react";
 import { useDarkMode } from "../../../hooks/useDarkMode";
 
 const LIGHT = {
@@ -42,20 +42,9 @@ export type OverviewData = {
 export default function OverviewView({ data }: { data: OverviewData }) {
   const [dark] = useDarkMode();
   const t = (dark ? DARK : LIGHT) as typeof LIGHT;
-  const [refreshing, setRefreshing] = useState(false);
-  const [refreshErr, setRefreshErr] = useState("");
 
-  async function handleRefresh() {
-    setRefreshing(true);
-    setRefreshErr("");
-    try {
-      const r = await fetch("/api/crm/refresh-views", { method: "POST" });
-      if (!r.ok) throw new Error("Błąd refresh-views");
-      window.location.reload();
-    } catch (e) {
-      setRefreshErr(e instanceof Error ? e.message : "Błąd");
-      setRefreshing(false);
-    }
+  function handleRefresh() {
+    window.location.reload();
   }
 
   if (!data) {
@@ -105,21 +94,18 @@ export default function OverviewView({ data }: { data: OverviewData }) {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
             <button
               onClick={handleRefresh}
-              disabled={refreshing}
               style={{
                 display: "flex", alignItems: "center", gap: 6,
                 padding: "6px 13px", fontSize: 12, fontWeight: 500,
-                borderRadius: 7, cursor: refreshing ? "not-allowed" : "pointer",
+                borderRadius: 7, cursor: "pointer",
                 background: t.kpi, border: `1px solid ${t.border}`,
-                color: refreshing ? t.textSub : t.text,
-                opacity: refreshing ? 0.7 : 1, transition: "opacity 0.15s",
+                color: t.text,
                 whiteSpace: "nowrap",
               }}
             >
-              <span style={{ display: "inline-block", transition: "transform 0.6s", transform: refreshing ? "rotate(360deg)" : "none" }}>🔄</span>
-              {refreshing ? "Odświeżam…" : "Odśwież dane"}
+              <span>🔄</span>
+              Odśwież dane
             </button>
-            {refreshErr && <span style={{ fontSize: 11, color: "#ef4444" }}>{refreshErr}</span>}
           </div>
         </div>
         <p className="oa-sub">Kompletny przegląd bazy klientów Nadwyraz.com</p>
