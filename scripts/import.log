@@ -394,3 +394,1728 @@ rpc error: "crm_behavior_segments" is not a table or materialized view
 [ETL step 9] runSanityChecks OK
 [2024-01] ✅ zamówień: 2344, klientów: 2245, eventów: 4955, niezmapowanych: 748
 [2024-02] Pobieram zamówienia...
+[ETL] start — 5732 line-items, source: shoper-2024-02
+[ETL step 2] anonymizeAndVault OK — 5732 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 5732 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 798
+[ETL step 5] buildClientProfiles OK — 2447 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 2447, events: 5732
+[ETL step 8] refresh_crm_views OK
+[ETL step 9] runSanityChecks OK
+[2024-02] ✅ zamówień: 2573, klientów: 2447, eventów: 5732, niezmapowanych: 798
+[2024-03] Pobieram zamówienia...
+    ⚠ order-products 138519 — próba 1/3, retry za 5000ms: order-products 138519 (429): {"error":"temporarily_unavailable","error_description":"You have reached requests limit: 10\/10"}
+[ETL] start — 4394 line-items, source: shoper-2024-03
+[ETL step 2] anonymizeAndVault OK — 4394 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 4394 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 562
+[ETL step 5] buildClientProfiles OK — 1825 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1825, events: 4394
+[ETL step 8] refresh_crm_views OK
+[ETL step 9] runSanityChecks OK
+[2024-03] ✅ zamówień: 1896, klientów: 1825, eventów: 4394, niezmapowanych: 562
+[2024-04] Pobieram zamówienia...
+[ETL] start — 5375 line-items, source: shoper-2024-04
+[ETL step 2] anonymizeAndVault OK — 5375 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 5375 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 516
+[ETL step 5] buildClientProfiles OK — 2175 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 2175, events: 5375
+[ETL step 8] refresh_crm_views OK
+[ETL step 9] runSanityChecks OK
+[2024-04] ✅ zamówień: 2286, klientów: 2175, eventów: 5375, niezmapowanych: 516
+[2024-05] Pobieram zamówienia...
+    ⚠ order-products 142182 — próba 1/3, retry za 5000ms: order-products 142182 (429): {"error":"temporarily_unavailable","error_description":"You have reached requests limit: 10\/10"}
+    ⚠ order-products 143612 — próba 1/3, retry za 5000ms: order-products 143612 (429): {"error":"temporarily_unavailable","error_description":"You have reached requests limit: 10\/10"}
+[ETL] start — 5092 line-items, source: shoper-2024-05
+[ETL step 2] anonymizeAndVault OK — 5092 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 5092 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 417
+[ETL step 5] buildClientProfiles OK — 2346 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 2346, events: 5092
+[ETL step 8] refresh_crm_views OK
+[ETL step 9] runSanityChecks OK
+[2024-05] ✅ zamówień: 2445, klientów: 2346, eventów: 5092, niezmapowanych: 417
+[2024-06] Pobieram zamówienia...
+[ETL] start — 7193 line-items, source: shoper-2024-06
+[ETL step 2] anonymizeAndVault OK — 7193 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 7193 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 754
+[ETL step 5] buildClientProfiles OK — 3317 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 3317, events: 7193
+[ETL step 8] refresh_crm_views OK
+[ETL step 9] runSanityChecks OK
+[2024-06] ✅ zamówień: 3440, klientów: 3317, eventów: 7193, niezmapowanych: 754
+[2024-07] Pobieram zamówienia...
+    ⚠ order-products 148281 — próba 1/3, retry za 5000ms: order-products 148281 (429): {"error":"temporarily_unavailable","error_description":"You have reached requests limit: 10\/10"}
+[ETL] start — 4273 line-items, source: shoper-2024-07
+[ETL step 2] anonymizeAndVault OK — 4273 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 4273 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 388
+[ETL step 5] buildClientProfiles OK — 1729 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1729, events: 4273
+[ETL step 8] refresh_crm_views OK
+[ETL step 9] runSanityChecks OK
+[2024-07] ✅ zamówień: 1798, klientów: 1729, eventów: 4273, niezmapowanych: 388
+[2024-08] Pobieram zamówienia...
+[ETL] start — 3337 line-items, source: shoper-2024-08
+[ETL step 2] anonymizeAndVault OK — 3337 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 3337 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 271
+[ETL step 5] buildClientProfiles OK — 1381 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1381, events: 3337
+[ETL step 8] refresh_crm_views OK
+[ETL step 9] runSanityChecks OK
+[2024-08] ✅ zamówień: 1443, klientów: 1381, eventów: 3337, niezmapowanych: 271
+[2024-09] Pobieram zamówienia...
+[ETL] start — 5879 line-items, source: shoper-2024-09
+[ETL step 2] anonymizeAndVault OK — 5879 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 5879 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 522
+[ETL step 5] buildClientProfiles OK — 2399 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase FAILED: recalculateLTV failed: canceling statement due to statement timeout Error: recalculateLTV failed: canceling statement due to statement timeout
+    at recalculateLTV (file:///workspaces/consensus-engine/lib/crm/etl.js:540:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async upsertToSupabase (file:///workspaces/consensus-engine/lib/crm/etl.js:623:3)
+    at async runETLPipeline (file:///workspaces/consensus-engine/lib/crm/etl.js:1080:14)
+    at async main (/workspaces/consensus-engine/scripts/shoper-full-import.js:368:22)
+[2024-09] błąd: recalculateLTV failed: canceling statement due to statement timeout
+[2024-10] Pobieram zamówienia...
+[ETL] start — 5422 line-items, source: shoper-2024-10
+[ETL step 2] anonymizeAndVault OK — 5422 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 5422 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 281
+[ETL step 5] buildClientProfiles OK — 2346 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase FAILED: recalculateLTV failed: canceling statement due to statement timeout Error: recalculateLTV failed: canceling statement due to statement timeout
+    at recalculateLTV (file:///workspaces/consensus-engine/lib/crm/etl.js:540:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async upsertToSupabase (file:///workspaces/consensus-engine/lib/crm/etl.js:623:3)
+    at async runETLPipeline (file:///workspaces/consensus-engine/lib/crm/etl.js:1080:14)
+    at async main (/workspaces/consensus-engine/scripts/shoper-full-import.js:368:22)
+[2024-10] błąd: recalculateLTV failed: canceling statement due to statement timeout
+[2024-11] Pobieram zamówienia...
+[ETL] start — 15503 line-items, source: shoper-2024-11
+[ETL step 2] anonymizeAndVault OK — 15503 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 15503 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 711
+[ETL step 5] buildClientProfiles OK — 4867 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase FAILED: recalculateLTV failed: canceling statement due to statement timeout Error: recalculateLTV failed: canceling statement due to statement timeout
+    at recalculateLTV (file:///workspaces/consensus-engine/lib/crm/etl.js:540:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async upsertToSupabase (file:///workspaces/consensus-engine/lib/crm/etl.js:623:3)
+    at async runETLPipeline (file:///workspaces/consensus-engine/lib/crm/etl.js:1080:14)
+    at async main (/workspaces/consensus-engine/scripts/shoper-full-import.js:368:22)
+[2024-11] błąd: recalculateLTV failed: canceling statement due to statement timeout
+[2024-12] Pobieram zamówienia...
+    ⚠ order-products 166601 — próba 1/3, retry za 5000ms: order-products 166601 (429): {"error":"temporarily_unavailable","error_description":"You have reached requests limit: 10\/10"}
+[ETL] start — 22939 line-items, source: shoper-2024-12
+[ETL step 2] anonymizeAndVault OK — 22939 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 22939 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 733
+[ETL step 5] buildClientProfiles OK — 8079 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase FAILED: recalculateLTV failed: canceling statement due to statement timeout Error: recalculateLTV failed: canceling statement due to statement timeout
+    at recalculateLTV (file:///workspaces/consensus-engine/lib/crm/etl.js:540:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async upsertToSupabase (file:///workspaces/consensus-engine/lib/crm/etl.js:623:3)
+    at async runETLPipeline (file:///workspaces/consensus-engine/lib/crm/etl.js:1080:14)
+    at async main (/workspaces/consensus-engine/scripts/shoper-full-import.js:368:22)
+[2024-12] błąd: recalculateLTV failed: canceling statement due to statement timeout
+[2025-01] Pobieram zamówienia...
+[ETL] start — 4656 line-items, source: shoper-2025-01
+[ETL step 2] anonymizeAndVault OK — 4656 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 4656 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 217
+[ETL step 5] buildClientProfiles OK — 1903 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase FAILED: recalculateLTV failed: canceling statement due to statement timeout Error: recalculateLTV failed: canceling statement due to statement timeout
+    at recalculateLTV (file:///workspaces/consensus-engine/lib/crm/etl.js:540:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async upsertToSupabase (file:///workspaces/consensus-engine/lib/crm/etl.js:623:3)
+    at async runETLPipeline (file:///workspaces/consensus-engine/lib/crm/etl.js:1080:14)
+    at async main (/workspaces/consensus-engine/scripts/shoper-full-import.js:368:22)
+[2025-01] błąd: recalculateLTV failed: canceling statement due to statement timeout
+[2025-02] Pobieram zamówienia...
+[ETL] start — 4977 line-items, source: shoper-2025-02
+[ETL step 2] anonymizeAndVault OK — 4977 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 4977 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 219
+[ETL step 5] buildClientProfiles OK — 2074 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase FAILED: recalculateLTV failed: canceling statement due to statement timeout Error: recalculateLTV failed: canceling statement due to statement timeout
+    at recalculateLTV (file:///workspaces/consensus-engine/lib/crm/etl.js:540:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async upsertToSupabase (file:///workspaces/consensus-engine/lib/crm/etl.js:623:3)
+    at async runETLPipeline (file:///workspaces/consensus-engine/lib/crm/etl.js:1080:14)
+    at async main (/workspaces/consensus-engine/scripts/shoper-full-import.js:368:22)
+[2025-02] błąd: recalculateLTV failed: canceling statement due to statement timeout
+[2025-03] Pobieram zamówienia...
+[ETL] start — 4222 line-items, source: shoper-2025-03
+[ETL step 2] anonymizeAndVault OK — 4222 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 4222 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 182
+[ETL step 5] buildClientProfiles OK — 1791 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase FAILED: recalculateLTV failed: canceling statement due to statement timeout Error: recalculateLTV failed: canceling statement due to statement timeout
+    at recalculateLTV (file:///workspaces/consensus-engine/lib/crm/etl.js:540:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async upsertToSupabase (file:///workspaces/consensus-engine/lib/crm/etl.js:623:3)
+    at async runETLPipeline (file:///workspaces/consensus-engine/lib/crm/etl.js:1080:14)
+    at async main (/workspaces/consensus-engine/scripts/shoper-full-import.js:368:22)
+[2025-03] błąd: recalculateLTV failed: canceling statement due to statement timeout
+[2025-04] Pobieram zamówienia...
+[ETL] start — 4770 line-items, source: shoper-2025-04
+[ETL step 2] anonymizeAndVault OK — 4770 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 4770 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 155
+[ETL step 5] buildClientProfiles OK — 1838 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase FAILED: recalculateLTV failed: canceling statement due to statement timeout Error: recalculateLTV failed: canceling statement due to statement timeout
+    at recalculateLTV (file:///workspaces/consensus-engine/lib/crm/etl.js:540:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async upsertToSupabase (file:///workspaces/consensus-engine/lib/crm/etl.js:623:3)
+    at async runETLPipeline (file:///workspaces/consensus-engine/lib/crm/etl.js:1080:14)
+    at async main (/workspaces/consensus-engine/scripts/shoper-full-import.js:368:22)
+[2025-04] błąd: recalculateLTV failed: canceling statement due to statement timeout
+[2025-05] Pobieram zamówienia...
+[ETL] start — 6023 line-items, source: shoper-2025-05
+[ETL step 2] anonymizeAndVault OK — 6023 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 6023 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 189
+[ETL step 5] buildClientProfiles OK — 2626 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase FAILED: recalculateLTV failed: canceling statement due to statement timeout Error: recalculateLTV failed: canceling statement due to statement timeout
+    at recalculateLTV (file:///workspaces/consensus-engine/lib/crm/etl.js:540:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async upsertToSupabase (file:///workspaces/consensus-engine/lib/crm/etl.js:623:3)
+    at async runETLPipeline (file:///workspaces/consensus-engine/lib/crm/etl.js:1080:14)
+    at async main (/workspaces/consensus-engine/scripts/shoper-full-import.js:368:22)
+[2025-05] błąd: recalculateLTV failed: canceling statement due to statement timeout
+[2025-06] Pobieram zamówienia...
+    ⚠ order-products 181594 — próba 1/3, retry za 1000ms: order-products 181594 (500): 
+nohup: ignoring input
+[dotenv@17.3.1] injecting env (8) from .env.local -- tip: ⚙️  override existing env vars with { override: true }
+Checkpoint: wznawiamy po miesiącu 2025-05
+
+Plan: 10 miesięcy (2025-06 → 2026-03)
+
+[2025-06] Pobieram zamówienia...
+(node:2997) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspaces/consensus-engine/lib/crm/etl.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspaces/consensus-engine/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  API: 4137 stron, 206801 zamówień, najstarsze: 2017-11-07
+  [binary search] krok 1: strona 2069/4137 → 2023-07-28 (low=1, high=4137)
+  [binary search] krok 2: strona 3103/4137 → 2024-12-13 (low=2070, high=4137)
+  [binary search] krok 3: strona 3620/4137 → 2025-09-22 (low=3104, high=4137)
+  [binary search] krok 4: strona 3362/4137 → 2025-05-08 (low=3104, high=3620)
+  [binary search] krok 5: strona 3491/4137 → 2025-07-03 (low=3363, high=3620)
+  [binary search] krok 6: strona 3427/4137 → 2025-06-12 (low=3363, high=3491)
+  [binary search] krok 7: strona 3395/4137 → 2025-05-25 (low=3363, high=3427)
+  [binary search] krok 8: strona 3411/4137 → 2025-06-04 (low=3396, high=3427)
+  [binary search] krok 9: strona 3403/4137 → 2025-05-30 (low=3396, high=3411)
+  [binary search] krok 10: strona 3407/4137 → 2025-06-02 (low=3404, high=3411)
+  [binary search] krok 11: strona 3405/4137 → 2025-05-31 (low=3404, high=3407)
+  [binary search] krok 12: strona 3406/4137 → 2025-06-01 (low=3406, high=3407)
+  Binary search: 12 kroków → strona startowa 3404
+[ETL] start — 8156 line-items, source: shoper-2025-06
+[ETL step 2] anonymizeAndVault OK — 8156 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 8156 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 920
+[ETL step 5] buildClientProfiles OK — 3786 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase FAILED: recalculateLTV failed: canceling statement due to statement timeout Error: recalculateLTV failed: canceling statement due to statement timeout
+    at recalculateLTV (file:///workspaces/consensus-engine/lib/crm/etl.js:544:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async upsertToSupabase (file:///workspaces/consensus-engine/lib/crm/etl.js:627:3)
+    at async runETLPipeline (file:///workspaces/consensus-engine/lib/crm/etl.js:1084:14)
+    at async main (/workspaces/consensus-engine/scripts/shoper-full-import.js:368:22)
+[2025-06] błąd: recalculateLTV failed: canceling statement due to statement timeout
+[2025-07] Pobieram zamówienia...
+[ETL] start — 6723 line-items, source: shoper-2025-07
+[ETL step 2] anonymizeAndVault OK — 6723 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 6723 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 227
+[ETL step 5] buildClientProfiles OK — 2555 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase FAILED: recalculateLTV failed: <!DOCTYPE html>
+<!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en-US"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js ie7 oldie" lang="en-US"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js ie8 oldie" lang="en-US"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en-US"> <!--<![endif]-->
+<head>
+
+<title> | 502: Bad gateway</title>
+<meta charset="UTF-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="stylesheet" id="cf_styles-css" href="/cdn-cgi/styles/main.css" />
+</head>
+<body>
+<div id="cf-wrapper">
+    <div id="cf-error-details" class="p-0">
+        <header class="mx-auto pt-10 lg:pt-6 lg:px-8 w-240 lg:w-full mb-8">
+            <h1 class="inline-block sm:block sm:mb-2 font-light text-60 lg:text-4xl text-black-dark leading-tight mr-2">
+                <span class="inline-block">Bad gateway</span>
+                <span class="code-label">Error code 502</span>
+            </h1>
+            <div>
+                Visit <a href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_502&utm_campaign=dayrmhsdpcgakbsfjkyp.supabase.co" target="_blank" rel="noopener noreferrer">cloudflare.com</a> for more information.
+            </div>
+            <div class="mt-3">2026-03-23 22:06:56 UTC</div>
+        </header>
+        <div class="my-8 bg-gradient-gray">
+            <div class="w-240 lg:w-full mx-auto">
+                <div class="clearfix md:px-8">
+                    <div id="cf-browser-status" class=" relative w-1/3 md:w-full py-15 md:p-0 md:py-8 md:text-left md:border-solid md:border-0 md:border-b md:border-gray-400 overflow-hidden float-left md:float-none text-center">
+  <div class="relative mb-10 md:m-0">
+    
+    <span class="cf-icon-browser block md:hidden h-20 bg-center bg-no-repeat"></span>
+    <span class="cf-icon-ok w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4"></span>
+    
+  </div>
+  <span class="md:block w-full truncate">You</span>
+  <h3 class="md:inline-block mt-3 md:mt-0 text-2xl text-gray-600 font-light leading-1.3">
+  
+    Browser
+  
+  </h3>
+  
+  <span class="leading-1.3 text-2xl text-green-success">Working</span>
+  
+</div>
+                    <div id="cf-cloudflare-status" class=" relative w-1/3 md:w-full py-15 md:p-0 md:py-8 md:text-left md:border-solid md:border-0 md:border-b md:border-gray-400 overflow-hidden float-left md:float-none text-center">
+  <div class="relative mb-10 md:m-0">
+    <a href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_502&#38;utm_campaign=dayrmhsdpcgakbsfjkyp.supabase.co" target="_blank" rel="noopener noreferrer">
+    <span class="cf-icon-cloud block md:hidden h-20 bg-center bg-no-repeat"></span>
+    <span class="cf-icon-ok w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4"></span>
+    </a>
+  </div>
+  <span class="md:block w-full truncate">Amsterdam</span>
+  <h3 class="md:inline-block mt-3 md:mt-0 text-2xl text-gray-600 font-light leading-1.3">
+  <a href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_502&utm_campaign=dayrmhsdpcgakbsfjkyp.supabase.co" target="_blank" rel="noopener noreferrer">
+    Cloudflare
+  </a>
+  </h3>
+  
+  <span class="leading-1.3 text-2xl text-green-success">Working</span>
+  
+</div>
+                    <div id="cf-host-status" class="cf-error-source relative w-1/3 md:w-full py-15 md:p-0 md:py-8 md:text-left md:border-solid md:border-0 md:border-b md:border-gray-400 overflow-hidden float-left md:float-none text-center">
+  <div class="relative mb-10 md:m-0">
+    
+    <span class="cf-icon-server block md:hidden h-20 bg-center bg-no-repeat"></span>
+    <span class="cf-icon-error w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4"></span>
+    
+  </div>
+  <span class="md:block w-full truncate">dayrmhsdpcgakbsfjkyp.supabase.co</span>
+  <h3 class="md:inline-block mt-3 md:mt-0 text-2xl text-gray-600 font-light leading-1.3">
+  
+    Host
+  
+  </h3>
+  
+  <span class="leading-1.3 text-2xl text-red-error">Error</span>
+  
+</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-240 lg:w-full mx-auto mb-8 lg:px-8">
+            <div class="clearfix">
+                <div class="w-1/2 md:w-full float-left pr-6 md:pb-10 md:pr-0 leading-relaxed">
+                    <h2 class="text-3xl font-normal leading-1.3 mb-4">What happened?</h2>
+                    <p>The web server reported a bad gateway error.</p>
+                </div>
+                <div class="w-1/2 md:w-full float-left leading-relaxed">
+                    <h2 class="text-3xl font-normal leading-1.3 mb-4">What can I do?</h2>
+                    <p class="mb-6">Please try again in a few minutes.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="cf-error-footer cf-wrapper w-240 lg:w-full py-10 sm:py-4 sm:px-8 mx-auto text-center sm:text-left border-solid border-0 border-t border-gray-300">
+    <p class="text-13">
+      <span class="cf-footer-item sm:block sm:mb-1">Cloudflare Ray ID: <strong class="font-semibold">9e10befaf869c23f</strong></span>
+      <span class="cf-footer-separator sm:hidden">&bull;</span>
+      <span id="cf-footer-item-ip" class="cf-footer-item hidden sm:block sm:mb-1">
+        Your IP:
+        <button type="button" id="cf-footer-ip-reveal" class="cf-footer-ip-reveal-btn">Click to reveal</button>
+        <span class="hidden" id="cf-footer-ip">20.61.206.192</span>
+        <span class="cf-footer-separator sm:hidden">&bull;</span>
+      </span>
+      <span class="cf-footer-item sm:block sm:mb-1"><span>Performance &amp; security by</span> <a rel="noopener noreferrer" href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_502&#38;utm_campaign=dayrmhsdpcgakbsfjkyp.supabase.co" id="brand_link" target="_blank">Cloudflare</a></span>
+      
+    </p>
+    <script>(function(){function d(){var b=a.getElementById("cf-footer-item-ip"),c=a.getElementById("cf-footer-ip-reveal");b&&"classList"in b&&(b.classList.remove("hidden"),c.addEventListener("click",function(){c.classList.add("hidden");a.getElementById("cf-footer-ip").classList.remove("hidden")}))}var a=document;document.addEventListener&&a.addEventListener("DOMContentLoaded",d)})();</script>
+  </div><!-- /.error-footer -->
+
+    </div>
+</div>
+</body>
+</html> Error: recalculateLTV failed: <!DOCTYPE html>
+<!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en-US"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js ie7 oldie" lang="en-US"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js ie8 oldie" lang="en-US"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en-US"> <!--<![endif]-->
+<head>
+
+<title> | 502: Bad gateway</title>
+<meta charset="UTF-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="stylesheet" id="cf_styles-css" href="/cdn-cgi/styles/main.css" />
+</head>
+<body>
+<div id="cf-wrapper">
+    <div id="cf-error-details" class="p-0">
+        <header class="mx-auto pt-10 lg:pt-6 lg:px-8 w-240 lg:w-full mb-8">
+            <h1 class="inline-block sm:block sm:mb-2 font-light text-60 lg:text-4xl text-black-dark leading-tight mr-2">
+                <span class="inline-block">Bad gateway</span>
+                <span class="code-label">Error code 502</span>
+            </h1>
+            <div>
+                Visit <a href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_502&utm_campaign=dayrmhsdpcgakbsfjkyp.supabase.co" target="_blank" rel="noopener noreferrer">cloudflare.com</a> for more information.
+            </div>
+            <div class="mt-3">2026-03-23 22:06:56 UTC</div>
+        </header>
+        <div class="my-8 bg-gradient-gray">
+            <div class="w-240 lg:w-full mx-auto">
+                <div class="clearfix md:px-8">
+                    <div id="cf-browser-status" class=" relative w-1/3 md:w-full py-15 md:p-0 md:py-8 md:text-left md:border-solid md:border-0 md:border-b md:border-gray-400 overflow-hidden float-left md:float-none text-center">
+  <div class="relative mb-10 md:m-0">
+    
+    <span class="cf-icon-browser block md:hidden h-20 bg-center bg-no-repeat"></span>
+    <span class="cf-icon-ok w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4"></span>
+    
+  </div>
+  <span class="md:block w-full truncate">You</span>
+  <h3 class="md:inline-block mt-3 md:mt-0 text-2xl text-gray-600 font-light leading-1.3">
+  
+    Browser
+  
+  </h3>
+  
+  <span class="leading-1.3 text-2xl text-green-success">Working</span>
+  
+</div>
+                    <div id="cf-cloudflare-status" class=" relative w-1/3 md:w-full py-15 md:p-0 md:py-8 md:text-left md:border-solid md:border-0 md:border-b md:border-gray-400 overflow-hidden float-left md:float-none text-center">
+  <div class="relative mb-10 md:m-0">
+    <a href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_502&#38;utm_campaign=dayrmhsdpcgakbsfjkyp.supabase.co" target="_blank" rel="noopener noreferrer">
+    <span class="cf-icon-cloud block md:hidden h-20 bg-center bg-no-repeat"></span>
+    <span class="cf-icon-ok w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4"></span>
+    </a>
+  </div>
+  <span class="md:block w-full truncate">Amsterdam</span>
+  <h3 class="md:inline-block mt-3 md:mt-0 text-2xl text-gray-600 font-light leading-1.3">
+  <a href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_502&utm_campaign=dayrmhsdpcgakbsfjkyp.supabase.co" target="_blank" rel="noopener noreferrer">
+    Cloudflare
+  </a>
+  </h3>
+  
+  <span class="leading-1.3 text-2xl text-green-success">Working</span>
+  
+</div>
+                    <div id="cf-host-status" class="cf-error-source relative w-1/3 md:w-full py-15 md:p-0 md:py-8 md:text-left md:border-solid md:border-0 md:border-b md:border-gray-400 overflow-hidden float-left md:float-none text-center">
+  <div class="relative mb-10 md:m-0">
+    
+    <span class="cf-icon-server block md:hidden h-20 bg-center bg-no-repeat"></span>
+    <span class="cf-icon-error w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4"></span>
+    
+  </div>
+  <span class="md:block w-full truncate">dayrmhsdpcgakbsfjkyp.supabase.co</span>
+  <h3 class="md:inline-block mt-3 md:mt-0 text-2xl text-gray-600 font-light leading-1.3">
+  
+    Host
+  
+  </h3>
+  
+  <span class="leading-1.3 text-2xl text-red-error">Error</span>
+  
+</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-240 lg:w-full mx-auto mb-8 lg:px-8">
+            <div class="clearfix">
+                <div class="w-1/2 md:w-full float-left pr-6 md:pb-10 md:pr-0 leading-relaxed">
+                    <h2 class="text-3xl font-normal leading-1.3 mb-4">What happened?</h2>
+                    <p>The web server reported a bad gateway error.</p>
+                </div>
+                <div class="w-1/2 md:w-full float-left leading-relaxed">
+                    <h2 class="text-3xl font-normal leading-1.3 mb-4">What can I do?</h2>
+                    <p class="mb-6">Please try again in a few minutes.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="cf-error-footer cf-wrapper w-240 lg:w-full py-10 sm:py-4 sm:px-8 mx-auto text-center sm:text-left border-solid border-0 border-t border-gray-300">
+    <p class="text-13">
+      <span class="cf-footer-item sm:block sm:mb-1">Cloudflare Ray ID: <strong class="font-semibold">9e10befaf869c23f</strong></span>
+      <span class="cf-footer-separator sm:hidden">&bull;</span>
+      <span id="cf-footer-item-ip" class="cf-footer-item hidden sm:block sm:mb-1">
+        Your IP:
+        <button type="button" id="cf-footer-ip-reveal" class="cf-footer-ip-reveal-btn">Click to reveal</button>
+        <span class="hidden" id="cf-footer-ip">20.61.206.192</span>
+        <span class="cf-footer-separator sm:hidden">&bull;</span>
+      </span>
+      <span class="cf-footer-item sm:block sm:mb-1"><span>Performance &amp; security by</span> <a rel="noopener noreferrer" href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_502&#38;utm_campaign=dayrmhsdpcgakbsfjkyp.supabase.co" id="brand_link" target="_blank">Cloudflare</a></span>
+      
+    </p>
+    <script>(function(){function d(){var b=a.getElementById("cf-footer-item-ip"),c=a.getElementById("cf-footer-ip-reveal");b&&"classList"in b&&(b.classList.remove("hidden"),c.addEventListener("click",function(){c.classList.add("hidden");a.getElementById("cf-footer-ip").classList.remove("hidden")}))}var a=document;document.addEventListener&&a.addEventListener("DOMContentLoaded",d)})();</script>
+  </div><!-- /.error-footer -->
+
+    </div>
+</div>
+</body>
+</html>
+    at recalculateLTV (file:///workspaces/consensus-engine/lib/crm/etl.js:544:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async upsertToSupabase (file:///workspaces/consensus-engine/lib/crm/etl.js:627:3)
+    at async runETLPipeline (file:///workspaces/consensus-engine/lib/crm/etl.js:1084:14)
+    at async main (/workspaces/consensus-engine/scripts/shoper-full-import.js:368:22)
+[2025-07] błąd: recalculateLTV failed: <!DOCTYPE html>
+<!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en-US"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js ie7 oldie" lang="en-US"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js ie8 oldie" lang="en-US"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en-US"> <!--<![endif]-->
+<head>
+
+<title> | 502: Bad gateway</title>
+<meta charset="UTF-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="stylesheet" id="cf_styles-css" href="/cdn-cgi/styles/main.css" />
+</head>
+<body>
+<div id="cf-wrapper">
+    <div id="cf-error-details" class="p-0">
+        <header class="mx-auto pt-10 lg:pt-6 lg:px-8 w-240 lg:w-full mb-8">
+            <h1 class="inline-block sm:block sm:mb-2 font-light text-60 lg:text-4xl text-black-dark leading-tight mr-2">
+                <span class="inline-block">Bad gateway</span>
+                <span class="code-label">Error code 502</span>
+            </h1>
+            <div>
+                Visit <a href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_502&utm_campaign=dayrmhsdpcgakbsfjkyp.supabase.co" target="_blank" rel="noopener noreferrer">cloudflare.com</a> for more information.
+            </div>
+            <div class="mt-3">2026-03-23 22:06:56 UTC</div>
+        </header>
+        <div class="my-8 bg-gradient-gray">
+            <div class="w-240 lg:w-full mx-auto">
+                <div class="clearfix md:px-8">
+                    <div id="cf-browser-status" class=" relative w-1/3 md:w-full py-15 md:p-0 md:py-8 md:text-left md:border-solid md:border-0 md:border-b md:border-gray-400 overflow-hidden float-left md:float-none text-center">
+  <div class="relative mb-10 md:m-0">
+    
+    <span class="cf-icon-browser block md:hidden h-20 bg-center bg-no-repeat"></span>
+    <span class="cf-icon-ok w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4"></span>
+    
+  </div>
+  <span class="md:block w-full truncate">You</span>
+  <h3 class="md:inline-block mt-3 md:mt-0 text-2xl text-gray-600 font-light leading-1.3">
+  
+    Browser
+  
+  </h3>
+  
+  <span class="leading-1.3 text-2xl text-green-success">Working</span>
+  
+</div>
+                    <div id="cf-cloudflare-status" class=" relative w-1/3 md:w-full py-15 md:p-0 md:py-8 md:text-left md:border-solid md:border-0 md:border-b md:border-gray-400 overflow-hidden float-left md:float-none text-center">
+  <div class="relative mb-10 md:m-0">
+    <a href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_502&#38;utm_campaign=dayrmhsdpcgakbsfjkyp.supabase.co" target="_blank" rel="noopener noreferrer">
+    <span class="cf-icon-cloud block md:hidden h-20 bg-center bg-no-repeat"></span>
+    <span class="cf-icon-ok w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4"></span>
+    </a>
+  </div>
+  <span class="md:block w-full truncate">Amsterdam</span>
+  <h3 class="md:inline-block mt-3 md:mt-0 text-2xl text-gray-600 font-light leading-1.3">
+  <a href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_502&utm_campaign=dayrmhsdpcgakbsfjkyp.supabase.co" target="_blank" rel="noopener noreferrer">
+    Cloudflare
+  </a>
+  </h3>
+  
+  <span class="leading-1.3 text-2xl text-green-success">Working</span>
+  
+</div>
+                    <div id="cf-host-status" class="cf-error-source relative w-1/3 md:w-full py-15 md:p-0 md:py-8 md:text-left md:border-solid md:border-0 md:border-b md:border-gray-400 overflow-hidden float-left md:float-none text-center">
+  <div class="relative mb-10 md:m-0">
+    
+    <span class="cf-icon-server block md:hidden h-20 bg-center bg-no-repeat"></span>
+    <span class="cf-icon-error w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4"></span>
+    
+  </div>
+  <span class="md:block w-full truncate">dayrmhsdpcgakbsfjkyp.supabase.co</span>
+  <h3 class="md:inline-block mt-3 md:mt-0 text-2xl text-gray-600 font-light leading-1.3">
+  
+    Host
+  
+  </h3>
+  
+  <span class="leading-1.3 text-2xl text-red-error">Error</span>
+  
+</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-240 lg:w-full mx-auto mb-8 lg:px-8">
+            <div class="clearfix">
+                <div class="w-1/2 md:w-full float-left pr-6 md:pb-10 md:pr-0 leading-relaxed">
+                    <h2 class="text-3xl font-normal leading-1.3 mb-4">What happened?</h2>
+                    <p>The web server reported a bad gateway error.</p>
+                </div>
+                <div class="w-1/2 md:w-full float-left leading-relaxed">
+                    <h2 class="text-3xl font-normal leading-1.3 mb-4">What can I do?</h2>
+                    <p class="mb-6">Please try again in a few minutes.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="cf-error-footer cf-wrapper w-240 lg:w-full py-10 sm:py-4 sm:px-8 mx-auto text-center sm:text-left border-solid border-0 border-t border-gray-300">
+    <p class="text-13">
+      <span class="cf-footer-item sm:block sm:mb-1">Cloudflare Ray ID: <strong class="font-semibold">9e10befaf869c23f</strong></span>
+      <span class="cf-footer-separator sm:hidden">&bull;</span>
+      <span id="cf-footer-item-ip" class="cf-footer-item hidden sm:block sm:mb-1">
+        Your IP:
+        <button type="button" id="cf-footer-ip-reveal" class="cf-footer-ip-reveal-btn">Click to reveal</button>
+        <span class="hidden" id="cf-footer-ip">20.61.206.192</span>
+        <span class="cf-footer-separator sm:hidden">&bull;</span>
+      </span>
+      <span class="cf-footer-item sm:block sm:mb-1"><span>Performance &amp; security by</span> <a rel="noopener noreferrer" href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_502&#38;utm_campaign=dayrmhsdpcgakbsfjkyp.supabase.co" id="brand_link" target="_blank">Cloudflare</a></span>
+      
+    </p>
+    <script>(function(){function d(){var b=a.getElementById("cf-footer-item-ip"),c=a.getElementById("cf-footer-ip-reveal");b&&"classList"in b&&(b.classList.remove("hidden"),c.addEventListener("click",function(){c.classList.add("hidden");a.getElementById("cf-footer-ip").classList.remove("hidden")}))}var a=document;document.addEventListener&&a.addEventListener("DOMContentLoaded",d)})();</script>
+  </div><!-- /.error-footer -->
+
+    </div>
+</div>
+</body>
+</html>
+[2025-08] Pobieram zamówienia...
+[ETL] start — 5436 line-items, source: shoper-2025-08
+[ETL step 2] anonymizeAndVault OK — 5436 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 5436 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 201
+[ETL step 5] buildClientProfiles OK — 2232 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase FAILED: recalculateLTV failed: canceling statement due to statement timeout Error: recalculateLTV failed: canceling statement due to statement timeout
+    at recalculateLTV (file:///workspaces/consensus-engine/lib/crm/etl.js:544:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async upsertToSupabase (file:///workspaces/consensus-engine/lib/crm/etl.js:627:3)
+    at async runETLPipeline (file:///workspaces/consensus-engine/lib/crm/etl.js:1084:14)
+    at async main (/workspaces/consensus-engine/scripts/shoper-full-import.js:368:22)
+[2025-08] błąd: recalculateLTV failed: canceling statement due to statement timeout
+[2025-09] Pobieram zamówienia...
+[ETL] start — 6244 line-items, source: shoper-2025-09
+[ETL step 2] anonymizeAndVault OK — 6244 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 6244 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 349
+[ETL step 5] buildClientProfiles OK — 2732 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase FAILED: recalculateLTV failed: canceling statement due to statement timeout Error: recalculateLTV failed: canceling statement due to statement timeout
+    at recalculateLTV (file:///workspaces/consensus-engine/lib/crm/etl.js:544:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async upsertToSupabase (file:///workspaces/consensus-engine/lib/crm/etl.js:627:3)
+    at async runETLPipeline (file:///workspaces/consensus-engine/lib/crm/etl.js:1084:14)
+    at async main (/workspaces/consensus-engine/scripts/shoper-full-import.js:368:22)
+[2025-09] błąd: recalculateLTV failed: canceling statement due to statement timeout
+[2025-10] Pobieram zamówienia...
+[ETL] start — 6087 line-items, source: shoper-2025-10
+[ETL step 2] anonymizeAndVault OK — 6087 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 6087 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 212
+[ETL step 5] buildClientProfiles OK — 2743 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase FAILED: recalculateLTV failed: canceling statement due to statement timeout Error: recalculateLTV failed: canceling statement due to statement timeout
+    at recalculateLTV (file:///workspaces/consensus-engine/lib/crm/etl.js:544:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async upsertToSupabase (file:///workspaces/consensus-engine/lib/crm/etl.js:627:3)
+    at async runETLPipeline (file:///workspaces/consensus-engine/lib/crm/etl.js:1084:14)
+    at async main (/workspaces/consensus-engine/scripts/shoper-full-import.js:368:22)
+[2025-10] błąd: recalculateLTV failed: canceling statement due to statement timeout
+[2025-11] Pobieram zamówienia...
+    ⚠ order-products 199283 — próba 1/3, retry za 1000ms: order-products 199283 (500): 
+[ETL] start — 16406 line-items, source: shoper-2025-11
+[ETL step 2] anonymizeAndVault OK — 16406 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 16406 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 518
+[ETL step 5] buildClientProfiles OK — 5343 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase FAILED: recalculateLTV failed: canceling statement due to statement timeout Error: recalculateLTV failed: canceling statement due to statement timeout
+    at recalculateLTV (file:///workspaces/consensus-engine/lib/crm/etl.js:544:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async upsertToSupabase (file:///workspaces/consensus-engine/lib/crm/etl.js:627:3)
+    at async runETLPipeline (file:///workspaces/consensus-engine/lib/crm/etl.js:1084:14)
+    at async main (/workspaces/consensus-engine/scripts/shoper-full-import.js:368:22)
+[2025-11] błąd: recalculateLTV failed: canceling statement due to statement timeout
+[2025-12] Pobieram zamówienia...
+nohup: ignoring input
+[dotenv@17.3.1] injecting env (9) from .env.local -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+Checkpoint: wznawiamy po miesiącu 2025-11
+
+Plan: 4 miesięcy (2025-12 → 2026-03)
+
+[2025-12] Pobieram zamówienia...
+(node:4746) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspaces/consensus-engine/lib/crm/etl.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspaces/consensus-engine/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  API: 4137 stron, 206830 zamówień, najstarsze: 2017-11-07
+  [binary search] krok 1: strona 2069/4137 → 2023-07-28 (low=1, high=4137)
+  [binary search] krok 2: strona 3103/4137 → 2024-12-13 (low=2070, high=4137)
+  [binary search] krok 3: strona 3620/4137 → 2025-09-22 (low=3104, high=4137)
+  [binary search] krok 4: strona 3879/4137 → 2025-12-11 (low=3621, high=4137)
+  [binary search] krok 5: strona 3750/4137 → 2025-11-19 (low=3621, high=3879)
+  [binary search] krok 6: strona 3815/4137 → 2025-12-01 (low=3751, high=3879)
+  [binary search] krok 7: strona 3783/4137 → 2025-11-27 (low=3751, high=3815)
+  [binary search] krok 8: strona 3799/4137 → 2025-11-29 (low=3784, high=3815)
+  [binary search] krok 9: strona 3807/4137 → 2025-11-30 (low=3800, high=3815)
+  [binary search] krok 10: strona 3811/4137 → 2025-11-30 (low=3808, high=3815)
+  [binary search] krok 11: strona 3813/4137 → 2025-11-30 (low=3812, high=3815)
+  [binary search] krok 12: strona 3814/4137 → 2025-11-30 (low=3814, high=3815)
+  Binary search: 12 kroków → strona startowa 3813
+nohup: ignoring input
+[dotenv@17.3.1] injecting env (9) from .env.local -- tip: ⚙️  write to custom object with { processEnv: myObject }
+Checkpoint: wznawiamy po miesiącu 2025-11
+
+Plan: 4 miesięcy (2025-12 → 2026-03)
+
+[2025-12] Pobieram zamówienia...
+(node:2450) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspaces/consensus-engine/lib/crm/etl.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspaces/consensus-engine/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  API: 4138 stron, 206864 zamówień, najstarsze: 2017-11-07
+  [binary search] krok 1: strona 2069/4138 → 2023-07-28 (low=1, high=4138)
+  [binary search] krok 2: strona 3104/4138 → 2024-12-13 (low=2070, high=4138)
+  [binary search] krok 3: strona 3621/4138 → 2025-09-22 (low=3105, high=4138)
+  [binary search] krok 4: strona 3880/4138 → 2025-12-11 (low=3622, high=4138)
+  [binary search] krok 5: strona 3751/4138 → 2025-11-19 (low=3622, high=3880)
+  [binary search] krok 6: strona 3816/4138 → 2025-12-01 (low=3752, high=3880)
+  [binary search] krok 7: strona 3784/4138 → 2025-11-27 (low=3752, high=3816)
+  [binary search] krok 8: strona 3800/4138 → 2025-11-29 (low=3785, high=3816)
+  [binary search] krok 9: strona 3808/4138 → 2025-11-30 (low=3801, high=3816)
+  [binary search] krok 10: strona 3812/4138 → 2025-11-30 (low=3809, high=3816)
+  [binary search] krok 11: strona 3814/4138 → 2025-11-30 (low=3813, high=3816)
+  [binary search] krok 12: strona 3815/4138 → 2025-12-01 (low=3815, high=3816)
+  Binary search: 12 kroków → strona startowa 3813
+    ⚠ order-products 202082 — próba 1/3, retry za 1000ms: order-products 202082 (500): 
+    ⚠ order-products 202726 — próba 1/3, retry za 1000ms: order-products 202726 (500): 
+[ETL] start — 23219 line-items, source: shoper-2025-12
+[ETL step 2] anonymizeAndVault OK — 23219 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 23219 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 514
+[ETL step 5] buildClientProfiles OK — 8906 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 8906, events: 23219
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2025-12] ✅ zamówień: 9443, klientów: 8906, eventów: 23219, niezmapowanych: 514
+[2026-01] Pobieram zamówienia...
+[ETL] start — 4899 line-items, source: shoper-2026-01
+[ETL step 2] anonymizeAndVault OK — 4899 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 4899 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 90
+[ETL step 5] buildClientProfiles OK — 2260 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 2260, events: 4899
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-01] ✅ zamówień: 2375, klientów: 2260, eventów: 4899, niezmapowanych: 90
+[2026-02] Pobieram zamówienia...
+    ⚠ order-products 214757 — próba 1/3, retry za 1000ms: order-products 214757 (500): 
+[ETL] start — 5460 line-items, source: shoper-2026-02
+[ETL step 2] anonymizeAndVault OK — 5460 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 5460 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 103
+[ETL step 5] buildClientProfiles OK — 2426 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 2426, events: 5460
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-02] ✅ zamówień: 2554, klientów: 2426, eventów: 5460, niezmapowanych: 103
+[2026-03] Pobieram zamówienia...
+    ⚠ order-products 216324 — próba 1/3, retry za 1000ms: order-products 216324 (500): 
+[ETL] start — 4128 line-items, source: shoper-2026-03
+[ETL step 2] anonymizeAndVault OK — 4128 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 4128 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 358
+[ETL step 5] buildClientProfiles OK — 1724 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1724, events: 4128
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03] ✅ zamówień: 1830, klientów: 1724, eventów: 4128, niezmapowanych: 358
+Przeliczam LTV dla całej bazy...
+LTV error: canceling statement due to statement timeout
+
+=== Import 2022-2026 zakończony ===
+Startuje import historyczny 2017-2021...
+Import historyczny uruchomiony w tle (PID: 37016)
+[dotenv@17.3.1] injecting env (0) from .env.local -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[2026-03-24T11:25:47.093Z] === Import historyczny 2017-2021 — start ===
+[2026-03-24T11:25:47.125Z] Plan: 60 miesięcy (2017-01 → 2021-12)
+
+[2026-03-24T11:25:47.125Z] [2017-01] Pobieram zamówienia...
+(node:37016) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspaces/consensus-engine/lib/crm/etl.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspaces/consensus-engine/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[2026-03-24T11:25:47.093Z] === Import historyczny 2017-2021 — start ===
+[2026-03-24T11:25:47.125Z] Plan: 60 miesięcy (2017-01 → 2021-12)
+
+[2026-03-24T11:25:47.125Z] [2017-01] Pobieram zamówienia...
+[2026-03-24T11:25:48.074Z] [2017-01] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:48.074Z] [2017-01] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:48.090Z] [2017-02] Pobieram zamówienia...
+[2026-03-24T11:25:48.090Z] [2017-02] Pobieram zamówienia...
+[2026-03-24T11:25:48.772Z] [2017-02] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:48.772Z] [2017-02] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:48.773Z] [2017-03] Pobieram zamówienia...
+[2026-03-24T11:25:48.773Z] [2017-03] Pobieram zamówienia...
+[2026-03-24T11:25:49.474Z] [2017-03] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:49.474Z] [2017-03] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:49.475Z] [2017-04] Pobieram zamówienia...
+[2026-03-24T11:25:49.475Z] [2017-04] Pobieram zamówienia...
+[2026-03-24T11:25:50.175Z] [2017-04] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:50.175Z] [2017-04] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:50.175Z] [2017-05] Pobieram zamówienia...
+[2026-03-24T11:25:50.175Z] [2017-05] Pobieram zamówienia...
+[2026-03-24T11:25:50.870Z] [2017-05] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:50.870Z] [2017-05] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:50.871Z] [2017-06] Pobieram zamówienia...
+[2026-03-24T11:25:50.871Z] [2017-06] Pobieram zamówienia...
+[2026-03-24T11:25:51.592Z] [2017-06] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:51.592Z] [2017-07] Pobieram zamówienia...
+[2026-03-24T11:25:51.592Z] [2017-06] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:51.592Z] [2017-07] Pobieram zamówienia...
+[2026-03-24T11:25:52.258Z] [2017-07] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:52.258Z] [2017-07] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:52.258Z] [2017-08] Pobieram zamówienia...
+[2026-03-24T11:25:52.258Z] [2017-08] Pobieram zamówienia...
+[2026-03-24T11:25:52.954Z] [2017-08] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:52.954Z] [2017-08] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:52.955Z] [2017-09] Pobieram zamówienia...
+[2026-03-24T11:25:52.955Z] [2017-09] Pobieram zamówienia...
+[2026-03-24T11:25:53.707Z] [2017-09] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:53.707Z] [2017-09] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:53.707Z] [2017-10] Pobieram zamówienia...
+[2026-03-24T11:25:53.707Z] [2017-10] Pobieram zamówienia...
+[2026-03-24T11:25:54.418Z] [2017-10] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:54.418Z] [2017-10] ⏭  0 zamówień — pomijam
+[2026-03-24T11:25:54.419Z] [2017-11] Pobieram zamówienia...
+[2026-03-24T11:25:54.419Z] [2017-11] Pobieram zamówienia...
+
+══════════════════════════════════════════════
+  PODSUMOWANIE IMPORTU
+══════════════════════════════════════════════
+  Zamówień przetworzonych: 16202
+  Klientów w bazie:        110668
+  Eventów w bazie:         373219
+  SUM(ltv):                16993195.30 PLN
+══════════════════════════════════════════════
+
+[ETL] start — 249 line-items, source: historical-2017-11
+[ETL step 2] anonymizeAndVault OK — 249 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 249 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 151
+[ETL step 5] buildClientProfiles OK — 158 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 158, events: 249
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T11:28:39.173Z] [2017-11] ✅ zamówień: 161, klientów: 158, eventów: 249, niezmapowanych: 151
+[2026-03-24T11:28:39.173Z] [2017-11] ✅ zamówień: 161, klientów: 158, eventów: 249, niezmapowanych: 151
+[2026-03-24T11:28:39.173Z] [2017-12] Pobieram zamówienia...
+[2026-03-24T11:28:39.173Z] [2017-12] Pobieram zamówienia...
+[ETL] start — 670 line-items, source: historical-2017-12
+[ETL step 2] anonymizeAndVault OK — 670 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 670 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 348
+[ETL step 5] buildClientProfiles OK — 448 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 448, events: 670
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T11:32:27.911Z] [2017-12] ✅ zamówień: 457, klientów: 448, eventów: 670, niezmapowanych: 348
+[2026-03-24T11:32:27.911Z] [2017-12] ✅ zamówień: 457, klientów: 448, eventów: 670, niezmapowanych: 348
+[2026-03-24T11:32:27.912Z] [2018-01] Pobieram zamówienia...
+[2026-03-24T11:32:27.912Z] [2018-01] Pobieram zamówienia...
+[ETL] start — 156 line-items, source: historical-2018-01
+[ETL step 2] anonymizeAndVault OK — 156 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 156 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 66
+[ETL step 5] buildClientProfiles OK — 109 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 109, events: 156
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T11:35:01.242Z] [2018-01] ✅ zamówień: 111, klientów: 109, eventów: 156, niezmapowanych: 66
+[2026-03-24T11:35:01.242Z] [2018-02] Pobieram zamówienia...
+[2026-03-24T11:35:01.242Z] [2018-01] ✅ zamówień: 111, klientów: 109, eventów: 156, niezmapowanych: 66
+[2026-03-24T11:35:01.242Z] [2018-02] Pobieram zamówienia...
+[ETL] start — 336 line-items, source: historical-2018-02
+[ETL step 2] anonymizeAndVault OK — 336 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 336 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 173
+[ETL step 5] buildClientProfiles OK — 214 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 214, events: 336
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T11:38:10.178Z] [2018-02] ✅ zamówień: 215, klientów: 214, eventów: 336, niezmapowanych: 173
+[2026-03-24T11:38:10.178Z] [2018-02] ✅ zamówień: 215, klientów: 214, eventów: 336, niezmapowanych: 173
+[2026-03-24T11:38:10.179Z] [2018-03] Pobieram zamówienia...
+[2026-03-24T11:38:10.179Z] [2018-03] Pobieram zamówienia...
+[ETL] start — 573 line-items, source: historical-2018-03
+[ETL step 2] anonymizeAndVault OK — 573 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 573 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 219
+[ETL step 5] buildClientProfiles OK — 324 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 324, events: 573
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T11:41:59.380Z] [2018-03] ✅ zamówień: 332, klientów: 324, eventów: 573, niezmapowanych: 219
+[2026-03-24T11:41:59.380Z] [2018-03] ✅ zamówień: 332, klientów: 324, eventów: 573, niezmapowanych: 219
+[2026-03-24T11:41:59.381Z] [2018-04] Pobieram zamówienia...
+[2026-03-24T11:41:59.381Z] [2018-04] Pobieram zamówienia...
+[ETL] start — 661 line-items, source: historical-2018-04
+[ETL step 2] anonymizeAndVault OK — 661 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 661 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 252
+[ETL step 5] buildClientProfiles OK — 404 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 404, events: 661
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T11:45:40.850Z] [2018-04] ✅ zamówień: 412, klientów: 404, eventów: 661, niezmapowanych: 252
+[2026-03-24T11:45:40.850Z] [2018-04] ✅ zamówień: 412, klientów: 404, eventów: 661, niezmapowanych: 252
+[2026-03-24T11:45:40.851Z] [2018-05] Pobieram zamówienia...
+[2026-03-24T11:45:40.851Z] [2018-05] Pobieram zamówienia...
+[ETL] start — 600 line-items, source: historical-2018-05
+[ETL step 2] anonymizeAndVault OK — 600 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 600 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 231
+[ETL step 5] buildClientProfiles OK — 383 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 383, events: 600
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T11:49:15.546Z] [2018-05] ✅ zamówień: 387, klientów: 383, eventów: 600, niezmapowanych: 231
+[2026-03-24T11:49:15.546Z] [2018-05] ✅ zamówień: 387, klientów: 383, eventów: 600, niezmapowanych: 231
+[2026-03-24T11:49:15.546Z] [2018-06] Pobieram zamówienia...
+[2026-03-24T11:49:15.546Z] [2018-06] Pobieram zamówienia...
+[ETL] start — 637 line-items, source: historical-2018-06
+[ETL step 2] anonymizeAndVault OK — 637 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 637 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 223
+[ETL step 5] buildClientProfiles OK — 417 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 417, events: 637
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T11:53:02.346Z] [2018-06] ✅ zamówień: 425, klientów: 417, eventów: 637, niezmapowanych: 223
+[2026-03-24T11:53:02.346Z] [2018-06] ✅ zamówień: 425, klientów: 417, eventów: 637, niezmapowanych: 223
+[2026-03-24T11:53:02.347Z] [2018-07] Pobieram zamówienia...
+[2026-03-24T11:53:02.347Z] [2018-07] Pobieram zamówienia...
+[ETL] start — 469 line-items, source: historical-2018-07
+[ETL step 2] anonymizeAndVault OK — 469 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 469 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 175
+[ETL step 5] buildClientProfiles OK — 301 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 301, events: 469
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T11:56:44.732Z] [2018-07] ✅ zamówień: 303, klientów: 301, eventów: 469, niezmapowanych: 175
+[2026-03-24T11:56:44.732Z] [2018-07] ✅ zamówień: 303, klientów: 301, eventów: 469, niezmapowanych: 175
+[2026-03-24T11:56:44.733Z] [2018-08] Pobieram zamówienia...
+[2026-03-24T11:56:44.733Z] [2018-08] Pobieram zamówienia...
+[ETL] start — 821 line-items, source: historical-2018-08
+[ETL step 2] anonymizeAndVault OK — 821 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 821 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 279
+[ETL step 5] buildClientProfiles OK — 457 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 457, events: 821
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T12:01:13.995Z] [2018-08] ✅ zamówień: 461, klientów: 457, eventów: 821, niezmapowanych: 279
+[2026-03-24T12:01:13.995Z] [2018-08] ✅ zamówień: 461, klientów: 457, eventów: 821, niezmapowanych: 279
+[2026-03-24T12:01:13.996Z] [2018-09] Pobieram zamówienia...
+[2026-03-24T12:01:13.996Z] [2018-09] Pobieram zamówienia...
+[ETL] start — 954 line-items, source: historical-2018-09
+[ETL step 2] anonymizeAndVault OK — 954 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 954 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 384
+[ETL step 5] buildClientProfiles OK — 516 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 516, events: 954
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T12:05:24.696Z] [2018-09] ✅ zamówień: 528, klientów: 516, eventów: 954, niezmapowanych: 384
+[2026-03-24T12:05:24.697Z] [2018-10] Pobieram zamówienia...
+[2026-03-24T12:05:24.696Z] [2018-09] ✅ zamówień: 528, klientów: 516, eventów: 954, niezmapowanych: 384
+[2026-03-24T12:05:24.697Z] [2018-10] Pobieram zamówienia...
+[ETL] start — 1247 line-items, source: historical-2018-10
+[ETL step 2] anonymizeAndVault OK — 1247 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 1247 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 382
+[ETL step 5] buildClientProfiles OK — 639 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 639, events: 1247
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T12:10:41.258Z] [2018-10] ✅ zamówień: 653, klientów: 639, eventów: 1247, niezmapowanych: 382
+[2026-03-24T12:10:41.258Z] [2018-11] Pobieram zamówienia...
+[2026-03-24T12:10:41.258Z] [2018-10] ✅ zamówień: 653, klientów: 639, eventów: 1247, niezmapowanych: 382
+[2026-03-24T12:10:41.258Z] [2018-11] Pobieram zamówienia...
+[ETL] start — 1947 line-items, source: historical-2018-11
+[ETL step 2] anonymizeAndVault OK — 1947 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 1947 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 685
+[ETL step 5] buildClientProfiles OK — 908 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 908, events: 1947
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T12:16:36.147Z] [2018-11] ✅ zamówień: 943, klientów: 908, eventów: 1947, niezmapowanych: 685
+[2026-03-24T12:16:36.147Z] [2018-11] ✅ zamówień: 943, klientów: 908, eventów: 1947, niezmapowanych: 685
+[2026-03-24T12:16:36.147Z] [2018-12] Pobieram zamówienia...
+[2026-03-24T12:16:36.147Z] [2018-12] Pobieram zamówienia...
+[ETL] start — 3404 line-items, source: historical-2018-12
+[ETL step 2] anonymizeAndVault OK — 3404 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 3404 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 1163
+[ETL step 5] buildClientProfiles OK — 1605 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1605, events: 3404
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T12:25:55.760Z] [2018-12] ✅ zamówień: 1664, klientów: 1605, eventów: 3404, niezmapowanych: 1163
+[2026-03-24T12:25:55.760Z] [2018-12] ✅ zamówień: 1664, klientów: 1605, eventów: 3404, niezmapowanych: 1163
+[2026-03-24T12:25:55.761Z] [2019-01] Pobieram zamówienia...
+[2026-03-24T12:25:55.761Z] [2019-01] Pobieram zamówienia...
+[ETL] start — 1173 line-items, source: historical-2019-01
+[ETL step 2] anonymizeAndVault OK — 1173 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 1173 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 446
+[ETL step 5] buildClientProfiles OK — 577 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 577, events: 1173
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T12:30:39.671Z] [2019-01] ✅ zamówień: 596, klientów: 577, eventów: 1173, niezmapowanych: 446
+[2026-03-24T12:30:39.671Z] [2019-02] Pobieram zamówienia...
+[2026-03-24T12:30:39.671Z] [2019-01] ✅ zamówień: 596, klientów: 577, eventów: 1173, niezmapowanych: 446
+[2026-03-24T12:30:39.671Z] [2019-02] Pobieram zamówienia...
+[ETL] start — 1104 line-items, source: historical-2019-02
+[ETL step 2] anonymizeAndVault OK — 1104 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 1104 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 673
+[ETL step 5] buildClientProfiles OK — 575 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 575, events: 1104
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T12:36:04.994Z] [2019-02] ✅ zamówień: 594, klientów: 575, eventów: 1104, niezmapowanych: 673
+[2026-03-24T12:36:04.994Z] [2019-02] ✅ zamówień: 594, klientów: 575, eventów: 1104, niezmapowanych: 673
+[2026-03-24T12:36:04.995Z] [2019-03] Pobieram zamówienia...
+[2026-03-24T12:36:04.995Z] [2019-03] Pobieram zamówienia...
+[ETL] start — 986 line-items, source: historical-2019-03
+[ETL step 2] anonymizeAndVault OK — 986 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 986 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 609
+[ETL step 5] buildClientProfiles OK — 491 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 491, events: 986
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T12:41:00.547Z] [2019-03] ✅ zamówień: 509, klientów: 491, eventów: 986, niezmapowanych: 609
+[2026-03-24T12:41:00.547Z] [2019-03] ✅ zamówień: 509, klientów: 491, eventów: 986, niezmapowanych: 609
+[2026-03-24T12:41:00.548Z] [2019-04] Pobieram zamówienia...
+[2026-03-24T12:41:00.548Z] [2019-04] Pobieram zamówienia...
+[2026-03-24T12:43:32.841Z]   ⚠ order-products 11122 — próba 1/3, retry za 1000ms: order-products 11122 (500): 
+[2026-03-24T12:43:32.841Z]   ⚠ order-products 11122 — próba 1/3, retry za 1000ms: order-products 11122 (500): 
+[ETL] start — 1148 line-items, source: historical-2019-04
+[ETL step 2] anonymizeAndVault OK — 1148 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 1148 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 624
+[ETL step 5] buildClientProfiles OK — 604 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 604, events: 1148
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T12:46:29.472Z] [2019-04] ✅ zamówień: 614, klientów: 604, eventów: 1148, niezmapowanych: 624
+[2026-03-24T12:46:29.472Z] [2019-05] Pobieram zamówienia...
+[2026-03-24T12:46:29.472Z] [2019-04] ✅ zamówień: 614, klientów: 604, eventów: 1148, niezmapowanych: 624
+[2026-03-24T12:46:29.472Z] [2019-05] Pobieram zamówienia...
+[ETL] start — 914 line-items, source: historical-2019-05
+[ETL step 2] anonymizeAndVault OK — 914 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 914 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 491
+[ETL step 5] buildClientProfiles OK — 448 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 448, events: 914
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T12:51:12.439Z] [2019-05] ✅ zamówień: 461, klientów: 448, eventów: 914, niezmapowanych: 491
+[2026-03-24T12:51:12.439Z] [2019-05] ✅ zamówień: 461, klientów: 448, eventów: 914, niezmapowanych: 491
+[2026-03-24T12:51:12.440Z] [2019-06] Pobieram zamówienia...
+[2026-03-24T12:51:12.440Z] [2019-06] Pobieram zamówienia...
+[ETL] start — 1008 line-items, source: historical-2019-06
+[ETL step 2] anonymizeAndVault OK — 1008 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 1008 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 552
+[ETL step 5] buildClientProfiles OK — 583 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 583, events: 1008
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T12:56:26.984Z] [2019-06] ✅ zamówień: 597, klientów: 583, eventów: 1008, niezmapowanych: 552
+[2026-03-24T12:56:26.985Z] [2019-07] Pobieram zamówienia...
+[2026-03-24T12:56:26.984Z] [2019-06] ✅ zamówień: 597, klientów: 583, eventów: 1008, niezmapowanych: 552
+[2026-03-24T12:56:26.985Z] [2019-07] Pobieram zamówienia...
+[ETL] start — 864 line-items, source: historical-2019-07
+[ETL step 2] anonymizeAndVault OK — 864 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 864 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 497
+[ETL step 5] buildClientProfiles OK — 448 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 448, events: 864
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T13:01:07.352Z] [2019-07] ✅ zamówień: 461, klientów: 448, eventów: 864, niezmapowanych: 497
+[2026-03-24T13:01:07.352Z] [2019-07] ✅ zamówień: 461, klientów: 448, eventów: 864, niezmapowanych: 497
+[2026-03-24T13:01:07.354Z] [2019-08] Pobieram zamówienia...
+[2026-03-24T13:01:07.354Z] [2019-08] Pobieram zamówienia...
+[ETL] start — 993 line-items, source: historical-2019-08
+[ETL step 2] anonymizeAndVault OK — 993 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 993 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 563
+[ETL step 5] buildClientProfiles OK — 516 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 516, events: 993
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T13:06:24.327Z] [2019-08] ✅ zamówień: 532, klientów: 516, eventów: 993, niezmapowanych: 563
+[2026-03-24T13:06:24.327Z] [2019-08] ✅ zamówień: 532, klientów: 516, eventów: 993, niezmapowanych: 563
+[2026-03-24T13:06:24.328Z] [2019-09] Pobieram zamówienia...
+[2026-03-24T13:06:24.328Z] [2019-09] Pobieram zamówienia...
+[ETL] start — 1100 line-items, source: historical-2019-09
+[ETL step 2] anonymizeAndVault OK — 1100 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 1100 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 688
+[ETL step 5] buildClientProfiles OK — 561 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 561, events: 1100
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T13:10:50.465Z] [2019-09] ✅ zamówień: 570, klientów: 561, eventów: 1100, niezmapowanych: 688
+[2026-03-24T13:10:50.465Z] [2019-09] ✅ zamówień: 570, klientów: 561, eventów: 1100, niezmapowanych: 688
+[2026-03-24T13:10:50.466Z] [2019-10] Pobieram zamówienia...
+[2026-03-24T13:10:50.466Z] [2019-10] Pobieram zamówienia...
+[ETL] start — 1419 line-items, source: historical-2019-10
+[ETL step 2] anonymizeAndVault OK — 1419 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 1419 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 874
+[ETL step 5] buildClientProfiles OK — 675 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 675, events: 1419
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T13:17:46.256Z] [2019-10] ✅ zamówień: 698, klientów: 675, eventów: 1419, niezmapowanych: 874
+[2026-03-24T13:17:46.256Z] [2019-11] Pobieram zamówienia...
+[2026-03-24T13:17:46.256Z] [2019-10] ✅ zamówień: 698, klientów: 675, eventów: 1419, niezmapowanych: 874
+[2026-03-24T13:17:46.256Z] [2019-11] Pobieram zamówienia...
+[ETL] start — 3122 line-items, source: historical-2019-11
+[ETL step 2] anonymizeAndVault OK — 3122 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 3122 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 1916
+[ETL step 5] buildClientProfiles OK — 1406 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1406, events: 3122
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T13:25:40.352Z] [2019-11] ✅ zamówień: 1445, klientów: 1406, eventów: 3122, niezmapowanych: 1916
+[2026-03-24T13:25:40.352Z] [2019-11] ✅ zamówień: 1445, klientów: 1406, eventów: 3122, niezmapowanych: 1916
+[2026-03-24T13:25:40.353Z] [2019-12] Pobieram zamówienia...
+[2026-03-24T13:25:40.353Z] [2019-12] Pobieram zamówienia...
+[ETL] start — 5749 line-items, source: historical-2019-12
+[ETL step 2] anonymizeAndVault OK — 5749 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 5749 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 3448
+[ETL step 5] buildClientProfiles OK — 2601 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 2601, events: 5749
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T13:41:17.631Z] [2019-12] ✅ zamówień: 2666, klientów: 2601, eventów: 5749, niezmapowanych: 3448
+[2026-03-24T13:41:17.631Z] [2019-12] ✅ zamówień: 2666, klientów: 2601, eventów: 5749, niezmapowanych: 3448
+[2026-03-24T13:41:17.632Z] [2020-01] Pobieram zamówienia...
+[2026-03-24T13:41:17.632Z] [2020-01] Pobieram zamówienia...
+[ETL] start — 1405 line-items, source: historical-2020-01
+[ETL step 2] anonymizeAndVault OK — 1405 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 1405 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 826
+[ETL step 5] buildClientProfiles OK — 706 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 706, events: 1405
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T13:47:41.149Z] [2020-01] ✅ zamówień: 726, klientów: 706, eventów: 1405, niezmapowanych: 826
+[2026-03-24T13:47:41.149Z] [2020-01] ✅ zamówień: 726, klientów: 706, eventów: 1405, niezmapowanych: 826
+[2026-03-24T13:47:41.149Z] [2020-02] Pobieram zamówienia...
+[2026-03-24T13:47:41.149Z] [2020-02] Pobieram zamówienia...
+[ETL] start — 2229 line-items, source: historical-2020-02
+[ETL step 2] anonymizeAndVault OK — 2229 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 2229 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 1314
+[ETL step 5] buildClientProfiles OK — 1097 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1097, events: 2229
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T13:54:27.693Z] [2020-02] ✅ zamówień: 1129, klientów: 1097, eventów: 2229, niezmapowanych: 1314
+[2026-03-24T13:54:27.693Z] [2020-02] ✅ zamówień: 1129, klientów: 1097, eventów: 2229, niezmapowanych: 1314
+[2026-03-24T13:54:27.694Z] [2020-03] Pobieram zamówienia...
+[2026-03-24T13:54:27.694Z] [2020-03] Pobieram zamówienia...
+[ETL] start — 1507 line-items, source: historical-2020-03
+[ETL step 2] anonymizeAndVault OK — 1507 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 1507 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 791
+[ETL step 5] buildClientProfiles OK — 771 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 771, events: 1507
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T13:59:53.350Z] [2020-03] ✅ zamówień: 785, klientów: 771, eventów: 1507, niezmapowanych: 791
+[2026-03-24T13:59:53.350Z] [2020-03] ✅ zamówień: 785, klientów: 771, eventów: 1507, niezmapowanych: 791
+[2026-03-24T13:59:53.351Z] [2020-04] Pobieram zamówienia...
+[2026-03-24T13:59:53.351Z] [2020-04] Pobieram zamówienia...
+[ETL] start — 1473 line-items, source: historical-2020-04
+[ETL step 2] anonymizeAndVault OK — 1473 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 1473 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 834
+[ETL step 5] buildClientProfiles OK — 702 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 702, events: 1473
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T14:06:18.997Z] [2020-04] ✅ zamówień: 722, klientów: 702, eventów: 1473, niezmapowanych: 834
+[2026-03-24T14:06:18.997Z] [2020-04] ✅ zamówień: 722, klientów: 702, eventów: 1473, niezmapowanych: 834
+[2026-03-24T14:06:18.997Z] [2020-05] Pobieram zamówienia...
+[2026-03-24T14:06:18.997Z] [2020-05] Pobieram zamówienia...
+[ETL] start — 2541 line-items, source: historical-2020-05
+[ETL step 2] anonymizeAndVault OK — 2541 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 2541 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 1304
+[ETL step 5] buildClientProfiles OK — 1136 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1136, events: 2541
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T14:14:53.678Z] [2020-05] ✅ zamówień: 1181, klientów: 1136, eventów: 2541, niezmapowanych: 1304
+[2026-03-24T14:14:53.678Z] [2020-05] ✅ zamówień: 1181, klientów: 1136, eventów: 2541, niezmapowanych: 1304
+[2026-03-24T14:14:53.679Z] [2020-06] Pobieram zamówienia...
+[2026-03-24T14:14:53.679Z] [2020-06] Pobieram zamówienia...
+[ETL] start — 1567 line-items, source: historical-2020-06
+[ETL step 2] anonymizeAndVault OK — 1567 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 1567 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 722
+[ETL step 5] buildClientProfiles OK — 802 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 802, events: 1567
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T14:20:42.172Z] [2020-06] ✅ zamówień: 838, klientów: 802, eventów: 1567, niezmapowanych: 722
+[2026-03-24T14:20:42.172Z] [2020-06] ✅ zamówień: 838, klientów: 802, eventów: 1567, niezmapowanych: 722
+[2026-03-24T14:20:42.173Z] [2020-07] Pobieram zamówienia...
+[2026-03-24T14:20:42.173Z] [2020-07] Pobieram zamówienia...
+[ETL] start — 2285 line-items, source: historical-2020-07
+[ETL step 2] anonymizeAndVault OK — 2285 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 2285 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 1178
+[ETL step 5] buildClientProfiles OK — 939 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 939, events: 2285
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T14:27:01.894Z] [2020-07] ✅ zamówień: 968, klientów: 939, eventów: 2285, niezmapowanych: 1178
+[2026-03-24T14:27:01.895Z] [2020-08] Pobieram zamówienia...
+[2026-03-24T14:27:01.894Z] [2020-07] ✅ zamówień: 968, klientów: 939, eventów: 2285, niezmapowanych: 1178
+[2026-03-24T14:27:01.895Z] [2020-08] Pobieram zamówienia...
+[ETL] start — 1749 line-items, source: historical-2020-08
+[ETL step 2] anonymizeAndVault OK — 1749 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 1749 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 937
+[ETL step 5] buildClientProfiles OK — 794 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 794, events: 1749
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T14:33:51.171Z] [2020-08] ✅ zamówień: 821, klientów: 794, eventów: 1749, niezmapowanych: 937
+[2026-03-24T14:33:51.171Z] [2020-08] ✅ zamówień: 821, klientów: 794, eventów: 1749, niezmapowanych: 937
+[2026-03-24T14:33:51.173Z] [2020-09] Pobieram zamówienia...
+[2026-03-24T14:33:51.173Z] [2020-09] Pobieram zamówienia...
+[2026-03-24T14:41:20.909Z]   ⚠ order-products 28842 — próba 1/3, retry za 1000ms: order-products 28842 (500): 
+[2026-03-24T14:41:20.909Z]   ⚠ order-products 28842 — próba 1/3, retry za 1000ms: order-products 28842 (500): 
+[ETL] start — 3691 line-items, source: historical-2020-09
+[ETL step 2] anonymizeAndVault OK — 3691 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 3691 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 1995
+[ETL step 5] buildClientProfiles OK — 1509 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1509, events: 3691
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T14:44:23.785Z] [2020-09] ✅ zamówień: 1548, klientów: 1509, eventów: 3691, niezmapowanych: 1995
+[2026-03-24T14:44:23.785Z] [2020-09] ✅ zamówień: 1548, klientów: 1509, eventów: 3691, niezmapowanych: 1995
+[2026-03-24T14:44:23.786Z] [2020-10] Pobieram zamówienia...
+[2026-03-24T14:44:23.786Z] [2020-10] Pobieram zamówienia...
+[ETL] start — 5477 line-items, source: historical-2020-10
+[ETL step 2] anonymizeAndVault OK — 5477 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 5477 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 2812
+[ETL step 5] buildClientProfiles OK — 2108 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 2108, events: 5477
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T14:58:15.735Z] [2020-10] ✅ zamówień: 2185, klientów: 2108, eventów: 5477, niezmapowanych: 2812
+[2026-03-24T14:58:15.735Z] [2020-10] ✅ zamówień: 2185, klientów: 2108, eventów: 5477, niezmapowanych: 2812
+[2026-03-24T14:58:15.736Z] [2020-11] Pobieram zamówienia...
+[2026-03-24T14:58:15.736Z] [2020-11] Pobieram zamówienia...
+[ETL] start — 10101 line-items, source: historical-2020-11
+[ETL step 2] anonymizeAndVault OK — 10101 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 10101 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 5338
+[ETL step 5] buildClientProfiles OK — 3423 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 3423, events: 10101
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T15:15:27.922Z] [2020-11] ✅ zamówień: 3561, klientów: 3423, eventów: 10101, niezmapowanych: 5338
+[2026-03-24T15:15:27.922Z] [2020-11] ✅ zamówień: 3561, klientów: 3423, eventów: 10101, niezmapowanych: 5338
+[2026-03-24T15:15:27.923Z] [2020-12] Pobieram zamówienia...
+[2026-03-24T15:15:27.923Z] [2020-12] Pobieram zamówienia...
+[ETL] start — 11376 line-items, source: historical-2020-12
+[ETL step 2] anonymizeAndVault OK — 11376 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 11376 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 5872
+[ETL step 5] buildClientProfiles OK — 4518 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 4518, events: 11376
+[ETL step 8] refresh_crm_views OK
+[ETL step 9] runSanityChecks OK
+[2026-03-24T15:41:33.067Z] [2020-12] ✅ zamówień: 4693, klientów: 4518, eventów: 11376, niezmapowanych: 5872
+[2026-03-24T15:41:33.068Z] [2021-01] Pobieram zamówienia...
+[2026-03-24T15:41:33.067Z] [2020-12] ✅ zamówień: 4693, klientów: 4518, eventów: 11376, niezmapowanych: 5872
+[2026-03-24T15:41:33.068Z] [2021-01] Pobieram zamówienia...
+[ETL] start — 3998 line-items, source: historical-2021-01
+[ETL step 2] anonymizeAndVault OK — 3998 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 3998 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 2099
+[ETL step 5] buildClientProfiles OK — 1746 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1746, events: 3998
+[ETL step 8] refresh_crm_views OK
+[ETL step 9] runSanityChecks OK
+[2026-03-24T15:52:35.169Z] [2021-01] ✅ zamówień: 1797, klientów: 1746, eventów: 3998, niezmapowanych: 2099
+[2026-03-24T15:52:35.169Z] [2021-01] ✅ zamówień: 1797, klientów: 1746, eventów: 3998, niezmapowanych: 2099
+[2026-03-24T15:52:35.169Z] [2021-02] Pobieram zamówienia...
+[2026-03-24T15:52:35.169Z] [2021-02] Pobieram zamówienia...
+[ETL] start — 4486 line-items, source: historical-2021-02
+[ETL step 2] anonymizeAndVault OK — 4486 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 4486 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 2599
+[ETL step 5] buildClientProfiles OK — 1870 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1870, events: 4486
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T16:05:24.546Z] [2021-02] ✅ zamówień: 1943, klientów: 1870, eventów: 4486, niezmapowanych: 2599
+[2026-03-24T16:05:24.546Z] [2021-02] ✅ zamówień: 1943, klientów: 1870, eventów: 4486, niezmapowanych: 2599
+[2026-03-24T16:05:24.546Z] [2021-03] Pobieram zamówienia...
+[2026-03-24T16:05:24.546Z] [2021-03] Pobieram zamówienia...
+[2026-03-24T16:10:30.978Z]   ⚠ order-products 45134 — próba 1/3, retry za 1000ms: order-products 45134 (500): 
+[2026-03-24T16:10:30.978Z]   ⚠ order-products 45134 — próba 1/3, retry za 1000ms: order-products 45134 (500): 
+[ETL] start — 3759 line-items, source: historical-2021-03
+[ETL step 2] anonymizeAndVault OK — 3759 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 3759 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 2084
+[ETL step 5] buildClientProfiles OK — 1515 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1515, events: 3759
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T16:16:11.718Z] [2021-03] ✅ zamówień: 1572, klientów: 1515, eventów: 3759, niezmapowanych: 2084
+[2026-03-24T16:16:11.718Z] [2021-03] ✅ zamówień: 1572, klientów: 1515, eventów: 3759, niezmapowanych: 2084
+[2026-03-24T16:16:11.719Z] [2021-04] Pobieram zamówienia...
+[2026-03-24T16:16:11.719Z] [2021-04] Pobieram zamówienia...
+[ETL] start — 4330 line-items, source: historical-2021-04
+[ETL step 2] anonymizeAndVault OK — 4330 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 4330 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 2418
+[ETL step 5] buildClientProfiles OK — 1646 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1646, events: 4330
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T16:25:56.000Z] [2021-04] ✅ zamówień: 1692, klientów: 1646, eventów: 4330, niezmapowanych: 2418
+[2026-03-24T16:25:56.000Z] [2021-04] ✅ zamówień: 1692, klientów: 1646, eventów: 4330, niezmapowanych: 2418
+[2026-03-24T16:25:56.001Z] [2021-05] Pobieram zamówienia...
+[2026-03-24T16:25:56.001Z] [2021-05] Pobieram zamówienia...
+[ETL] start — 3765 line-items, source: historical-2021-05
+[ETL step 2] anonymizeAndVault OK — 3765 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 3765 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 2037
+[ETL step 5] buildClientProfiles OK — 1540 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1540, events: 3765
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T16:35:28.429Z] [2021-05] ✅ zamówień: 1588, klientów: 1540, eventów: 3765, niezmapowanych: 2037
+[2026-03-24T16:35:28.430Z] [2021-06] Pobieram zamówienia...
+[2026-03-24T16:35:28.429Z] [2021-05] ✅ zamówień: 1588, klientów: 1540, eventów: 3765, niezmapowanych: 2037
+[2026-03-24T16:35:28.430Z] [2021-06] Pobieram zamówienia...
+[2026-03-24T16:41:31.839Z]   ⚠ order-products 50644 — próba 1/3, retry za 1000ms: order-products 50644 (500): 
+[2026-03-24T16:41:31.839Z]   ⚠ order-products 50644 — próba 1/3, retry za 1000ms: order-products 50644 (500): 
+[ETL] start — 3516 line-items, source: historical-2021-06
+[ETL step 2] anonymizeAndVault OK — 3516 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 3516 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 2154
+[ETL step 5] buildClientProfiles OK — 1569 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1569, events: 3516
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T16:46:40.299Z] [2021-06] ✅ zamówień: 1623, klientów: 1569, eventów: 3516, niezmapowanych: 2154
+[2026-03-24T16:46:40.299Z] [2021-06] ✅ zamówień: 1623, klientów: 1569, eventów: 3516, niezmapowanych: 2154
+[2026-03-24T16:46:40.300Z] [2021-07] Pobieram zamówienia...
+[2026-03-24T16:46:40.300Z] [2021-07] Pobieram zamówienia...
+[ETL] start — 3458 line-items, source: historical-2021-07
+[ETL step 2] anonymizeAndVault OK — 3458 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 3458 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 2029
+[ETL step 5] buildClientProfiles OK — 1343 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1343, events: 3458
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T16:55:40.988Z] [2021-07] ✅ zamówień: 1379, klientów: 1343, eventów: 3458, niezmapowanych: 2029
+[2026-03-24T16:55:40.988Z] [2021-07] ✅ zamówień: 1379, klientów: 1343, eventów: 3458, niezmapowanych: 2029
+[2026-03-24T16:55:40.988Z] [2021-08] Pobieram zamówienia...
+[2026-03-24T16:55:40.988Z] [2021-08] Pobieram zamówienia...
+[ETL] start — 2384 line-items, source: historical-2021-08
+[ETL step 2] anonymizeAndVault OK — 2384 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 2384 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 1290
+[ETL step 5] buildClientProfiles OK — 1069 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1069, events: 2384
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T17:03:09.734Z] [2021-08] ✅ zamówień: 1090, klientów: 1069, eventów: 2384, niezmapowanych: 1290
+[2026-03-24T17:03:09.734Z] [2021-08] ✅ zamówień: 1090, klientów: 1069, eventów: 2384, niezmapowanych: 1290
+[2026-03-24T17:03:09.735Z] [2021-09] Pobieram zamówienia...
+[2026-03-24T17:03:09.735Z] [2021-09] Pobieram zamówienia...
+[ETL] start — 3623 line-items, source: historical-2021-09
+[ETL step 2] anonymizeAndVault OK — 3623 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 3623 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 2096
+[ETL step 5] buildClientProfiles OK — 1596 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1596, events: 3623
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T17:14:37.540Z] [2021-09] ✅ zamówień: 1630, klientów: 1596, eventów: 3623, niezmapowanych: 2096
+[2026-03-24T17:14:37.541Z] [2021-10] Pobieram zamówienia...
+[2026-03-24T17:14:37.540Z] [2021-09] ✅ zamówień: 1630, klientów: 1596, eventów: 3623, niezmapowanych: 2096
+[2026-03-24T17:14:37.541Z] [2021-10] Pobieram zamówienia...
+[ETL] start — 3748 line-items, source: historical-2021-10
+[ETL step 2] anonymizeAndVault OK — 3748 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 3748 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 2176
+[ETL step 5] buildClientProfiles OK — 1613 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 1613, events: 3748
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T17:26:04.132Z] [2021-10] ✅ zamówień: 1657, klientów: 1613, eventów: 3748, niezmapowanych: 2176
+[2026-03-24T17:26:04.133Z] [2021-11] Pobieram zamówienia...
+[2026-03-24T17:26:04.132Z] [2021-10] ✅ zamówień: 1657, klientów: 1613, eventów: 3748, niezmapowanych: 2176
+[2026-03-24T17:26:04.133Z] [2021-11] Pobieram zamówienia...
+[2026-03-24T17:39:52.699Z]   ⚠ order-products 60491 — próba 1/3, retry za 1000ms: order-products 60491 (500): 
+[2026-03-24T17:39:52.699Z]   ⚠ order-products 60491 — próba 1/3, retry za 1000ms: order-products 60491 (500): 
+[ETL] start — 12457 line-items, source: historical-2021-11
+[ETL step 2] anonymizeAndVault OK — 12457 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 12457 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 6371
+[ETL step 5] buildClientProfiles OK — 3957 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 3957, events: 12457
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T17:48:19.943Z] [2021-11] ✅ zamówień: 4123, klientów: 3957, eventów: 12457, niezmapowanych: 6371
+[2026-03-24T17:48:19.944Z] [2021-12] Pobieram zamówienia...
+[2026-03-24T17:48:19.943Z] [2021-11] ✅ zamówień: 4123, klientów: 3957, eventów: 12457, niezmapowanych: 6371
+[2026-03-24T17:48:19.944Z] [2021-12] Pobieram zamówienia...
+[2026-03-24T18:02:55.236Z]   ⚠ order-products 66111 — próba 1/3, retry za 1000ms: order-products 66111 (500): 
+[2026-03-24T18:02:55.236Z]   ⚠ order-products 66111 — próba 1/3, retry za 1000ms: order-products 66111 (500): 
+[2026-03-24T18:08:01.064Z]   ⚠ order-products 67400 — próba 1/3, retry za 1000ms: order-products 67400 (500): 
+[2026-03-24T18:08:01.064Z]   ⚠ order-products 67400 — próba 1/3, retry za 1000ms: order-products 67400 (500): 
+[ETL] start — 14665 line-items, source: historical-2021-12
+[ETL step 2] anonymizeAndVault OK — 14665 items
+[ETL step 3] mapWorldsAndTaxonomy OK — 14665 items
+[ETL step 3.5] assignPromoAndNewProduct OK
+[ETL step 4] assignOccasion OK
+[ETL] unmapped products: 8018
+[ETL step 5] buildClientProfiles OK — 5455 clients
+[ETL step 6] segmentClients OK
+[ETL step 7] upsertToSupabase OK — clients: 5455, events: 14665
+[ETL step 8] refresh_crm_views OK
+[sanity] LTV recalculate failed: recalculateAllLTV fetch events error: TypeError: fetch failed
+[ETL step 9] runSanityChecks OK
+[2026-03-24T18:12:45.882Z] [2021-12] ✅ zamówień: 5683, klientów: 5455, eventów: 14665, niezmapowanych: 8018
+[2026-03-24T18:12:45.882Z] [2021-12] ✅ zamówień: 5683, klientów: 5455, eventów: 14665, niezmapowanych: 8018
+[2026-03-24T18:12:45.883Z] Przeliczam LTV dla całej bazy...
+[2026-03-24T18:12:45.883Z] Przeliczam LTV dla całej bazy...
+[2026-03-24T18:12:54.139Z] ❌ LTV error: canceling statement due to statement timeout
+[2026-03-24T18:12:54.139Z] 
+══════════════════════════════════════════════
+[2026-03-24T18:12:54.139Z]   PODSUMOWANIE IMPORTU HISTORYCZNEGO 2017-2021
+[2026-03-24T18:12:54.139Z] ══════════════════════════════════════════════
+[2026-03-24T18:12:54.139Z]   Zamówień przetworzonych: 61729
+[2026-03-24T18:12:54.139Z]   Klientów zaktualizowanych: 59792
+[2026-03-24T18:12:54.139Z] ══════════════════════════════════════════════
+
+[2026-03-24T18:12:54.139Z] ❌ LTV error: canceling statement due to statement timeout
+[2026-03-24T18:12:54.139Z] 
+══════════════════════════════════════════════
+[2026-03-24T18:12:54.139Z]   PODSUMOWANIE IMPORTU HISTORYCZNEGO 2017-2021
+[2026-03-24T18:12:54.139Z] ══════════════════════════════════════════════
+[2026-03-24T18:12:54.139Z]   Zamówień przetworzonych: 61729
+[2026-03-24T18:12:54.139Z]   Klientów zaktualizowanych: 59792
+[2026-03-24T18:12:54.139Z] ══════════════════════════════════════════════
+
