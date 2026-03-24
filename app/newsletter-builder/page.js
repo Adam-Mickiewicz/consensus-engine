@@ -11,7 +11,7 @@ import Nav from "../components/Nav";
 
 function generateHeadingHTML(h) {
   const fontImport = h.fontFamily.includes("Playfair")
-    ? `<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">`
+    ? `<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">`
     : h.fontFamily.includes("DM Serif")
     ? `<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">`
     : h.fontFamily.includes("Open Sans")
@@ -30,16 +30,16 @@ const defaultHeading = {
   subtextColor: "#000000",
   subtextMarginTop: 8,
   fontFamily: "'Playfair Display', serif",
-  fontSize: 28,
+  fontSize: 26,
   fontWeight: "700",
   color: "#000000",
   textAlign: "center",
-  lineHeight: 1.3,
+  lineHeight: 1.1,
   letterSpacing: 0,
   paddingTop: 16,
   paddingBottom: 16,
   paddingH: 24,
-  marginBottom: 0,
+  marginBottom: 12,
 };
 
 function generateTextBlockHTML(text) {
@@ -852,12 +852,12 @@ const defaultPromo = {
   badge: "+Promo",
   badgeBg: "#1a1a1a",
   badgeColor: "#ffffff",
-  badgeRadius: 20,
-  badgeFontFamily: "arial, helvetica, sans-serif",
+  badgeRadius: 15,
+  badgeFontFamily: "'Open Sans', sans-serif",
   badgeFontSize: 11,
   badgeLetterSpacing: 0,
   badgePaddingTop: 0,
-  badgePaddingBottom: 10,
+  badgePaddingBottom: 5,
   // Nagłówek
   headline: "15% extra na początek wiosny 🌸",
   headlineFontFamily: "'Playfair Display', serif",
@@ -865,27 +865,27 @@ const defaultPromo = {
   headlineFontWeight: "700",
   headlineColor: "#1a1a1a",
   headlineLetterSpacing: 0,
-  headlinePaddingBottom: 6,
+  headlinePaddingBottom: 12,
   // Podtytuł
   subtitleShow: true,
   subtitle: "Przy zamówieniu za min 200 zł",
-  subtitleFontFamily: "'Open Sans', sans-serif",
+  subtitleFontFamily: "'Playfair Display', serif",
   subtitleFontSize: 15,
   subtitleFontWeight: "400",
   subtitleColor: "#444444",
   subtitleLetterSpacing: 0,
-  subtitlePaddingBottom: 14,
+  subtitlePaddingBottom: 6,
   // Kod promo
   promoCodeShow: true,
   promoCodeLabel: "z kodem*:",
   promoCode: "WIOSNA15",
-  promoCodeFontSize: 22,
+  promoCodeFontSize: 24,
   promoCodeFontWeight: "700",
   promoCodeColor: "#1a1a1a",
   promoCodeLabelColor: "#888888",
   promoCodeFontFamily: "arial, helvetica, sans-serif",
   promoCodeLetterSpacing: 2,
-  promoCodePaddingBottom: 16,
+  promoCodePaddingBottom: 12,
   promoCodeBgShow: false,
   promoCodeBg: "#f5f2ee",
   promoCodeBgRadius: 8,
@@ -907,7 +907,7 @@ const defaultPromo = {
   buttonRadius: 12,
   buttonPaddingV: 12,
   buttonPaddingH: 48,
-  buttonPaddingBottom: 20,
+  buttonPaddingBottom: 24,
   // Padding główny
   paddingTop: 24,
   paddingBottom: 24,
@@ -964,11 +964,11 @@ function generatePromoHTML(p) {
 
   const badgeHTML = p.badgeShow ? `<p style="display:inline-block;background:${p.badgeBg};color:${p.badgeColor};font-family:${p.badgeFontFamily};font-size:${p.badgeFontSize}px;font-weight:700;letter-spacing:${p.badgeLetterSpacing}px;padding:3px 10px;border-radius:${p.badgeRadius}px;margin:${p.badgePaddingTop}px 0 ${p.badgePaddingBottom}px 0;">${p.badge}</p>` : "";
 
-  const headlineHTML = `<p style="font-family:${p.headlineFontFamily};font-size:${p.headlineFontSize}px;font-weight:${p.headlineFontWeight};color:${p.headlineColor};letter-spacing:${p.headlineLetterSpacing}px;margin:0 0 ${p.headlinePaddingBottom}px 0;line-height:1.3;">${p.headline}</p>`;
+  const headlineHTML = `<p style="font-family:${p.headlineFontFamily};font-size:${p.headlineFontSize}px;font-weight:${p.headlineFontWeight};color:${p.headlineColor};letter-spacing:${p.headlineLetterSpacing}px;margin:0 0 ${p.headlinePaddingBottom}px 0;line-height:1.1;">${p.headline}</p>`;
 
-  const subtitleHTML = p.subtitleShow ? `<p style="font-family:${p.subtitleFontFamily};font-size:${p.subtitleFontSize}px;font-weight:${p.subtitleFontWeight};color:${p.subtitleColor};letter-spacing:${p.subtitleLetterSpacing}px;margin:0 0 ${p.subtitlePaddingBottom}px 0;line-height:1.5;">${p.subtitle}</p>` : "";
+  const subtitleHTML = p.subtitleShow ? `<p style="font-family:${p.subtitleFontFamily};font-size:${p.subtitleFontSize}px;font-weight:${p.subtitleFontWeight};color:${p.subtitleColor};letter-spacing:${p.subtitleLetterSpacing}px;margin:0 0 ${p.subtitlePaddingBottom}px 0;line-height:1.3;">${p.subtitle}</p>` : "";
 
-  const promoLabel = p.promoCodeShow ? `<p style="font-family:${p.promoCodeFontFamily};font-size:12px;color:${p.promoCodeLabelColor};margin:0 0 4px 0;">${p.promoCodeLabel}</p>` : "";
+  const promoLabel = p.promoCodeShow ? `<p style="font-family:${p.promoCodeFontFamily};font-size:12px;color:${p.promoCodeLabelColor};margin:10px 0 0 0;">${p.promoCodeLabel}</p>` : "";
   const promoCode = p.promoCodeShow ? `<p style="font-family:${p.promoCodeFontFamily};font-size:${p.promoCodeFontSize}px;font-weight:${p.promoCodeFontWeight};color:${p.promoCodeColor};letter-spacing:${p.promoCodeLetterSpacing}px;margin:0;">${p.promoCode}</p>` : "";
   const promoCodeWrapped = p.promoCodeShow ? (p.promoCodeBgShow
     ? `<div style="display:inline-block;background:${p.promoCodeBg};border-radius:${p.promoCodeBgRadius}px;padding:${p.promoCodeBgPaddingV}px ${p.promoCodeBgPaddingH}px;min-width:${p.promoCodeBgMinWidth || 0}px;">${promoCode}</div>`
