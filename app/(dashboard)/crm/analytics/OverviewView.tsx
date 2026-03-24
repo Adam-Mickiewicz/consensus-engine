@@ -49,10 +49,8 @@ export default function OverviewView({ data }: { data: OverviewData }) {
     setRefreshing(true);
     setRefreshErr("");
     try {
-      const r1 = await fetch("/api/crm/recalculate-ltv", { method: "POST" });
-      if (!r1.ok) throw new Error("Błąd recalculate-ltv");
-      const r2 = await fetch("/api/crm/refresh-views", { method: "POST" });
-      if (!r2.ok) throw new Error("Błąd refresh-views");
+      const r = await fetch("/api/crm/refresh-views", { method: "POST" });
+      if (!r.ok) throw new Error("Błąd refresh-views");
       window.location.reload();
     } catch (e) {
       setRefreshErr(e instanceof Error ? e.message : "Błąd");

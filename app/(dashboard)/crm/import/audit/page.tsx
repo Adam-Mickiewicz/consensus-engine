@@ -908,26 +908,12 @@ export default function AuditPage() {
     setLtvState("loading");
     setLtvResult(null);
     setLtvError(null);
-    setLtvProgress("Przeliczam LTV...");
+    setLtvProgress("Przeliczam LTV... (może potrwać do 5 minut)");
     try {
-      let offset = 0;
-      let totalLtv = 0;
-      while (true) {
-        const res = await fetch("/api/crm/recalculate-ltv", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ offset }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Błąd serwera");
-        if (data.done) {
-          totalLtv = data.total_ltv ?? 0;
-          break;
-        }
-        offset = data.next_offset;
-        setLtvProgress(`Przeliczam LTV... ${offset.toLocaleString("pl-PL")} / 110 000 klientów`);
-      }
-      setLtvResult({ updated: 110000, total_ltv: totalLtv });
+      const res = await fetch("/api/crm/recalculate-ltv-full", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Błąd serwera");
+      setLtvResult({ updated: data.updated ?? 0, total_ltv: data.total_ltv ?? 0 });
       setLtvState("done");
       runProductionAudit();
     } catch (e) {
