@@ -1,0 +1,13 @@
+name: Deploy to Vercel
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy to Vercel
+        run: |
+          curl -X POST "https://api.vercel.com/v1/integrations/deploy/prj_NbYJ2DLCw2xk5tN2LAHNEQOL9NJv/${{ secrets.VERCEL_DEPLOY_HOOK }}"
