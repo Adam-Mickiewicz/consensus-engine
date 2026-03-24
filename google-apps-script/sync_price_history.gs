@@ -1,34 +1,25 @@
 /**
- * SYNC PROMOTIONS → Supabase
+ * SYNC PRICE HISTORY → Supabase
  * ─────────────────────────────────────────────────────────────
  * Instrukcja:
- *  1. Otwórz Google Sheets: Matryca_okazji
+ *  1. Otwórz Google Sheets: Matryca_cen
  *  2. W menu Rozszerzenia → Apps Script wklej ten plik
  *  3. Ustaw Script Properties:
  *       SYNC_SECRET  = twój tajny token (ten sam co w .env)
  *       VERCEL_URL   = consensus-engine-chi.vercel.app
- *  4. Uruchom setupTrigger() raz żeby aktywować automatyczną sync co 30 min
- *  5. Uruchom syncPromotions() ręcznie żeby przetestować
+ *  4. Uruchom setupTrigger() raz żeby aktywować automatyczną sync raz dziennie
+ *  5. Uruchom syncPriceHistory() ręcznie żeby przetestować
  * ─────────────────────────────────────────────────────────────
  */
 
-var SHEET_NAME = "PROMO_MATRIX";
+var SHEET_NAME = "Arkusz1";
 
 // Mapowanie nagłówków → klucze API (lowercase, trim)
 var COLUMN_MAP = {
-  "promo_name":     "promo_name",
-  "promo_type":     "promo_type",
-  "discount_type":  "discount_type",
-  "discount_value": "discount_value",
-  "category_list":  "category_list",
-  "product_list":   "product_list",
-  "requires_code":  "requires_code",
-  "code_name":      "code_name",
-  "free_shipping":  "free_shipping",
-  "start_date":     "start_date",
-  "end_date":       "end_date",
-  "season":         "season",
-  "notes":          "notes",
+  "category_id": "category_id",
+  "date_from":   "date_from",
+  "date_to":     "date_to",
+  "avg_price":   "avg_price",
 };
 
 function sendToWebhook(endpoint, rows) {
@@ -57,13 +48,7 @@ function formatDate(d) {
   return s === '' ? null : s;
 }
 
-function parseBool(val) {
-  if (typeof val === 'boolean') return val;
-  var s = String(val).trim().toUpperCase();
-  return s === 'PRAWDA' || s === 'TRUE' || s === '1';
-}
-
-function syncPromotions() {
+function syncPriceHistory() {
   var ss    = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) throw new Error("Arkusz '" + SHEET_NAME + "' nie istnieje");
@@ -79,35 +64,33 @@ function syncPromotions() {
     if (key) colMap[i] = key;
   }
 
-  // Znajdź indeks promo_name
-  var promoNameIdx = -1;
+  // Znajdź indeks category_id
+  var catColIdx = -1;
   for (var ci in colMap) {
-    if (colMap[ci] === 'promo_name') { promoNameIdx = parseInt(ci); break; }
+    if (colMap[ci] === 'category_id') { catColIdx = parseInt(ci); break; }
   }
 
   var rows = [];
   for (var r = 1; r < data.length; r++) {
     var raw = data[r];
 
-    // Pomiń wiersze bez promo_name
-    var nameVal = promoNameIdx >= 0 ? raw[promoNameIdx] : raw[0];
-    if (!nameVal || String(nameVal).trim() === '') continue;
+    // Pomiń puste wiersze (bez category_id)
+    var catVal = catColIdx >= 0 ? raw[catColIdx] : raw[0];
+    if (!catVal || String(catVal).trim() === '') continue;
 
     var obj = {};
     for (var c in colMap) {
       var fieldKey = colMap[c];
       var val      = raw[c];
 
-      if (fieldKey === 'start_date' || fieldKey === 'end_date') {
+      if (fieldKey === 'date_from') {
         obj[fieldKey] = formatDate(val);
-      } else if (fieldKey === 'requires_code' || fieldKey === 'free_shipping') {
-        obj[fieldKey] = parseBool(val);
-      } else if (fieldKey === 'category_list' || fieldKey === 'product_list' ||
-                 fieldKey === 'code_name' || fieldKey === 'notes') {
-        var s = (val === null || val === undefined) ? '' : String(val).trim();
-        obj[fieldKey] = s === '' ? null : s;
+      } else if (fieldKey === 'date_to') {
+        obj[fieldKey] = formatDate(val);
+      } else if (fieldKey === 'avg_price') {
+        obj[fieldKey] = parseFloat(String(val).replace(',', '.')) || 0;
       } else {
-        obj[fieldKey] = (val === null || val === undefined) ? '' : String(val);
+        obj[fieldKey] = String(val).trim();
       }
     }
     rows.push(obj);
@@ -115,17 +98,18 @@ function syncPromotions() {
 
   if (rows.length === 0) { Logger.log("Brak wierszy do wysłania"); return; }
 
-  var result = sendToWebhook('/api/sync/promotions', rows);
+  var result = sendToWebhook('/api/sync/price-history', rows);
   Logger.log("Zsynchronizowano: " + (result.upserted || 0) + " rekordów");
 }
 
 function setupTrigger() {
   ScriptApp.getProjectTriggers().forEach(function(t) {
-    if (t.getHandlerFunction() === 'syncPromotions') ScriptApp.deleteTrigger(t);
+    if (t.getHandlerFunction() === 'syncPriceHistory') ScriptApp.deleteTrigger(t);
   });
-  ScriptApp.newTrigger('syncPromotions')
+  ScriptApp.newTrigger('syncPriceHistory')
     .timeBased()
-    .everyMinutes(30)
+    .everyDays(1)
+    .atHour(3)
     .create();
-  Logger.log("Trigger ustawiony: syncPromotions co 30 minut");
+  Logger.log("Trigger ustawiony: syncPriceHistory raz dziennie o 3:00");
 }

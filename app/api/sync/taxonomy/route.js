@@ -19,18 +19,25 @@ function parseCsvArray(val) {
   return val.split(",").map((s) => s.trim()).filter(Boolean);
 }
 
+function parseDate(val) {
+  if (!val || val === "") return null;
+  const s = String(val).trim();
+  return s === "" ? null : s;
+}
+
 function mapRow(row) {
   return {
     ean:                Number(row.ean              ?? row["KodEAN"]),
     name:               row.name                   ?? row["Towar"]               ?? "",
     variant:            row.variant                ?? row["Wariant"]             ?? null,
     collection:         row.collection             ?? row["Kolekcja"]            ?? null,
-    product_group:      row.product_group          ?? row["Grupa"]               ?? null,
+    product_group:      row.product_group          ?? row["Kategoria produktowa"] ?? row["Grupa"] ?? null,
     tags_granularne:    parseCsvArray(row.tags_granularne  ?? row["TAGS_GRANULARNE"]),
     tags_domenowe:      parseCsvArray(row.tags_domenowe    ?? row["TAGS_DOMENOWE"]),
     filary_marki:       parseCsvArray(row.filary_marki     ?? row["FILARY_MARKI"]),
     okazje:             parseCsvArray(row.okazje           ?? row["OKAZJE"]),
     segment_prezentowy: row.segment_prezentowy     ?? row["SEGMENT_PREZENTOWY"]  ?? null,
+    launch_date:        parseDate(row.launch_date  ?? row["DATA URUCHOMIENIA"]),
     evergreen:          parseBoolean(row.evergreen ?? row["EVERGREEN"]),
     price_avg:          row.price_avg != null ? Number(row.price_avg) : null,
     available:          row.available !== undefined ? parseBoolean(row.available) : true,
