@@ -9,8 +9,8 @@ export async function POST() {
     const sb = getServiceClient();
     const { error } = await sb.rpc('refresh_crm_views');
     if (error) {
-      console.error('[refresh-views] RPC error:', error);
-      throw new Error(`${error.message} (code: ${error.code})`);
+      console.error('[refresh-views] RPC error (full):', JSON.stringify(error, null, 2));
+      throw new Error(`${error.message} (code: ${error.code}, hint: ${error.hint ?? '-'})`);
     }
     return NextResponse.json({ success: true });
   } catch (err) {
