@@ -213,118 +213,116 @@ async function main() {
     console.log(`   Checkpoint: wznawianie od client_id > "${cp.lastClientId}"`);
   }
 
-  // 1. Pobierz client_id bez email_encrypted, posortowane (do checkpointu)
-  console.log("📋 Pobieram master_key (email_encrypted IS NULL)...");
-  let query = sb
+  // Pobierz łączną liczbę rekordów do uzupełnienia (dla % globalnego)
+  console.log("📊 Pobieram łączną liczbę rekordów do uzupełnienia...");
+  let countQuery = sb
     .from("master_key")
-    .select("client_id")
-    .is("email_encrypted", null)
-    .order("client_id", { ascending: true });
+    .select("client_id", { count: "exact", head: true })
+    .is("email_encrypted", null);
+  if (cp.lastClientId) countQuery = countQuery.gt("client_id", cp.lastClientId);
 
-  if (cp.lastClientId) {
-    query = query.gt("client_id", cp.lastClientId);
-  }
-
-  const { data: vaultRows, error: vaultErr } = await query;
-  if (vaultErr) {
-    console.error("❌ Błąd pobierania master_key:", vaultErr.message);
+  const { count: totalToProcess, error: countErr } = await countQuery;
+  if (countErr) {
+    console.error("❌ Błąd liczenia rekordów:", countErr.message);
     process.exit(1);
   }
 
-  if (!vaultRows || vaultRows.length === 0) {
+  if (!totalToProcess || totalToProcess === 0) {
     console.log("✅ Wszystkie rekordy mają już email_encrypted — nic do zrobienia.");
     return;
   }
 
-  console.log(`   Rekordów do uzupełnienia: ${vaultRows.length}`);
+  console.log(`   Łącznie do uzupełnienia: ${totalToProcess}\n`);
 
-  const clientIds = vaultRows.map((r) => r.client_id);
+  const stats = { updated: 0, failed: 0, noOrder: 0 };
+  let globalProcessed = 0;
+  let lastClientId = cp.lastClientId;
 
-  // 2. Dla każdego client_id znajdź jeden order_id z client_product_events
-  console.log("🗄️  Pobieram order_id z client_product_events...");
+  // Główna pętla — pobiera 1000 rekordów naraz aż do wyczerpania wszystkich
+  while (true) {
+    // Pobierz kolejnych 1000 bez email_encrypted
+    let query = sb
+      .from("master_key")
+      .select("client_id")
+      .is("email_encrypted", null)
+      .order("client_id", { ascending: true })
+      .limit(1000);
 
-  // Pobieramy w batchach po 1000 (limit Supabase IN)
-  const orderMap = new Map(); // clientId → orderId
-  const BATCH_SIZE = 500;
+    if (lastClientId) query = query.gt("client_id", lastClientId);
 
-  for (let i = 0; i < clientIds.length; i += BATCH_SIZE) {
-    const slice = clientIds.slice(i, i + BATCH_SIZE);
-    const { data: evRows, error: evErr } = await sb
-      .from("client_product_events")
-      .select("client_id, order_id")
-      .in("client_id", slice)
-      .not("order_id", "is", null)
-      .limit(slice.length * 5); // może być wiele wierszy per klient
-
-    if (evErr) {
-      console.warn(`  ⚠ Błąd client_product_events batch ${i}: ${evErr.message}`);
-      continue;
+    const { data: vaultRows, error: vaultErr } = await query;
+    if (vaultErr) {
+      console.error("❌ Błąd pobierania master_key:", vaultErr.message);
+      process.exit(1);
     }
 
-    for (const row of (evRows ?? [])) {
-      // Zachowaj tylko pierwszy znaleziony order_id per client_id
-      if (!orderMap.has(row.client_id) && row.order_id) {
-        orderMap.set(row.client_id, String(row.order_id));
+    // Brak kolejnych rekordów — koniec
+    if (!vaultRows || vaultRows.length === 0) {
+      console.log("\n✅ Brak kolejnych rekordów — zakończono.");
+      break;
+    }
+
+    const clientIds = vaultRows.map((r) => r.client_id);
+
+    // Znajdź order_id dla tego batcha
+    const orderMap = new Map();
+    for (let i = 0; i < clientIds.length; i += 500) {
+      const slice = clientIds.slice(i, i + 500);
+      const { data: evRows, error: evErr } = await sb
+        .from("client_product_events")
+        .select("client_id, order_id")
+        .in("client_id", slice)
+        .not("order_id", "is", null)
+        .limit(slice.length * 5);
+
+      if (evErr) {
+        console.warn(`  ⚠ Błąd client_product_events batch ${i}: ${evErr.message}`);
+        continue;
+      }
+
+      for (const row of (evRows ?? [])) {
+        if (!orderMap.has(row.client_id) && row.order_id) {
+          orderMap.set(row.client_id, String(row.order_id));
+        }
       }
     }
-  }
 
-  console.log(`   Znaleziono order_id dla ${orderMap.size} / ${clientIds.length} klientów`);
+    const noOrder = clientIds.filter((id) => !orderMap.has(id));
+    stats.noOrder += noOrder.length;
 
-  // Klienci bez jakiegokolwiek order_id w bazie — nie możemy ich uzupełnić
-  const noOrder = clientIds.filter((id) => !orderMap.has(id));
-  if (noOrder.length > 0) {
-    console.log(`   ⚠ Brak order_id w bazie dla ${noOrder.length} klientów — pominięci`);
-  }
+    const toProcess = clientIds
+      .filter((id) => orderMap.has(id))
+      .map((clientId) => ({ clientId, orderId: orderMap.get(clientId) }));
 
-  // 3. Przetwarzaj w batchach po CONCURRENCY
-  const toProcess = clientIds
-    .filter((id) => orderMap.has(id))
-    .map((clientId) => ({ clientId, orderId: orderMap.get(clientId) }));
-
-  const stats = { updated: 0, failed: 0 };
-  let lastCheckpointId = cp.lastClientId;
-
-  console.log(`\n🚀 Przetwarzam ${toProcess.length} klientów (${CONCURRENCY} równolegle, ${BATCH_DELAY_MS}ms przerwa)...\n`);
-
-  for (let i = 0; i < toProcess.length; i += CONCURRENCY) {
-    const batch = toProcess.slice(i, i + CONCURRENCY);
-
-    await processBatch(sb, batch, stats);
-
-    // Checkpoint — zapisz ostatni client_id z batcha
-    const lastInBatch = batch[batch.length - 1].clientId;
-    if (lastInBatch !== lastCheckpointId) {
-      lastCheckpointId = lastInBatch;
-      saveCheckpoint(lastCheckpointId);
+    // Przetwórz w batchach po CONCURRENCY
+    for (let i = 0; i < toProcess.length; i += CONCURRENCY) {
+      const batch = toProcess.slice(i, i + CONCURRENCY);
+      await processBatch(sb, batch, stats);
+      if (i + CONCURRENCY < toProcess.length) {
+        await sleep(BATCH_DELAY_MS);
+      }
     }
 
-    // Loguj postęp co LOG_INTERVAL rekordów
-    const processed = Math.min(i + CONCURRENCY, toProcess.length);
-    if (processed % LOG_INTERVAL < CONCURRENCY || processed === toProcess.length) {
-      const pct = Math.round((processed / toProcess.length) * 100);
-      process.stdout.write(
-        `  [${pct}%] ${processed}/${toProcess.length} — ` +
-        `OK: ${stats.updated}, błędy: ${stats.failed}\n`
-      );
-    }
+    // Checkpoint — zapisz ostatni client_id z porcji
+    lastClientId = clientIds[clientIds.length - 1];
+    saveCheckpoint(lastClientId);
 
-    if (i + CONCURRENCY < toProcess.length) {
-      await sleep(BATCH_DELAY_MS);
-    }
+    // Loguj globalny postęp po każdej porcji 1000
+    globalProcessed += clientIds.length;
+    const pct = Math.min(100, Math.round((globalProcessed / totalToProcess) * 100));
+    console.log(
+      `  [${pct}%] ${globalProcessed}/${totalToProcess} — ` +
+      `OK: ${stats.updated}, błędy: ${stats.failed}, brak order_id: ${stats.noOrder}`
+    );
   }
 
-  // 4. Podsumowanie
+  // Podsumowanie
   console.log("\n─────────────────────────────────────────");
   console.log("✅ Gotowe!");
   console.log(`   Uzupełniono:       ${stats.updated}`);
   console.log(`   Błędy/brak danych: ${stats.failed}`);
-  console.log(`   Brak order_id:     ${noOrder.length}`);
-  const total = clientIds.length;
-  const missed = total - stats.updated;
-  if (missed > 0) {
-    console.log(`   Łącznie pominięto: ${missed} / ${total}`);
-  }
+  console.log(`   Brak order_id:     ${stats.noOrder}`);
+  console.log(`   Łącznie w sesji:   ${globalProcessed}`);
 }
 
 main().catch((err) => {
