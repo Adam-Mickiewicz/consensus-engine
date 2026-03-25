@@ -1364,63 +1364,6 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
         }
       }
 
-      // Wywołaj AI żeby wygenerować copy dla każdej kreacji
-      const prompt = `Jesteś copywriterem marki Nadwyraz.com (polska marka e-commerce, narracyjne skarpetki i inne produkty z motywami literackimi/kulturowymi). Masz wygenerować copy reklamowe dla akcji marketingowej.
-
-DANE BRIEFU:
-${briefSummary}
-
-LISTA KREACJI do wygenerowania copy:
-${kreacje.map((k, i) => `${i + 1}. Medium: ${k.medium} | Format: ${k.format} | Rodzaj: ${k.rodzaj}`).join("\n")}
-
-Dla każdej kreacji wygeneruj copy w 3 fazach kampanii (jeśli dana faza ma sens dla tego medium — jeśli nie, zostaw puste):
-- early_access: copy na early access / wcześniejszy dostęp dla bazy mailingowej
-- full_access: copy na pełny start promocji (główna faza)
-- reminder: copy przypominające / domykające (FOMO, ostatni moment)
-
-Zasady copy:
-- Meta Ads: Nagłówek (krótki, mocny, z emoji) + Copy (pierwsze zdanie najmocniejsze, FOMO)
-- Email/Newsletter: kompaktowe 3-6 zdań, bez elaboratów
-- Slider/Pop-up/Baner: 1-2 zdania, tylko konkret i FOMO
-- Google Ads: tylko nagłówek i krótka linia copy
-
-Zwróć TYLKO JSON w formacie:
-{
-  "kreacje": [
-    {
-      "index": 1,
-      "early_access": "tekst lub null",
-      "full_access": "tekst",
-      "reminder": "tekst lub null"
-    }
-  ]
-}`;
-
-      const aiResponse = await fetch("/api/anthropic", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 4000,
-          messages: [{ role: "user", content: prompt }],
-        }),
-      });
-
-      let copyData = {};
-      if (aiResponse.ok) {
-        const aiJson = await aiResponse.json();
-        const rawText = aiJson.content?.[0]?.text || "";
-        try {
-          const cleaned = rawText.replace(/```json|```/g, "").trim();
-          const parsed = JSON.parse(cleaned);
-          copyData = Object.fromEntries(
-            (parsed.kreacje || []).map(k => [k.index, k])
-          );
-        } catch (e) {
-          console.warn("AI JSON parse error:", e);
-        }
-      }
-
       // Zbuduj Excel
       const XLSX = await import("xlsx");
       const wb = XLSX.utils.book_new();
@@ -1441,8 +1384,7 @@ Zwróć TYLKO JSON w formacie:
       ];
 
       const rows = [headers];
-      kreacje.forEach((k, i) => {
-        const copy = copyData[i + 1] || {};
+      kreacje.forEach((k) => {
         rows.push([
           brief.name || "",
           k.medium,
@@ -1452,9 +1394,9 @@ Zwróć TYLKO JSON w formacie:
           "",  // Link do grafik — puste, wypełni grafik
           "",  // link do wideo — puste
           k.iloscCopy ?? "",
-          copy.early_access || "",
-          copy.full_access || "",
-          copy.reminder || "",
+          "",
+          "",
+          "",
         ]);
       });
 
@@ -1666,7 +1608,7 @@ Copy: ${brief.copyProposals || "—"}`;
                     opacity: exportingFormaty ? 0.7 : 1,
                   }}
                 >
-                  {exportingFormaty ? "⏳ AI..." : "⬇ Formaty"}
+                  {exportingFormaty ? "..." : "⬇ Formaty"}
                 </button>
                 <button onClick={save} disabled={saving} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                   {saving ? "Zapisuję..." : "💾 Zapisz"}
@@ -1946,7 +1888,7 @@ Copy: ${brief.copyProposals || "—"}`;
                   opacity: exportingFormaty ? 0.7 : 1,
                 }}
               >
-                {exportingFormaty ? "⏳ Generuję copy..." : "⬇ Pobierz Formaty XLS"}
+                {exportingFormaty ? "Generuję..." : "⬇ Pobierz Formaty XLS"}
               </button>
               <button onClick={save} disabled={saving} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "10px 24px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                 {saving ? "Zapisuję..." : "💾 Zapisz brief"}
