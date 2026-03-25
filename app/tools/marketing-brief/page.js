@@ -696,6 +696,7 @@ export default function MarketingBrief() {
   const [synthLength, setSynthLength] = useState("medium");
   const [copyFromModal, setCopyFromModal] = useState(null); // id kanału docelowego
   const [exportingXlsx, setExportingXlsx] = useState(false);
+  const [exportingFormaty, setExportingFormaty] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
   const [formTab, setFormTab] = useState("brief"); // brief | copy
   const [summary, setSummary] = useState(null);
@@ -1311,6 +1312,187 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
     setExportingXlsx(false);
   };
 
+  const exportFormaty = async () => {
+    setExportingFormaty(true);
+    try {
+      // Zbierz dane z briefu do prompta AI
+      const briefSummary = [
+        brief.name && `Nazwa akcji: ${brief.name}`,
+        brief.dateStart && brief.dateEnd && `Daty: ${brief.dateStart} → ${brief.dateEnd}`,
+        brief.headline && `Hasło główne: ${brief.headline}`,
+        brief.discount && `Rabat: ${brief.discount}`,
+        brief.promoCode && `Kod: ${brief.promoCode}`,
+        brief.goal && `Cel: ${brief.goal}`,
+        brief.copyProposals && `Propozycje copy z briefu:\n${brief.copyProposals}`,
+        brief.keyFindings && `Kluczowe ustalenia:\n${brief.keyFindings}`,
+        brief.recommendations && `Rekomendacje:\n${brief.recommendations}`,
+      ].filter(Boolean).join("\n");
+
+      // Zbuduj listę kreacji z briefu
+      const kreacje = [];
+      for (const [id, cfg] of Object.entries(brief.channels || {})) {
+        if (!cfg.active) continue;
+        const channelDef = CHANNELS.find(c => c.id === id);
+        if (!channelDef) continue;
+        const selectedFmts = (channelDef.formats || []).filter(f =>
+          (cfg.selectedFormats || []).includes(f.id)
+        );
+        for (const fmt of selectedFmts) {
+          const fmtData = cfg.formatData?.[fmt.id] || {};
+          if (fmt.isCarousel) {
+            kreacje.push({
+              medium: channelDef.label.replace(/^[^\w]*/, "").trim(),
+              format: fmt.label,
+              rodzaj: "Karuzela",
+              iloscGrafik: fmtData.karuzela_cards || "10 kart",
+              iloscCopy: cfg.visible?.includes("copy") ? 1 : null,
+              uwagi: fmtData.note_karuzela || cfg.notes || "",
+            });
+          } else {
+            const types = Array.isArray(fmtData.types) ? fmtData.types : ["Grafika statyczna"];
+            for (const typ of types) {
+              kreacje.push({
+                medium: channelDef.label.replace(/^[^\w]*/, "").trim(),
+                format: fmt.label,
+                rodzaj: typ,
+                iloscGrafik: fmtData["count_" + typ] || 1,
+                iloscCopy: (["email", "slider_main", "slider_category", "popup"].includes(id)) ? 1 : null,
+                uwagi: fmtData["note_" + typ] || fmtData.note || cfg.notes || "",
+              });
+            }
+          }
+        }
+      }
+
+      // Wywołaj AI żeby wygenerować copy dla każdej kreacji
+      const prompt = `Jesteś copywriterem marki Nadwyraz.com (polska marka e-commerce, narracyjne skarpetki i inne produkty z motywami literackimi/kulturowymi). Masz wygenerować copy reklamowe dla akcji marketingowej.
+
+DANE BRIEFU:
+${briefSummary}
+
+LISTA KREACJI do wygenerowania copy:
+${kreacje.map((k, i) => `${i + 1}. Medium: ${k.medium} | Format: ${k.format} | Rodzaj: ${k.rodzaj}`).join("\n")}
+
+Dla każdej kreacji wygeneruj copy w 3 fazach kampanii (jeśli dana faza ma sens dla tego medium — jeśli nie, zostaw puste):
+- early_access: copy na early access / wcześniejszy dostęp dla bazy mailingowej
+- full_access: copy na pełny start promocji (główna faza)
+- reminder: copy przypominające / domykające (FOMO, ostatni moment)
+
+Zasady copy:
+- Meta Ads: Nagłówek (krótki, mocny, z emoji) + Copy (pierwsze zdanie najmocniejsze, FOMO)
+- Email/Newsletter: kompaktowe 3-6 zdań, bez elaboratów
+- Slider/Pop-up/Baner: 1-2 zdania, tylko konkret i FOMO
+- Google Ads: tylko nagłówek i krótka linia copy
+
+Zwróć TYLKO JSON w formacie:
+{
+  "kreacje": [
+    {
+      "index": 1,
+      "early_access": "tekst lub null",
+      "full_access": "tekst",
+      "reminder": "tekst lub null"
+    }
+  ]
+}`;
+
+      const aiResponse = await fetch("/api/anthropic", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 4000,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+
+      let copyData = {};
+      if (aiResponse.ok) {
+        const aiJson = await aiResponse.json();
+        const rawText = aiJson.content?.[0]?.text || "";
+        try {
+          const cleaned = rawText.replace(/```json|```/g, "").trim();
+          const parsed = JSON.parse(cleaned);
+          copyData = Object.fromEntries(
+            (parsed.kreacje || []).map(k => [k.index, k])
+          );
+        } catch (e) {
+          console.warn("AI JSON parse error:", e);
+        }
+      }
+
+      // Zbuduj Excel
+      const XLSX = await import("xlsx");
+      const wb = XLSX.utils.book_new();
+
+      // Nagłówek arkusza
+      const headers = [
+        "Promocja",
+        "Medium (Meta/ Google)",
+        "Format",
+        "Rodzaj grafiki",
+        "Ilość grafik",
+        "Link do grafik",
+        "link do wideo",
+        "Ilość copy",
+        "early access (Copy - link lub tekst)",
+        "full access",
+        "reminder",
+      ];
+
+      const rows = [headers];
+      kreacje.forEach((k, i) => {
+        const copy = copyData[i + 1] || {};
+        rows.push([
+          brief.name || "",
+          k.medium,
+          k.format,
+          k.rodzaj,
+          k.iloscGrafik,
+          "",  // Link do grafik — puste, wypełni grafik
+          "",  // link do wideo — puste
+          k.iloscCopy ?? "",
+          copy.early_access || "",
+          copy.full_access || "",
+          copy.reminder || "",
+        ]);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+
+      // Szerokości kolumn
+      ws["!cols"] = [
+        { wch: 22 }, // Promocja
+        { wch: 24 }, // Medium
+        { wch: 22 }, // Format
+        { wch: 22 }, // Rodzaj grafiki
+        { wch: 12 }, // Ilość grafik
+        { wch: 18 }, // Link do grafik
+        { wch: 16 }, // link do wideo
+        { wch: 12 }, // Ilość copy
+        { wch: 55 }, // early access
+        { wch: 55 }, // full access
+        { wch: 55 }, // reminder
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, "Formaty");
+
+      const xlsxBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([xlsxBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `formaty-${brief.name || "brief"}.xlsx`;
+      a.click();
+    } catch (e) {
+      console.error(e);
+      alert("Błąd eksportu Formaty: " + e.message);
+    }
+    setExportingFormaty(false);
+  };
+
   const handleEditorSave = ({ name, type, blob, dataUrl }) => {
     // Dodaj do załączników czatu
     const newAttachment = { name, type, data: dataUrl.split(",")[1] };
@@ -1467,6 +1649,24 @@ Copy: ${brief.copyProposals || "—"}`;
                 </button>
                 <button onClick={exportXlsx} disabled={exportingXlsx} style={{ background: "#1a7a3a", color: "#fff", border: "none", borderRadius: 6, padding: "8px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
                   {exportingXlsx ? "..." : "⬇ XLSX"}
+                </button>
+                <button
+                  onClick={exportFormaty}
+                  disabled={exportingFormaty}
+                  title="Eksportuj listę kreacji z AI copy"
+                  style={{
+                    padding: "6px 14px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    background: "#7c3aed",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 6,
+                    cursor: exportingFormaty ? "wait" : "pointer",
+                    opacity: exportingFormaty ? 0.7 : 1,
+                  }}
+                >
+                  {exportingFormaty ? "⏳ AI..." : "⬇ Formaty"}
                 </button>
                 <button onClick={save} disabled={saving} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                   {saving ? "Zapisuję..." : "💾 Zapisz"}
@@ -1730,6 +1930,23 @@ Copy: ${brief.copyProposals || "—"}`;
               </button>
               <button onClick={exportXlsx} disabled={exportingXlsx} style={{ background: "#1a7a3a", color: "#fff", border: "none", borderRadius: 6, padding: "10px 16px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>
                 {exportingXlsx ? "Generuję..." : "⬇ Pobierz XLSX"}
+              </button>
+              <button
+                onClick={exportFormaty}
+                disabled={exportingFormaty}
+                style={{
+                  padding: "10px 24px",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  background: "#7c3aed",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  cursor: exportingFormaty ? "wait" : "pointer",
+                  opacity: exportingFormaty ? 0.7 : 1,
+                }}
+              >
+                {exportingFormaty ? "⏳ Generuję copy..." : "⬇ Pobierz Formaty XLS"}
               </button>
               <button onClick={save} disabled={saving} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "10px 24px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                 {saving ? "Zapisuję..." : "💾 Zapisz brief"}
