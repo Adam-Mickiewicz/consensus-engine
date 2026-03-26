@@ -205,13 +205,8 @@ export async function GET(request) {
     const result = await runETLPipeline(normalized, sb, 'cron_sync');
     console.log(`[cron] ETL OK — klientów: ${result.clients ?? '?'}, eventów: ${result.events ?? '?'}`);
 
-    // 5. Przelicz LTV raz po imporcie
-    const { error: ltvErr } = await sb.rpc('recalculate_all_ltv');
-    if (ltvErr) {
-      console.error('[cron] LTV RPC error:', ltvErr.message);
-    } else {
-      console.log('[cron] LTV przeliczone ✅');
-    }
+    // 5. LTV przeliczane ręcznie przez SQL Editor — pominięte w cronie
+    // const { error: ltvErr } = await sb.rpc('recalculate_all_ltv');
 
     // 6. Zapisz do sync_log
     const durationMs = Date.now() - startedAt;
