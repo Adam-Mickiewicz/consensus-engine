@@ -12,7 +12,7 @@ export const maxDuration = 300; // 5 minut
 
 // ─── Shoper config ─────────────────────────────────────────────────────────────
 
-const SHOP_URL    = (process.env.SHOPER_URL ?? 'https://nadwyraz.com').replace(/\/$/, '');
+const SHOP_URL    = (process.env.SHOPER_URL ?? 'https://nadwyraz.com').replace(/^(?!https?:\/\/)/, 'https://').replace(/\/$/, '');
 const API_TOKEN   = process.env.SHOPER_CLIENT_SECRET ?? process.env.SHOPER_API_TOKEN;
 const HEADERS     = { Authorization: `Bearer ${API_TOKEN}`, Accept: 'application/json' };
 
