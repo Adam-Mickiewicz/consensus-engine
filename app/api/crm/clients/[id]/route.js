@@ -14,7 +14,7 @@ export async function GET(_request, { params }) {
       sb.from('clients_360').select('*').eq('client_id', id).single(),
 
       sb.from('client_product_events')
-        .select('id,client_id,ean,product_name,order_date,season,occasion,order_id,order_sum,is_promo,is_new_product,price_category_id')
+        .select('id,client_id,ean,product_name,order_date,season,order_id,order_sum,is_promo,is_new_product,price_category_id')
         .eq('client_id', id)
         .order('order_date', { ascending: false }),
 
