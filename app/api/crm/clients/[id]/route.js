@@ -26,6 +26,10 @@ export async function GET(_request, { params }) {
         .maybeSingle(),
     ]);
 
+    if (eventsRes.error) console.error('events error:', eventsRes.error);
+    if (taxonomyRes.error) console.error('taxonomy error:', taxonomyRes.error);
+    if (predictionRes.error) console.error('prediction error:', predictionRes.error);
+
     if (profileRes.error) {
       if (profileRes.error.code === 'PGRST116') {
         return NextResponse.json({ error: 'Nie znaleziono klienta' }, { status: 404 });
