@@ -65,7 +65,7 @@ export async function POST(request) {
 
     const { error } = await supabase
       .from("promotions")
-      .upsert(mapped, { onConflict: "id" });
+      .upsert(mapped, { onConflict: "promo_name,start_date", ignoreDuplicates: true });
 
     if (error) throw error;
 
