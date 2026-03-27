@@ -7,76 +7,63 @@ import WorldsView from "./WorldsView";
 export default async function WorldsPage() {
   const supabase = getServiceClient();
 
-  const [taxonomyResult, worldsResult, segWorldsResult, segmentsResult] = await Promise.all([
-    supabase
-      .from("client_taxonomy_summary")
-      .select("top_tags_granularne, top_tags_domenowe, top_filary_marki")
-      .range(0, 199999),
-    supabase
-      .from("crm_worlds")
-      .select("*")
-      .order("count", { ascending: false })
-      .limit(10),
-    supabase.from("crm_segment_worlds").select("*"),
-    supabase.from("crm_segments").select("legacy_segment, count"),
-  ]);
+  const [granResult, domResult, filarResult, worldsResult, segWorldsResult, segmentsResult] =
+    await Promise.all([
+      supabase
+        .from("crm_tag_stats")
+        .select("tag, client_count")
+        .eq("tag_type", "granularne")
+        .order("client_count", { ascending: false }),
+      supabase
+        .from("crm_tag_stats")
+        .select("tag, client_count")
+        .eq("tag_type", "domenowe")
+        .order("client_count", { ascending: false }),
+      supabase
+        .from("crm_tag_stats")
+        .select("tag, client_count")
+        .eq("tag_type", "filary")
+        .order("client_count", { ascending: false }),
+      supabase
+        .from("crm_worlds")
+        .select("*")
+        .order("count", { ascending: false })
+        .limit(10),
+      supabase.from("crm_segment_worlds").select("*"),
+      supabase.from("crm_segments").select("legacy_segment, count"),
+    ]);
 
-  if (taxonomyResult.error && worldsResult.error) {
+  if (granResult.error || !granResult.data?.length) {
     return <WorldsView data={null} />;
   }
 
-  const taxonomy = taxonomyResult.data ?? [];
-  const worldsRaw = worldsResult.data ?? [];
-  const segWorlds = segWorldsResult.data ?? [];
+  const worldsRaw     = worldsResult.data ?? [];
+  const segWorlds     = segWorldsResult.data ?? [];
   const segmentCounts = segmentsResult.data ?? [];
 
-  if (taxonomy.length === 0) {
-    return <WorldsView data={null} />;
-  }
-
-  // Top granular tags — flatten all arrays and count
-  const granFreq = new Map<string, number>();
-  for (const row of taxonomy) {
-    for (const tag of row.top_tags_granularne ?? []) {
-      granFreq.set(tag, (granFreq.get(tag) ?? 0) + 1);
-    }
-  }
-  const topTags = [...granFreq.entries()]
-    .sort((a, b) => b[1] - a[1])
+  // Top 20 granular tags
+  const topTags = (granResult.data ?? [])
     .slice(0, 20)
-    .map(([tag, count]) => ({ tag, count }));
+    .map(r => ({ tag: r.tag, count: Number(r.client_count) }));
 
-  // Pillar stats
-  const pillarFreq = new Map<string, number>();
-  for (const row of taxonomy) {
-    for (const tag of row.top_filary_marki ?? []) {
-      pillarFreq.set(tag, (pillarFreq.get(tag) ?? 0) + 1);
-    }
-  }
-  const totalPillarCount = [...pillarFreq.values()].reduce((s, v) => s + v, 0) || 1;
-  const pillarStats = [...pillarFreq.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([pillar, count]) => ({
-      pillar,
-      count,
-      pct: Math.round((count / totalPillarCount) * 100),
-    }));
+  // Brand pillars
+  const pillarRows = filarResult.data ?? [];
+  const totalPillarCount = pillarRows.reduce((s, r) => s + Number(r.client_count), 0) || 1;
+  const pillarStats = pillarRows.map(r => ({
+    pillar: r.tag,
+    count:  Number(r.client_count),
+    pct:    Math.round((Number(r.client_count) / totalPillarCount) * 100),
+  }));
 
-  // Top domain tags
-  const domainFreq = new Map<string, number>();
-  for (const row of taxonomy) {
-    for (const tag of row.top_tags_domenowe ?? []) {
-      domainFreq.set(tag, (domainFreq.get(tag) ?? 0) + 1);
-    }
-  }
-  const totalDomainCount = taxonomy.length || 1;
-  const topDomains = [...domainFreq.entries()]
-    .sort((a, b) => b[1] - a[1])
+  // Top 10 domain tags
+  const domRows = domResult.data ?? [];
+  const totalDomainCount = domRows.reduce((s, r) => s + Number(r.client_count), 0) || 1;
+  const topDomains = domRows
     .slice(0, 10)
-    .map(([domain, count]) => ({
-      domain,
-      count,
-      pct: Math.round((count / totalDomainCount) * 100),
+    .map(r => ({
+      domain: r.tag,
+      count:  Number(r.client_count),
+      pct:    Math.round((Number(r.client_count) / totalDomainCount) * 100),
     }));
 
   // Top worlds list z widoku crm_worlds
@@ -85,7 +72,7 @@ export default async function WorldsPage() {
   // Mapa: segment → łączna liczba klientów (z crm_segments)
   const segTotalMap = new Map(segmentCounts.map(s => [s.legacy_segment, Number(s.count)]));
 
-  // Heatmap: segment × świat z crm_segment_worlds (bez ładowania wszystkich rekordów)
+  // Heatmap: segment × świat z crm_segment_worlds
   const segOrder = ["Diamond", "Platinum", "Gold", "Returning", "New"];
   const heatmap = segOrder
     .map(seg => {
