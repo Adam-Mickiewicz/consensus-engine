@@ -100,6 +100,7 @@ export async function POST(request) {
       error_message: err?.message ?? String(err),
     }).catch(() => {});
 
+    console.error('Taxonomy sync error:', err?.message, err?.stack);
     return Response.json({ error: err?.message ?? "Internal error" }, { status: 500 });
   }
 }
