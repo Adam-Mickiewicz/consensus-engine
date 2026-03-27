@@ -22,7 +22,7 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const CHECKPOINT_FILE = path.join(__dirname, "import-checkpoint.json");
-const IMPORT_FROM     = "2022-01"; // włącznie
+const IMPORT_FROM     = "2017-11"; // włącznie
 const IMPORT_TO       = "2026-03"; // włącznie
 const CONCURRENCY     = 4;         // równoległe requesty po produkty (rate limit ~10 req/s)
 const BATCH_DELAY_MS  = 500;       // przerwa między batchami produktów
@@ -283,15 +283,16 @@ async function clearDatabase(supabase) {
     return;
   }
 
-  // Fallback: delete per tabela
-  const { error: e1 } = await supabase.from("client_product_events").delete().gte("id", 0);
-  if (e1) console.warn("  client_product_events delete:", e1.message);
-
+  // Fallback: delete per tabela — kolejność: najpierw duże tabele (ryzyko timeout),
+  // client_product_events na końcu — żeby eventy przeżyły crash na clients_360.
   const { error: e2 } = await supabase.from("clients_360").delete().gte("client_id", "");
   if (e2) console.warn("  clients_360 delete:", e2.message);
 
   const { error: e3 } = await supabase.from("master_key").delete().gte("client_id", "");
   if (e3) console.warn("  master_key delete:", e3.message);
+
+  const { error: e1 } = await supabase.from("client_product_events").delete().gte("id", 0);
+  if (e1) console.warn("  client_product_events delete:", e1.message);
 
   // Weryfikacja
   const counts = {};
@@ -319,11 +320,11 @@ async function main() {
   const allMonths  = monthsInRange(IMPORT_FROM, IMPORT_TO);
 
   // Jeśli brak checkpointu — wyczyść bazę
-  if (!checkpoint.lastCompleted) {
-    await clearDatabase(supabase);
-  } else {
+  // if (!checkpoint.lastCompleted) {
+  //   await clearDatabase(supabase);
+  // } else {
     console.log(`Checkpoint: wznawiamy po miesiącu ${checkpoint.lastCompleted}`);
-  }
+  // }
 
   // Odfiltruj już przetworzone miesiące
   const months = checkpoint.lastCompleted
@@ -395,19 +396,19 @@ async function main() {
   else console.log("LTV przeliczone ✅");
 
   // ── Uruchom import historyczny 2017-2021 w tle ──
-  console.log('\n=== Import 2022-2026 zakończony ===');
-  console.log('Startuje import historyczny 2017-2021...');
-  const { spawn } = require('child_process');
-  const historical = spawn('node', ['scripts/shoper-historical-import.js'], {
-    detached: true,
-    stdio: [
-      'ignore',
-      fs.openSync('scripts/import.log', 'a'),
-      fs.openSync('scripts/import.log', 'a'),
-    ],
-  });
-  historical.unref();
-  console.log('Import historyczny uruchomiony w tle (PID: ' + historical.pid + ')');
+  // console.log('\n=== Import 2022-2026 zakończony ===');
+  // console.log('Startuje import historyczny 2017-2021...');
+  // const { spawn } = require('child_process');
+  // const historical = spawn('node', ['scripts/shoper-historical-import.js'], {
+  //   detached: true,
+  //   stdio: [
+  //     'ignore',
+  //     fs.openSync('scripts/import.log', 'a'),
+  //     fs.openSync('scripts/import.log', 'a'),
+  //   ],
+  // });
+  // historical.unref();
+  // console.log('Import historyczny uruchomiony w tle (PID: ' + historical.pid + ')');
 
   // ── Podsumowanie ──
   const { data: ltvData } = await supabase.from("clients_360").select("count");

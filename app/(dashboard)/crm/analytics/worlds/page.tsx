@@ -11,7 +11,7 @@ export default async function WorldsPage() {
     supabase
       .from("client_taxonomy_summary")
       .select("top_tags_granularne, top_tags_domenowe, top_filary_marki")
-      .limit(500000),
+      .range(0, 199999),
     supabase
       .from("crm_worlds")
       .select("*")
