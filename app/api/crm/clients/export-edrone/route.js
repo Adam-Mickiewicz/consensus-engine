@@ -7,7 +7,7 @@
  *   Filtry klientów (te same co /api/crm/clients/list):
  *     segment      – legacy_segment (Diamond / Platinum / Gold / Returning / New)
  *     risk         – risk_level (OK / Risk / HighRisk / Lost)
- *     world        – ulubiony_swiat
+ *     world        – top_domena
  *     date_from    – ostatni zakup ≥ data (YYYY-MM-DD)
  *     date_to      – ostatni zakup ≤ data (YYYY-MM-DD)
  *
@@ -104,7 +104,7 @@ function buildTags(client, events) {
   const tags = [];
   const {
     legacy_segment, risk_level, ltv, orders_count,
-    last_order, first_order, ulubiony_swiat, winback_priority,
+    last_order, first_order, top_domena, winback_priority,
   } = client;
 
   const {
@@ -129,8 +129,8 @@ function buildTags(client, events) {
   if (risk_level && riskTagMap[risk_level]) tags.push(riskTagMap[risk_level]);
 
   // ── 3. ŚWIAT ─────────────────────────────────────────────────────────────────
-  if (ulubiony_swiat) {
-    tags.push('Swiat_' + slugifyTag(ulubiony_swiat));
+  if (top_domena) {
+    tags.push('Swiat_' + slugifyTag(top_domena));
   }
 
   // ── 4. OKAZJE (z historii zakupów) ──────────────────────────────────────────
@@ -193,7 +193,7 @@ async function fetchClients(sb, { segment, risk, world, date_from, date_to, scop
   // Single-client or explicit ID list — bypass pagination
   if (client_ids && client_ids.length > 0) {
     let q = sb.from('clients_360')
-      .select('client_id,legacy_segment,risk_level,ltv,orders_count,last_order,first_order,ulubiony_swiat,winback_priority')
+      .select('client_id,legacy_segment,risk_level,ltv,orders_count,last_order,first_order,top_domena,winback_priority')
       .in('client_id', client_ids);
     const { data, error } = await q;
     if (error) throw new Error(`clients_360 fetch error: ${error.message}`);
@@ -206,7 +206,7 @@ async function fetchClients(sb, { segment, risk, world, date_from, date_to, scop
   let countQ = sb.from('clients_360').select('client_id', { count: 'exact', head: true });
   if (segment)   countQ = countQ.eq('legacy_segment', segment);
   if (risk)      countQ = countQ.eq('risk_level', risk);
-  if (world)     countQ = countQ.eq('ulubiony_swiat', world);
+  if (world)     countQ = countQ.eq('top_domena', world);
   if (date_from) countQ = countQ.gte('last_order', date_from);
   if (date_to)   countQ = countQ.lte('last_order', date_to);
   if (scope === 'winback') {
@@ -218,13 +218,13 @@ async function fetchClients(sb, { segment, risk, world, date_from, date_to, scop
   const pages = Math.ceil(total / BATCH_SIZE);
   for (let i = 0; i < pages; i++) {
     let q = sb.from('clients_360')
-      .select('client_id,legacy_segment,risk_level,ltv,orders_count,last_order,first_order,ulubiony_swiat,winback_priority')
+      .select('client_id,legacy_segment,risk_level,ltv,orders_count,last_order,first_order,top_domena,winback_priority')
       .order('ltv', { ascending: false })
       .range(i * BATCH_SIZE, (i + 1) * BATCH_SIZE - 1);
 
     if (segment)   q = q.eq('legacy_segment', segment);
     if (risk)      q = q.eq('risk_level', risk);
-    if (world)     q = q.eq('ulubiony_swiat', world);
+    if (world)     q = q.eq('top_domena', world);
     if (date_from) q = q.gte('last_order', date_from);
     if (date_to)   q = q.lte('last_order', date_to);
     if (scope === 'winback') q = q.not('winback_priority', 'is', null);

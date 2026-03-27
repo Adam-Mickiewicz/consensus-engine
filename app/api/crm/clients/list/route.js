@@ -7,13 +7,13 @@ function buildQuery(sb, params) {
   const { segment, risk, world, ltv_min, ltv_max, search, sort, date_from, date_to } = params;
 
   let q = sb.from('clients_360').select(
-    'client_id,legacy_segment,risk_level,ltv,orders_count,last_order,first_order,ulubiony_swiat,winback_priority',
+    'client_id,legacy_segment,risk_level,ltv,orders_count,last_order,first_order,top_domena,winback_priority',
     { count: 'exact' }
   );
 
   if (segment)   q = q.eq('legacy_segment', segment);
   if (risk)      q = q.eq('risk_level', risk);
-  if (world)     q = q.eq('ulubiony_swiat', world);
+  if (world)     q = q.eq('top_domena', world);
   if (ltv_min)   q = q.gte('ltv', parseFloat(ltv_min));
   if (ltv_max)   q = q.lte('ltv', parseFloat(ltv_max));
   if (search)    q = q.ilike('client_id', `%${search}%`);
@@ -73,7 +73,7 @@ export async function GET(request) {
 
     const [clientsRes, worldsRes] = await Promise.all([
       q,
-      sb.from('crm_worlds').select('*').limit(25),
+      sb.from('clients_360').select('top_domena').not('top_domena', 'is', null).limit(200),
     ]);
 
     if (clientsRes.error) throw new Error(clientsRes.error.message);
@@ -82,9 +82,7 @@ export async function GET(request) {
 
     let worlds = [];
     if (!worldsRes.error && worldsRes.data) {
-      worlds = worldsRes.data
-        .map(r => r.ulubiony_swiat ?? r.swiat ?? r.world ?? Object.values(r).find(v => typeof v === 'string'))
-        .filter(Boolean);
+      worlds = [...new Set(worldsRes.data.map(r => r.top_domena).filter(Boolean))].sort();
     }
 
     return NextResponse.json({

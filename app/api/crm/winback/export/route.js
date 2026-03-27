@@ -30,7 +30,7 @@ export async function GET(request) {
 
     let countQ = sb.from('clients_360').select('*', { count: 'exact', head: true });
     countQ = applyTierFilter(countQ, tier);
-    if (world) countQ = countQ.eq('ulubiony_swiat', world);
+    if (world) countQ = countQ.eq('top_domena', world);
     const { count } = await countQ;
     const total = Math.min(count ?? 0, 10000);
     const pages = Math.ceil(total / PAGE);
@@ -42,10 +42,10 @@ export async function GET(request) {
         const idx = b * CONC + i;
         if (idx >= pages) break;
         let q = sb.from('clients_360')
-          .select('client_id,legacy_segment,risk_level,ltv,orders_count,last_order,ulubiony_swiat')
+          .select('client_id,legacy_segment,risk_level,ltv,orders_count,last_order,top_domena')
           .range(idx * PAGE, (idx + 1) * PAGE - 1);
         q = applyTierFilter(q, tier);
-        if (world) q = q.eq('ulubiony_swiat', world);
+        if (world) q = q.eq('top_domena', world);
         switch (sort) {
           case 'ltv_asc':        q = q.order('ltv', { ascending: true }); break;
           case 'last_order_asc': q = q.order('last_order', { ascending: true }); break;
@@ -60,7 +60,7 @@ export async function GET(request) {
       }
     }
 
-    const COLS = ['client_id', 'legacy_segment', 'risk_level', 'ltv', 'orders_count', 'last_order', 'days_since_last_order', 'ulubiony_swiat'];
+    const COLS = ['client_id', 'legacy_segment', 'risk_level', 'ltv', 'orders_count', 'last_order', 'days_since_last_order', 'top_domena'];
     const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const lines = [COLS.join(',')];
     for (const r of rows) {
@@ -72,7 +72,7 @@ export async function GET(request) {
         escape(r.orders_count),
         escape(r.last_order ? r.last_order.slice(0, 10) : ''),
         escape(daysSince(r.last_order)),
-        escape(r.ulubiony_swiat),
+        escape(r.top_domena),
       ].join(','));
     }
 

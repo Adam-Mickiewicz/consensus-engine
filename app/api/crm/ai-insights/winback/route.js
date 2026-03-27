@@ -21,7 +21,7 @@ export async function GET(request) {
 
     const [profileRes, historyRes] = await Promise.all([
       sb.from('clients_360')
-        .select('client_id,legacy_segment,risk_level,ltv,last_order,first_order,orders_count,ulubiony_swiat,purchase_frequency_yearly')
+        .select('client_id,legacy_segment,risk_level,ltv,last_order,first_order,orders_count,top_domena')
         .eq('client_id', clientId)
         .single(),
       sb.from('client_product_events')

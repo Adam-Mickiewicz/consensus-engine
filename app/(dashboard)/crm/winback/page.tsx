@@ -35,7 +35,7 @@ interface WinbackClient {
   ltv: number | null;
   orders_count: number | null;
   last_order: string | null;
-  ulubiony_swiat: string | null;
+  top_domena: string | null;
   winback_priority: string | null;
   days_since_last_order: number | null;
 }
@@ -274,7 +274,7 @@ function WinbackContent() {
                   <th style={{ textAlign: "right" }}>Zamówień</th>
                   <th onClick={() => setParam("sort", sort === "last_order_asc" ? "ltv_desc" : "last_order_asc")}>Ostatni zakup {sort === "last_order_asc" ? "↑" : "↕"}</th>
                   <th style={{ textAlign: "right" }}>Dni nieaktywności</th>
-                  <th>Ulubiony świat</th>
+                  <th>Top domena</th>
                   <th>Winback</th>
                 </tr>
               </thead>
@@ -292,7 +292,7 @@ function WinbackContent() {
                       <td style={{ textAlign: "right", color: t.textSub, fontVariantNumeric: "tabular-nums" }}>{c.orders_count ?? "—"}</td>
                       <td style={{ color: t.textSub, fontSize: 12 }}>{c.last_order ? c.last_order.slice(0, 10) : "—"}</td>
                       <td style={{ textAlign: "right", color: daysColor, fontWeight: days != null && days > 365 ? 600 : 400, fontVariantNumeric: "tabular-nums" }}>{days != null ? `${days.toLocaleString("pl-PL")} dni` : "—"}</td>
-                      <td style={{ color: t.textSub, fontSize: 12, maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis" }}>{c.ulubiony_swiat ?? "—"}</td>
+                      <td style={{ color: t.textSub, fontSize: 12, maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis" }}>{c.top_domena ?? "—"}</td>
                       <td>{isVip ? <span className="wb-badge" style={{ background: "#ef444422", color: "#ef4444", fontSize: 10 }}>VIP</span> : c.winback_priority ? <span className="wb-badge" style={{ background: "#f9731622", color: "#f97316", fontSize: 10 }}>⚡</span> : null}</td>
                     </tr>
                   );

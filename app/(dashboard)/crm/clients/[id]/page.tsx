@@ -51,7 +51,7 @@ interface Profile {
   orders_count: number | null;
   first_order: string | null;
   last_order: string | null;
-  ulubiony_swiat: string | null;
+  top_domena: string | null;
   winback_priority: string | null;
 }
 interface EventRow {
@@ -733,10 +733,10 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                   </div>
                 ))}
               </div>
-              {profile.ulubiony_swiat && (
+              {profile.top_domena && (
                 <div>
-                  <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Ulubiony świat</div>
-                  <span className="cp-pillar" style={{ fontSize: 13 }}>{profile.ulubiony_swiat}</span>
+                  <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Top domena</div>
+                  <span className="cp-pillar" style={{ fontSize: 13 }}>{profile.top_domena}</span>
                 </div>
               )}
             </div>

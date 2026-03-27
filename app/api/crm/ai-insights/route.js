@@ -20,21 +20,17 @@ export async function POST(request) {
 
     const sb = getServiceClient();
 
-    const [overviewRes, segmentsRes, worldsRes, occasionLtvRes, segSummaryRes] =
+    const [overviewRes, segmentsRes, occasionLtvRes] =
       await Promise.all([
         sb.from('crm_overview').select('*').single(),
         sb.from('crm_segments').select('*'),
-        sb.from('crm_worlds').select('*').limit(10),
         sb.from('crm_occasion_ltv').select('*').limit(15),
-        sb.from('crm_segment_summary').select('*').single(),
       ]);
 
     const crmData = {
-      overview:        overviewRes.data  ?? {},
-      segments:        segmentsRes.data  ?? [],
-      worlds:          worldsRes.data    ?? [],
-      occasion_ltv:    occasionLtvRes.data ?? [],
-      segment_summary: segSummaryRes.data ?? {},
+      overview:     overviewRes.data  ?? {},
+      segments:     segmentsRes.data  ?? [],
+      occasion_ltv: occasionLtvRes.data ?? [],
     };
 
     // Build active filter context

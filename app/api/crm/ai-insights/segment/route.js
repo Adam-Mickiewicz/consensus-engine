@@ -22,11 +22,11 @@ export async function POST(request) {
 
     // ── 1. Build filtered client query ──────────────────────────────────────
     let clientsQ = sb.from('clients_360')
-      .select('client_id,legacy_segment,risk_level,ulubiony_swiat,ltv,last_order,orders_count,purchase_frequency_yearly');
+      .select('client_id,legacy_segment,risk_level,top_domena,ltv,last_order,orders_count');
 
     if (segment)   clientsQ = clientsQ.eq('legacy_segment', segment);
     if (risk)      clientsQ = clientsQ.eq('risk_level', risk);
-    if (world)     clientsQ = clientsQ.eq('ulubiony_swiat', world);
+    if (world)     clientsQ = clientsQ.eq('top_domena', world);
     if (date_from) clientsQ = clientsQ.gte('last_order', date_from);
     if (date_to)   clientsQ = clientsQ.lte('last_order', date_to);
 

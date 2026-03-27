@@ -12,7 +12,7 @@ async function fetchAll(sb, params) {
     .select('*', { count: 'exact', head: true });
   if (segment)  countQ = countQ.eq('legacy_segment', segment);
   if (risk)     countQ = countQ.eq('risk_level', risk);
-  if (world)    countQ = countQ.eq('ulubiony_swiat', world);
+  if (world)    countQ = countQ.eq('top_domena', world);
   if (ltv_min)  countQ = countQ.gte('ltv', parseFloat(ltv_min));
   if (ltv_max)  countQ = countQ.lte('ltv', parseFloat(ltv_max));
   if (search)   countQ = countQ.ilike('client_id', `%${search}%`);
@@ -28,11 +28,11 @@ async function fetchAll(sb, params) {
       const idx = b * CONC + i;
       if (idx >= pages) break;
       let q = sb.from('clients_360')
-        .select('client_id,legacy_segment,risk_level,ltv,orders_count,last_order,first_order,ulubiony_swiat,winback_priority')
+        .select('client_id,legacy_segment,risk_level,ltv,orders_count,last_order,first_order,top_domena,winback_priority')
         .range(idx * PAGE, (idx + 1) * PAGE - 1);
       if (segment)  q = q.eq('legacy_segment', segment);
       if (risk)     q = q.eq('risk_level', risk);
-      if (world)    q = q.eq('ulubiony_swiat', world);
+      if (world)    q = q.eq('top_domena', world);
       if (ltv_min)  q = q.gte('ltv', parseFloat(ltv_min));
       if (ltv_max)  q = q.lte('ltv', parseFloat(ltv_max));
       if (search)   q = q.ilike('client_id', `%${search}%`);
@@ -55,7 +55,7 @@ async function fetchAll(sb, params) {
 }
 
 function toCSV(rows) {
-  const COLS = ['client_id', 'legacy_segment', 'risk_level', 'ltv', 'orders_count', 'last_order', 'first_order', 'ulubiony_swiat', 'winback_priority'];
+  const COLS = ['client_id', 'legacy_segment', 'risk_level', 'ltv', 'orders_count', 'last_order', 'first_order', 'top_domena', 'winback_priority'];
   const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const lines = [COLS.join(',')];
   for (const r of rows) {

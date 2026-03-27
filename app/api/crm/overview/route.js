@@ -19,11 +19,10 @@ export async function GET(request) {
 
     if (!hasFilters) {
       // Fast path: materialized views
-      const [overviewRes, segmentsRes, riskRes, worldsRes] = await Promise.all([
+      const [overviewRes, segmentsRes, riskRes] = await Promise.all([
         sb.from('crm_overview').select('*').single(),
         sb.from('crm_segments').select('*'),
         sb.from('crm_risk').select('*'),
-        sb.from('crm_worlds').select('*').order('count', { ascending: false }).limit(10),
       ]);
 
       if (overviewRes.error || !overviewRes.data) {
@@ -45,10 +44,7 @@ export async function GET(request) {
           risk_level: r.risk_level,
           count:      Number(r.count),
         })),
-        worlds:  (worldsRes.data ?? []).map(r => ({
-          ulubiony_swiat: r.ulubiony_swiat,
-          count:          Number(r.count),
-        })),
+        worlds:   [],
         filtered: false,
       });
     }

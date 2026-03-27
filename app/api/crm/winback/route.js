@@ -21,7 +21,7 @@ function applyTierFilter(q, tier) {
 }
 
 function applyFilters(q, { world, segment, date_from, date_to }) {
-  if (world)     q = q.eq('ulubiony_swiat', world);
+  if (world)     q = q.eq('top_domena', world);
   if (segment)   q = q.eq('legacy_segment', segment);
   if (date_from) q = q.gte('last_order', date_from);
   if (date_to)   q = q.lte('last_order', date_to);
@@ -94,7 +94,7 @@ export async function GET(request) {
     const sb = getServiceClient();
 
     let clientsQ = sb.from('clients_360')
-      .select('client_id,legacy_segment,risk_level,ltv,orders_count,last_order,ulubiony_swiat,winback_priority', { count: 'exact' });
+      .select('client_id,legacy_segment,risk_level,ltv,orders_count,last_order,top_domena,winback_priority', { count: 'exact' });
     clientsQ = applyTierFilter(clientsQ, tier);
     clientsQ = applyFilters(clientsQ, filters);
     clientsQ = applySort(clientsQ, sort);
@@ -102,7 +102,7 @@ export async function GET(request) {
 
     const [clientsRes, worldsRes, statsData] = await Promise.all([
       clientsQ,
-      sb.from('crm_worlds').select('*').limit(25),
+      sb.from('clients_360').select('top_domena').not('top_domena', 'is', null).limit(200),
       fetchAllStats(sb, tier, filters),
     ]);
 
@@ -115,9 +115,7 @@ export async function GET(request) {
 
     let worlds = [];
     if (!worldsRes.error && worldsRes.data) {
-      worlds = worldsRes.data
-        .map(r => r.ulubiony_swiat ?? r.swiat ?? r.world ?? Object.values(r).find(v => typeof v === 'string'))
-        .filter(Boolean);
+      worlds = [...new Set(worldsRes.data.map(r => r.top_domena).filter(Boolean))].sort();
     }
 
     return NextResponse.json({

@@ -34,7 +34,7 @@ interface ClientRow {
   orders_count: number | null;
   last_order: string | null;
   first_order: string | null;
-  ulubiony_swiat: string | null;
+  top_domena: string | null;
   winback_priority: string | null;
 }
 
@@ -317,7 +317,7 @@ export default function ClientsView() {
                   <th style={{ textAlign: "right", ...thStyle("orders") }} onClick={() => setSort("orders")}>Zamówienia{sortIcon("orders")}</th>
                   <th style={thStyle("last_order")} onClick={() => setSort("last_order")}>Ostatni zakup{sortIcon("last_order")}</th>
                   <th style={thStyle("first_order")} onClick={() => setSort("first_order")}>Pierwszy zakup{sortIcon("first_order")}</th>
-                  <th>Ulubiony świat</th>
+                  <th>Top domena</th>
                   <th>Winback</th>
                   <th></th>
                 </tr>
@@ -342,7 +342,7 @@ export default function ClientsView() {
                     <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: t.textSub }}>{c.orders_count ?? "—"}</td>
                     <td style={{ color: t.textSub, fontSize: 12 }}>{c.last_order ? c.last_order.slice(0, 10) : "—"}</td>
                     <td style={{ color: t.textSub, fontSize: 12 }}>{c.first_order ? c.first_order.slice(0, 10) : "—"}</td>
-                    <td style={{ color: t.textSub, fontSize: 12, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis" }}>{c.ulubiony_swiat ?? "—"}</td>
+                    <td style={{ color: t.textSub, fontSize: 12, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis" }}>{c.top_domena ?? "—"}</td>
                     <td>
                       {c.winback_priority ? (
                         <span className="cl-badge" style={{ background: "#ef444422", color: "#ef4444", fontSize: 10 }}>
