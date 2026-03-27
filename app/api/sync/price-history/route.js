@@ -71,12 +71,14 @@ export async function POST(request) {
 
     return Response.json({ success: true, rows: inserted });
   } catch (err) {
-    await supabase.from("sync_log").insert({
-      source: "price_history",
-      status: "error",
-      rows_upserted: 0,
-      error_message: err?.message ?? String(err),
-    }).catch(() => {});
+    try {
+      await supabase.from("sync_log").insert({
+        source: "price_history",
+        status: "error",
+        rows_upserted: 0,
+        error_message: err?.message ?? String(err),
+      });
+    } catch (_) {}
 
     return Response.json({ error: err?.message ?? "Internal error" }, { status: 500 });
   }

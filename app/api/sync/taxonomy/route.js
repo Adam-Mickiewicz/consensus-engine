@@ -93,12 +93,14 @@ export async function POST(request) {
 
     return Response.json({ ok: true, upserted: mapped.length });
   } catch (err) {
-    await supabase.from("sync_log").insert({
-      source: "taxonomy",
-      status: "error",
-      rows_upserted: 0,
-      error_message: err?.message ?? String(err),
-    }).catch(() => {});
+    try {
+      await supabase.from("sync_log").insert({
+        source: "taxonomy",
+        status: "error",
+        rows_upserted: 0,
+        error_message: err?.message ?? String(err),
+      });
+    } catch (_) {}
 
     console.error('Taxonomy sync error:', err?.message, err?.stack);
     return Response.json({ error: err?.message ?? "Internal error" }, { status: 500 });
