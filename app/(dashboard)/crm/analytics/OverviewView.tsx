@@ -36,7 +36,7 @@ export type OverviewData = {
   vipReanimacja: number;
   bySegment: { segment: string; count: number; sumLtv: number; avgLtv: number; pct: number }[];
   byRisk: { risk_level: string; count: number; pct: number }[];
-  topWorlds: { world: string; count: number; pct: number }[];
+  topDomains: { domain: string; count: number }[];
 } | null;
 
 export default function OverviewView({ data }: { data: OverviewData }) {
@@ -55,7 +55,7 @@ export default function OverviewView({ data }: { data: OverviewData }) {
     );
   }
 
-  const maxWorld = Math.max(...data.topWorlds.map(w => w.count), 1);
+  const maxDomain = Math.max(...data.topDomains.map(d => d.count), 1);
   const maxRisk = Math.max(...data.byRisk.map(r => r.count), 1);
 
   return (
@@ -191,18 +191,18 @@ export default function OverviewView({ data }: { data: OverviewData }) {
           </div>
 
           <div className="oa-block">
-            <div className="oa-section">Top 10 ulubionych światów</div>
+            <div className="oa-section">Top 10 domen tematycznych</div>
             <div className="oa-table-wrap" style={{ padding: "4px 16px" }}>
-              {data.topWorlds.map((w, i) => (
-                <div key={w.world} className="oa-world-row">
-                  <span style={{ color: t.textSub, fontSize: 11 }}>#{i + 1} {w.world}</span>
+              {data.topDomains.map((d, i) => (
+                <div key={d.domain} className="oa-world-row">
+                  <span style={{ color: t.textSub, fontSize: 11 }}>#{i + 1} {d.domain}</span>
                   <div className="oa-bar-bg">
                     <div className="oa-bar-fill" style={{
-                      width: `${(w.count / maxWorld) * 100}%`,
+                      width: `${(d.count / maxDomain) * 100}%`,
                       background: t.accent,
                     }} />
                   </div>
-                  <span style={{ color: t.textSub, fontSize: 11, textAlign: "right" }}>{w.count}</span>
+                  <span style={{ color: t.textSub, fontSize: 11, textAlign: "right" }}>{d.count}</span>
                 </div>
               ))}
             </div>
