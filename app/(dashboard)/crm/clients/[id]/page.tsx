@@ -77,7 +77,7 @@ interface Taxonomy {
   tags_domenowe_counts: Record<string, number> | null;
   filary_marki_counts: Record<string, number> | null;
   okazje_counts: Record<string, number> | null;
-  top_segments: Record<string, number> | [string, number][] | null;
+  top_segments: { segment: string; count: number }[] | null;
   seasons_counts: Record<string, number> | null;
   product_groups_counts: Record<string, number> | null;
   new_products_ratio: number | null;
@@ -659,11 +659,7 @@ function InterestProfile({ taxonomy, t }: { taxonomy: Taxonomy; t: typeof DARK }
   const seasons        = sortedEntries(taxonomy.seasons_counts ?? {});
   const productGroups  = sortedEntries(taxonomy.product_groups_counts ?? {});
 
-  const topSegments: [string, number][] = (() => {
-    const raw = taxonomy.top_segments ?? [];
-    if (Array.isArray(raw)) return raw as [string, number][];
-    return Object.entries(raw as Record<string, number>).sort((a, b) => b[1] - a[1]);
-  })();
+  const topSegments = (taxonomy.top_segments ?? []) as { segment: string; count: number }[];
 
   const newRatio       = Math.round(taxonomy.new_products_ratio ?? 0);
   const evergreenRatio = 100 - newRatio;
@@ -713,10 +709,10 @@ function InterestProfile({ taxonomy, t }: { taxonomy: Taxonomy; t: typeof DARK }
           <div style={{ marginBottom: 12 }}>
             <div style={subLabel}>Segmenty prezentowe</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {(showAllSegments ? topSegments : topSegments.slice(0, 3)).map(([seg, cnt]) => (
-                <div key={seg} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 8px", background: t.bg, borderRadius: 7, border: `1px solid ${t.border}` }}>
-                  <span style={{ fontSize: 12, color: t.text }}>{seg}</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: t.accent }}>{cnt}</span>
+              {(showAllSegments ? topSegments : topSegments.slice(0, 3)).map(({ segment, count }) => (
+                <div key={segment} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 8px", background: t.bg, borderRadius: 7, border: `1px solid ${t.border}` }}>
+                  <span style={{ fontSize: 12, color: t.text }}>{segment}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.accent }}>{count}</span>
                 </div>
               ))}
               {topSegments.length > 3 && (
