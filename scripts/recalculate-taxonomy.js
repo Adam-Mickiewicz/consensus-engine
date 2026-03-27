@@ -171,11 +171,11 @@ function buildTaxonomyRows(byClient, eanMap, nameMap) {
     }
 
     const evergreen_ratio = totalEvents > 0
-      ? Math.round((evergreenCount / totalEvents) * 10000) / 10000
+      ? Math.min(100, Math.round((evergreenCount / totalEvents) * 10000) / 100)
       : 0;
 
     const new_products_ratio = totalEvents > 0
-      ? Math.round((newProductCount / totalEvents) * 10000) / 100
+      ? Math.min(100, Math.round((newProductCount / totalEvents) * 10000) / 100)
       : 0;
 
     const top_segment = Object.entries(segFreq).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
