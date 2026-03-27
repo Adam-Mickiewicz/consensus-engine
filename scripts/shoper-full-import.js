@@ -263,10 +263,14 @@ function normalizeOrder(order, productsMap) {
   }));
 
   return {
-    order_id: String(order.order_id ?? order.id ?? ""),
-    email:    (order.email ?? order.client_email ?? "").toLowerCase().trim(),
-    date:     (order.add_date ?? order.date_add ?? order.date ?? order.created_at ?? "").slice(0, 10),
-    sum:      parseFloat(order.total_price ?? order.total ?? order.sum ?? 0),
+    order_id:        String(order.order_id ?? order.id ?? ""),
+    email:           (order.email ?? order.client_email ?? "").toLowerCase().trim(),
+    date:            (order.add_date ?? order.date_add ?? order.date ?? order.created_at ?? "").slice(0, 10),
+    sum:             parseFloat(order.total_price ?? order.total ?? order.sum ?? 0),
+    promo_code:      order.promo_code || null,
+    discount_code:   parseFloat(order.discount_code) || 0,
+    discount_client: parseFloat(order.discount_client) || 0,
+    shipping_cost:   parseFloat(order.shipping_cost) || 0,
     products,
   };
 }

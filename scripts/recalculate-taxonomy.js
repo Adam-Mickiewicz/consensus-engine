@@ -80,7 +80,7 @@ async function loadAllEvents() {
   while (true) {
     const { data, error } = await supabase
       .from("client_product_events")
-      .select("client_id, ean, product_name, season, is_promo, is_new_product")
+      .select("client_id, ean, product_name, season, is_promo, is_new_product, promo_code, shipping_cost, order_date, price_category_id, price_at_purchase")
       .range(offset, offset + EVENTS_PAGE_SIZE - 1);
 
     if (error) throw new Error(`events fetch error (offset ${offset}): ${error.message}`);
@@ -95,6 +95,30 @@ async function loadAllEvents() {
 
   console.log(`\n   ✓ łącznie ${allEvents.length} eventów`);
   return allEvents;
+}
+
+// ─── Krok 1b: Promocje ────────────────────────────────────────────────────────
+
+async function loadPromotions() {
+  console.log("🎯 Pobieranie promocji...");
+  const { data, error } = await supabase
+    .from("promotions")
+    .select("id, promo_name, promo_type, start_date, end_date, season, free_shipping, requires_code, code_name, discount_type, discount_min, discount_max");
+  if (error) throw new Error(`promotions fetch error: ${error.message}`);
+  console.log(`   ✓ ${data.length} promocji`);
+  return data ?? [];
+}
+
+// ─── Krok 1c: Price history ───────────────────────────────────────────────────
+
+async function loadPriceHistory() {
+  console.log("💰 Pobieranie price_history...");
+  const { data, error } = await supabase
+    .from("price_history")
+    .select("category_id, date_from, date_to, avg_price");
+  if (error) throw new Error(`price_history fetch error: ${error.message}`);
+  console.log(`   ✓ ${data.length} rekordów price_history`);
+  return data ?? [];
 }
 
 // ─── Krok 3: Grupowanie i matching ───────────────────────────────────────────
@@ -133,8 +157,24 @@ function groupByClient(events) {
 
 // ─── Krok 4: Budowanie rekordów taksonomii ────────────────────────────────────
 
-function buildTaxonomyRows(byClient, eanMap, nameMap) {
+const SIGNAL_RANK = { promo_code: 4, price_below_benchmark: 3, free_shipping: 2, date_match: 1 };
+
+function buildTaxonomyRows(byClient, eanMap, nameMap, promotions, priceHistory) {
   console.log(`\n🧮 Przeliczanie taksonomii dla ${byClient.size} klientów...`);
+
+  // Lookup structures for promo matching
+  const promoById = new Map(promotions.map((p) => [p.id, p]));
+
+  const promoByCode = new Map();
+  for (const promo of promotions) {
+    if (promo.code_name) promoByCode.set(promo.code_name.toLowerCase(), promo);
+  }
+
+  const priceHistoryByCategory = new Map();
+  for (const ph of priceHistory) {
+    if (!priceHistoryByCategory.has(ph.category_id)) priceHistoryByCategory.set(ph.category_id, []);
+    priceHistoryByCategory.get(ph.category_id).push(ph);
+  }
 
   const rows = [];
   let processed = 0;
@@ -154,6 +194,10 @@ function buildTaxonomyRows(byClient, eanMap, nameMap) {
     let newProductCount     = 0;
     let matchedAny          = false;
 
+    // Promo matching state per client
+    const promoMatches = new Map(); // promo_id -> { promo, orders_count, signals: Set, promo_codes_used: Set }
+    let free_shipping_orders = 0;
+
     for (const ev of events) {
       // Pola bezpośrednio z eventu
       if (ev.season)         seasonsFreq[ev.season] = (seasonsFreq[ev.season] ?? 0) + 1;
@@ -161,17 +205,104 @@ function buildTaxonomyRows(byClient, eanMap, nameMap) {
       if (ev.is_new_product) newProductCount++;
 
       const p = matchProduct(ev, eanMap, nameMap);
-      if (!p) continue;
+      if (p) {
+        matchedAny = true;
+        for (const t of p.tags_granularne  ?? []) tagGranFreq[t]    = (tagGranFreq[t]    ?? 0) + 1;
+        for (const t of p.tags_domenowe    ?? []) tagDomFreq[t]     = (tagDomFreq[t]     ?? 0) + 1;
+        for (const t of p.filary_marki     ?? []) filarFreq[t]      = (filarFreq[t]      ?? 0) + 1;
+        for (const t of p.okazje           ?? []) okazjeFreq[t]     = (okazjeFreq[t]     ?? 0) + 1;
+        if (p.segment_prezentowy) segFreq[p.segment_prezentowy]     = (segFreq[p.segment_prezentowy] ?? 0) + 1;
+        if (p.product_group)      productGroupFreq[p.product_group] = (productGroupFreq[p.product_group] ?? 0) + 1;
+        if (p.evergreen) evergreenCount++;
+      }
 
-      matchedAny = true;
-      for (const t of p.tags_granularne  ?? []) tagGranFreq[t]          = (tagGranFreq[t]          ?? 0) + 1;
-      for (const t of p.tags_domenowe    ?? []) tagDomFreq[t]           = (tagDomFreq[t]           ?? 0) + 1;
-      for (const t of p.filary_marki     ?? []) filarFreq[t]            = (filarFreq[t]            ?? 0) + 1;
-      for (const t of p.okazje           ?? []) okazjeFreq[t]           = (okazjeFreq[t]           ?? 0) + 1;
-      if (p.segment_prezentowy) segFreq[p.segment_prezentowy]           = (segFreq[p.segment_prezentowy] ?? 0) + 1;
-      if (p.product_group)      productGroupFreq[p.product_group]       = (productGroupFreq[p.product_group] ?? 0) + 1;
-      if (p.evergreen) evergreenCount++;
+      // ── Promo matching ──────────────────────────────────────────────────────
+      const orderDate = ev.order_date ? ev.order_date.slice(0, 10) : null;
+      if (!orderDate) continue;
+
+      if (ev.shipping_cost === 0) free_shipping_orders++;
+
+      // Map promo_id -> best signal for THIS event
+      const eventSignals = new Map(); // promo_id -> signal string
+
+      function setSignal(promoId, signal) {
+        const current = eventSignals.get(promoId);
+        if (!current || SIGNAL_RANK[signal] > (SIGNAL_RANK[current] ?? 0)) {
+          eventSignals.set(promoId, signal);
+        }
+      }
+
+      // Signal 1: promo_code match
+      if (ev.promo_code) {
+        const matchedPromo = promoByCode.get(ev.promo_code.toLowerCase());
+        if (matchedPromo) setSignal(matchedPromo.id, "promo_code");
+      }
+
+      // Signal 2: price below benchmark
+      if (ev.price_at_purchase !== null && ev.price_at_purchase !== undefined && ev.price_category_id) {
+        const categoryHistory = priceHistoryByCategory.get(ev.price_category_id) ?? [];
+        const ph = categoryHistory.find(
+          (h) => orderDate >= h.date_from && (!h.date_to || orderDate <= h.date_to)
+        );
+        if (ph && ev.price_at_purchase < ph.avg_price * 0.99) {
+          for (const promo of promotions) {
+            if (!promo.start_date || !promo.end_date) continue;
+            if (orderDate >= promo.start_date && orderDate <= promo.end_date) {
+              setSignal(promo.id, "price_below_benchmark");
+            }
+          }
+        }
+      }
+
+      // Signal 3: date match / free_shipping
+      for (const promo of promotions) {
+        if (!promo.start_date || !promo.end_date) continue;
+        if (orderDate >= promo.start_date && orderDate <= promo.end_date) {
+          const signal = ev.shipping_cost === 0 && promo.free_shipping ? "free_shipping" : "date_match";
+          setSignal(promo.id, signal);
+        }
+      }
+
+      // Accumulate event signals into promoMatches
+      for (const [promoId, signal] of eventSignals) {
+        if (!promoMatches.has(promoId)) {
+          const promo = promoById.get(promoId);
+          if (!promo) continue;
+          promoMatches.set(promoId, { promo, orders_count: 0, signals: new Set(), promo_codes_used: new Set() });
+        }
+        const entry = promoMatches.get(promoId);
+        entry.orders_count++;
+        entry.signals.add(signal);
+        if (signal === "promo_code" && ev.promo_code) entry.promo_codes_used.add(ev.promo_code);
+      }
     }
+
+    // Build promo_history
+    const promo_history = [...promoMatches.values()]
+      .map(({ promo, orders_count, signals, promo_codes_used }) => {
+        const strongestSignal = [...signals].sort(
+          (a, b) => (SIGNAL_RANK[b] ?? 0) - (SIGNAL_RANK[a] ?? 0)
+        )[0] ?? "date_match";
+        return {
+          promo_name:       promo.promo_name,
+          promo_type:       promo.promo_type,
+          season:           promo.season,
+          orders_count,
+          signal:           strongestSignal,
+          free_shipping:    signals.has("free_shipping"),
+          promo_code_used:  promo_codes_used.size > 0 ? [...promo_codes_used][0] : null,
+        };
+      })
+      .sort((a, b) => b.orders_count - a.orders_count);
+
+    // promo_seasons: unique season values from all matched promos
+    const promoSeasonsSet = new Set();
+    for (const { promo } of promoMatches.values()) {
+      for (const s of (Array.isArray(promo.season) ? promo.season : [promo.season]).filter(Boolean)) {
+        promoSeasonsSet.add(s);
+      }
+    }
+    const promo_seasons = [...promoSeasonsSet];
 
     const evergreen_ratio = totalEvents > 0
       ? Math.min(100, Math.max(0, Math.round((evergreenCount / totalEvents) * 10000) / 100))
@@ -206,6 +337,9 @@ function buildTaxonomyRows(byClient, eanMap, nameMap) {
       evergreen_count:        Math.round(evergreenCount),
       promo_count:            Math.round(promoCount),
       total_events:           Math.round(totalEvents),
+      promo_history,
+      promo_seasons,
+      free_shipping_orders,
       updated_at: new Date().toISOString(),
     });
 
@@ -248,10 +382,14 @@ async function main() {
   const startedAt = Date.now();
   console.log("🚀 recalculate-taxonomy.js — start\n");
 
-  const { eanMap, nameMap } = await loadProducts();
-  const events              = await loadAllEvents();
-  const byClient            = groupByClient(events);
-  const { rows, processed, withMatch } = buildTaxonomyRows(byClient, eanMap, nameMap);
+  const [{ eanMap, nameMap }, promotions, priceHistory] = await Promise.all([
+    loadProducts(),
+    loadPromotions(),
+    loadPriceHistory(),
+  ]);
+  const events   = await loadAllEvents();
+  const byClient = groupByClient(events);
+  const { rows, processed, withMatch } = buildTaxonomyRows(byClient, eanMap, nameMap, promotions, priceHistory);
 
   await upsertRows(rows);
   await postProcess();
