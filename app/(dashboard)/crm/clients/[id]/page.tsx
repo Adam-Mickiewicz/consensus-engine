@@ -1,5 +1,5 @@
 "use client";
-import { use, useState, useEffect } from "react";
+import React, { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { useDarkMode } from "../../../../hooks/useDarkMode";
 import PIIAccessButton from "../../../../../components/auth/PIIAccessButton";
@@ -73,6 +73,17 @@ interface Taxonomy {
   top_tags_domenowe: string[] | null;
   top_filary_marki: string[] | null;
   top_okazje: string[] | null;
+  tags_granularne_counts: Record<string, number> | null;
+  tags_domenowe_counts: Record<string, number> | null;
+  filary_marki_counts: Record<string, number> | null;
+  okazje_counts: Record<string, number> | null;
+  top_segments: Record<string, number> | [string, number][] | null;
+  seasons_counts: Record<string, number> | null;
+  product_groups_counts: Record<string, number> | null;
+  new_products_ratio: number | null;
+  evergreen_count: number | null;
+  promo_count: number | null;
+  total_events: number | null;
 }
 interface Prediction {
   predicted_next_order: string | null;
@@ -592,6 +603,204 @@ function ActionsPanel({ clientId, t }: {
   );
 }
 
+// ─── InterestProfile ──────────────────────────────────────────────────────────
+
+function TagGroup({ label, items, limit = 5, chipStyle, t }: {
+  label: string;
+  items: [string, number][];
+  limit?: number;
+  chipStyle?: React.CSSProperties;
+  t: typeof DARK;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  if (!items.length) return null;
+  const visible = expanded ? items : items.slice(0, limit);
+  const hasMore = items.length > limit;
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>{label}</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+        {visible.map(([tag, cnt]) => (
+          <span key={tag} style={{
+            display: "inline-flex", alignItems: "center", gap: 4,
+            padding: "3px 8px", borderRadius: 20, fontSize: 11,
+            background: t.hover, color: t.text, border: `1px solid ${t.border}`,
+            ...chipStyle,
+          }}>
+            {tag}
+            <span style={{ fontSize: 9, fontWeight: 700, background: "rgba(0,0,0,0.12)", borderRadius: 8, padding: "1px 4px" }}>{cnt}</span>
+          </span>
+        ))}
+        {hasMore && (
+          <button onClick={() => setExpanded(e => !e)} style={{
+            background: "none", border: `1px dashed ${t.border}`, borderRadius: 20,
+            padding: "3px 8px", fontSize: 11, color: t.textSub, cursor: "pointer",
+          }}>
+            {expanded ? "Pokaż mniej" : `+${items.length - limit} więcej`}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InterestProfile({ taxonomy, t }: { taxonomy: Taxonomy; t: typeof DARK }) {
+  const [showAllSegments, setShowAllSegments] = useState(false);
+
+  function sortedEntries(obj: Record<string, number> | null | undefined): [string, number][] {
+    if (!obj) return [];
+    return Object.entries(obj).sort((a, b) => b[1] - a[1]);
+  }
+
+  const tagsGranularne = sortedEntries(taxonomy.tags_granularne_counts);
+  const tagsDomenowe   = sortedEntries(taxonomy.tags_domenowe_counts);
+  const okazje         = sortedEntries(taxonomy.okazje_counts);
+  const filaryMarki    = sortedEntries(taxonomy.filary_marki_counts);
+  const seasons        = sortedEntries(taxonomy.seasons_counts);
+  const productGroups  = sortedEntries(taxonomy.product_groups_counts);
+
+  const topSegments: [string, number][] = (() => {
+    if (!taxonomy.top_segments) return [];
+    if (Array.isArray(taxonomy.top_segments)) return taxonomy.top_segments as [string, number][];
+    return Object.entries(taxonomy.top_segments as Record<string, number>).sort((a, b) => b[1] - a[1]);
+  })();
+
+  const newRatio      = Math.round(taxonomy.new_products_ratio ?? 0);
+  const evergreenRatio = 100 - newRatio;
+  const totalEvents   = taxonomy.total_events ?? 0;
+  const promoCount    = taxonomy.promo_count ?? 0;
+  const evergreenCount = taxonomy.evergreen_count ?? 0;
+  const promoPct      = totalEvents ? Math.round((promoCount / totalEvents) * 100) : 0;
+
+  const blockStyle = {
+    background: t.card, border: `1px solid ${t.border}`, borderRadius: 10,
+    padding: "16px 18px", marginBottom: 14,
+  };
+  const blockLabel = {
+    fontSize: 10, textTransform: "uppercase" as const, letterSpacing: "0.1em",
+    color: t.textSub, marginBottom: 12,
+  };
+  const subLabel = {
+    fontSize: 10, color: t.textSub, textTransform: "uppercase" as const,
+    letterSpacing: "0.06em", marginBottom: 6,
+  };
+  const accentChip: React.CSSProperties = {
+    background: t.accent + "18", color: t.accent, border: `1px solid ${t.accent}44`,
+  };
+  const pillChip: React.CSSProperties = {
+    background: t.accent + "22", color: t.accent, border: `1px solid ${t.accent}44`,
+  };
+
+  return (
+    <>
+      {/* BLOK 1 — DNA zakupowe */}
+      <div style={blockStyle}>
+        <div style={blockLabel}>DNA zakupowe</div>
+        <TagGroup label="Tagi granularne" items={tagsGranularne} limit={5} t={t} />
+        <TagGroup label="Domeny" items={tagsDomenowe} limit={5} t={t} chipStyle={accentChip} />
+        <TagGroup label="Okazje" items={okazje} limit={5} t={t} chipStyle={accentChip} />
+        {filaryMarki.length > 0 && (
+          <TagGroup label="Filary marki" items={filaryMarki} limit={5} t={t} chipStyle={pillChip} />
+        )}
+      </div>
+
+      {/* BLOK 2 — Wzorce zakupowe */}
+      <div style={blockStyle}>
+        <div style={blockLabel}>Wzorce zakupowe</div>
+
+        {/* Segmenty prezentowe */}
+        {topSegments.length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <div style={subLabel}>Segmenty prezentowe</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {(showAllSegments ? topSegments : topSegments.slice(0, 3)).map(([seg, cnt]) => (
+                <div key={seg} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 8px", background: t.bg, borderRadius: 7, border: `1px solid ${t.border}` }}>
+                  <span style={{ fontSize: 12, color: t.text }}>{seg}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.accent }}>{cnt}</span>
+                </div>
+              ))}
+              {topSegments.length > 3 && (
+                <button onClick={() => setShowAllSegments(s => !s)} style={{ background: "none", border: `1px dashed ${t.border}`, borderRadius: 7, padding: "4px 8px", fontSize: 11, color: t.textSub, cursor: "pointer", textAlign: "left" }}>
+                  {showAllSegments ? "Pokaż mniej" : `Pokaż wszystkie (${topSegments.length})`}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Pory roku */}
+        {seasons.length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <div style={subLabel}>Pory roku</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+              {seasons.map(([s, cnt]) => {
+                const col = SEASON_COLORS[s.toLowerCase()] ?? t.accent;
+                return (
+                  <span key={s} style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    padding: "3px 8px", borderRadius: 20, fontSize: 11,
+                    background: col + "22", color: col, border: `1px solid ${col}44`,
+                  }}>
+                    {SEASON_ICONS[s.toLowerCase()] ?? "📅"} {s}
+                    <span style={{ fontSize: 9, fontWeight: 700, background: "rgba(0,0,0,0.12)", borderRadius: 8, padding: "1px 4px" }}>{cnt}</span>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Kategorie produktowe */}
+        <TagGroup label="Kategorie produktowe" items={productGroups} limit={5} t={t} />
+
+        {/* Nowości vs evergreen */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={subLabel}>Nowości vs evergreen</div>
+          <div style={{ height: 8, borderRadius: 4, overflow: "hidden", background: t.border, display: "flex" }}>
+            <div style={{ width: `${newRatio}%`, background: "#22c55e", transition: "width 0.4s" }} />
+            <div style={{ flex: 1, background: "#6366f1" }} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+            <span style={{ fontSize: 10, color: "#22c55e" }}>Nowości {newRatio}%</span>
+            <span style={{ fontSize: 10, color: "#6366f1" }}>Evergreen {evergreenRatio}%</span>
+          </div>
+        </div>
+
+        {/* Promo vs full price */}
+        <div>
+          <div style={subLabel}>Promo vs full price</div>
+          <div style={{ height: 8, borderRadius: 4, overflow: "hidden", background: t.border, display: "flex" }}>
+            <div style={{ width: `${promoPct}%`, background: "#f59e0b", transition: "width 0.4s" }} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+            <span style={{ fontSize: 10, color: "#f59e0b" }}>Promo {promoPct}%</span>
+            <span style={{ fontSize: 10, color: t.textSub }}>Full price {100 - promoPct}%</span>
+          </div>
+        </div>
+      </div>
+
+      {/* BLOK 3 — Statystyki */}
+      <div style={blockStyle}>
+        <div style={blockLabel}>Statystyki</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+          <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{totalEvents}</div>
+            <div style={{ fontSize: 9, color: t.textSub, marginTop: 2 }}>Łącznie pozycji zakupowych</div>
+          </div>
+          <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#6366f1" }}>{evergreenCount}</div>
+            <div style={{ fontSize: 9, color: t.textSub, marginTop: 2 }}>Produkty ponadczasowe</div>
+          </div>
+          <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#f59e0b" }}>{promoCount}</div>
+            <div style={{ fontSize: 9, color: t.textSub, marginTop: 2 }}>Zakupy w promocji</div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function ProfileSkeleton({ t }: { t: typeof DARK }) {
@@ -650,13 +859,6 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   const risk = profile.risk_level ?? "";
   const isVipReanimacja = profile.winback_priority?.includes("VIP") || profile.winback_priority?.includes("REANIMACJA");
   const orderGroups = buildOrderGroups(events);
-
-  // Occasions
-  const occasionCounts: Record<string, number> = {};
-  for (const ev of events) {
-    if (ev.occasion) occasionCounts[ev.occasion] = (occasionCounts[ev.occasion] || 0) + 1;
-  }
-  const occasions = Object.entries(occasionCounts).sort((a, b) => b[1] - a[1]);
 
   return (
     <>
@@ -758,45 +960,8 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
               </div>
             )}
 
-            {/* Interests */}
-            {taxonomy && (
-              <div className="cp-card">
-                <div className="cp-section-label">Profil zainteresowań</div>
-                {taxonomy.top_tags_granularne?.length ? (
-                  <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Tagi granularne</div>
-                    <div>{taxonomy.top_tags_granularne.slice(0, 5).map(tag => <span key={tag} className="cp-pill">{tag}</span>)}</div>
-                  </div>
-                ) : null}
-                {taxonomy.top_tags_domenowe?.length ? (
-                  <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Domeny</div>
-                    <div>{taxonomy.top_tags_domenowe.slice(0, 3).map(d => <span key={d} className="cp-badge" style={{ background: t.hover, color: t.text, marginRight: 4, border: `1px solid ${t.border}` }}>{d}</span>)}</div>
-                  </div>
-                ) : null}
-                {taxonomy.top_filary_marki?.length ? (
-                  <div>
-                    <div style={{ fontSize: 10, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Filary marki</div>
-                    <div>{taxonomy.top_filary_marki.map(p => <span key={p} className="cp-pillar">{p}</span>)}</div>
-                  </div>
-                ) : null}
-              </div>
-            )}
-
-            {/* Occasions */}
-            {occasions.length > 0 && (
-              <div className="cp-card">
-                <div className="cp-section-label">Okazje zakupowe</div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {occasions.map(([occ, cnt]) => (
-                    <span key={occ} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 20, background: t.accent + "18", border: `1px solid ${t.accent}44`, color: t.accent, fontSize: 11, fontWeight: 500 }}>
-                      🎁 {occ}
-                      <span style={{ background: t.accent + "33", borderRadius: 10, padding: "1px 5px", fontSize: 9, fontWeight: 700 }}>×{cnt}</span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Profil zainteresowań */}
+            {taxonomy && <InterestProfile taxonomy={taxonomy} t={t} />}
           </div>
         </div>
       </div>
