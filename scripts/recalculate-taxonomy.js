@@ -39,6 +39,9 @@ function sortedByFreq(freq) {
 async function batchUpsert(rows) {
   for (let i = 0; i < rows.length; i += UPSERT_BATCH_SIZE) {
     const batch = rows.slice(i, i + UPSERT_BATCH_SIZE);
+    if (i === 0) {
+      console.log("🔍 Przykładowy rekord (pierwszy z batcha):", JSON.stringify(batch[0], null, 2));
+    }
     const { error } = await supabase
       .from("client_taxonomy_summary")
       .upsert(batch, { onConflict: "client_id" });
@@ -171,11 +174,11 @@ function buildTaxonomyRows(byClient, eanMap, nameMap) {
     }
 
     const evergreen_ratio = totalEvents > 0
-      ? Math.min(100, Math.round((evergreenCount / totalEvents) * 10000) / 100)
+      ? Math.min(100, Math.max(0, Math.round((evergreenCount / totalEvents) * 10000) / 100))
       : 0;
 
     const new_products_ratio = totalEvents > 0
-      ? Math.min(100, Math.round((newProductCount / totalEvents) * 10000) / 100)
+      ? Math.min(100, Math.max(0, Math.round((newProductCount / totalEvents) * 10000) / 100))
       : 0;
 
     const top_segment = Object.entries(segFreq).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
@@ -200,9 +203,9 @@ function buildTaxonomyRows(byClient, eanMap, nameMap) {
       seasons_counts:         seasonsFreq,
       product_groups_counts:  productGroupFreq,
       new_products_ratio,
-      evergreen_count:        evergreenCount,
-      promo_count:            promoCount,
-      total_events:           totalEvents,
+      evergreen_count:        Math.round(evergreenCount),
+      promo_count:            Math.round(promoCount),
+      total_events:           Math.round(totalEvents),
       updated_at: new Date().toISOString(),
     });
 
