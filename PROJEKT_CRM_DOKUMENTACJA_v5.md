@@ -1,5 +1,5 @@
-# Projekt CRM — Dokumentacja techniczna v4
-**Data aktualizacji:** 27.03.2026
+# Projekt CRM — Dokumentacja techniczna v5
+**Data aktualizacji:** 27.03.2026 (wieczór)
 **Repozytorium:** github.com/Adam-Mickiewicz/consensus-engine
 **Stos:** Next.js 15 (App Router) · Supabase (Postgres + Edge Functions + pg_cron) · Vercel · Google Apps Script
 
@@ -40,10 +40,10 @@ Next.js CRM frontend (/crm/*)
 | Tabela | Opis | Rozmiar (27.03.2026) |
 |---|---|---|
 | `clients_360` | Profil klienta: segment, LTV, ryzyko, daty, top_domena | 150 906 klientów |
-| `client_product_events` | Zdarzenia zakupowe (EAN, produkt, data, sezon, promo) | 476 738 eventów |
-| `client_taxonomy_summary` | Tagi, liczniki, wzorce zakupowe per klient | 106 036 klientów z tagami |
+| `client_product_events` | Zdarzenia zakupowe (EAN, produkt, data, sezon, promo, koszty dostawy) | 476 738 eventów |
+| `client_taxonomy_summary` | Tagi, liczniki, wzorce zakupowe, historia promocji per klient | 106 036 klientów z tagami |
 | `products` | Katalog produktów z tagami domenowymi/granularnymi/filarami/okazjami | — |
-| `promotions` | Promocje z datami, typami, rabatami | 151 rekordów (2022–2026) |
+| `promotions` | Promocje z datami, typami, rabatami (min/max) | 151 rekordów (2022–2026) |
 | `crm_predictive_ltv` | Predykcje: LTV 12M, prawdopodobieństwo zakupu 30d, rytm | — |
 | `sync_log` | Log wszystkich operacji sync | — |
 
@@ -51,20 +51,39 @@ Next.js CRM frontend (/crm/*)
 
 ```sql
 client_id, legacy_segment, risk_level, ltv, orders_count,
-first_order, last_order, top_domena,        -- dodane 27.03.2026
+first_order, last_order, top_domena,
 winback_priority
 ```
 
 **Usunięte (legacy):**
 `ulubiony_swiat`, `worlds_list`, `events_list`, `purchase_frequency_yearly`, `full_order_history`
 
-### 2.3 Kolumny client_taxonomy_summary (aktualny stan)
+### 2.3 Kolumny client_product_events (aktualny stan)
+
+```sql
+-- Pierwotne
+client_id, order_id, ean, product_name, price_at_purchase,
+quantity, line_total, order_date, season, promo_flag
+
+-- Dodane (sesja 27.03.2026 wieczór)
+promo_code        -- TEXT: kod promocyjny użyty przy zamówieniu (z Shoper API)
+discount_code     -- TEXT: kod rabatowy
+discount_client   -- NUMERIC: rabat per klient
+shipping_cost     -- NUMERIC: koszt dostawy dla zamówienia
+```
+
+**Uwaga dot. `shipping_cost`:**
+- Dla danych historycznych (przed integracją API) obliczany jako: `order_sum - SUM(line_total) per order_id`
+- Zakres walidowany: 0–30 zł (wartości poza zakresem ustawiane na NULL)
+- Ta sama wartość `shipping_cost` zapisywana dla wszystkich pozycji (line itemów) z tego samego `order_id`
+
+### 2.4 Kolumny client_taxonomy_summary (aktualny stan)
 
 ```sql
 -- Stare (listy top-N)
 top_tags_granularne, top_tags_domenowe, top_filary_marki, top_okazje
 
--- Nowe (dodane w sesji 27.03.2026)
+-- Nowe (dodane sesja 27.03.2026 rano)
 tags_granularne_counts   -- JSONB: {tag: count}
 tags_domenowe_counts     -- JSONB: {tag: count}
 filary_marki_counts      -- JSONB: {tag: count}
@@ -76,31 +95,82 @@ new_products_ratio       -- NUMERIC: % nowości (0–100)
 evergreen_count          -- INT: liczba produktów ponadczasowych
 promo_count              -- INT: liczba zakupów w promocji
 total_events             -- INT: łączna liczba pozycji zakupowych
+
+-- Nowe (dodane sesja 27.03.2026 wieczór — matchowanie promocji)
+promo_history            -- JSONB array: historia dopasowanych promocji
+promo_seasons            -- TEXT[]: tablicaseason'ów, w których klient kupował w promocji
+free_shipping_orders     -- INTEGER: liczba zamówień z darmową dostawą
 ```
 
-### 2.4 Tabela promotions
+**Format `promo_history`:**
+```json
+[
+  {
+    "promo_name": "Walentynki 2024",
+    "promo_type": ["procent"],
+    "season": "Walentynki",
+    "orders_count": 2,
+    "best_signal": "promo_code",
+    "free_shipping": true,
+    "promo_code_used": "LOVE24"
+  }
+]
+```
+
+**Hierarchia sygnałów dopasowania promocji (best_signal):**
+
+| Priorytet | Sygnał | Warunek |
+|---|---|---|
+| 1 | `promo_code` | `promo_code` lub `discount_code` z eventu pasuje do `code_name` promocji |
+| 2 | `price_below_benchmark` | `price_at_purchase < avg_price z price_history * 0.99` (tolerancja 1%) |
+| 3 | `free_shipping` | `shipping_cost = 0` i promocja ma `free_shipping = true` |
+| 4 | `date_match` | Data zakupu mieści się w `start_date`–`end_date` promocji |
+
+### 2.5 Tabela promotions (aktualny stan)
 
 ```sql
-id, promo_name, promo_type (JSONB array), discount_type, discount_value,
+id, promo_name, promo_type (JSONB array), discount_type,
+discount_min, discount_max,          -- zastąpiły discount_value (numeric(5,2))
 category_list, product_list, requires_code, code_name, free_shipping,
 start_date, end_date, season (JSONB array), notes
 
 CONSTRAINT promotions_name_start_unique UNIQUE (promo_name, start_date)
 ```
 
-### 2.5 Materialized views (aktywne)
+**Zmiana (sesja 27.03.2026 wieczór):** kolumna `discount_value` zastąpiona przez `discount_min` i `discount_max` (typ `numeric(5,2)`) — pozwala przechowywać zakresy rabatów.
+
+### 2.6 Materialized views (aktywne)
 
 | View | Opis |
 |---|---|
-| `crm_segment_stats` | Statystyki per segment |
-| `crm_tag_stats` | Unnest tagów domenowych/granularnych/filarów/okazji z liczebnościami (dodane 27.03.2026) |
+| `crm_overview` | Przegląd ogólny KPI |
+| `crm_segments` | Statystyki per segment |
+| `crm_risk` | Statystyki ryzyka |
+| `crm_occasions` | Statystyki okazji |
+| `crm_cohorts` | Analiza kohortowa |
+| `crm_tag_stats` | Unnest tagów domenowych/granularnych/filarów/okazji z liczebnościami |
 | `crm_predictive_ltv` | Predykcje LTV i zakupów |
 | `crm_predictive_summary` | Podsumowanie predykcji |
 | `crm_next_purchase_calendar` | Kalendarz przewidywanych zakupów |
 
-**Odświeżanie:** `refresh_crm_views()` wywoływana przez Edge Function `recalculate-crm` o 10:00 UTC.
+**Odświeżanie:** funkcja `refresh_crm_views()` wywoływana przez Edge Function `recalculate-crm` o 10:00 UTC.
 
-**Usunięte views:** `crm_worlds`, `crm_segment_worlds`, `crm_segment_collectors`, `crm_segment_summary`
+**Aktualna definicja `refresh_crm_views()`:**
+```sql
+CREATE OR REPLACE FUNCTION refresh_crm_views()
+RETURNS void AS $$
+BEGIN
+  REFRESH MATERIALIZED VIEW crm_overview;
+  REFRESH MATERIALIZED VIEW crm_segments;
+  REFRESH MATERIALIZED VIEW crm_risk;
+  REFRESH MATERIALIZED VIEW crm_occasions;
+  REFRESH MATERIALIZED VIEW crm_cohorts;
+  REFRESH MATERIALIZED VIEW crm_tag_stats;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+**Usunięte views:** `crm_worlds`, `crm_segment_worlds` (usunięte — nie istniały po wcześniejszym czyszczeniu), `crm_segment_collectors`, `crm_segment_summary`
 
 ---
 
@@ -149,6 +219,7 @@ Przelicza `client_taxonomy_summary` dla wszystkich klientów bezpośrednio z `cl
 - `top_segments` — array `[{segment, count}]`
 - `seasons_counts`, `product_groups_counts` — JSONB z licznikami
 - `new_products_ratio`, `evergreen_count`, `promo_count`, `total_events`
+- `promo_history`, `promo_seasons`, `free_shipping_orders` — matchowanie z tabelą `promotions`
 
 **Uruchomienie:**
 ```bash
@@ -161,12 +232,20 @@ node scripts/recalculate-taxonomy.js
 
 | Skrypt | Opis |
 |---|---|
-| `shoper-full-import.js` | Pełny import danych z Shoper API |
+| `shoper-full-import.js` | Pełny import danych z Shoper API — pobiera `promo_code`, `discount_code`, `discount_client`, `shipping_cost` |
 | `shoper-historical-import.js` | Import historyczny zamówień |
 | `backfill-emails.js` | Uzupełnianie emaili w PII |
 | `shoper-pii-backfill.js` | Backfill danych PII ze Shoper |
 | `clean-db.js` | Narzędzie do czyszczenia danych |
 | `export-backup.js` | Eksport backupu bazy |
+
+### 4.3 lib/crm/etl.js
+
+Warstwa ETL używana przez `shoper-full-import.js` i sync orders. Zaktualizowana (sesja 27.03.2026 wieczór) o obsługę nowych pól z Shoper API:
+- `promo_code` — kod promocyjny z zamówienia
+- `discount_code` — kod rabatowy
+- `discount_client` — rabat per klient
+- `shipping_cost` — koszt dostawy (identyczny dla wszystkich line itemów z tego samego `order_id`)
 
 ---
 
@@ -183,7 +262,7 @@ node scripts/recalculate-taxonomy.js
 
 **Wykonuje:**
 1. `recalculate_all_ltv()` — przeliczenie LTV wszystkich klientów
-2. `refresh_crm_views()` — odświeżenie materialized views (w tym `crm_tag_stats`)
+2. `refresh_crm_views()` — odświeżenie materialized views (6 views: overview, segments, risk, occasions, cohorts, tag_stats)
 
 ---
 
@@ -191,7 +270,9 @@ node scripts/recalculate-taxonomy.js
 
 Triggery: `syncTaxonomy`, `syncPromotions`, `syncPriceHistory`
 
-**Poprawka (27.03.2026):** usunięte wywołania `SpreadsheetApp.getUi().alert()` z triggerów — powodowały błędy przy uruchamianiu bez aktywnego arkusza.
+**Poprawki (sesja 27.03.2026):**
+- Usunięte wywołania `SpreadsheetApp.getUi().alert()` z triggerów — powodowały błędy przy uruchamianiu bez aktywnego arkusza (zastąpione `Logger.log`)
+- `syncPromotions`: funkcja `parseDiscount` obsługuje teraz zarówno liczby (`15`) jak i stringi z procentem (`"15%"`) — mapuje na `discount_min` i `discount_max`
 
 **Batch taxonomy sync:** zmieniony z 500 → 100 rekordów na żądanie (stabilność).
 
@@ -225,7 +306,7 @@ Triggery: `syncTaxonomy`, `syncPromotions`, `syncPriceHistory`
 - Szybkie akcje (eksport edrone, rekomendacje AI, winback AI, kopiuj ID)
 - Predykcja zakupu (prawdopodobieństwo 30d, LTV 12M, rytm)
 - Wskaźniki zachowania (promo%, sezon, dzień tygodnia, śr. koszyk)
-- **Profil zainteresowań** (nowy układ — 3 bloki):
+- **Profil zainteresowań** (3 bloki):
 
 **Blok 1 — DNA zakupowe:**
 - Tagi granularne z licznikami (top 5 + rozwiń)
@@ -244,6 +325,10 @@ Triggery: `syncTaxonomy`, `syncPromotions`, `syncPriceHistory`
 - `total_events` — Łącznie pozycji zakupowych
 - `evergreen_count` — Produkty ponadczasowe
 - `promo_count` — Zakupy w promocji
+
+**Blok 4 — Historia promocji (napisany prompt, do wdrożenia):**
+- Lista promocji z `promo_history`: nazwa, typ, sezon, liczba zamówień, sygnał dopasowania, darmowa dostawa
+- Wskaźnik `free_shipping_orders` i liste sezonów z `promo_seasons`
 
 ---
 
@@ -275,11 +360,11 @@ Triggery: `syncTaxonomy`, `syncPromotions`, `syncPriceHistory`
 
 | Priorytet | Zadanie |
 |---|---|
-| P1 | RLS na tabelach Supabase (alert bezpieczeństwa z 2026-03-23) |
+| P1 | RLS na tabelach Supabase |
 | P1 | Dodanie `recalculate-taxonomy.js` do automatycznego pipeline (po `sync-orders`) |
-| P2 | Powiązanie promocji z profilem klienta (matching dat zamówień ↔ tabela `promotions`) |
-| P2 | Analityka grupowa (zachowania per segment/domena/tag z filtrowaniem dat) |
-| P3 | Redukcja unmapped products (~29% klientów bez taksonomii) |
+| P2 | UI blok "Historia promocji" w profilu klienta (prompt napisany, gotowy do wdrożenia) |
+| P2 | Analityka grupowa — zachowania per segment/domena/tag z filtrowaniem dat |
+| P3 | Redukcja unmapped products (~27% klientów bez taksonomii) |
 | P3 | Testy automatyczne |
 | P3 | Usunięcie lub aktualizacja zakładki `/crm/analytics/worlds` (legacy) |
 
@@ -289,5 +374,6 @@ Triggery: `syncTaxonomy`, `syncPromotions`, `syncPriceHistory`
 
 | Wersja | Data | Opis |
 |---|---|---|
-| v4 | 27.03.2026 | Rozbudowa profilu klienta, recalculate-taxonomy, crm_tag_stats, top_domena, naprawa sync endpointów, upsert promotions, cleanup legacy |
+| v5 | 27.03.2026 (wieczór) | Matchowanie promocji z profilem klienta: nowe kolumny w `client_product_events` (promo_code, discount_code, discount_client, shipping_cost), nowe kolumny w `client_taxonomy_summary` (promo_history, promo_seasons, free_shipping_orders), hierarchia sygnałów, price_below_benchmark. Tabela promotions: discount_value → discount_min/discount_max. ETL zaktualizowany. refresh_crm_views() naprawiona (usunięto crm_worlds, crm_segment_worlds). Apps Script syncPromotions naprawiony. |
+| v4 | 27.03.2026 (rano) | Rozbudowa profilu klienta, recalculate-taxonomy, crm_tag_stats, top_domena, naprawa sync endpointów, upsert promotions, cleanup legacy |
 | v3 | — | (poprzednia wersja — brak pliku w repo) |
