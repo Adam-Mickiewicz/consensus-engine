@@ -652,25 +652,25 @@ function InterestProfile({ taxonomy, t }: { taxonomy: Taxonomy; t: typeof DARK }
     return Object.entries(obj).sort((a, b) => b[1] - a[1]);
   }
 
-  const tagsGranularne = sortedEntries(taxonomy.tags_granularne_counts);
-  const tagsDomenowe   = sortedEntries(taxonomy.tags_domenowe_counts);
-  const okazje         = sortedEntries(taxonomy.okazje_counts);
-  const filaryMarki    = sortedEntries(taxonomy.filary_marki_counts);
-  const seasons        = sortedEntries(taxonomy.seasons_counts);
-  const productGroups  = sortedEntries(taxonomy.product_groups_counts);
+  const tagsGranularne = sortedEntries(taxonomy.tags_granularne_counts ?? {});
+  const tagsDomenowe   = sortedEntries(taxonomy.tags_domenowe_counts ?? {});
+  const okazje         = sortedEntries(taxonomy.okazje_counts ?? {});
+  const filaryMarki    = sortedEntries(taxonomy.filary_marki_counts ?? {});
+  const seasons        = sortedEntries(taxonomy.seasons_counts ?? {});
+  const productGroups  = sortedEntries(taxonomy.product_groups_counts ?? {});
 
   const topSegments: [string, number][] = (() => {
-    if (!taxonomy.top_segments) return [];
-    if (Array.isArray(taxonomy.top_segments)) return taxonomy.top_segments as [string, number][];
-    return Object.entries(taxonomy.top_segments as Record<string, number>).sort((a, b) => b[1] - a[1]);
+    const raw = taxonomy.top_segments ?? [];
+    if (Array.isArray(raw)) return raw as [string, number][];
+    return Object.entries(raw as Record<string, number>).sort((a, b) => b[1] - a[1]);
   })();
 
-  const newRatio      = Math.round(taxonomy.new_products_ratio ?? 0);
+  const newRatio       = Math.round(taxonomy.new_products_ratio ?? 0);
   const evergreenRatio = 100 - newRatio;
-  const totalEvents   = taxonomy.total_events ?? 0;
-  const promoCount    = taxonomy.promo_count ?? 0;
+  const totalEvents    = taxonomy.total_events ?? 0;
+  const promoCount     = taxonomy.promo_count ?? 0;
   const evergreenCount = taxonomy.evergreen_count ?? 0;
-  const promoPct      = totalEvents ? Math.round((promoCount / totalEvents) * 100) : 0;
+  const promoPct       = totalEvents ? Math.round((promoCount / totalEvents) * 100) : 0;
 
   const blockStyle = {
     background: t.card, border: `1px solid ${t.border}`, borderRadius: 10,
