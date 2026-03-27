@@ -80,7 +80,7 @@ async function loadAllEvents() {
   while (true) {
     const { data, error } = await supabase
       .from("client_product_events")
-      .select("client_id, ean, product_name, season, is_promo, is_new_product, promo_code, shipping_cost, order_date, price_category_id, price_at_purchase")
+      .select("client_id, ean, product_name, season, is_promo, is_new_product, promo_code, shipping_cost, order_date, price_category_id, price_at_purchase, order_id, order_sum, line_total")
       .range(offset, offset + EVENTS_PAGE_SIZE - 1);
 
     if (error) throw new Error(`events fetch error (offset ${offset}): ${error.message}`);
@@ -94,6 +94,32 @@ async function loadAllEvents() {
   }
 
   console.log(`\n   ✓ łącznie ${allEvents.length} eventów`);
+
+  // Oblicz shipping_cost z order_sum - SUM(line_total) dla eventów bez danych o koszcie dostawy
+  const orderLineTotals = new Map(); // order_id -> { order_sum, sum_line_total }
+  for (const ev of allEvents) {
+    if (!ev.order_id) continue;
+    if (!orderLineTotals.has(ev.order_id)) {
+      orderLineTotals.set(ev.order_id, { order_sum: parseFloat(ev.order_sum ?? 0), sum_line_total: 0 });
+    }
+    orderLineTotals.get(ev.order_id).sum_line_total += parseFloat(ev.line_total ?? 0);
+  }
+
+  const shippingByOrder = new Map(); // order_id -> computed shipping_cost or null
+  for (const [order_id, { order_sum, sum_line_total }] of orderLineTotals) {
+    const computed = Math.round((order_sum - sum_line_total) * 100) / 100;
+    shippingByOrder.set(order_id, computed >= 0 && computed <= 30 ? computed : null);
+  }
+
+  for (const ev of allEvents) {
+    if (ev.shipping_cost !== null && ev.shipping_cost !== undefined) continue;
+    const computed = shippingByOrder.get(ev.order_id);
+    if (computed !== null && computed !== undefined) ev.shipping_cost = computed;
+  }
+
+  const computed_count = allEvents.filter((ev) => ev.shipping_cost !== null && ev.shipping_cost !== undefined).length;
+  console.log(`   ✓ shipping_cost dostępny dla ${computed_count}/${allEvents.length} eventów`);
+
   return allEvents;
 }
 
