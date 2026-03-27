@@ -77,7 +77,7 @@ async function loadAllEvents() {
   while (true) {
     const { data, error } = await supabase
       .from("client_product_events")
-      .select("client_id, ean, product_name")
+      .select("client_id, ean, product_name, season, is_promo, is_new_product")
       .range(offset, offset + EVENTS_PAGE_SIZE - 1);
 
     if (error) throw new Error(`events fetch error (offset ${offset}): ${error.message}`);
@@ -138,25 +138,35 @@ function buildTaxonomyRows(byClient, eanMap, nameMap) {
   let withMatch = 0;
 
   for (const [client_id, events] of byClient) {
-    const tagGranFreq  = {};
-    const tagDomFreq   = {};
-    const filarFreq    = {};
-    const okazjeFreq   = {};
-    const segFreq      = {};
-    let totalEvents    = events.length;
-    let evergreenCount = 0;
-    let matchedAny     = false;
+    const tagGranFreq       = {};
+    const tagDomFreq        = {};
+    const filarFreq         = {};
+    const okazjeFreq        = {};
+    const segFreq           = {};
+    const seasonsFreq       = {};
+    const productGroupFreq  = {};
+    const totalEvents       = events.length;
+    let evergreenCount      = 0;
+    let promoCount          = 0;
+    let newProductCount     = 0;
+    let matchedAny          = false;
 
     for (const ev of events) {
+      // Pola bezpośrednio z eventu
+      if (ev.season)         seasonsFreq[ev.season] = (seasonsFreq[ev.season] ?? 0) + 1;
+      if (ev.is_promo)       promoCount++;
+      if (ev.is_new_product) newProductCount++;
+
       const p = matchProduct(ev, eanMap, nameMap);
       if (!p) continue;
 
       matchedAny = true;
-      for (const t of p.tags_granularne  ?? []) tagGranFreq[t] = (tagGranFreq[t] ?? 0) + 1;
-      for (const t of p.tags_domenowe    ?? []) tagDomFreq[t]  = (tagDomFreq[t]  ?? 0) + 1;
-      for (const t of p.filary_marki     ?? []) filarFreq[t]   = (filarFreq[t]   ?? 0) + 1;
-      for (const t of p.okazje           ?? []) okazjeFreq[t]  = (okazjeFreq[t]  ?? 0) + 1;
-      if (p.segment_prezentowy) segFreq[p.segment_prezentowy] = (segFreq[p.segment_prezentowy] ?? 0) + 1;
+      for (const t of p.tags_granularne  ?? []) tagGranFreq[t]          = (tagGranFreq[t]          ?? 0) + 1;
+      for (const t of p.tags_domenowe    ?? []) tagDomFreq[t]           = (tagDomFreq[t]           ?? 0) + 1;
+      for (const t of p.filary_marki     ?? []) filarFreq[t]            = (filarFreq[t]            ?? 0) + 1;
+      for (const t of p.okazje           ?? []) okazjeFreq[t]           = (okazjeFreq[t]           ?? 0) + 1;
+      if (p.segment_prezentowy) segFreq[p.segment_prezentowy]           = (segFreq[p.segment_prezentowy] ?? 0) + 1;
+      if (p.product_group)      productGroupFreq[p.product_group]       = (productGroupFreq[p.product_group] ?? 0) + 1;
       if (p.evergreen) evergreenCount++;
     }
 
@@ -164,16 +174,35 @@ function buildTaxonomyRows(byClient, eanMap, nameMap) {
       ? Math.round((evergreenCount / totalEvents) * 10000) / 10000
       : 0;
 
+    const new_products_ratio = totalEvents > 0
+      ? Math.round((newProductCount / totalEvents) * 10000) / 100
+      : 0;
+
     const top_segment = Object.entries(segFreq).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+
+    const top_segments = Object.entries(segFreq)
+      .sort((a, b) => b[1] - a[1])
+      .map(([segment, count]) => ({ segment, count }));
 
     rows.push({
       client_id,
-      top_tags_granularne: sortedByFreq(tagGranFreq),
-      top_tags_domenowe:   sortedByFreq(tagDomFreq),
-      top_filary_marki:    sortedByFreq(filarFreq),
-      top_okazje:          sortedByFreq(okazjeFreq),
+      top_tags_granularne:    sortedByFreq(tagGranFreq),
+      top_tags_domenowe:      sortedByFreq(tagDomFreq),
+      top_filary_marki:       sortedByFreq(filarFreq),
+      top_okazje:             sortedByFreq(okazjeFreq),
       top_segment,
       evergreen_ratio,
+      tags_granularne_counts: tagGranFreq,
+      tags_domenowe_counts:   tagDomFreq,
+      filary_marki_counts:    filarFreq,
+      okazje_counts:          okazjeFreq,
+      top_segments,
+      seasons_counts:         seasonsFreq,
+      product_groups_counts:  productGroupFreq,
+      new_products_ratio,
+      evergreen_count:        evergreenCount,
+      promo_count:            promoCount,
+      total_events:           totalEvents,
       updated_at: new Date().toISOString(),
     });
 
