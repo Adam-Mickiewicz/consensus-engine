@@ -19,6 +19,15 @@ function parseCsvArray(val) {
   return val.split(",").map((s) => s.trim()).filter(Boolean);
 }
 
+function sanitizeStr(val) {
+  if (val == null) return null;
+  const s = String(val)
+    .replace(/[\n\r\t]/g, " ")
+    .replace(/[\x00-\x1F]/g, "")
+    .trim();
+  return s === "" ? null : s;
+}
+
 function parseDate(val) {
   if (!val || val === "") return null;
   const s = String(val).trim();
@@ -28,15 +37,15 @@ function parseDate(val) {
 function mapRow(row) {
   return {
     ean:                Number(row.ean              ?? row["KodEAN"]),
-    name:               row.name                   ?? row["Towar"]               ?? "",
-    variant:            row.variant                ?? row["Wariant"]             ?? null,
-    collection:         row.collection             ?? row["Kolekcja"]            ?? null,
-    product_group:      row.product_group          ?? row["Kategoria produktowa"] ?? row["Grupa"] ?? null,
+    name:               sanitizeStr(row.name                   ?? row["Towar"])               ?? "",
+    variant:            sanitizeStr(row.variant                ?? row["Wariant"]),
+    collection:         sanitizeStr(row.collection             ?? row["Kolekcja"]),
+    product_group:      sanitizeStr(row.product_group          ?? row["Kategoria produktowa"] ?? row["Grupa"]),
     tags_granularne:    parseCsvArray(row.tags_granularne  ?? row["TAGS_GRANULARNE"]),
     tags_domenowe:      parseCsvArray(row.tags_domenowe    ?? row["TAGS_DOMENOWE"]),
     filary_marki:       parseCsvArray(row.filary_marki     ?? row["FILARY_MARKI"]),
     okazje:             parseCsvArray(row.okazje           ?? row["OKAZJE"]),
-    segment_prezentowy: row.segment_prezentowy     ?? row["SEGMENT_PREZENTOWY"]  ?? null,
+    segment_prezentowy: sanitizeStr(row.segment_prezentowy     ?? row["SEGMENT_PREZENTOWY"]),
     launch_date:        parseDate(row.launch_date  ?? row["DATA URUCHOMIENIA"]),
     evergreen:          parseBoolean(row.evergreen ?? row["EVERGREEN"]),
     price_avg:          row.price_avg != null ? Number(row.price_avg) : null,
