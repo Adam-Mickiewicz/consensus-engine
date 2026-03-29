@@ -12,6 +12,7 @@ const TOOLS = [
   { href: "/tools/countdown", label: "Generator odliczania", icon: "⏱" },
   { href: "/tools/marketing-brief", label: "Akcje marketingowe", icon: "📋" },
   { href: "/tools/brand-settings", label: "Ustawienia marki", icon: "🏷️" },
+  { href: "/tools/znakowanie", label: "Znakowanie odzieży", icon: "👕" },
 ];
 
 const LIGHT = {
