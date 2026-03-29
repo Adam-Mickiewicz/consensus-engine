@@ -72,6 +72,12 @@ const VIDEOS = {
     { id: 'z4MU5YI7JeA', caption: 'Farby wodne — przygotowanie sita i druk' },
     { id: 'uzP4fCaLweU', caption: 'Discharge — wywab na ciemnej koszulce bawełnianej' },
   ],
+  cmyk: [
+    { id: '1AOaYC8uzW4', caption: 'CMYK sitodruk — druk 4-kolorowy na koszulce krok po kroku' },
+    { id: 'cutw7nrBk1c', caption: 'Separacja CMYK i Simulated Process — pełny tutorial' },
+    { id: 'qzmRK3NmI9c', caption: 'Ryonet: 4-color process i Separation Studio — webinar' },
+    { id: 'hgYxJd-vr9Y', caption: 'Photoshop dla sitodruku — konwersja do rastra halftonowego' },
+  ],
   haft: [
     { id: 'h9UMYbWxAVY', caption: 'Historia i proces digitizingu haftu maszynowego' },
     { id: '3FBFeRB2mJw', caption: 'Maszyny wielogłowicowe — Ricoma vs Tajima vs SWF' },
@@ -218,6 +224,32 @@ const PHOTOS = {
     sq('digital allover print polyester fashion', 'Cyfrowy pełny wydruk na poliestrze'),
     sq('sublimation printing process heat paper', 'Papier transferowy sublimacyjny'),
     sq('allover print cut sew sportswear design', 'Cut-and-sew sublimacja — od szwu do szwu'),
+  ],
+  cmyk: [
+    sq('cmyk halftone screen printing tshirt dots', 'Raster CMYK — kropeczki pod lupą na koszulce'),
+    sq('4 color process screen printing halftone', '4-kolorowy druk procesowy — separacja CMYK'),
+    sq('halftone print dots pattern colorful', 'Raster rastrowy — efekt gazetowy z bliska'),
+    sq('process color screen printing photo tshirt', 'Zdjęcie wydrukowane sitodrukiem CMYK'),
+    sq('cmyk print cyan magenta yellow black ink', 'Farby CMYK — przezroczyste nakładające się'),
+    sq('screen printing registration marks colors', 'Pasery — precyzyjne dopasowanie 4 sit'),
+    sq('full color tshirt print white shirt photo', 'Pełnokolorowe zdjęcie na białej koszulce'),
+    sq('halftone dot pattern print closeup fabric', 'Zbliżenie na raster — efekt druku procesowego'),
+    sq('color separation screen printing film', 'Separacja barwna — 4 filmy pozytywowe'),
+    sq('cmyk screen printing moiré halftone angle', 'Kąty rastra — jak unikać efektu mory'),
+    sq('photo realistic tshirt print screen printing', 'Fotorealistyczny nadruk sitodrukiem procesowym'),
+    sq('process screen printing workshop production', 'Produkcja 4-kolorowa — warsztat sitodrukowy'),
+  ],
+  simulated: [
+    sq('simulated process screen printing dark shirt', 'Symulacja procesowa — pełen kolor na czarnej'),
+    sq('photorealistic dark tshirt print band', 'Koszulka kapeli — fotorealizm na czarnym tle'),
+    sq('multicolor screen printing dark garment', 'Wielokolorowy sitodruk na ciemnym materiale'),
+    sq('spot color simulation screen printing', 'Kolory spotowe symulujące zdjęcie'),
+    sq('screen printing dark tshirt photo realistic', 'Fotorealizm na czarnej koszulce — symulacja'),
+    sq('band tshirt rock print photorealistic dark', 'Rock koszulka — symulacja na czarnym tle'),
+    sq('high fidelity screen print dark garment', 'Hi-fi sitodruk na ciemnej koszulce'),
+    sq('screen printing opaque ink dark shirt', 'Kryjące farby — symulacja na ciemnym'),
+    sq('streetwear dark tshirt graphic print premium', 'Premium streetwear — symulacja procesowa'),
+    sq('screen printing 8 color dark garment', '8 sita — symulacja pełnokolorowa'),
   ],
   flex: [
     sq('heat transfer vinyl tshirt htv craft', 'Folia termotransferowa HTV na koszulce'),
@@ -589,6 +621,43 @@ export default function ZnakowaniePage() {
             <PhotoGallery photos={PHOTOS.high_density} t={t} />
           </TechCard>
 
+          <TechCard icon="🎯" title="CMYK / Druk Procesowy" subtitle="4 sita, przezroczyste farby, raster — pełne kolory z minimalnej liczby matryc" t={t}>
+            <p style={{ marginBottom: 12, color: t.text }}>Zamiast kryjących farb spotowych, CMYK używa <strong>przezroczystych farb</strong> rastrowanych pod różnymi kątami. Gdy nakładają się na siebie, oko odbiera to jako pełną paletę barw — efekt jak w druku gazetowym z bliska.</p>
+            <Tags items={[
+              { text: 'Tylko jasne koszulki', color: 'yellow' }, { text: '4 matryce', color: 'green' },
+              { text: 'Zdjęcia / gradienty', color: 'green' }, { text: 'Raster wymagany', color: 'blue' },
+              { text: 'Nie na ciemne!', color: 'red' },
+            ]} t={t} />
+            <ProsCons
+              pros={['Pełna paleta barw przy tylko 4 matrycach', 'Zdjęcia i gradienty możliwe w sitodruku', 'Niższy koszt przygotowalni niż symulacja', 'Efekt artystyczny — raster widoczny z bliska']}
+              cons={['Działa tylko na białych / bardzo jasnych koszulkach', 'Farby przezroczyste = brak krycia na ciemnym', 'Nigdy nie da neonowych, żarówiastych kolorów', 'Błąd kąta rastra → efekt mory (Moiré)', 'Wymaga 300 DPI — żadnych małych JPEGów!', 'Separacja tylko przez specjalistyczne oprogramowanie']}
+              t={t} />
+            <Callout icon="⚠️" t={t}>
+              <strong style={{ color: t.accentLight }}>Pułapka Moiré:</strong> Jeśli kąty rastra C/M/Y/K są źle dobrane, na nadruku powstaje geometryczny wzór szachownicy. Separację zawsze zlecajcie drukarni — oni znają własne maszyny i siatki.
+            </Callout>
+            <Callout icon="🔥" t={t}>
+              <strong style={{ color: t.accentLight }}>Ciemna koszulka + CMYK = błoto.</strong> Farby przezroczyste na białym poddruku dają zgaszone, brudne kolory. Do zdjęć na ciemnym materiale jedyna opcja to <strong>Simulated Process</strong> — patrz niżej.
+            </Callout>
+            <PhotoGallery photos={PHOTOS.cmyk} t={t} />
+          </TechCard>
+
+          <TechCard icon="🌗" title="Simulated Process (Symulacja)" subtitle="6–10 kryjących farb spotowych rastrowanych — fotorealizm na ciemnym tle" t={t}>
+            <p style={{ marginBottom: 12, color: t.text }}>Zamiast 4 przezroczystych farb CMYK, program separuje obraz na <strong>6–10 mocno kryjących farb</strong> (biała baza, czerwony, niebieski, żółty, szary, white highlight…). Każda jest rastrowana, ale ponieważ są kryjące — uderzają w ciemny materiał z pełną mocą.</p>
+            <Tags items={[
+              { text: 'Ciemne koszulki ✓', color: 'green' }, { text: '6–10 matryc', color: 'yellow' },
+              { text: 'Fotorealizm', color: 'green' }, { text: 'Nakłady 200+', color: 'blue' },
+              { text: 'Droga przygotowalnia', color: 'red' },
+            ]} t={t} />
+            <ProsCons
+              pros={['Fotorealistyczny, nasycony nadruk NA CZARNYM tle', 'Żywe kolory których CMYK nie da', 'Efekt premium — koszulki kapel, kolekcje artystyczne', 'Trwałe, kryjące farby jak klasyczny plastizol']}
+              cons={['6–10 matryc = wysoki koszt przygotowalni', 'Opłacalne dopiero od ~200 sztuk', 'Wymaga specjalisty od separacji — nie dla amatora', 'Dłuższy czas przygotowania niż CMYK']}
+              t={t} />
+            <Callout icon="💡" t={t}>
+              <strong style={{ color: t.accentLight }}>Kiedy zamiast Symulacji:</strong> Jeśli klient chce pełnokolorowe zdjęcie na &lt;50 sztukach — zawsze DTG lub DTF. Sitodruk (CMYK lub Symulacja) opłaca się od ~100–200 szt., gdy jakość i trwałość mają wartość premium.
+            </Callout>
+            <PhotoGallery photos={PHOTOS.simulated} t={t} />
+          </TechCard>
+
           <TechCard icon="✨" title="Inne efekty sitodruku" subtitle="Metaliczne, brokatowe, odblaskowe, świecące, crack, foil…" t={t}>
             <p style={{ marginBottom: 12, color: t.text }}>Narzędzia do pojedynczych dropów i efektów specjalnych, nie baza kolekcji.</p>
             <Callout icon="📏" t={t}>
@@ -596,6 +665,8 @@ export default function ZnakowaniePage() {
             </Callout>
           </TechCard>
 
+          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: t.textBright, margin: '32px 0 12px' }}>📹 Filmy — CMYK, raster, separacja</h3>
+          <VideoGrid videos={VIDEOS.cmyk} t={t} />
           <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: t.textBright, margin: '32px 0 12px' }}>📹 Filmy — Sitodruk w praktyce</h3>
           <VideoGrid videos={VIDEOS.sitodruk} t={t} />
         </div>
