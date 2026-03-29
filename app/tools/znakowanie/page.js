@@ -240,6 +240,36 @@ export default function ZnakowaniePage() {
 
       <Nav current="/tools/znakowanie" />
 
+      {/* ─── SIDE NAV ─── */}
+      <div style={{
+        position: 'fixed', top: '50%', right: 16, transform: 'translateY(-50%)',
+        zIndex: 900, display: 'flex', flexDirection: 'column', gap: 2,
+      }}>
+        {NAV_ITEMS.map(n => {
+          const active = activeSection === n.id;
+          return (
+            <button key={n.id} onClick={() => scrollTo(n.id)} title={n.label} style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px',
+              background: active ? t.accentGlow : 'transparent',
+              border: `1px solid ${active ? t.accent + '60' : 'transparent'}`,
+              borderRadius: 6, cursor: 'pointer', textAlign: 'left',
+              transition: 'all 0.15s', whiteSpace: 'nowrap',
+            }}>
+              <span style={{
+                width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+                background: active ? t.accent : t.textDim, opacity: active ? 1 : 0.45,
+                transition: 'all 0.15s',
+              }} />
+              <span style={{
+                fontSize: 11, fontWeight: active ? 700 : 400,
+                color: active ? t.accentLight : t.textDim,
+                transition: 'all 0.15s',
+              }}>{n.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* ─── HERO ─── */}
       <header style={{
         minHeight: '70vh', display: 'flex', flexDirection: 'column', justifyContent: 'center',
