@@ -73,10 +73,10 @@ const VIDEOS = {
     { id: 'uzP4fCaLweU', caption: 'Discharge — wywab na ciemnej koszulce bawełnianej' },
   ],
   cmyk: [
-    { id: '1AOaYC8uzW4', caption: 'CMYK sitodruk — druk 4-kolorowy na koszulce krok po kroku' },
-    { id: 'cutw7nrBk1c', caption: 'Separacja CMYK i Simulated Process — pełny tutorial' },
-    { id: 'qzmRK3NmI9c', caption: 'Ryonet: 4-color process i Separation Studio — webinar' },
-    { id: 'hgYxJd-vr9Y', caption: 'Photoshop dla sitodruku — konwersja do rastra halftonowego' },
+    { id: 'cutw7nrBk1c', caption: 'Separacja CMYK i Simulated Process — pełny tutorial (SpeedySep)' },
+    { id: 'x4YZX0c15aM', caption: 'Sitodruk 4-kolorowy CMYK — szczegółowy tutorial (Ryonet)' },
+    { id: '_XNg9DV53ek', caption: 'Separacja CMYK w Photoshopie do sitodruku (Ryonet)' },
+    { id: 'S07FxeLHh0M', caption: 'CMYK w sitodruku — wskazówki dla początkujących (ZDigitizing)' },
   ],
   haft: [
     { id: 'h9UMYbWxAVY', caption: 'Historia i proces digitizingu haftu maszynowego' },
@@ -99,10 +99,9 @@ const VIDEOS = {
   ],
 };
 
-// keyword-based Unsplash: each unique URL string = consistent different image
-const sq = (kw, alt) => ({ url: `https://source.unsplash.com/400x300/?${kw.replace(/ /g, '+')}`, alt });
-// specific Unsplash photo by ID
-const U = (id, alt) => ({ url: `https://source.unsplash.com/${id}/400x300`, alt });
+// picsum.photos — seed-based, always returns 200, no redirect to other domains
+const sq = (kw, alt) => ({ url: `https://picsum.photos/seed/${kw.replace(/\s+/g, '-')}/400/300`, alt });
+const U = (id, alt) => ({ url: `https://picsum.photos/seed/${id}/400/300`, alt });
 // Pexels photo by ID
 const P = (id, alt) => ({ url: `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=400`, alt });
 
@@ -324,10 +323,12 @@ function PhotoGallery({ photos, t }) {
     <div style={{ margin: '20px 0' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
         {visible.map((p, i) => (
-          <div key={i} style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${t.border}`, aspectRatio: '4/3', background: t.bgCardAlt }}>
+          <div key={i} style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${t.border}`, aspectRatio: '4/3', background: t.bgCardAlt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <img src={p.url} alt={p.alt}
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              loading="lazy" />
+              referrerPolicy="no-referrer"
+              onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement.innerHTML = `<span style="font-size:11px;color:#888;padding:8px;text-align:center">${p.alt}</span>`; }}
+            />
           </div>
         ))}
       </div>
