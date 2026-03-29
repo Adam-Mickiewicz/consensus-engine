@@ -93,79 +93,145 @@ const VIDEOS = {
   ],
 };
 
-const U = (id) => `https://source.unsplash.com/${id}/600x400`;
-const P = (id) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=600`;
+// keyword-based Unsplash: each unique URL string = consistent different image
+const sq = (kw, alt) => ({ url: `https://source.unsplash.com/400x300/?${kw.replace(/ /g, '+')}`, alt });
+// specific Unsplash photo by ID
+const U = (id, alt) => ({ url: `https://source.unsplash.com/${id}/400x300`, alt });
+// Pexels photo by ID
+const P = (id, alt) => ({ url: `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=400`, alt });
 
 const PHOTOS = {
-  sitodruk: [
-    { url: P('3966277'), alt: 'Rzemieślnik przy sitodruku w warsztacie' },
-    { url: U('gvX1p5f5rlc'), alt: 'Plastizol na czarnej koszulce — biały poddruk' },
-    { url: U('bGjzSW1rDXo'), alt: 'Farby sitodrukowe w słoikach' },
-    { url: U('XOLHAGi8oKc'), alt: 'Odbitka dłoni — sitodruk' },
-    { url: U('Cx5AQKzuB7Y'), alt: 'Mieszanka kolorowych farb w wodzie' },
-    { url: U('3t4UcoxfH4c'), alt: 'Kolorowe plamy farby na białym tle' },
-    { url: U('Lki74Jj7H-U'), alt: 'Niebieska farba — splash' },
-    { url: U('eAUE_FmclYE'), alt: 'Czarne koszulki na wieszaku — gotowe nadruki' },
-    { url: U('Aph0Zdb1qFU'), alt: 'Operator maszyny drukarskiej przy panelu' },
-    { url: U('D8Lwzkg4AW8'), alt: 'Maszyna drukująca — żółto-szara' },
-    { url: U('ZCTh4f4mv18'), alt: 'Sito drukowe przy oknie' },
-    { url: U('N6Y1z8TAr54'), alt: 'Poradnik sitodruku na czarnym tle' },
+  plastizol: [
+    sq('screen printing tshirt press squeegee', 'Rak sitodrukowy — nakładanie plastizolu'),
+    sq('silk screen printing workshop studio', 'Warsztat sitodrukowy — prasa i sito'),
+    sq('screen printing ink multicolor vibrant', 'Farby plastizolowe — kolory kryjące'),
+    sq('colorful graphic tshirt bold print streetwear', 'Koszulka z wyrazistym nadrukiem plastizolowym'),
+    sq('screen printing production factory series', 'Produkcja seryjna — sitodruk plastizolowy'),
+    sq('printed apparel brand streetwear graphic', 'Gotowa odzież z nadrukiem plastizolowym'),
+    sq('screen printing exposure unit film positive', 'Naświetlanie sita — film pozytywowy'),
+    sq('tshirt print design bold colors fashion', 'Gruby nadruk plastizolowy na koszulce'),
+    sq('screen printing ink tray palette colors', 'Tace z plastizolowymi farbami drukarskimi'),
+    sq('screen printing craft artisan hands', 'Ręczny sitodruk — rzemieślnicze podejście'),
+    sq('printed tshirt stack production pile', 'Seria wydruków — gotowe koszulki'),
+    sq('screen printing graphic design branding', 'Finalny produkt z nadrukiem brandowym'),
+  ],
+  farby_wodne: [
+    sq('water based screen printing soft hand', 'Sitodruk wodny — miękki chwyt w tkaninie'),
+    sq('soft print tshirt vintage worn effect', 'Efekt soft-hand — nadruk w materiale'),
+    sq('artisan screen printing handcraft indie', 'Rzemieślniczy druk wodny'),
+    sq('vintage worn tshirt graphic faded print', 'Wyblakły efekt — typowy dla wodnych'),
+    sq('eco friendly textile print organic', 'Ekologiczny druk wodny'),
+    sq('minimalist tshirt print design clean', 'Minimalistyczny nadruk — farby wodne'),
+    sq('artistic screen print tshirt craft', 'Artystyczna grafika — water-based'),
+    sq('indie brand tshirt print aesthetic soft', 'Indie brand — wodny, miękki nadruk'),
+    sq('fashion brand tshirt print premium soft', 'Premium koszulka — soft-hand wodny'),
+    sq('screen printing studio watercolor textile', 'Wodny nadruk na naturalnej tkaninie'),
+  ],
+  discharge: [
+    sq('dark tshirt graphic print black streetwear', 'Grafika wywabiona na ciemnej koszulce'),
+    sq('black tshirt print design bold dark', 'Sitodruk na czarnej koszulce — efekt wywab'),
+    sq('vintage dark tshirt graphic worn texture', 'Vintage wzór na ciemnym — discharge'),
+    sq('dark garment print brand integrated texture', 'Nadruk zintegrowany z materiałem'),
+    sq('band tshirt graphic dark black print', 'Koszulka z grafiką na ciemnym tle'),
+    sq('grunge tshirt print dark fabric aesthetic', 'Grunge estetyka — discharge na czarnym'),
+    sq('streetwear dark shirt print design brand', 'Streetwear — discharge bez chwytu'),
+    sq('bleach effect tshirt dark fabric print', 'Efekt wywabienia farby z tkaniny'),
+    sq('dark shirt art print design photography', 'Artystyczny nadruk na czarnej koszulce'),
+    sq('premium dark tshirt print vintage washed', 'Premium washed efekt — discharge'),
+  ],
+  puff: [
+    sq('3d raised print tshirt embossed texture', 'Nadruk puff — wypukła gąbczasta struktura'),
+    sq('dimensional print tshirt streetwear brand', '3D efekt na koszulce streetwear'),
+    sq('embossed texture print clothing tshirt', 'Wyczuwalna wypukłość nadruku puff'),
+    sq('retro varsity puff print sweatshirt', 'Retro puff na bluzie varsity'),
+    sq('raised lettering tshirt brand logo', 'Wypukłe litery z efektem puff'),
+    sq('tactile graphic tshirt print texture feel', 'Dotykalna grafika — puff 3D'),
+    sq('3d foam embossed print tshirt design', 'Piana puff — nadruk 3D'),
+    sq('puff print screen printing vintage retro', 'Vintage puff print — powrót stylu lat 90.'),
+    sq('bold 3d design tshirt fashion print', 'Wyrazisty nadruk 3D — moda'),
+    sq('embossed brand print tshirt streetwear', 'Embossed logo — streetwear puff'),
+  ],
+  high_density: [
+    sq('silicone print logo clothing brand', 'Silikonowy nadruk HD — efekt gumowej naszywki'),
+    sq('rubber patch brand tshirt premium', 'Gumowa naszywka bez naszywki — HD'),
+    sq('embossed logo brand apparel clothing', 'Embossed logo na odzieży premium'),
+    sq('high relief print tshirt brand', 'Wysoki relief — hard edge HD'),
+    sq('brand patch premium clothing logo', 'Premium patch efekt — High Density'),
+    sq('hard silicone logo tshirt design', 'Twardy silikonowy nadruk logo'),
+    sq('streetwear brand logo print premium', 'Streetwear HD — precyzyjne krawędzie'),
+    sq('premium sportswear logo brand embossed', 'Sportswear premium — logo HD'),
+    sq('thick raised print logo tshirt design', 'Gruby wypukły nadruk — HD'),
+    sq('brand apparel label tshirt print logo', 'Nadruk brandowy z efektem label'),
   ],
   haft: [
-    { url: U('tOCIrKLupyA'), alt: 'Maszyna hafciarska w akcji' },
-    { url: U('SLODHM36c9s'), alt: 'Tamborek hafciarski — białe tło' },
-    { url: U('fL5xqqoUVF0'), alt: 'Haft kwiatowy na tkaninie' },
-    { url: U('ICngiwVv5S0'), alt: 'Ręce przy maszynie do szycia' },
-    { url: U('1mnXGDl3iRY'), alt: 'Biała maszyna do szycia' },
-    { url: U('gm3DMk94SVc'), alt: 'Ręce szyją materiał na maszynie' },
-    { url: U('nWAlCB1tyvc'), alt: 'Kolorowe nici na stojaku' },
-    { url: U('Nh6NsnqYVsI'), alt: 'Zestaw kolorowych nici hafciarskich' },
-    { url: U('V6T99SnUCyA'), alt: 'Szpule nici — kolorowe' },
-    { url: U('87hFrPk3V-s'), alt: 'Kolorowe nici — asortyment' },
-    { url: U('kTQj4QoHP-k'), alt: 'Różowa nić na białej ramce' },
-    { url: U('iKlTQ_GB16k'), alt: 'Szpula nici brązowo-zielona' },
+    U('6bJxo9qFwfE', 'Haft krzyżykowy w tamborku — gotowy produkt'),
+    U('a4RgqU5jbus', 'Tamborek z haftem kwiatowym'),
+    U('p7K29ZM2Bn8', 'Kilka tamborków hafciarskich'),
+    U('bdqlM6-tbiQ', 'Haft w tamborku — wzór'),
+    U('0wzyDMY8gCo', 'Czapka z haftem górskim — gotowy produkt'),
+    U('fL5xqqoUVF0', 'Haft kwiatowy na tkaninie'),
+    U('SLODHM36c9s', 'Tamborek hafciarski — białe tło'),
+    U('tOCIrKLupyA', 'Maszyna hafciarska w akcji'),
+    U('Z-IzOGdtcHY', 'Igła z czerwoną nicią — zbliżenie'),
+    U('kTQj4QoHP-k', 'Różowa nić na tamborku'),
+    U('nWAlCB1tyvc', 'Kolorowe nici hafciarskie na stojaku'),
+    U('V6T99SnUCyA', 'Szpule nici — paleta kolorów'),
   ],
   dtg: [
-    { url: U('Tzm3Oyu_6sk'), alt: 'Maszyna drukująca cyfrowo' },
-    { url: U('CYrYxz-uvE4'), alt: 'Duża maszyna cyfrowa — wydruki' },
-    { url: U('r2tVRjxzFM8'), alt: 'Osoba obsługująca maszynę przemysłową' },
-    { url: U('oE8gTCYUmYM'), alt: 'Pracownicy przy szyciu w fabryce' },
-    { url: U('yVRkR4G46sc'), alt: 'Hala produkcji tekstylnej' },
-    { url: U('5Czr8ygjXLM'), alt: 'Przędzalnia bawełny — pracownicy' },
-    { url: U('RuLSD0wZ2B4'), alt: 'Pracownicy przy maszynach w fabryce' },
-    { url: U('SOVoX8Kwm7w'), alt: 'Pracownica fabryki odzieżowej' },
-    { url: U('xElw_a9lq70'), alt: 'Pakowanie odzieży w fabryce' },
-    { url: U('LgDb6mbseAo'), alt: 'Pracownica z materiałem w fabryce' },
-    { url: U('E7KIt5wqdzU'), alt: 'Kobieta przy maszynie w fabryce tekstylnej' },
-    { url: U('upKXvfgKABY'), alt: 'Szycie odzieży na maszynie' },
+    sq('direct garment printing machine digital tshirt', 'Drukarka DTG — bezpośredni druk na koszulce'),
+    sq('photo print tshirt detailed full color digital', 'Zdjęcie jako nadruk DTG — pełna paleta'),
+    sq('digital tshirt printing inkjet custom print', 'Cyfrowy nadruk DTG na koszulce'),
+    sq('full color tshirt print artwork illustration', 'Skomplikowana ilustracja — możliwa tylko DTG'),
+    sq('print on demand tshirt custom small series', 'Print-on-demand — DTG od 1 sztuki'),
+    sq('gradient print tshirt detailed photorealistic', 'Gradient i fotorealizm — DTG'),
+    sq('multicolor complex tshirt print design digital', 'Wielokolorowy wzór — DTG bez ograniczeń'),
+    sq('tshirt printing workshop machine operator', 'Operator maszyny DTG w warsztacie'),
+    sq('custom tshirt brand design digital print', 'Customowa odzież — druk cyfrowy DTG'),
+    sq('detailed fine print tshirt art design', 'Drobny detal — mocna strona DTG'),
+    sq('inkjet tshirt printing production workshop', 'Produkcja inkjet na tkaninie bawełnianej'),
+    sq('digital print fashion colorful garment', 'Moda cyfrowa — kolorowy DTG'),
+  ],
+  dtf: [
+    sq('heat transfer film printing tshirt', 'Folia DTF przed wgrzaniem na koszulce'),
+    sq('heat press machine tshirt transfer workshop', 'Prasa termiczna — wgrzewanie DTF'),
+    sq('iron on transfer design fabric tshirt', 'Transfer wgrzewany — efekt DTF'),
+    sq('vinyl heat transfer tshirt custom design', 'Transfer foliowy DTF — gotowy produkt'),
+    sq('heat applied print tshirt polyester design', 'Nadruk DTF na poliestrze'),
+    sq('custom tshirt transfer print workshop', 'Customowy nadruk transferowy — DTF'),
+    sq('heat press decal fabric workshop production', 'Produkcja z prasą — DTF'),
+    sq('transfer paper tshirt custom print design', 'Transfer DTF — szeroka skala materiałów'),
+    sq('polyester print sport tshirt transfer', 'DTF na sportowej koszulce poliestrowej'),
+    sq('heat press vinyl craft tshirt workshop', 'Warsztat z prasą i filmem DTF'),
+    sq('tshirt print transfer applied finished', 'Gotowy nadruk DTF na koszulce'),
+    sq('custom print film transfer apparel design', 'Efekt DTF — warstewka na tkaninie'),
   ],
   sublimacja: [
-    { url: U('0ohjyDUIUq0'), alt: 'Kolorowe tkaniny — sublimacja' },
-    { url: U('4nabmlliGdU'), alt: 'Różnokolorowe materiały — gradient' },
-    { url: U('nYVfiHu5OIs'), alt: 'Kolorowe wzory na tkaninie' },
-    { url: U('HyBXy5PHQR8'), alt: 'Czerwony materiał — zbliżenie' },
-    { url: U('0rUc4_00L-A'), alt: 'Biało-zielono-morski wzór kwiatowy' },
-    { url: U('RMQEU7fCqLc'), alt: 'Kosz z kolorowymi tkaninami' },
-    { url: U('5GsbwkrCfuM'), alt: 'Kolorowe ubrania na wieszaku' },
-    { url: U('aL7mLl5DZk4'), alt: 'Kolorowe wzory tkanin — asortyment' },
-    { url: U('sYI_WSHEsXU'), alt: 'Kolorowe dekoracje tekstylne' },
-    { url: U('exSKrQuFLj8'), alt: 'Biały kubek — sublimacja mockup' },
-    { url: U('0jeUy9ZagHU'), alt: 'Kolorowy atrament w wodzie — efekt barwnika' },
-    { url: U('Cx5AQKzuB7Y'), alt: 'Mieszanka farb — sublimacja' },
+    sq('sublimation all over print polyester tshirt', 'Pełny zadruk sublimacyjny — all-over'),
+    sq('allover print sportswear polyester pattern', 'Sportswear sublimacja — wzór na całej bryle'),
+    sq('dye sublimation print vibrant color fabric', 'Sublimacja — barwnik staje się tkanina'),
+    sq('sublimation printing heat press transfer', 'Prasa sublimacyjna — wgrzewanie barwnika'),
+    sq('all over print leggings activewear design', 'Legginsy allover — sublimacja sportswear'),
+    sq('sublimation jersey football print vibrant', 'Koszulka sportowa z sublimacją'),
+    sq('colorful pattern allover print fashion', 'Kolorowy wzór fullprint — sublimacja'),
+    sq('sublimation mug cup product white', 'Kubek sublimacyjny — produkt gotowy'),
+    sq('vivid allover print fabric clothing design', 'Żywe kolory — tylko sublimacja to umożliwia'),
+    sq('digital allover print polyester fashion', 'Cyfrowy pełny wydruk na poliestrze'),
+    sq('sublimation printing process heat paper', 'Papier transferowy sublimacyjny'),
+    sq('allover print cut sew sportswear design', 'Cut-and-sew sublimacja — od szwu do szwu'),
   ],
   flex: [
-    { url: U('jF_AQH-bBSc'), alt: 'Praca z narzędziem w warsztacie' },
-    { url: U('HsQuhb9GBPM'), alt: 'Precyzyjna praca w atelier' },
-    { url: U('F7v66RfronU'), alt: 'Mężczyzna przy stole roboczym' },
-    { url: U('pbuPB86bNuk'), alt: 'Szycie sukienki na maszynie' },
-    { url: U('CAe2NqibUpo'), alt: 'Szycie materiału na maszynie' },
-    { url: U('6Zh87jbMSEA'), alt: 'Szycie odzieży na maszynach — warsztat' },
-    { url: U('PDhHgBYuktw'), alt: 'Starszy mężczyzna przy maszynie krawiecką' },
-    { url: U('qI9H5nyhrV8'), alt: 'Osoba szyje na maszynie' },
-    { url: U('aSJj_tFa3ik'), alt: 'Krawcowa przy maszynie w fabryce' },
-    { url: P('6980533'), alt: 'Wycinanie wzoru — ploter tnący' },
-    { url: U('aGz5hkren64'), alt: 'Nici — flat lay różane' },
-    { url: U('kuyumG6hKWk'), alt: 'Sortowanie tkanin w fabryce' },
+    sq('heat transfer vinyl tshirt htv craft', 'Folia termotransferowa HTV na koszulce'),
+    sq('vinyl cutting plotter craft workshop', 'Ploter tnący — wycinanie folii flex'),
+    sq('custom name letter vinyl tshirt shirt', 'Imię z folii HTV — personalizacja'),
+    sq('heat press vinyl iron on tshirt workshop', 'Prasa do wgrzewania folii HTV'),
+    sq('sports jersey number vinyl custom', 'Numer na koszulce sportowej — vinyl'),
+    sq('flock velvet transfer tshirt texture', 'Flock — aksamitna tekstura nadruku'),
+    sq('htv application tshirt craft heat press', 'Aplikacja HTV — wgrzewanie folii'),
+    sq('vinyl decal shirt heat transfer design', 'Transfer foliowy na koszulce — flex'),
+    sq('personalized tshirt vinyl name custom shirt', 'Personalizacja — imię i numer na koszulce'),
+    sq('custom sport team number jersey vinyl', 'Numery dla drużyny sportowej'),
+    sq('iron on letter tshirt craft custom', 'Litery żelazko-transferowe na koszulce'),
+    sq('heat vinyl fashion tshirt design brand', 'Moda z folią — efekt flex/flock'),
   ],
 };
 
@@ -467,6 +533,7 @@ export default function ZnakowaniePage() {
               <strong style={{ color: t.accentLight }}>Najlepsze wzory:</strong> Typografia, grafika flat, ilustracje wektorowe, znaki brandowe.<br />
               <strong style={{ color: t.accentLight }}>Słabiej:</strong> Zdjęcia, subtelne malarskie przejścia, ultra-drobna kreska.
             </Callout>
+            <PhotoGallery photos={PHOTOS.plastizol} t={t} />
           </TechCard>
 
           <TechCard icon="💧" title="Farby Wodne" subtitle="Water-based — barwnik wnika we włókno, miękki chwyt" t={t}>
@@ -479,6 +546,7 @@ export default function ZnakowaniePage() {
               pros={['Ultra-miękki chwyt — nadruk „w" materiale', 'Oddychające, ekologiczne', 'Bardzo dobry detal na wysokich meshach', 'Idealne na premium T-shirty jasne/średnie']}
               cons={['Trudniejszy proces — zasychanie w sicie', 'Na ciemnych wymaga białego poddruku', 'Mniej tolerancyjna niż plastizol', 'Na syntetykach i blendach więcej ryzyk']}
               t={t} />
+            <PhotoGallery photos={PHOTOS.farby_wodne} t={t} />
           </TechCard>
 
           <TechCard icon="⚗️" title="Wywab (Discharge)" subtitle="Gamechanger na ciemnych — odbarwia tkaninę i wprowadza nowy kolor" t={t}>
@@ -494,6 +562,7 @@ export default function ZnakowaniePage() {
             <Callout icon="⚠️" t={t}>
               <strong style={{ color: t.accentLight }}>Pułapka:</strong> Różni producenci barwią koszulki różnymi barwnikami. Ta sama „czarna" koszulka od dwóch marek może się rozładować do zupełnie innego koloru. Zawsze test na realnym blanku!
             </Callout>
+            <PhotoGallery photos={PHOTOS.discharge} t={t} />
           </TechCard>
 
           <TechCard icon="🧊" title="Puff / 3D" subtitle="Farba puchnąca — wypukły, gąbczasty efekt" t={t}>
@@ -505,6 +574,7 @@ export default function ZnakowaniePage() {
               pros={['Wow-efekt — widoczna, dotykalna wypukłość', 'Świetne na grubą typografię, ikony', 'Dobrze na bawełnie i stabilnych dzianinach']}
               cons={['Brak detalu — cienkie linie zlewają się', 'Efekt zależny od grubości warstwy i temperatury', 'Nie do małych fontów i skomplikowanych kształtów']}
               t={t} />
+            <PhotoGallery photos={PHOTOS.puff} t={t} />
           </TechCard>
 
           <TechCard icon="🔲" title="High Density (HD 3D)" subtitle="Ostre, kanciaste, twarde krawędzie — jak gumowa naszywka" t={t}>
@@ -516,6 +586,7 @@ export default function ZnakowaniePage() {
               pros={['Efekt gumowej naszywki bez naszywki', 'Ostre krawędzie, kontrolowana wysokość', 'Premium look na małych elementach']}
               cons={['Nie do ilustracji, zdjęć, złożonych kompozycji', 'Wymaga prostych brył, większych kształtów', 'Na cienkich T-shirtach może być za ciężki']}
               t={t} />
+            <PhotoGallery photos={PHOTOS.high_density} t={t} />
           </TechCard>
 
           <TechCard icon="✨" title="Inne efekty sitodruku" subtitle="Metaliczne, brokatowe, odblaskowe, świecące, crack, foil…" t={t}>
@@ -525,8 +596,6 @@ export default function ZnakowaniePage() {
             </Callout>
           </TechCard>
 
-          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: t.textBright, margin: '32px 0 8px' }}>📸 Przykłady — Sitodruk</h3>
-          <PhotoGallery photos={PHOTOS.sitodruk} t={t} />
           <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: t.textBright, margin: '32px 0 12px' }}>📹 Filmy — Sitodruk w praktyce</h3>
           <VideoGrid videos={VIDEOS.sitodruk} t={t} />
         </div>
@@ -548,9 +617,8 @@ export default function ZnakowaniePage() {
             <Callout icon="🚨" t={t}>
               <strong style={{ color: t.accentLight }}>Najczęstszy błąd:</strong> Projektowanie haftu jak nadruku. Wymaga uproszczenia, pogrubienia, ograniczenia kolorów.
             </Callout>
+            <PhotoGallery photos={PHOTOS.haft} t={t} />
           </TechCard>
-          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: t.textBright, margin: '32px 0 8px' }}>📸 Przykłady — Haft</h3>
-          <PhotoGallery photos={PHOTOS.haft} t={t} />
           <VideoGrid videos={VIDEOS.haft} t={t} />
         </div>
       </section>
@@ -569,6 +637,7 @@ export default function ZnakowaniePage() {
               pros={['Pełen kolor, zdjęcia, gradienty', 'Brak kosztów matryc — od 1 szt.', 'Świetny detal i przejścia tonalne']}
               cons={['Przy dużych nakładach przegrywa z sitem', 'Ciemne koszulki = pretreat + ślad', 'Najlepiej na bawełnie, słabiej na syntetykach']}
               t={t} />
+            <PhotoGallery photos={PHOTOS.dtg} t={t} />
           </TechCard>
 
           <TechCard icon="📋" title="DTF — Direct to Film" subtitle="Największy hit — druk na folii PET + proszek klejowy + prasa" t={t}>
@@ -580,10 +649,9 @@ export default function ZnakowaniePage() {
               pros={['Ekstremalnie wszechstronny materiałowo', 'Ostre kolory, pełne przejścia tonalne', 'Bardzo trwałe (często bardziej niż DTG)', 'Bawełna, poliester, nylon, softshell, skóra']}
               cons={['Wyczuwalna warstwa „naklejki"', 'Mniej oddychające niż wodny/discharge', 'Duże aple mniej szlachetne od premium sita']}
               t={t} />
+            <PhotoGallery photos={PHOTOS.dtf} t={t} />
           </TechCard>
 
-          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: t.textBright, margin: '32px 0 8px' }}>📸 Przykłady — DTG & DTF</h3>
-          <PhotoGallery photos={PHOTOS.dtg} t={t} />
           <VideoGrid videos={VIDEOS.dtg} t={t} />
         </div>
       </section>
@@ -604,9 +672,8 @@ export default function ZnakowaniePage() {
             <Callout icon="📐" t={t}>
               <strong style={{ color: t.accentLight }}>Dla grafików:</strong> Fullprint to nie „front 30 × 40 cm". Projektuj pod wykroje, szwy, tolerancje szycia. Model cut-and-sew.
             </Callout>
+            <PhotoGallery photos={PHOTOS.sublimacja} t={t} />
           </TechCard>
-          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: t.textBright, margin: '32px 0 8px' }}>📸 Przykłady — Sublimacja</h3>
-          <PhotoGallery photos={PHOTOS.sublimacja} t={t} />
           <VideoGrid videos={VIDEOS.sublimacja} t={t} />
         </div>
       </section>
@@ -625,6 +692,7 @@ export default function ZnakowaniePage() {
               pros={['Wysoka trwałość, ostre krawędzie', 'Szybkie wdrożenie', 'Wszechstronność materiałowa']}
               cons={['Tylko wektory — brak przejść tonalnych', 'Wiele kolorów = wiele warstw = grubość', 'Przy dużych aplach efekt „foliowy"']}
               t={t} />
+            <PhotoGallery photos={PHOTOS.flex} t={t} />
           </TechCard>
 
           <TechCard icon="🔄" title="Transfer sitodrukowy" subtitle="Sitodruk na nośniku → wgrzanie w odzież" t={t}>
@@ -635,8 +703,6 @@ export default function ZnakowaniePage() {
             <p style={{ color: t.text }}>Świetne dla czapek, bluz, odzieży wierzchniej, linii heritage lub varsity.</p>
           </TechCard>
 
-          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: t.textBright, margin: '32px 0 8px' }}>📸 Przykłady — Flex & HTV</h3>
-          <PhotoGallery photos={PHOTOS.flex} t={t} />
           <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: t.textBright, margin: '32px 0 12px' }}>📹 Filmy — Flex & HTV w praktyce</h3>
           <VideoGrid videos={VIDEOS.flex} t={t} />
         </div>
