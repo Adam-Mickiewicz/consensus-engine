@@ -93,6 +93,82 @@ const VIDEOS = {
   ],
 };
 
+const U = (id) => `https://source.unsplash.com/${id}/600x400`;
+const P = (id) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=600`;
+
+const PHOTOS = {
+  sitodruk: [
+    { url: P('3966277'), alt: 'Rzemieślnik przy sitodruku w warsztacie' },
+    { url: U('gvX1p5f5rlc'), alt: 'Plastizol na czarnej koszulce — biały poddruk' },
+    { url: U('bGjzSW1rDXo'), alt: 'Farby sitodrukowe w słoikach' },
+    { url: U('XOLHAGi8oKc'), alt: 'Odbitka dłoni — sitodruk' },
+    { url: U('Cx5AQKzuB7Y'), alt: 'Mieszanka kolorowych farb w wodzie' },
+    { url: U('3t4UcoxfH4c'), alt: 'Kolorowe plamy farby na białym tle' },
+    { url: U('Lki74Jj7H-U'), alt: 'Niebieska farba — splash' },
+    { url: U('eAUE_FmclYE'), alt: 'Czarne koszulki na wieszaku — gotowe nadruki' },
+    { url: U('Aph0Zdb1qFU'), alt: 'Operator maszyny drukarskiej przy panelu' },
+    { url: U('D8Lwzkg4AW8'), alt: 'Maszyna drukująca — żółto-szara' },
+    { url: U('ZCTh4f4mv18'), alt: 'Sito drukowe przy oknie' },
+    { url: U('N6Y1z8TAr54'), alt: 'Poradnik sitodruku na czarnym tle' },
+  ],
+  haft: [
+    { url: U('tOCIrKLupyA'), alt: 'Maszyna hafciarska w akcji' },
+    { url: U('SLODHM36c9s'), alt: 'Tamborek hafciarski — białe tło' },
+    { url: U('fL5xqqoUVF0'), alt: 'Haft kwiatowy na tkaninie' },
+    { url: U('ICngiwVv5S0'), alt: 'Ręce przy maszynie do szycia' },
+    { url: U('1mnXGDl3iRY'), alt: 'Biała maszyna do szycia' },
+    { url: U('gm3DMk94SVc'), alt: 'Ręce szyją materiał na maszynie' },
+    { url: U('nWAlCB1tyvc'), alt: 'Kolorowe nici na stojaku' },
+    { url: U('Nh6NsnqYVsI'), alt: 'Zestaw kolorowych nici hafciarskich' },
+    { url: U('V6T99SnUCyA'), alt: 'Szpule nici — kolorowe' },
+    { url: U('87hFrPk3V-s'), alt: 'Kolorowe nici — asortyment' },
+    { url: U('kTQj4QoHP-k'), alt: 'Różowa nić na białej ramce' },
+    { url: U('iKlTQ_GB16k'), alt: 'Szpula nici brązowo-zielona' },
+  ],
+  dtg: [
+    { url: U('Tzm3Oyu_6sk'), alt: 'Maszyna drukująca cyfrowo' },
+    { url: U('CYrYxz-uvE4'), alt: 'Duża maszyna cyfrowa — wydruki' },
+    { url: U('r2tVRjxzFM8'), alt: 'Osoba obsługująca maszynę przemysłową' },
+    { url: U('oE8gTCYUmYM'), alt: 'Pracownicy przy szyciu w fabryce' },
+    { url: U('yVRkR4G46sc'), alt: 'Hala produkcji tekstylnej' },
+    { url: U('5Czr8ygjXLM'), alt: 'Przędzalnia bawełny — pracownicy' },
+    { url: U('RuLSD0wZ2B4'), alt: 'Pracownicy przy maszynach w fabryce' },
+    { url: U('SOVoX8Kwm7w'), alt: 'Pracownica fabryki odzieżowej' },
+    { url: U('xElw_a9lq70'), alt: 'Pakowanie odzieży w fabryce' },
+    { url: U('LgDb6mbseAo'), alt: 'Pracownica z materiałem w fabryce' },
+    { url: U('E7KIt5wqdzU'), alt: 'Kobieta przy maszynie w fabryce tekstylnej' },
+    { url: U('upKXvfgKABY'), alt: 'Szycie odzieży na maszynie' },
+  ],
+  sublimacja: [
+    { url: U('0ohjyDUIUq0'), alt: 'Kolorowe tkaniny — sublimacja' },
+    { url: U('4nabmlliGdU'), alt: 'Różnokolorowe materiały — gradient' },
+    { url: U('nYVfiHu5OIs'), alt: 'Kolorowe wzory na tkaninie' },
+    { url: U('HyBXy5PHQR8'), alt: 'Czerwony materiał — zbliżenie' },
+    { url: U('0rUc4_00L-A'), alt: 'Biało-zielono-morski wzór kwiatowy' },
+    { url: U('RMQEU7fCqLc'), alt: 'Kosz z kolorowymi tkaninami' },
+    { url: U('5GsbwkrCfuM'), alt: 'Kolorowe ubrania na wieszaku' },
+    { url: U('aL7mLl5DZk4'), alt: 'Kolorowe wzory tkanin — asortyment' },
+    { url: U('sYI_WSHEsXU'), alt: 'Kolorowe dekoracje tekstylne' },
+    { url: U('exSKrQuFLj8'), alt: 'Biały kubek — sublimacja mockup' },
+    { url: U('0jeUy9ZagHU'), alt: 'Kolorowy atrament w wodzie — efekt barwnika' },
+    { url: U('Cx5AQKzuB7Y'), alt: 'Mieszanka farb — sublimacja' },
+  ],
+  flex: [
+    { url: U('jF_AQH-bBSc'), alt: 'Praca z narzędziem w warsztacie' },
+    { url: U('HsQuhb9GBPM'), alt: 'Precyzyjna praca w atelier' },
+    { url: U('F7v66RfronU'), alt: 'Mężczyzna przy stole roboczym' },
+    { url: U('pbuPB86bNuk'), alt: 'Szycie sukienki na maszynie' },
+    { url: U('CAe2NqibUpo'), alt: 'Szycie materiału na maszynie' },
+    { url: U('6Zh87jbMSEA'), alt: 'Szycie odzieży na maszynach — warsztat' },
+    { url: U('PDhHgBYuktw'), alt: 'Starszy mężczyzna przy maszynie krawiecką' },
+    { url: U('qI9H5nyhrV8'), alt: 'Osoba szyje na maszynie' },
+    { url: U('aSJj_tFa3ik'), alt: 'Krawcowa przy maszynie w fabryce' },
+    { url: P('6980533'), alt: 'Wycinanie wzoru — ploter tnący' },
+    { url: U('aGz5hkren64'), alt: 'Nici — flat lay różane' },
+    { url: U('kuyumG6hKWk'), alt: 'Sortowanie tkanin w fabryce' },
+  ],
+};
+
 const CHEATSHEET = [
   { label: 'Duże nakłady:', value: 'Sitodruk plastizolowy' },
   { label: 'Premium chwyt:', value: 'Farby wodne / Discharge' },
@@ -104,28 +180,68 @@ const CHEATSHEET = [
 
 // ─── Sub-components ───
 
+function VideoCard({ v, t }) {
+  const [playing, setPlaying] = useState(false);
+  return (
+    <div style={{ borderRadius: 12, overflow: 'hidden', border: `1px solid ${t.border}`, background: '#000' }}>
+      {playing ? (
+        <iframe
+          src={`https://www.youtube.com/embed/${v.id}?autoplay=1&rel=0`}
+          style={{ width: '100%', aspectRatio: '16/9', display: 'block', border: 'none' }}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      ) : (
+        <div onClick={() => setPlaying(true)} style={{ position: 'relative', aspectRatio: '16/9', cursor: 'pointer', overflow: 'hidden' }}>
+          <img src={`https://img.youtube.com/vi/${v.id}/hqdefault.jpg`} alt={v.caption}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: 'brightness(0.72)' }} />
+          <div style={{
+            position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+            width: 56, height: 56, background: 'rgba(220,0,0,0.92)', borderRadius: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <div style={{ width: 0, height: 0, borderStyle: 'solid', borderWidth: '10px 0 10px 18px', borderColor: 'transparent transparent transparent #fff', marginLeft: 3 }} />
+          </div>
+        </div>
+      )}
+      <div style={{ padding: '10px 14px', fontSize: 13, color: t.textDim, background: t.bgCard, borderTop: `1px solid ${t.border}` }}>
+        {v.caption}
+      </div>
+    </div>
+  );
+}
+
 function VideoGrid({ videos, t }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, margin: '24px 0' }}>
-      {videos.map(v => (
-        <a key={v.id} href={`https://www.youtube.com/watch?v=${v.id}`} target="_blank" rel="noopener noreferrer"
-          style={{ borderRadius: 12, overflow: 'hidden', border: `1px solid ${t.border}`, background: '#000', textDecoration: 'none', display: 'block' }}>
-          <div style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden' }}>
-            <img src={`https://img.youtube.com/vi/${v.id}/hqdefault.jpg`} alt={v.caption}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: 'brightness(0.75)' }} />
-            <div style={{
-              position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-              width: 56, height: 56, background: 'rgba(255,0,0,0.85)', borderRadius: 12,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <div style={{ width: 0, height: 0, borderStyle: 'solid', borderWidth: '10px 0 10px 18px', borderColor: 'transparent transparent transparent #fff', marginLeft: 3 }} />
-            </div>
+      {videos.map(v => <VideoCard key={v.id} v={v} t={t} />)}
+    </div>
+  );
+}
+
+function PhotoGallery({ photos, t }) {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? photos : photos.slice(0, 3);
+  return (
+    <div style={{ margin: '20px 0' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+        {visible.map((p, i) => (
+          <div key={i} style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${t.border}`, aspectRatio: '4/3', background: t.bgCardAlt }}>
+            <img src={p.url} alt={p.alt}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              loading="lazy" />
           </div>
-          <div style={{ padding: '10px 14px', fontSize: 13, color: t.textDim, background: t.bgCard, borderTop: `1px solid ${t.border}` }}>
-            {v.caption}
-          </div>
-        </a>
-      ))}
+        ))}
+      </div>
+      {photos.length > 3 && (
+        <button onClick={() => setExpanded(e => !e)} style={{
+          marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '7px 16px', borderRadius: 8, border: `1px solid ${t.border}`,
+          background: 'transparent', color: t.textDim, fontSize: 13, cursor: 'pointer', transition: 'all 0.15s',
+        }}>
+          {expanded ? '▲ Zwiń' : `▼ Pokaż więcej zdjęć (${photos.length - 3})`}
+        </button>
+      )}
     </div>
   );
 }
@@ -409,6 +525,8 @@ export default function ZnakowaniePage() {
             </Callout>
           </TechCard>
 
+          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: t.textBright, margin: '32px 0 8px' }}>📸 Przykłady — Sitodruk</h3>
+          <PhotoGallery photos={PHOTOS.sitodruk} t={t} />
           <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: t.textBright, margin: '32px 0 12px' }}>📹 Filmy — Sitodruk w praktyce</h3>
           <VideoGrid videos={VIDEOS.sitodruk} t={t} />
         </div>
@@ -431,6 +549,8 @@ export default function ZnakowaniePage() {
               <strong style={{ color: t.accentLight }}>Najczęstszy błąd:</strong> Projektowanie haftu jak nadruku. Wymaga uproszczenia, pogrubienia, ograniczenia kolorów.
             </Callout>
           </TechCard>
+          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: t.textBright, margin: '32px 0 8px' }}>📸 Przykłady — Haft</h3>
+          <PhotoGallery photos={PHOTOS.haft} t={t} />
           <VideoGrid videos={VIDEOS.haft} t={t} />
         </div>
       </section>
@@ -462,6 +582,8 @@ export default function ZnakowaniePage() {
               t={t} />
           </TechCard>
 
+          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: t.textBright, margin: '32px 0 8px' }}>📸 Przykłady — DTG & DTF</h3>
+          <PhotoGallery photos={PHOTOS.dtg} t={t} />
           <VideoGrid videos={VIDEOS.dtg} t={t} />
         </div>
       </section>
@@ -483,6 +605,8 @@ export default function ZnakowaniePage() {
               <strong style={{ color: t.accentLight }}>Dla grafików:</strong> Fullprint to nie „front 30 × 40 cm". Projektuj pod wykroje, szwy, tolerancje szycia. Model cut-and-sew.
             </Callout>
           </TechCard>
+          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: t.textBright, margin: '32px 0 8px' }}>📸 Przykłady — Sublimacja</h3>
+          <PhotoGallery photos={PHOTOS.sublimacja} t={t} />
           <VideoGrid videos={VIDEOS.sublimacja} t={t} />
         </div>
       </section>
@@ -511,6 +635,8 @@ export default function ZnakowaniePage() {
             <p style={{ color: t.text }}>Świetne dla czapek, bluz, odzieży wierzchniej, linii heritage lub varsity.</p>
           </TechCard>
 
+          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: t.textBright, margin: '32px 0 8px' }}>📸 Przykłady — Flex & HTV</h3>
+          <PhotoGallery photos={PHOTOS.flex} t={t} />
           <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: t.textBright, margin: '32px 0 12px' }}>📹 Filmy — Flex & HTV w praktyce</h3>
           <VideoGrid videos={VIDEOS.flex} t={t} />
         </div>
