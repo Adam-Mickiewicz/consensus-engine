@@ -67,21 +67,29 @@ const DECISIONS = [
 
 const VIDEOS = {
   sitodruk: [
-    { id: 'PfWkGaLEnmg', caption: 'How Screen Printing Works — cały proces krok po kroku' },
-    { id: 'GBJWsjfy5pc', caption: 'Water-based vs Plastisol — porównanie chwytu i efektu' },
-    { id: 'CXJp7wuMaFk', caption: 'Discharge Printing — jak działa wywab na ciemnej koszulce' },
-    { id: '3xLAxfkrIjE', caption: 'Puff Print — efekt wypukły 3D w sitodruku' },
+    { id: 'gvX1p5f5rlc', caption: 'Plastizol na ciemnym — biały poddruk krok po kroku' },
+    { id: 'cvwHtH5F0Yk', caption: 'Plastizol na granatowym — cały proces w studiu' },
+    { id: 'z4MU5YI7JeA', caption: 'Farby wodne — przygotowanie sita i druk' },
+    { id: 'uzP4fCaLweU', caption: 'Discharge — wywab na ciemnej koszulce bawełnianej' },
   ],
   haft: [
-    { id: 'r-lxwCyRQ9c', caption: 'Jak działa haft maszynowy — od pliku do gotowego produktu' },
-    { id: 'ZZ7M5fOtD04', caption: 'Najczęstsze błędy przy przygotowaniu haftu' },
+    { id: 'h9UMYbWxAVY', caption: 'Historia i proces digitizingu haftu maszynowego' },
+    { id: '3FBFeRB2mJw', caption: 'Maszyny wielogłowicowe — Ricoma vs Tajima vs SWF' },
   ],
   dtg: [
-    { id: 'pQ2gZqxjEQk', caption: 'DTG — jak wygląda druk bezpośredni na koszulce' },
-    { id: 'XyaZPqSxrac', caption: 'DTF — od folii do gotowego produktu' },
+    { id: '1GkqdwXhlLI', caption: 'DTG — cały proces z Kornit Digital w Printful' },
+    { id: '_zqAujRkALo', caption: 'Jak powstaje produkt DTG w print-on-demand' },
+    { id: 'bXYSLTqHp0o', caption: 'DTF — czego nie wiedzieć przed zakupem drukarki' },
+    { id: 'OGoHaaod0AI', caption: 'DTF na poliestrze i odzieży sportowej' },
   ],
   sublimacja: [
-    { id: 'YZIO6xBUbCM', caption: 'Sublimacja — jak barwnik staje się częścią materiału' },
+    { id: 'cA3cF2TZfAs', caption: 'Sublimacja — transfer na drukarce desktopowej' },
+    { id: 'O4_QtXx6F20', caption: 'Jak wgrzewać transfer sublimacyjny prasą' },
+    { id: 'qBIRAo3nrTI', caption: 'Sublimacja na koszulkach — pełny poradnik' },
+  ],
+  flex: [
+    { id: 'bCMpBgDptbw', caption: 'HTV 101 — podstawy folii termotransferowej' },
+    { id: '2rMnU5go7Pg', caption: 'Ploter i HTV — poradnik dla początkujących' },
   ],
 };
 
@@ -502,6 +510,9 @@ export default function ZnakowaniePage() {
           <TechCard icon="🏷" title="Naszywki, Emblematy, Chenille" subtitle="Osobna kategoria premium" t={t}>
             <p style={{ color: t.text }}>Świetne dla czapek, bluz, odzieży wierzchniej, linii heritage lub varsity.</p>
           </TechCard>
+
+          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: t.textBright, margin: '32px 0 12px' }}>📹 Filmy — Flex & HTV w praktyce</h3>
+          <VideoGrid videos={VIDEOS.flex} t={t} />
         </div>
       </section>
 
