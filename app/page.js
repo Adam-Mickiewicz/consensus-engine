@@ -63,6 +63,13 @@ const TOOLS = [
     name: "Ustawienia marki",
     desc: "Konfiguracja tonu, kolorów i parametrów marki dla pozostałych narzędzi.",
   },
+  {
+    href: "/tools/znakowanie",
+    icon: "👕",
+    label: "Przewodnik",
+    name: "Znakowanie odzieży",
+    desc: "Kompletny przewodnik po technikach znakowania — sitodruk, haft, DTG/DTF, sublimacja, flex.",
+  },
 ];
 
 export default function Home() {
