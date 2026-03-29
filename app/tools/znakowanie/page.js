@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useDarkMode } from '../../hooks/useDarkMode';
+import Nav from '../../components/Nav';
 
 // ─── Theme tokens ───
 const dark = {
@@ -212,16 +213,6 @@ export default function ZnakowaniePage() {
   const [isDark] = useDarkMode();
   const t = isDark ? dark : light;
   const [activeSection, setActiveSection] = useState('');
-  const [showStickyNav, setShowStickyNav] = useState(false);
-  const heroRef = useRef(null);
-
-  useEffect(() => {
-    const el = heroRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(([e]) => setShowStickyNav(!e.isIntersecting), { threshold: 0.1 });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
 
   useEffect(() => {
     const onScroll = () => {
@@ -247,30 +238,10 @@ export default function ZnakowaniePage() {
   return (
     <div style={{ fontFamily: "'Source Sans 3', sans-serif", background: t.bg, color: t.text, lineHeight: 1.7, fontSize: 17, minHeight: '100vh' }}>
 
-      {/* ─── STICKY NAV ─── */}
-      <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
-        background: isDark ? 'rgba(14,14,14,0.85)' : 'rgba(245,240,235,0.9)',
-        backdropFilter: 'blur(16px)', borderBottom: `1px solid ${t.border}`,
-        padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        transform: showStickyNav ? 'translateY(0)' : 'translateY(-100%)',
-        transition: 'transform 0.3s',
-      }}>
-        <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.05rem', color: t.accentLight }}>Znakowanie Odzieży</div>
-        <div style={{ display: 'flex', gap: 4, overflow: 'auto' }}>
-          {NAV_ITEMS.map(n => (
-            <button key={n.id} onClick={() => scrollTo(n.id)} style={{
-              padding: '6px 12px', fontSize: 13, border: 'none', borderRadius: 6,
-              cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s',
-              background: activeSection === n.id ? t.accentGlow : 'transparent',
-              color: activeSection === n.id ? t.accentLight : t.textDim,
-            }}>{n.label}</button>
-          ))}
-        </div>
-      </nav>
+      <Nav current="/tools/znakowanie" />
 
       {/* ─── HERO ─── */}
-      <header ref={heroRef} style={{
+      <header style={{
         minHeight: '70vh', display: 'flex', flexDirection: 'column', justifyContent: 'center',
         alignItems: 'center', textAlign: 'center', padding: '80px 24px',
         background: `radial-gradient(ellipse at 30% 20%, ${t.accent}12 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, ${t.accent}08 0%, transparent 50%), ${t.bg}`,
