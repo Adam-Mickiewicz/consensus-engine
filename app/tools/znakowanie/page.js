@@ -328,7 +328,7 @@ export default function ZnakowaniePage() {
         <div style={containerStyle}>
           <SectionHeader num="01 — Sitodruk" title="Królestwo Farb i Efektów" lead="W sitodruku to farba zmienia wszystko: od przygotowania pliku, przez chwyt nadruku, po trwałość i cenę." t={t} />
 
-          <TechCard icon="🎨" title="Plastizol" subtitle="Klasyk sitodruku — farba na bazie PVC, leży „na" włóknie" t={t}>
+          <TechCard icon="🎨" title="Plastizol" subtitle={'Klasyk sitodruku — farba na bazie PVC, leży \u201Ena\u201D włóknie'} t={t}>
             <p style={{ marginBottom: 12, color: t.text }}>Najpopularniejsza farba sitodrukowa. Nie zastyga na sicie, schnie pod wpływem wysokiej temperatury. Daje mocne, kryjące kolory — nawet na czarnym.</p>
             <Tags items={[
               { text: 'Duże nakłady', color: 'green' }, { text: '1–4 kolory', color: 'green' },
@@ -461,7 +461,7 @@ export default function ZnakowaniePage() {
       <section id="sublimacja" style={sectionStyle}>
         <div style={containerStyle}>
           <SectionHeader num="04 — Sublimacja" title="Sublimacja & Fullprint" lead="Barwnik pod wpływem temperatury zamienia się w gaz i trwale wnika w poliestrowe włókna." t={t} />
-          <TechCard icon="🌈" title="Sublimacja / All-over Print" subtitle="Pełny zadruk „od szwu do szwu"" t={t}>
+          <TechCard icon="🌈" title="Sublimacja / All-over Print" subtitle={'Pełny zadruk \u201Eod szwu do szwu\u201D'} t={t}>
             <Tags items={[
               { text: '100% niewyczuwalny', color: 'green' }, { text: 'Pełny zadruk bryły', color: 'green' },
               { text: 'Tylko poliester!', color: 'red' }, { text: 'Brak na ciemnym', color: 'red' },
