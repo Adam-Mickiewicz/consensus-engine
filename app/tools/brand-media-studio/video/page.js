@@ -488,8 +488,12 @@ export default function VideoPage() {
               </div>
             )}
 
-            <div style={{ marginTop: 16, fontSize: 13, color: "#888" }}>
-              Est. koszt: <strong style={{ color: ACCENT }}>${estimatedCost}</strong>
+            <div style={{ fontSize: 12, color: "#888", marginTop: 12 }}>
+              Szacowany koszt generowania wideo:{" "}
+              <strong style={{ color: ACCENT }}>~${calculateCost(selectedModel, params)}</strong>
+              <span style={{ color: "#bbb", marginLeft: 4 }}>
+                ({selectedModel?.model_name} · {params?.duration} · {params?.variants || 1} wariant)
+              </span>
             </div>
           </div>
         )}
