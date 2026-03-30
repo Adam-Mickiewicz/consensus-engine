@@ -31,11 +31,11 @@ export async function GET() {
 
 export async function POST(request) {
   const supabase = getServiceClient();
-  const { section, url, alt, sort_order = 0 } = await request.json();
+  const { section, url, alt, description = '', sort_order = 0 } = await request.json();
 
   const { data, error } = await supabase
     .from('znakowanie_photos')
-    .insert([{ section, url, alt: alt || url, sort_order }])
+    .insert([{ section, url, alt: alt || url, description, sort_order }])
     .select()
     .single();
 

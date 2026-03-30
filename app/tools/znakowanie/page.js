@@ -321,30 +321,38 @@ function PhotoGallery({ photos, t, onPhotoClick, editMode, onDelete, onStartAdd,
         {visible.map((p, i) => (
           <div key={p.id || i} style={{
             borderRadius: 10, overflow: 'hidden', border: `1px solid ${t.border}`,
-            aspectRatio: '4/3', background: t.bgCardAlt,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            position: 'relative', cursor: editMode ? 'default' : 'zoom-in',
+            background: t.bgCardAlt, position: 'relative',
+            cursor: editMode ? 'default' : 'zoom-in',
           }}
-            onClick={() => !editMode && onPhotoClick?.({ url: p.url, alt: p.alt })}
+            onClick={() => !editMode && onPhotoClick?.({ url: p.url, alt: p.alt, description: p.description })}
           >
-            <img src={p.url} alt={p.alt}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              referrerPolicy="no-referrer"
-              onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement.innerHTML = `<span style="font-size:11px;color:#888;padding:8px;text-align:center">${p.alt}</span>`; }}
-            />
-            {editMode && (
-              <button
-                onClick={e => { e.stopPropagation(); onDelete?.(p.id, p._isLocal, p._localIdx); }}
-                title="Usuń zdjęcie"
-                style={{
-                  position: 'absolute', top: 5, right: 5,
-                  width: 26, height: 26, borderRadius: '50%',
-                  background: 'rgba(200,0,0,0.88)', border: '2px solid rgba(255,255,255,0.5)',
-                  color: '#fff', fontSize: 16, lineHeight: 1, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 700,
-                }}
-              >×</button>
+            <div style={{ aspectRatio: '4/3', overflow: 'hidden', position: 'relative' }}>
+              <img src={p.url} alt={p.alt}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                referrerPolicy="no-referrer"
+                onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement.innerHTML = `<span style="font-size:11px;color:#888;padding:8px;text-align:center;display:block">${p.alt}</span>`; }}
+              />
+              {editMode && (
+                <button
+                  onClick={e => { e.stopPropagation(); onDelete?.(p.id, p._isLocal, p._localIdx); }}
+                  title="Usuń zdjęcie"
+                  style={{
+                    position: 'absolute', top: 5, right: 5,
+                    width: 26, height: 26, borderRadius: '50%',
+                    background: 'rgba(200,0,0,0.88)', border: '2px solid rgba(255,255,255,0.5)',
+                    color: '#fff', fontSize: 16, lineHeight: 1, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 700,
+                  }}
+                >×</button>
+              )}
+            </div>
+            {p.description && (
+              <div style={{
+                padding: '8px 10px', fontSize: 11, color: t.textDim, lineHeight: 1.5,
+                borderTop: `1px solid ${t.border}`,
+                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+              }}>{p.description}</div>
             )}
           </div>
         ))}
@@ -381,13 +389,21 @@ function PhotoGallery({ photos, t, onPhotoClick, editMode, onDelete, onStartAdd,
             placeholder="https://..."
             style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgCard, color: t.text, fontSize: 13, marginBottom: 8, boxSizing: 'border-box' }}
           />
-          <div style={{ fontSize: 12, color: t.textDim, marginBottom: 6 }}>Opis (alt)</div>
+          <div style={{ fontSize: 12, color: t.textDim, marginBottom: 6 }}>Tytuł / alt (krótko)</div>
           <input
             type="text"
             value={newPhoto?.alt || ''}
             onChange={e => onNewPhotoChange({ ...newPhoto, alt: e.target.value })}
-            placeholder="Krótki opis zdjęcia..."
-            style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgCard, color: t.text, fontSize: 13, marginBottom: 12, boxSizing: 'border-box' }}
+            placeholder="Np. Sitodruk plastizolowy na ciemnym podłożu"
+            style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgCard, color: t.text, fontSize: 13, marginBottom: 8, boxSizing: 'border-box' }}
+          />
+          <div style={{ fontSize: 12, color: t.textDim, marginBottom: 6 }}>Opis / info <span style={{ opacity: 0.5 }}>(opcjonalne — pojawi się pod zdjęciem)</span></div>
+          <textarea
+            value={newPhoto?.description || ''}
+            onChange={e => onNewPhotoChange({ ...newPhoto, description: e.target.value })}
+            placeholder="Dodatkowe info, np. technika, szczegóły, uwagi..."
+            rows={3}
+            style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgCard, color: t.text, fontSize: 13, marginBottom: 12, boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }}
           />
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={onConfirmAdd} disabled={!newPhoto?.url?.trim()} style={{ padding: '8px 20px', borderRadius: 8, background: t.accent, border: 'none', color: '#fff', fontSize: 13, cursor: 'pointer' }}>
@@ -437,7 +453,10 @@ function Lightbox({ photo, onClose, t }) {
           style={{ maxWidth: '90vw', maxHeight: '82vh', objectFit: 'contain', borderRadius: 10, display: 'block' }}
         />
         {photo.alt && (
-          <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, marginTop: 12, textAlign: 'center', maxWidth: 600 }}>{photo.alt}</div>
+          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 10, textAlign: 'center', maxWidth: 700 }}>{photo.alt}</div>
+        )}
+        {photo.description && (
+          <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, marginTop: 8, textAlign: 'center', maxWidth: 700, lineHeight: 1.6, background: 'rgba(255,255,255,0.07)', borderRadius: 8, padding: '10px 16px' }}>{photo.description}</div>
         )}
       </div>
     </div>
@@ -602,7 +621,7 @@ export default function ZnakowaniePage() {
     }
     const res = await fetch('/api/znakowanie/photos', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ section, url: newPhoto.url, alt: newPhoto.alt || newPhoto.url, sort_order: base.length }),
+      body: JSON.stringify({ section, url: newPhoto.url, alt: newPhoto.alt || newPhoto.url, description: newPhoto.description || '', sort_order: base.length }),
     });
     const photo = await res.json();
     setDbPhotos(prev => ({ ...prev, [section]: [...(prev[section] || base), photo] }));
