@@ -113,6 +113,8 @@ export default function VideoPage() {
   const [toast, setToast] = useState(null);
   const [enhancing, setEnhancing] = useState(false);
   const [alternatives, setAlternatives] = useState([]);
+  const [aiModel, setAiModel] = useState("claude");
+  const [aiInstruction, setAiInstruction] = useState("");
 
   function setParam(key, val) {
     setParams(p => ({ ...p, [key]: val }));
@@ -155,7 +157,12 @@ export default function VideoPage() {
       const res = await fetch("/api/brand-media/enhance-prompt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, model_id: selectedModel?.model_id, job_type: "video" }),
+        body: JSON.stringify({
+          prompt,
+          instruction: aiInstruction,
+          model: aiModel,
+          context: { selectedModel: selectedModel?.model_id, params, jobType: "video" },
+        }),
       });
       const data = await res.json();
       if (data.enhanced) setPrompt(data.enhanced);
@@ -397,9 +404,52 @@ export default function VideoPage() {
                 width: "100%", minHeight: 200, padding: "12px 14px",
                 border: "1px solid #ddd", borderRadius: 8, fontSize: 14,
                 resize: "vertical", boxSizing: "border-box", outline: "none",
-                fontFamily: "inherit", lineHeight: 1.6, marginBottom: 12,
+                fontFamily: "inherit", lineHeight: 1.6, marginBottom: 16,
               }}
             />
+
+            {/* Model AI */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: "#888", marginBottom: 6, fontWeight: 500 }}>Model AI do ulepszania</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {[
+                  { id: "claude", label: "Claude Sonnet" },
+                  { id: "gpt-4o", label: "GPT-4o" },
+                  { id: "gpt-4.1", label: "GPT-4.1" },
+                  { id: "o3", label: "o3" },
+                ].map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => setAiModel(m.id)}
+                    style={{
+                      padding: "5px 12px", borderRadius: 20, fontSize: 12, cursor: "pointer",
+                      background: aiModel === m.id ? ACCENT : "transparent",
+                      color: aiModel === m.id ? "#fff" : "#666",
+                      border: aiModel === m.id ? `1px solid ${ACCENT}` : "1px solid #ddd",
+                      fontWeight: aiModel === m.id ? 500 : 400,
+                    }}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Instrukcja dla AI */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: "#888", marginBottom: 6, fontWeight: 500 }}>Instrukcja dla AI (opcjonalna)</div>
+              <textarea
+                value={aiInstruction}
+                onChange={e => setAiInstruction(e.target.value)}
+                placeholder="np. 'zaproponuj 3 warianty — minimalistyczny, narracyjny i energiczny' lub 'skup się na produkcie, styl lifestyle'"
+                style={{
+                  width: "100%", minHeight: 60, padding: 10,
+                  border: "1px solid #ddd", borderRadius: 8,
+                  fontSize: 13, resize: "vertical", fontFamily: "inherit",
+                  boxSizing: "border-box", outline: "none",
+                }}
+              />
+            </div>
 
             <button
               onClick={handleEnhancePrompt}
@@ -409,28 +459,31 @@ export default function VideoPage() {
                 border: `1px solid ${ACCENT}`, background: "#fff",
                 color: enhancing ? "#ccc" : ACCENT,
                 cursor: enhancing || !prompt.trim() ? "not-allowed" : "pointer",
-                marginBottom: alternatives.length ? 12 : 0,
               }}
             >
-              {enhancing ? "Generuję..." : "✦ Ulepsz prompt (Claude)"}
+              {enhancing ? "Generuję..." : "✦ Ulepsz prompt (AI)"}
             </button>
 
             {alternatives.length > 0 && (
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ fontSize: 11, color: "#888", fontWeight: 500 }}>Propozycje AI — kliknij aby użyć:</div>
                 {alternatives.map((alt, i) => (
-                  <button
+                  <div
                     key={i}
                     onClick={() => setPrompt(alt)}
                     style={{
-                      padding: "6px 12px", fontSize: 12, borderRadius: 20,
-                      border: "1px solid #e8ddd0", background: "#fdf7f2",
-                      color: ACCENT, cursor: "pointer", maxWidth: 240,
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      padding: "10px 14px",
+                      border: prompt === alt ? `1.5px solid ${ACCENT}` : "1px solid #eee",
+                      borderRadius: 8, fontSize: 13, lineHeight: 1.5,
+                      cursor: "pointer", background: prompt === alt ? "#fdf6ee" : "#fff",
+                      color: "#333", transition: "border-color 0.15s",
                     }}
-                    title={alt}
                   >
-                    Wariant {i + 1}: {alt.slice(0, 40)}{alt.length > 40 ? "..." : ""}
-                  </button>
+                    <div style={{ fontSize: 10, color: ACCENT, fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      Wariant {i + 1}
+                    </div>
+                    {alt}
+                  </div>
                 ))}
               </div>
             )}
