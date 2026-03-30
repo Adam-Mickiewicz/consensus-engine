@@ -214,7 +214,9 @@ async function fastInsert(rawOrders, productsMap, sb) {
     } else {
       for (const p of rawProducts) {
         const eanRaw = p.code ?? p.product_code ?? null;
-        const ean    = eanRaw ? (Number(String(eanRaw).trim()) || null) : null;
+        // EAN nulled out — FK constraint on products table would reject unknown EANs.
+        // After dropping client_product_events_ean_fkey the raw value can be stored.
+        const ean    = null; // eanRaw ? (Number(String(eanRaw).trim()) || null) : null
         eventRows.push({
           client_id,
           order_id,
@@ -356,12 +358,14 @@ export async function GET(request) {
 
   } catch (err) {
     console.error('[cron] błąd:', err.message);
-    await sb.from('sync_log').insert({
-      source: 'cron_sync',
-      status: 'error',
-      rows_upserted: 0,
-      meta: { error: err.message, duration_ms: Date.now() - startedAt },
-    }).catch(() => {});
+    try {
+      await sb.from('sync_log').insert({
+        source: 'cron_sync',
+        status: 'error',
+        rows_upserted: 0,
+        meta: { error: err.message, duration_ms: Date.now() - startedAt },
+      });
+    } catch (_) { /* sync_log insert failure nie powinno ukrywać oryginalnego błędu */ }
 
     return NextResponse.json(
       { success: false, error: err.message },
