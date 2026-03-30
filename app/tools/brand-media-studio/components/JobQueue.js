@@ -43,10 +43,27 @@ export default function JobQueue({ autoRefresh = true }) {
     }
   }, []);
 
+  async function triggerWorker() {
+    try {
+      await fetch("/api/cron/process-video-jobs", {
+        headers: { "Authorization": `Bearer ${process.env.NEXT_PUBLIC_CRON_SECRET}` },
+      });
+    } catch (e) {
+      // cicho ignoruj błędy
+    }
+  }
+
   useEffect(() => {
     fetchJobs();
     if (!autoRefresh) return;
-    const interval = setInterval(fetchJobs, 10000);
+    const interval = setInterval(async () => {
+      await fetchJobs();
+      setJobs(prev => {
+        const hasActive = prev.some(j => j.status === "queued" || j.status === "processing");
+        if (hasActive) triggerWorker();
+        return prev;
+      });
+    }, 15000);
     return () => clearInterval(interval);
   }, [fetchJobs, autoRefresh]);
 
