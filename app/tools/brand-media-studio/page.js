@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Nav from "../../components/Nav";
 import JobQueue from "./components/JobQueue";
+import LibraryGrid from "./components/LibraryGrid";
 
 const ACCENT = "#b8763a";
 
@@ -77,7 +78,7 @@ const MODULES = [
   },
 ];
 
-const TABS = ["Moduły", "Kolejka jobów", "Historia", "Ustawienia API"];
+const TABS = ["Moduły", "Kolejka jobów", "Biblioteka", "Historia", "Ustawienia API"];
 
 export default function BrandMediaStudioPage() {
   const [activeTab, setActiveTab] = useState("Moduły");
@@ -178,6 +179,11 @@ export default function BrandMediaStudioPage() {
         {/* Kolejka jobów */}
         {activeTab === "Kolejka jobów" && (
           <JobQueue autoRefresh={true} />
+        )}
+
+        {/* Biblioteka */}
+        {activeTab === "Biblioteka" && (
+          <LibraryGrid jobType="all" />
         )}
 
         {/* Historia */}

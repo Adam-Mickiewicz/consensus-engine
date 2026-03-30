@@ -58,7 +58,12 @@ Kontekst:
         messages: [{ role: 'user', content: userMessage }],
       });
       const raw = response.content[0]?.text || '[]';
-      alternatives = JSON.parse(cleanJSON(raw));
+      try {
+        alternatives = JSON.parse(cleanJSON(raw));
+        if (!Array.isArray(alternatives)) throw new Error('not array');
+      } catch {
+        alternatives = [raw.trim()];
+      }
     } else {
       // OpenAI models: gpt-4o, gpt-4.1, o3
       const modelMap = {
@@ -91,7 +96,12 @@ Kontekst:
 
       const data = await response.json();
       const raw = data.choices?.[0]?.message?.content || '[]';
-      alternatives = JSON.parse(cleanJSON(raw));
+      try {
+        alternatives = JSON.parse(cleanJSON(raw));
+        if (!Array.isArray(alternatives)) throw new Error('not array');
+      } catch {
+        alternatives = [raw.trim()];
+      }
     }
 
     if (!Array.isArray(alternatives)) {

@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Nav from "../../../components/Nav";
 import ModelSelector from "../components/ModelSelector";
-import ReferencePanel from "../components/ReferencePanel";
 import PromptSandbox from "../components/PromptSandbox";
 import CostEstimator from "../components/CostEstimator";
+import AttachmentPanel from "../components/AttachmentPanel";
+import PresetPanel from "../components/PresetPanel";
 
 const ACCENT = "#b8763a";
 const ORIENTATIONS = ["1:1", "4:3", "3:4", "16:9", "9:16"];
@@ -52,10 +53,11 @@ function Section({ title, children }) {
 
 export default function ImagesPage() {
   const router = useRouter();
+  const [sessionId] = useState(() => crypto.randomUUID());
   const [selectedModel, setSelectedModel] = useState(null);
   const [params, setParams] = useState({ orientation: "1:1", resolution: "", variants: "1" });
   const [prompt, setPrompt] = useState("");
-  const [refs, setRefs] = useState([]);
+  const [attachments, setAttachments] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [toast, setToast] = useState(null);
@@ -80,6 +82,25 @@ export default function ImagesPage() {
     return (selectedModel.price_per_unit * (parseInt(params.variants) || 1)).toFixed(2);
   }
 
+  function getCurrentConfig() {
+    return {
+      model_id: selectedModel?.model_id,
+      params,
+      prompt_template: prompt,
+    };
+  }
+
+  function handlePresetApply(preset) {
+    if (preset.model_id) setSelectedModel({ model_id: preset.model_id });
+    if (preset.params) setParams(p => ({ ...p, ...preset.params }));
+    if (preset.prompt_template) {
+      setPrompt(preset.prompt_template);
+      promptRef.current = preset.prompt_template;
+    }
+  }
+
+  const hasTemplateVars = prompt.includes("{{");
+
   async function handleSubmit() {
     if (!selectedModel) { setSubmitError("Wybierz model."); return; }
     if (!promptRef.current.trim()) { setSubmitError("Wpisz prompt."); return; }
@@ -95,7 +116,8 @@ export default function ImagesPage() {
           model_id: selectedModel.model_id,
           prompt: promptRef.current,
           params,
-          reference_urls: refs.map(r => r.url),
+          reference_urls: attachments.map(a => a.url),
+          attachment_ids: attachments.map(a => a.id),
           estimated_cost: parseFloat(computeCost()),
         }),
       });
@@ -140,16 +162,28 @@ export default function ImagesPage() {
           <span style={{ color: "#555" }}>Generowanie obrazów</span>
         </div>
 
-        <h1 style={{ fontSize: 22, fontWeight: 500, margin: "0 0 24px", color: "#1a1a1a" }}>
+        <h1 style={{ fontSize: 22, fontWeight: 500, margin: "0 0 16px", color: "#1a1a1a" }}>
           🖼 Generowanie obrazów
         </h1>
 
-        <Section title="1. Wybierz model">
+        {/* Presety */}
+        <div style={{ marginBottom: 8 }}>
+          <PresetPanel jobType="image" onApply={handlePresetApply} currentConfig={getCurrentConfig()} />
+        </div>
+
+        {/* Materiały źródłowe */}
+        <Section title="1. Materiały źródłowe">
+          <AttachmentPanel sessionId={sessionId} onChange={setAttachments} maxFiles={20} />
+        </Section>
+
+        {/* Model */}
+        <Section title="2. Wybierz model">
           <ModelSelector category="image" selectedModelId={selectedModel?.model_id} onModelChange={handleModelChange} />
         </Section>
 
+        {/* Parametry */}
         {selectedModel && (
-          <Section title="2. Parametry">
+          <Section title="3. Parametry">
             <ParamRow label="Orientacja">
               <ToggleGroup options={availableOrientations} value={params.orientation} onChange={v => setParam("orientation", v)} />
             </ParamRow>
@@ -167,10 +201,7 @@ export default function ImagesPage() {
           </Section>
         )}
 
-        <Section title="3. Zdjęcia referencyjne">
-          <ReferencePanel onRefsChange={setRefs} maxRefs={selectedModel?.max_ref_images || 4} />
-        </Section>
-
+        {/* Prompt */}
         <Section title="4. Prompt">
           <textarea
             value={prompt}
@@ -183,6 +214,15 @@ export default function ImagesPage() {
               fontFamily: "inherit", lineHeight: 1.6, marginBottom: 12,
             }}
           />
+          {hasTemplateVars && (
+            <div style={{
+              fontSize: 12, color: "#854d0e", background: "#fef9c3",
+              borderLeft: "3px solid #eab308", borderRadius: "0 6px 6px 0",
+              padding: "8px 12px", marginBottom: 12,
+            }}>
+              Zastąp <strong>{"{{zmienne}}"}</strong> nazwą produktu lub opisem przed generowaniem.
+            </div>
+          )}
           <PromptSandbox
             mainPrompt={prompt}
             onUsePrompt={p => { setPrompt(p); promptRef.current = p; }}
