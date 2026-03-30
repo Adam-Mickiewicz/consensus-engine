@@ -282,7 +282,7 @@ async function generateVideoSora(jobId, modelId, prompt, params, referenceUrls, 
       }
     }
 
-    const response = await fetch('https://api.openai.com/v1/videos/generations', {
+    const response = await fetch('https://api.openai.com/v1/videos/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -305,7 +305,7 @@ async function generateVideoSora(jobId, modelId, prompt, params, referenceUrls, 
     for (let i = 0; i < 60; i++) {
       await new Promise(r => setTimeout(r, 10000));
 
-      const statusRes = await fetch(`https://api.openai.com/v1/videos/generations/${soraJobId}`, {
+      const statusRes = await fetch(`https://api.openai.com/v1/videos/${soraJobId}`, {
         headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` },
       });
       const statusData = await statusRes.json();
@@ -322,10 +322,10 @@ async function generateVideoSora(jobId, modelId, prompt, params, referenceUrls, 
     if (!videoData) throw new Error('Timeout — Sora nie odpowiedział w ciągu 10 minut');
 
     const outputUrls = [];
-    const videos = videoData.data || videoData.videos || [];
+    const videos = videoData.data || [];
 
     for (let i = 0; i < videos.length; i++) {
-      const videoUrl = videos[i].url;
+      const videoUrl = videos[i]?.url;
       if (!videoUrl) continue;
 
       const videoRes = await fetch(videoUrl);
