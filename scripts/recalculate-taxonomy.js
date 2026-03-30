@@ -28,6 +28,20 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
 
+// ─── Mapowanie sezonów SNAKE_CASE → polskie nazwy ─────────────────────────────
+
+const SEASON_LABELS = {
+  BLACK_WEEK:        'Black Week',
+  DZIEN_CHLOPAKA:    'Dzień Chłopaka',
+  DZIEN_KOBIET:      'Dzień Kobiet',
+  DZIEN_MATKI:       'Dzień Matki',
+  DZIEN_NAUCZYCIELA: 'Dzień Nauczyciela',
+  DZIEN_OJCA:        'Dzień Ojca',
+  GWIAZDKA:          'Święta',
+  MIKOLAJKI:         'Mikołajki',
+  WALENTYNKI:        'Walentynki',
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function sortedByFreq(freq) {
@@ -55,7 +69,7 @@ async function loadProducts() {
   console.log("📦 Pobieranie produktów z tabeli products...");
   const { data, error } = await supabase
     .from("products")
-    .select("ean, name, tags_granularne, tags_domenowe, filary_marki, okazje, segment_prezentowy, evergreen");
+    .select("ean, name, product_group, tags_granularne, tags_domenowe, filary_marki, okazje, segment_prezentowy, evergreen");
   if (error) throw new Error(`products fetch error: ${error.message}`);
 
   const eanMap  = new Map();
@@ -226,7 +240,10 @@ function buildTaxonomyRows(byClient, eanMap, nameMap, promotions, priceHistory) 
 
     for (const ev of events) {
       // Pola bezpośrednio z eventu
-      if (ev.season)         seasonsFreq[ev.season] = (seasonsFreq[ev.season] ?? 0) + 1;
+      if (ev.season) {
+        const seasonLabel = SEASON_LABELS[ev.season] ?? ev.season;
+        seasonsFreq[seasonLabel] = (seasonsFreq[seasonLabel] ?? 0) + 1;
+      }
       if (ev.is_promo)       promoCount++;
       if (ev.is_new_product) newProductCount++;
 
