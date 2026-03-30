@@ -266,8 +266,6 @@ async function generateVideoSora(jobId, modelId, prompt, params, referenceUrls, 
     formData.append('prompt', fullPrompt);
     formData.append('size', resolution);
     formData.append('seconds', String(duration));
-    formData.append('n', String(parseInt(params?.variants) || 1));
-
     // Dodaj obraz bazowy jeśli jest (image-to-video)
     if (referenceUrls && referenceUrls.length > 0) {
       try {
