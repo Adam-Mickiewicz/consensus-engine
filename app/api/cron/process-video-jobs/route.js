@@ -184,17 +184,17 @@ export async function GET(request) {
 
         console.log('Veo operation done, full response:', JSON.stringify(opData.response, null, 2));
 
-        const generatedVideos = opData.response?.videos ||
+        const generatedVideos = opData.response?.generateVideoResponse?.generatedSamples ||
                                 opData.response?.generatedSamples ||
-                                opData.response?.predictions ||
+                                opData.response?.videos ||
                                 [];
 
         console.log('generatedVideos count:', generatedVideos.length);
         console.log('first video keys:', generatedVideos[0] ? Object.keys(generatedVideos[0]) : 'none');
         for (let i = 0; i < generatedVideos.length; i++) {
           const video = generatedVideos[i];
-          const videoBytes = video.bytesBase64Encoded || video.video?.bytesBase64Encoded;
-          const videoUri = video.uri || video.video?.uri;
+          const videoUri = video.video?.uri || video.uri;
+          const videoBytes = video.video?.bytesBase64Encoded || video.bytesBase64Encoded;
           const fileName = `${job.id}_${i}.mp4`;
 
           let buffer;
