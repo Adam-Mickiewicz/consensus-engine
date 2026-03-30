@@ -5,9 +5,9 @@ const ACCENT = "#b8763a";
 
 function SkeletonCard() {
   return (
-    <div style={{ border: "1px solid #eee", borderRadius: 10, overflow: "hidden", background: "#fff" }}>
-      <div style={{ aspectRatio: "1", background: "#f0f0f0", animation: "libSkeleton 1.4s ease-in-out infinite" }} />
-      <div style={{ padding: "10px 12px" }}>
+    <div style={{ border: "1px solid #eee", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
+      <div style={{ aspectRatio: "16/9", background: "#f0f0f0", animation: "libSkeleton 1.4s ease-in-out infinite" }} />
+      <div style={{ padding: "12px 14px" }}>
         <div style={{ height: 12, background: "#f0f0f0", borderRadius: 4, marginBottom: 8, animation: "libSkeleton 1.4s ease-in-out infinite" }} />
         <div style={{ height: 10, background: "#f0f0f0", borderRadius: 4, width: "60%", animation: "libSkeleton 1.4s ease-in-out infinite" }} />
       </div>
@@ -30,103 +30,69 @@ function ExpiryBadge({ days }) {
   );
 }
 
-function LibraryCard({ item, onDelete, onEdit }) {
-  const [hovered, setHovered] = useState(false);
+function LibraryCard({ item, onDelete, onRerun, onExtend, onEdit }) {
   const [expanded, setExpanded] = useState(false);
-  const videoRef = useRef(null);
-
   const expires = item.expires_in_days;
+  const isVideo = item.job_type === "video";
   const title = item.title || (item.prompt ? item.prompt.slice(0, 40) + (item.prompt.length > 40 ? "…" : "") : "Bez tytułu");
 
-  function handleMouseEnter() {
-    setHovered(true);
-    if (videoRef.current) videoRef.current.play().catch(() => {});
-  }
-  function handleMouseLeave() {
-    setHovered(false);
-    if (videoRef.current) { videoRef.current.pause(); videoRef.current.currentTime = 0; }
-  }
-
   return (
-    <div
-      style={{ border: "1px solid #eee", borderRadius: 10, overflow: "hidden", background: "#fff" }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <div style={{ border: "1px solid #eee", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
       {/* Preview */}
-      <div style={{ position: "relative", aspectRatio: "1", background: "#f5f5f5", overflow: "hidden" }}>
-        {item.job_type === "video" && item.output_urls?.[0] ? (
+      <div style={{
+        position: "relative",
+        aspectRatio: isVideo ? "16/9" : "1/1",
+        background: "#111",
+        overflow: "hidden",
+      }}>
+        {isVideo && item.output_urls?.[0] ? (
           <video
-            ref={videoRef}
             src={item.output_urls[0]}
+            controls
+            autoPlay
             muted
             loop
             playsInline
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            style={{ width: "100%", height: "100%", objectFit: "contain" }}
           />
-        ) : (
+        ) : item.output_urls?.[0] || item.thumbnail_url ? (
           <img
-            src={item.thumbnail_url || item.output_urls?.[0] || ""}
+            src={item.thumbnail_url || item.output_urls[0]}
             alt={title}
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
+        ) : (
+          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#555", fontSize: 13 }}>
+            Brak podglądu
+          </div>
         )}
 
         {/* Type badge */}
         <div style={{
           position: "absolute", top: 6, left: 6,
-          background: "rgba(0,0,0,0.55)", color: "#fff",
+          background: "rgba(0,0,0,0.6)", color: "#fff",
           fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 4,
+          pointerEvents: "none",
         }}>
-          {item.job_type === "video" ? "WIDEO" : "OBRAZ"}
+          {isVideo ? "WIDEO" : "OBRAZ"}
         </div>
 
         <ExpiryBadge days={expires} />
-
-        {/* Hover overlay */}
-        {hovered && (
-          <div style={{
-            position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-          }}>
-            {item.output_urls?.[0] && (
-              <a
-                href={item.output_urls[0]}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                style={{ padding: "6px 10px", background: "rgba(255,255,255,0.9)", borderRadius: 6, fontSize: 12, color: "#1a1a1a", textDecoration: "none", fontWeight: 500 }}
-              >
-                ⬇ Pobierz
-              </a>
-            )}
-            <button
-              onClick={e => { e.stopPropagation(); onEdit(item); }}
-              style={{ padding: "6px 10px", background: "rgba(255,255,255,0.9)", border: "none", borderRadius: 6, fontSize: 12, color: "#1a1a1a", cursor: "pointer", fontWeight: 500 }}
-            >
-              ✎ Edytuj
-            </button>
-            <button
-              onClick={e => { e.stopPropagation(); onDelete(item.id); }}
-              style={{ padding: "6px 10px", background: "rgba(239,68,68,0.85)", border: "none", borderRadius: 6, fontSize: 12, color: "#fff", cursor: "pointer", fontWeight: 500 }}
-            >
-              🗑 Usuń
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Metadata */}
-      <div style={{ padding: "10px 12px" }}>
-        <div style={{ fontSize: 13, fontWeight: 500, color: "#1a1a1a", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {title}
+      <div style={{ padding: "12px 14px" }}>
+        <div style={{ fontSize: 12, color: "#888", marginBottom: 2 }}>
+          {item.bms_model_config?.model_name || item.model_id}
+          {item.params?.orientation && ` · ${item.params.orientation}`}
+          {item.params?.duration && ` · ${item.params.duration}`}
         </div>
-        <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>{item.model_name || item.model_id}</div>
+
         {item.prompt && (
           <div
             onClick={() => setExpanded(e => !e)}
             style={{
-              fontSize: 11, color: "#666", lineHeight: 1.4, marginBottom: 4, cursor: "pointer",
+              fontSize: 12, color: "#555", lineHeight: 1.45, marginBottom: 8, cursor: "pointer",
               overflow: expanded ? "visible" : "hidden",
               display: expanded ? "block" : "-webkit-box",
               WebkitLineClamp: expanded ? undefined : 2,
@@ -136,18 +102,74 @@ function LibraryCard({ item, onDelete, onEdit }) {
             {item.prompt}
           </div>
         )}
-        {item.actual_cost && (
-          <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>${Number(item.actual_cost).toFixed(2)}</div>
-        )}
-        {item.tags?.length > 0 && (
-          <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 4 }}>
-            {item.tags.map(tag => (
-              <span key={tag} style={{ fontSize: 10, background: "#f0f0f0", color: "#666", padding: "1px 6px", borderRadius: 10 }}>{tag}</span>
-            ))}
+
+        {(item.actual_cost != null || item.estimated_cost != null) && (
+          <div style={{ fontSize: 11, color: "#888", marginBottom: 8 }}>
+            {item.actual_cost != null
+              ? `$${Number(item.actual_cost).toFixed(2)}`
+              : `~$${Number(item.estimated_cost).toFixed(2)}`
+            }
           </div>
         )}
-        <div style={{ fontSize: 11, color: expires <= 0 ? "#ef4444" : "#aaa" }}>
-          {expires > 0 ? `Usunięty za ${expires} dni` : "Wygasło"}
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {item.output_urls?.[0] && (
+            <a
+              href={item.output_urls[0]}
+              download
+              style={{
+                padding: "5px 10px", borderRadius: 6, fontSize: 11,
+                background: ACCENT, color: "#fff", textDecoration: "none", fontWeight: 500,
+              }}
+            >
+              ⬇ Pobierz
+            </a>
+          )}
+
+          <button
+            onClick={() => onRerun(item)}
+            style={{
+              padding: "5px 10px", borderRadius: 6, fontSize: 11,
+              background: "transparent", border: "1px solid #ddd", cursor: "pointer",
+            }}
+          >
+            ↺ Re-run
+          </button>
+
+          {isVideo && (
+            <button
+              onClick={() => onExtend(item)}
+              style={{
+                padding: "5px 10px", borderRadius: 6, fontSize: 11,
+                background: "transparent", border: `1px solid ${ACCENT}`,
+                color: ACCENT, cursor: "pointer",
+              }}
+            >
+              + Extend
+            </button>
+          )}
+
+          <button
+            onClick={() => onEdit(item)}
+            style={{
+              padding: "5px 10px", borderRadius: 6, fontSize: 11,
+              background: "transparent", border: "1px solid #ddd", cursor: "pointer",
+            }}
+          >
+            ✎ Edytuj tytuł
+          </button>
+
+          <button
+            onClick={() => onDelete(item.id)}
+            style={{
+              padding: "5px 10px", borderRadius: 6, fontSize: 11,
+              background: "transparent", border: "1px solid #eee",
+              color: "#999", cursor: "pointer", marginLeft: "auto",
+            }}
+          >
+            🗑 Usuń
+          </button>
         </div>
       </div>
     </div>
@@ -165,7 +187,11 @@ function EditModal({ item, onSave, onClose }) {
       const res = await fetch("/api/brand-media/library", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ job_id: item.id, title: title.trim(), tags: tags.split(",").map(t => t.trim()).filter(Boolean) }),
+        body: JSON.stringify({
+          job_id: item.id,
+          title: title.trim(),
+          tags: tags.split(",").map(t => t.trim()).filter(Boolean),
+        }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       onSave({ ...item, title: title.trim(), tags: tags.split(",").map(t => t.trim()).filter(Boolean) });
@@ -177,10 +203,14 @@ function EditModal({ item, onSave, onClose }) {
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center" }}
-      onClick={onClose}>
-      <div style={{ background: "#fff", borderRadius: 12, padding: 24, width: 400, boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}
-        onClick={e => e.stopPropagation()}>
+    <div
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: "#fff", borderRadius: 12, padding: 24, width: 400, boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}
+        onClick={e => e.stopPropagation()}
+      >
         <div style={{ fontWeight: 500, fontSize: 15, marginBottom: 16 }}>Edytuj metadane</div>
         <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>Tytuł</div>
@@ -204,6 +234,76 @@ function EditModal({ item, onSave, onClose }) {
   );
 }
 
+function RerunModal({ item, onClose, onSuccess }) {
+  const [prompt, setPrompt] = useState(item.prompt || "");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    try {
+      const endpoint = item.job_type === "video"
+        ? "/api/brand-media/generate-video"
+        : "/api/brand-media/generate-image";
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model_id: item.model_id,
+          prompt,
+          music_mode: item.music_mode,
+          music_brief: item.music_brief,
+          params: item.params,
+          reference_urls: item.reference_urls,
+          estimated_cost: item.estimated_cost,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      onClose();
+      onSuccess("Job dodany do kolejki — sprawdź w Kolejce");
+    } catch (err) {
+      console.error("Re-run error:", err);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: "#fff", borderRadius: 12, padding: 24, width: 500, maxWidth: "90vw" }}
+        onClick={e => e.stopPropagation()}
+      >
+        <h3 style={{ margin: "0 0 16px", fontSize: 16 }}>
+          Re-run {item.job_type === "video" ? "wideo" : "obrazu"}
+        </h3>
+        <textarea
+          value={prompt}
+          onChange={e => setPrompt(e.target.value)}
+          style={{
+            width: "100%", minHeight: 120, padding: 10,
+            border: "1px solid #ddd", borderRadius: 8, fontSize: 13,
+            resize: "vertical", fontFamily: "inherit", boxSizing: "border-box",
+          }}
+        />
+        <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
+          <button onClick={onClose}
+            style={{ padding: "8px 16px", border: "1px solid #ddd", borderRadius: 6, background: "transparent", cursor: "pointer" }}>
+            Anuluj
+          </button>
+          <button onClick={handleSubmit} disabled={submitting}
+            style={{ padding: "8px 16px", background: ACCENT, color: "#fff", border: "none", borderRadius: 6, cursor: submitting ? "not-allowed" : "pointer" }}>
+            {submitting ? "Dodaję..." : "Generuj ponownie"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function LibraryGrid({ jobType: initialJobType = "all" }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -212,7 +312,14 @@ export default function LibraryGrid({ jobType: initialJobType = "all" }) {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [rerunItem, setRerunItem] = useState(null);
+  const [toast, setToast] = useState(null);
   const searchTimer = useRef(null);
+
+  function showToast(msg, type = "success") {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  }
 
   const fetchItems = useCallback(async (reset = false) => {
     setLoading(true);
@@ -237,9 +344,7 @@ export default function LibraryGrid({ jobType: initialJobType = "all" }) {
     }
   }, [filterType, search, offset]);
 
-  useEffect(() => {
-    fetchItems(true);
-  }, [filterType]);
+  useEffect(() => { fetchItems(true); }, [filterType]);
 
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -247,14 +352,7 @@ export default function LibraryGrid({ jobType: initialJobType = "all" }) {
     return () => clearTimeout(searchTimer.current);
   }, [search]);
 
-  function loadMore() {
-    const nextOffset = offset + 20;
-    setOffset(nextOffset);
-  }
-
-  useEffect(() => {
-    if (offset > 0) fetchItems(false);
-  }, [offset]);
+  useEffect(() => { if (offset > 0) fetchItems(false); }, [offset]);
 
   async function deleteItem(id) {
     if (!confirm("Usunąć ten element z biblioteki?")) return;
@@ -262,7 +360,7 @@ export default function LibraryGrid({ jobType: initialJobType = "all" }) {
       await fetch(`/api/brand-media/jobs/${id}`, { method: "DELETE" });
       setItems(prev => prev.filter(i => i.id !== id));
     } catch (err) {
-      console.error("Delete library item error:", err);
+      showToast("Błąd usuwania: " + err.message, "error");
     }
   }
 
@@ -271,10 +369,14 @@ export default function LibraryGrid({ jobType: initialJobType = "all" }) {
     setEditingItem(null);
   }
 
+  function handleExtend(item) {
+    showToast("Funkcja Extend będzie dostępna wkrótce");
+  }
+
   const filters = [
     { id: "all", label: "Wszystkie" },
-    { id: "image", label: "Obrazy" },
     { id: "video", label: "Wideo" },
+    { id: "image", label: "Obrazy" },
   ];
 
   return (
@@ -286,8 +388,27 @@ export default function LibraryGrid({ jobType: initialJobType = "all" }) {
         }
       `}</style>
 
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: 24, right: 24, zIndex: 1000,
+          background: toast.type === "success" ? ACCENT : "#ef4444",
+          color: "#fff", padding: "12px 20px", borderRadius: 8,
+          fontSize: 13, boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        }}>
+          {toast.msg}
+        </div>
+      )}
+
       {editingItem && (
         <EditModal item={editingItem} onSave={handleEditSave} onClose={() => setEditingItem(null)} />
+      )}
+
+      {rerunItem && (
+        <RerunModal
+          item={rerunItem}
+          onClose={() => setRerunItem(null)}
+          onSuccess={showToast}
+        />
       )}
 
       {/* Toolbar */}
@@ -314,8 +435,8 @@ export default function LibraryGrid({ jobType: initialJobType = "all" }) {
 
       {/* Grid */}
       {loading && items.length === 0 ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-          {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+          {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : items.length === 0 ? (
         <div style={{ textAlign: "center", padding: "60px 0", color: "#aaa" }}>
@@ -325,12 +446,14 @@ export default function LibraryGrid({ jobType: initialJobType = "all" }) {
         </div>
       ) : (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
             {items.map(item => (
               <LibraryCard
                 key={item.id}
                 item={item}
                 onDelete={deleteItem}
+                onRerun={setRerunItem}
+                onExtend={handleExtend}
                 onEdit={setEditingItem}
               />
             ))}
@@ -338,7 +461,7 @@ export default function LibraryGrid({ jobType: initialJobType = "all" }) {
           {hasMore && (
             <div style={{ textAlign: "center", marginTop: 24 }}>
               <button
-                onClick={loadMore}
+                onClick={() => setOffset(o => o + 20)}
                 disabled={loading}
                 style={{
                   padding: "9px 24px", fontSize: 13, border: `1px solid ${ACCENT}`,
