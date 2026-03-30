@@ -24,6 +24,7 @@ interface SubItem {
 const SUBCATEGORIES: Record<string, SubItem[]> = {
   crm: [
     { href: "/crm/analytics",            label: "Overview 360°" },
+    { href: "/crm/analytics/behavior",   label: "Analityka behawioralna" },
     { href: "/crm/analytics/worlds",     label: "Zainteresowania" },
     { href: "/crm/analytics/predictive", label: "Predykcje" },
     { href: "/crm/clients",              label: "Klienci" },
