@@ -105,11 +105,17 @@ export default function AdminUsersPage() {
     setSaving(s => ({ ...s, [key]: true }));
     try {
       const jwt = await getJwt();
-      await fetch("/api/admin/users", {
+      const res = await fetch("/api/admin/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwt}` },
         body: JSON.stringify({ user_id: userId, tool: toolId, can_access: canAccess }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        console.error('PATCH tool perm error:', res.status, err);
+        alert('Błąd zapisu: ' + (err.error || res.status));
+        return;
+      }
       setUsers(prev => prev.map(u => {
         if (u.id !== userId) return u;
         return { ...u, tool_permissions: { ...u.tool_permissions, [toolId]: canAccess } };
@@ -323,7 +329,7 @@ export default function AdminUsersPage() {
                                   {cat}
                                 </div>
                                 {catTools.map(t => {
-                                  const canAccess = u.tool_permissions?.[t.tool_id] ?? true;
+                                  const canAccess = u.tool_permissions?.[t.tool_id] ?? false;
                                   const key = `tool_${u.id}_${t.tool_id}`;
                                   return (
                                     <div key={t.tool_id} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>

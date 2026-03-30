@@ -122,10 +122,13 @@ export async function POST(request) {
 export async function PATCH(request) {
   try {
     const user = await getAuthUser(request);
+    console.log('[PATCH] getAuthUser result:', user ? `uid=${user.id}` : 'null (unauthorized)');
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const sb = getServiceClient();
-    if (!await requireAdmin(sb, user.id)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const isAdmin = await requireAdmin(sb, user.id);
+    console.log('[PATCH] requireAdmin result:', isAdmin, 'for uid:', user.id);
+    if (!isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const body = await request.json();
 
