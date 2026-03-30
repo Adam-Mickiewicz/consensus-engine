@@ -214,9 +214,7 @@ async function fastInsert(rawOrders, productsMap, sb) {
     } else {
       for (const p of rawProducts) {
         const eanRaw = p.code ?? p.product_code ?? null;
-        // EAN nulled out — FK constraint on products table would reject unknown EANs.
-        // After dropping client_product_events_ean_fkey the raw value can be stored.
-        const ean    = null; // eanRaw ? (Number(String(eanRaw).trim()) || null) : null
+        const ean    = eanRaw ? (Number(String(eanRaw).trim()) || null) : null;
         eventRows.push({
           client_id,
           order_id,
