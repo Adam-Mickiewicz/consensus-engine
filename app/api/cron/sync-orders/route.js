@@ -172,8 +172,8 @@ export async function GET(request) {
   const startedAt = Date.now();
 
   try {
-    // Cutoff: 7 dni temu
-    const cutoffDate = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
+    // Cutoff: 2 dni temu
+    const cutoffDate = new Date(Date.now() - 2 * 86_400_000).toISOString().slice(0, 10);
     console.log(`[cron] sync-orders start — cutoff: ${cutoffDate}`);
 
     // 1. Pobierz zamówienia
