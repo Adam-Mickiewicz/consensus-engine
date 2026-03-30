@@ -31,11 +31,28 @@ export default function Nav({ current }) {
   const [open, setOpen] = useState(false);
   const [dark, setDark] = useState(false);
   const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (localStorage.getItem("ce-theme") === "dark") setDark(true);
-    supabase.auth.getUser().then(({ data }) => setUser(data?.user || null));
-    supabase.auth.onAuthStateChange((_, session) => setUser(session?.user || null));
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data?.user || null;
+      setUser(u);
+      if (u) {
+        supabase.from("user_roles").select("role").eq("user_id", u.id).maybeSingle()
+          .then(({ data: r }) => setIsAdmin(r?.role === "admin"));
+      }
+    });
+    supabase.auth.onAuthStateChange((_, session) => {
+      const u = session?.user || null;
+      setUser(u);
+      if (u) {
+        supabase.from("user_roles").select("role").eq("user_id", u.id).maybeSingle()
+          .then(({ data: r }) => setIsAdmin(r?.role === "admin"));
+      } else {
+        setIsAdmin(false);
+      }
+    });
   }, []);
 
   const handleSignOut = async () => {
@@ -129,6 +146,20 @@ export default function Nav({ current }) {
                 )}
               </Link>
             ))}
+            {isAdmin && (
+              <>
+                <div className="ce-nav-sep" />
+                <div className="ce-nav-menu-header">Administracja</div>
+                <Link
+                  href="/admin/users"
+                  className={"ce-nav-item" + (current === "/admin/users" ? " active" : "")}
+                  onClick={() => setOpen(false)}
+                >
+                  <span style={{ fontSize: 15, width: 20, textAlign: "center" }}>🛡️</span>
+                  Panel admina
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
