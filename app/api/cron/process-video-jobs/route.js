@@ -204,7 +204,15 @@ export async function GET(request) {
           if (videoBytes) {
             buffer = Buffer.from(videoBytes, 'base64');
           } else if (videoUri) {
-            const vRes = await fetch(videoUri);
+            const vRes = await fetch(
+              `${videoUri}${videoUri.includes('?') ? '&' : '?'}alt=media&key=${process.env.GOOGLE_AI_API_KEY}`
+            );
+            if (!vRes.ok) {
+              console.error('Video download error:', vRes.status, await vRes.text());
+              throw new Error(`Nie udało się pobrać wideo z Veo: ${vRes.status}`);
+            }
+            const contentType = vRes.headers.get('content-type') || 'video/mp4';
+            console.log('Video content-type:', contentType, 'size:', vRes.headers.get('content-length'));
             buffer = Buffer.from(await vRes.arrayBuffer());
           } else {
             console.warn(`[cron/veo] No video data for sample ${i}`);
