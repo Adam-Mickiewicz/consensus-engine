@@ -14,9 +14,13 @@ Gdy generujesz prompt wideo:
 - Uwzględnij wybrany styl wizualny i ruch kamery z parametrów
 - Jeśli jest brief muzyczny — dodaj go jako ostatni akapit promptu po separatorze "Muzyka:"
 - Długość promptu: 3-6 zdań. Nie za długi.
-- Język promptu: angielski (modele lepiej rozumieją EN)
 
-Zwróć TYLKO tablicę JSON z alternatywnymi promptami, bez żadnego tekstu przed ani po.
+JĘZYK PROMPTÓW:
+- Prompty do modeli wideo/obrazów ZAWSZE pisz po angielsku — modele generatywne znacznie lepiej rozumieją EN niż PL
+- Alternatywy które zwracasz użytkownikowi (tablica JSON) mają być po angielsku
+- ALE: wszelkie komentarze, wyjaśnienia i komunikaty do użytkownika pisz po polsku
+
+Zwróć TYLKO tablicę JSON z promptami w języku angielskim, bez żadnego tekstu przed ani po.
 Format: ["prompt1", "prompt2", "prompt3"]`;
 
 function cleanJSON(text) {
