@@ -34,7 +34,6 @@ export async function GET(request) {
   const { data: job } = await supabase
     .from('bms_jobs')
     .select('*')
-    .eq('job_type', 'video')
     .in('status', ['queued', 'processing'])
     .order('created_at', { ascending: true })
     .limit(1)
@@ -295,8 +294,63 @@ export async function GET(request) {
         return Response.json({ message: `Job ${job.id} uruchomiony w Veo (${operationName})` });
       }
 
+    } else if (job.job_type === 'image') {
+      const IMAGE_MODEL_MAP = {
+        'imagen4fast':  'imagen-4.0-fast-generate-001',
+        'imagen4':      'imagen-4.0-generate-001',
+        'imagen4ultra': 'imagen-4.0-ultra-generate-001',
+        'imagen3':      'imagen-3.0-generate-002',
+      };
+      const googleModel = IMAGE_MODEL_MAP[job.model_id];
+      if (!googleModel) throw new Error(`Nieznany model obrazu: ${job.model_id}`);
+
+      const requestBody = {
+        instances: [{ prompt: job.prompt || '' }],
+        parameters: {
+          sampleCount: parseInt(job.params?.variants) || 1,
+          aspectRatio: job.params?.orientation || '1:1',
+        },
+      };
+
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:predict?key=${process.env.GOOGLE_AI_API_KEY}`;
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Imagen API error ${response.status}: ${errText}`);
+      }
+
+      const result = await response.json();
+      const predictions = result.predictions || [];
+
+      for (let i = 0; i < predictions.length; i++) {
+        const imageBytes = predictions[i].bytesBase64Encoded;
+        if (!imageBytes) continue;
+        const buffer = Buffer.from(imageBytes, 'base64');
+        const fileName = `${job.id}_${i}.png`;
+        await supabase.storage
+          .from('bms-outputs')
+          .upload(fileName, buffer, { contentType: 'image/png', upsert: true });
+        const { data: urlData } = supabase.storage
+          .from('bms-outputs')
+          .getPublicUrl(fileName);
+        outputUrls.push(urlData.publicUrl);
+      }
+
+      await supabase.from('bms_jobs').update({
+        status: 'done',
+        output_urls: outputUrls,
+        thumbnail_url: outputUrls[0] || null,
+        updated_at: new Date().toISOString(),
+      }).eq('id', job.id);
+
     } else {
-      throw new Error(`Nieznany model: ${job.model_id}`);
+      throw new Error(`Nieznany typ joba: ${job.job_type} / model: ${job.model_id}`);
     }
 
   } catch (error) {
