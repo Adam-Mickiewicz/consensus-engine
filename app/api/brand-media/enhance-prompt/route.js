@@ -19,6 +19,13 @@ Gdy generujesz prompt wideo:
 Zwróć TYLKO tablicę JSON z alternatywnymi promptami, bez żadnego tekstu przed ani po.
 Format: ["prompt1", "prompt2", "prompt3"]`;
 
+function cleanJSON(text) {
+  return text
+    .replace(/```json\s*/gi, '')
+    .replace(/```\s*/gi, '')
+    .trim();
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -50,8 +57,8 @@ Kontekst:
         system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: userMessage }],
       });
-      const text = response.content[0]?.text || '[]';
-      alternatives = JSON.parse(text);
+      const raw = response.content[0]?.text || '[]';
+      alternatives = JSON.parse(cleanJSON(raw));
     } else {
       // OpenAI models: gpt-4o, gpt-4.1, o3
       const modelMap = {
@@ -83,8 +90,8 @@ Kontekst:
       }
 
       const data = await response.json();
-      const text = data.choices?.[0]?.message?.content || '[]';
-      alternatives = JSON.parse(text);
+      const raw = data.choices?.[0]?.message?.content || '[]';
+      alternatives = JSON.parse(cleanJSON(raw));
     }
 
     if (!Array.isArray(alternatives)) {
