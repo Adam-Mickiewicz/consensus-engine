@@ -18,11 +18,11 @@ const STEP_LABELS = ["Model", "Parametry", "Prompt", "Generuj"];
 
 function calculateCost(model, params) {
   if (!model) return "0.00";
-  const duration = parseInt(params.duration) || 4;
-  const variants = parseInt(params.variants) || 1;
-  const pricePerSec = params.resolution === "4K" && model.capabilities?.price_4k
-    ? model.capabilities.price_4k
-    : model.price_per_unit;
+  const duration = parseInt(params?.duration) || 4;
+  const variants = parseInt(params?.variants) || 1;
+  const pricePerSec = params?.resolution === "4K" && model.capabilities?.price_4k
+    ? parseFloat(model.capabilities.price_4k)
+    : parseFloat(model.price_per_unit);
   return (pricePerSec * duration * variants).toFixed(2);
 }
 
@@ -295,9 +295,36 @@ export default function VideoPage() {
               </div>
             </ParamRow>
 
-            {availableResolutions.length > 0 && (
+            {availableResolutions.length > 1 && (
               <ParamRow label="Rozdzielczość">
-                <Select value={params.resolution} onChange={v => setParam("resolution", v)} options={availableResolutions} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    {availableResolutions.map(res => (
+                      <button
+                        key={res}
+                        onClick={() => setParam("resolution", res)}
+                        style={{
+                          flex: 1, padding: "5px 8px",
+                          border: params.resolution === res ? `1.5px solid ${ACCENT}` : "1px solid #ddd",
+                          borderRadius: 6, fontSize: 12, cursor: "pointer",
+                          background: params.resolution === res ? "#fdf7f2" : "#fff",
+                          color: params.resolution === res ? ACCENT : "#666",
+                          fontWeight: params.resolution === res ? 500 : 400,
+                        }}
+                      >
+                        {res}
+                      </button>
+                    ))}
+                  </div>
+                  {params.resolution === "4K" && selectedModel?.capabilities?.price_4k && (
+                    <div style={{
+                      fontSize: 11, color: ACCENT, marginTop: 4,
+                      padding: "4px 8px", background: "#fdf7f2", borderRadius: 4,
+                    }}>
+                      4K: ${selectedModel.capabilities.price_4k}/sek. (vs ${selectedModel.price_per_unit}/sek. dla 1080p)
+                    </div>
+                  )}
+                </div>
               </ParamRow>
             )}
 

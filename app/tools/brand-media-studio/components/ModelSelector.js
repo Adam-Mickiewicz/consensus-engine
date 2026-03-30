@@ -99,13 +99,15 @@ export default function ModelSelector({ category, onModelChange, selectedModelId
                 ${model.price_per_unit.toFixed(2)} / {model.unit_label}
               </div>
               <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>
-                {model.capabilities?.resolutions?.[0] && (
-                  <span>{model.capabilities.resolutions[0]}</span>
+                {model.capabilities?.resolutions?.length > 0 && (
+                  <span>{model.capabilities.resolutions.join(' / ')}</span>
                 )}
                 {model.capabilities?.max_duration && (
                   <span> · max {model.capabilities.max_duration}s</span>
                 )}
-                <span style={{ textTransform: 'capitalize' }}> · {model.provider}</span>
+                {model.unit_label && (
+                  <span> · {model.unit_label}</span>
+                )}
               </div>
             </div>
           );
