@@ -182,7 +182,15 @@ export async function GET(request) {
 
         if (opData.error) throw new Error(`Veo error: ${opData.error.message}`);
 
-        const generatedVideos = opData.response?.videos || opData.response?.generatedSamples || [];
+        console.log('Veo operation done, full response:', JSON.stringify(opData.response, null, 2));
+
+        const generatedVideos = opData.response?.videos ||
+                                opData.response?.generatedSamples ||
+                                opData.response?.predictions ||
+                                [];
+
+        console.log('generatedVideos count:', generatedVideos.length);
+        console.log('first video keys:', generatedVideos[0] ? Object.keys(generatedVideos[0]) : 'none');
         for (let i = 0; i < generatedVideos.length; i++) {
           const video = generatedVideos[i];
           const videoBytes = video.bytesBase64Encoded || video.video?.bytesBase64Encoded;
