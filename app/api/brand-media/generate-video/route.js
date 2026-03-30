@@ -73,6 +73,10 @@ export async function POST(request) {
 }
 
 async function generateVideoAsync(jobId, modelId, prompt, params, referenceUrls, musicMode, musicBrief, estimatedCost) {
+  if (modelId.startsWith('sora')) {
+    return generateVideoSora(jobId, modelId, prompt, params, referenceUrls, musicMode, musicBrief);
+  }
+
   const supabase = getSupabase();
 
   try {
@@ -212,6 +216,140 @@ async function generateVideoAsync(jobId, modelId, prompt, params, referenceUrls,
 
   } catch (error) {
     console.error('[generate-video] generateVideoAsync error:', error);
+    await supabase
+      .from('bms_jobs')
+      .update({
+        status: 'failed',
+        error_message: error.message,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', jobId);
+  }
+}
+
+async function generateVideoSora(jobId, modelId, prompt, params, referenceUrls, musicMode, musicBrief) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+
+  try {
+    const soraModelMap = {
+      'sora2':    'sora-2',
+      'sora2pro': 'sora-2-pro',
+    };
+    const soraModel = soraModelMap[modelId];
+    if (!soraModel) throw new Error(`Nieznany model Sora: ${modelId}`);
+
+    const aspectRatioMap = {
+      '16:9': '1920x1080',
+      '9:16': '1080x1920',
+      '1:1':  '1080x1080',
+    };
+    const resolution = aspectRatioMap[params?.orientation] || '1080x1920';
+    const duration = parseInt(params?.duration) || 8;
+
+    let fullPrompt = prompt;
+    if (musicMode === 'brief' && musicBrief) {
+      fullPrompt += `\n\nBackground music: ${musicBrief}`;
+    }
+
+    const requestBody = {
+      model: soraModel,
+      prompt: fullPrompt,
+      n: parseInt(params?.variants) || 1,
+      size: resolution,
+      duration: duration,
+    };
+
+    // Dodaj obraz bazowy jeśli jest (image-to-video)
+    if (referenceUrls && referenceUrls.length > 0) {
+      try {
+        const imageRes = await fetch(referenceUrls[0]);
+        const imageBuffer = await imageRes.arrayBuffer();
+        const base64 = Buffer.from(imageBuffer).toString('base64');
+        const mimeType = imageRes.headers.get('content-type') || 'image/jpeg';
+        requestBody.image = `data:${mimeType};base64,${base64}`;
+      } catch (imgErr) {
+        console.warn('[generate-video/sora] Could not fetch reference image:', imgErr.message);
+      }
+    }
+
+    const response = await fetch('https://api.openai.com/v1/videos/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Sora API error ${response.status}: ${errText}`);
+    }
+
+    const result = await response.json();
+    const soraJobId = result.id;
+    if (!soraJobId) throw new Error('Brak job ID w odpowiedzi Sora');
+
+    // Polluj status co 10s, max 60 prób (10 minut)
+    let videoData = null;
+    for (let i = 0; i < 60; i++) {
+      await new Promise(r => setTimeout(r, 10000));
+
+      const statusRes = await fetch(`https://api.openai.com/v1/videos/generations/${soraJobId}`, {
+        headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` },
+      });
+      const statusData = await statusRes.json();
+
+      if (statusData.status === 'completed') {
+        videoData = statusData;
+        break;
+      }
+      if (statusData.status === 'failed') {
+        throw new Error(`Sora job failed: ${statusData.error || 'unknown error'}`);
+      }
+    }
+
+    if (!videoData) throw new Error('Timeout — Sora nie odpowiedział w ciągu 10 minut');
+
+    const outputUrls = [];
+    const videos = videoData.data || videoData.videos || [];
+
+    for (let i = 0; i < videos.length; i++) {
+      const videoUrl = videos[i].url;
+      if (!videoUrl) continue;
+
+      const videoRes = await fetch(videoUrl);
+      const videoBuffer = await videoRes.arrayBuffer();
+      const fileName = `${jobId}_${i}.mp4`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('bms-outputs')
+        .upload(fileName, Buffer.from(videoBuffer), { contentType: 'video/mp4' });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('bms-outputs')
+        .getPublicUrl(fileName);
+
+      outputUrls.push(urlData.publicUrl);
+    }
+
+    await supabase
+      .from('bms_jobs')
+      .update({
+        status: 'done',
+        output_urls: outputUrls,
+        thumbnail_url: outputUrls[0] || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', jobId);
+
+  } catch (error) {
+    console.error('[generate-video] generateVideoSora error:', error);
     await supabase
       .from('bms_jobs')
       .update({
