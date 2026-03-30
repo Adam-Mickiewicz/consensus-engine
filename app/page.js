@@ -70,6 +70,13 @@ const TOOLS = [
     name: "Znakowanie odzieży",
     desc: "Kompletny przewodnik po technikach znakowania — sitodruk, haft, DTG/DTF, sublimacja, flex.",
   },
+  {
+    href: "/tools/brand-media-studio",
+    icon: "🎬",
+    label: "Beta",
+    name: "Brand Media Studio",
+    desc: "Generuj wideo i obrazy produktowe za pomocą Veo 3, Sora, Imagen 3 i DALL-E. Repurpose formatów jednym kliknięciem.",
+  },
 ];
 
 export default function Home() {
