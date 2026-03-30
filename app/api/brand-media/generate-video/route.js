@@ -73,7 +73,7 @@ export async function POST(request) {
 }
 
 async function generateVideoAsync(jobId, modelId, prompt, params, referenceUrls, musicMode, musicBrief, estimatedCost) {
-  if (modelId.startsWith('sora')) {
+  if (modelId === 'sora2' || modelId === 'sora2pro') {
     return generateVideoSora(jobId, modelId, prompt, params, referenceUrls, musicMode, musicBrief);
   }
 
@@ -124,7 +124,6 @@ async function generateVideoAsync(jobId, modelId, prompt, params, referenceUrls,
         aspectRatio: aspectRatio,
         sampleCount: numberOfVideos,
         durationSeconds: durationSeconds,
-        enhancePrompt: true,
       },
     };
 
