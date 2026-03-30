@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useDarkMode } from '../../hooks/useDarkMode';
 import Nav from '../../components/Nav';
+import { supabase } from '../../../lib/supabase';
 
 // ─── Theme tokens ───
 const dark = {
@@ -311,31 +312,134 @@ function VideoGrid({ videos, t }) {
   );
 }
 
-function PhotoGallery({ photos, t }) {
+function PhotoGallery({ photos, t, onPhotoClick, editMode, onDelete, onStartAdd, onCancelAdd, addingActive, newPhoto, onNewPhotoChange, onConfirmAdd }) {
   const [expanded, setExpanded] = useState(false);
   const visible = expanded ? photos : photos.slice(0, 3);
   return (
     <div style={{ margin: '20px 0' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
         {visible.map((p, i) => (
-          <div key={i} style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${t.border}`, aspectRatio: '4/3', background: t.bgCardAlt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div key={p.id || i} style={{
+            borderRadius: 10, overflow: 'hidden', border: `1px solid ${t.border}`,
+            aspectRatio: '4/3', background: t.bgCardAlt,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative', cursor: editMode ? 'default' : 'zoom-in',
+          }}
+            onClick={() => !editMode && onPhotoClick?.({ url: p.url, alt: p.alt })}
+          >
             <img src={p.url} alt={p.alt}
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               referrerPolicy="no-referrer"
               onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement.innerHTML = `<span style="font-size:11px;color:#888;padding:8px;text-align:center">${p.alt}</span>`; }}
             />
+            {editMode && (
+              <button
+                onClick={e => { e.stopPropagation(); onDelete?.(p.id, p._isLocal, p._localIdx); }}
+                title="Usuń zdjęcie"
+                style={{
+                  position: 'absolute', top: 5, right: 5,
+                  width: 26, height: 26, borderRadius: '50%',
+                  background: 'rgba(200,0,0,0.88)', border: '2px solid rgba(255,255,255,0.5)',
+                  color: '#fff', fontSize: 16, lineHeight: 1, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 700,
+                }}
+              >×</button>
+            )}
           </div>
         ))}
       </div>
-      {photos.length > 3 && (
-        <button onClick={() => setExpanded(e => !e)} style={{
-          marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '7px 16px', borderRadius: 8, border: `1px solid ${t.border}`,
-          background: 'transparent', color: t.textDim, fontSize: 13, cursor: 'pointer', transition: 'all 0.15s',
-        }}>
-          {expanded ? '▲ Zwiń' : `▼ Pokaż więcej zdjęć (${photos.length - 3})`}
-        </button>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+        {photos.length > 3 && (
+          <button onClick={() => setExpanded(e => !e)} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '7px 16px', borderRadius: 8, border: `1px solid ${t.border}`,
+            background: 'transparent', color: t.textDim, fontSize: 13, cursor: 'pointer',
+          }}>
+            {expanded ? '▲ Zwiń' : `▼ Pokaż więcej zdjęć (${photos.length - 3})`}
+          </button>
+        )}
+        {editMode && !addingActive && (
+          <button onClick={onStartAdd} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '7px 16px', borderRadius: 8, border: `1px dashed ${t.accent}`,
+            background: 'transparent', color: t.accent, fontSize: 13, cursor: 'pointer',
+          }}>
+            + Dodaj zdjęcie
+          </button>
+        )}
+      </div>
+
+      {editMode && addingActive && (
+        <div style={{ marginTop: 12, padding: 16, borderRadius: 10, border: `1px solid ${t.accent}40`, background: t.accentGlow }}>
+          <div style={{ fontSize: 12, color: t.textDim, marginBottom: 6 }}>URL zdjęcia</div>
+          <input
+            type="url"
+            value={newPhoto?.url || ''}
+            onChange={e => onNewPhotoChange({ ...newPhoto, url: e.target.value })}
+            placeholder="https://..."
+            style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgCard, color: t.text, fontSize: 13, marginBottom: 8, boxSizing: 'border-box' }}
+          />
+          <div style={{ fontSize: 12, color: t.textDim, marginBottom: 6 }}>Opis (alt)</div>
+          <input
+            type="text"
+            value={newPhoto?.alt || ''}
+            onChange={e => onNewPhotoChange({ ...newPhoto, alt: e.target.value })}
+            placeholder="Krótki opis zdjęcia..."
+            style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgCard, color: t.text, fontSize: 13, marginBottom: 12, boxSizing: 'border-box' }}
+          />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={onConfirmAdd} disabled={!newPhoto?.url?.trim()} style={{ padding: '8px 20px', borderRadius: 8, background: t.accent, border: 'none', color: '#fff', fontSize: 13, cursor: 'pointer' }}>
+              Zapisz
+            </button>
+            <button onClick={onCancelAdd} style={{ padding: '8px 20px', borderRadius: 8, background: 'transparent', border: `1px solid ${t.border}`, color: t.textDim, fontSize: 13, cursor: 'pointer' }}>
+              Anuluj
+            </button>
+          </div>
+        </div>
       )}
+    </div>
+  );
+}
+
+function Lightbox({ photo, onClose, t }) {
+  useEffect(() => {
+    if (!photo) return;
+    const onKey = e => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [photo, onClose]);
+
+  if (!photo) return null;
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(0,0,0,0.93)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 20,
+      }}
+    >
+      <button onClick={onClose} style={{
+        position: 'absolute', top: 16, right: 16,
+        width: 44, height: 44, borderRadius: '50%',
+        background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
+        color: '#fff', fontSize: 24, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>×</button>
+      <div onClick={e => e.stopPropagation()} style={{ maxWidth: '90vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <img
+          src={photo.url}
+          alt={photo.alt}
+          referrerPolicy="no-referrer"
+          style={{ maxWidth: '90vw', maxHeight: '82vh', objectFit: 'contain', borderRadius: 10, display: 'block' }}
+        />
+        {photo.alt && (
+          <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, marginTop: 12, textAlign: 'center', maxWidth: 600 }}>{photo.alt}</div>
+        )}
+      </div>
     </div>
   );
 }
@@ -432,6 +536,14 @@ export default function ZnakowaniePage() {
   const t = isDark ? dark : light;
   const [activeSection, setActiveSection] = useState('');
 
+  // Photo management
+  const [lightbox, setLightbox] = useState(null);
+  const [editMode, setEditMode] = useState(false);
+  const [user, setUser] = useState(null);
+  const [dbPhotos, setDbPhotos] = useState({});
+  const [addingTo, setAddingTo] = useState(null);
+  const [newPhoto, setNewPhoto] = useState({ url: '', alt: '' });
+
   useEffect(() => {
     const onScroll = () => {
       let current = '';
@@ -445,6 +557,73 @@ export default function ZnakowaniePage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    fetch('/api/znakowanie/photos')
+      .then(r => r.json())
+      .then(data => setDbPhotos(data || {}))
+      .catch(() => setDbPhotos({}));
+  }, []);
+
+  function getPhotos(section) {
+    if (dbPhotos[section]?.length > 0) return dbPhotos[section];
+    return (PHOTOS[section] || []).map((p, i) => ({ ...p, _isLocal: true, _localIdx: i }));
+  }
+
+  async function handleDeletePhoto(section, photoId, isLocal, localIndex) {
+    if (isLocal) {
+      const toSeed = (PHOTOS[section] || [])
+        .filter((_, i) => i !== localIndex)
+        .map((p, i) => ({ section, url: p.url, alt: p.alt, sort_order: i }));
+      const res = await fetch('/api/znakowanie/photos/bulk', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(toSeed),
+      });
+      const seeded = await res.json();
+      setDbPhotos(prev => ({ ...prev, [section]: seeded }));
+    } else {
+      await fetch(`/api/znakowanie/photos/${photoId}`, { method: 'DELETE' });
+      setDbPhotos(prev => ({ ...prev, [section]: prev[section].filter(p => p.id !== photoId) }));
+    }
+  }
+
+  async function handleAddPhoto(section) {
+    if (!newPhoto.url.trim()) return;
+    const current = dbPhotos[section] || [];
+    let base = current;
+    if (!current.length && PHOTOS[section]?.length) {
+      const toSeed = PHOTOS[section].map((p, i) => ({ section, url: p.url, alt: p.alt, sort_order: i }));
+      const seedRes = await fetch('/api/znakowanie/photos/bulk', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(toSeed),
+      });
+      base = await seedRes.json();
+      setDbPhotos(prev => ({ ...prev, [section]: base }));
+    }
+    const res = await fetch('/api/znakowanie/photos', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ section, url: newPhoto.url, alt: newPhoto.alt || newPhoto.url, sort_order: base.length }),
+    });
+    const photo = await res.json();
+    setDbPhotos(prev => ({ ...prev, [section]: [...(prev[section] || base), photo] }));
+    setAddingTo(null);
+    setNewPhoto({ url: '', alt: '' });
+  }
+
+  function ep(section) {
+    if (!editMode) return {};
+    return {
+      editMode: true,
+      onDelete: (id, isLocal, localIdx) => handleDeletePhoto(section, id, isLocal, localIdx),
+      onStartAdd: () => { setAddingTo(section); setNewPhoto({ url: '', alt: '' }); },
+      onCancelAdd: () => setAddingTo(null),
+      addingActive: addingTo === section,
+      newPhoto,
+      onNewPhotoChange: setNewPhoto,
+      onConfirmAdd: () => handleAddPhoto(section),
+    };
+  }
+
   const scrollTo = (id) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -455,6 +634,8 @@ export default function ZnakowaniePage() {
 
   return (
     <div style={{ fontFamily: "'Source Sans 3', sans-serif", background: t.bg, color: t.text, lineHeight: 1.7, fontSize: 17, minHeight: '100vh' }}>
+
+      <Lightbox photo={lightbox} onClose={() => setLightbox(null)} t={t} />
 
       <Nav current="/tools/znakowanie" />
 
@@ -531,6 +712,23 @@ export default function ZnakowaniePage() {
             }}>{b.icon} {b.label}</button>
           ))}
         </div>
+        {user && (
+          <div style={{ marginTop: 24 }}>
+            <button
+              onClick={() => setEditMode(m => !m)}
+              style={{
+                padding: '8px 22px', borderRadius: 8,
+                background: editMode ? t.accent : 'transparent',
+                border: `1px solid ${t.accent}`,
+                color: editMode ? '#fff' : t.accentLight,
+                fontSize: 12, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.08em',
+                transition: 'all 0.15s',
+              }}
+            >
+              {editMode ? '✓ Tryb edycji WŁĄCZONY — kliknij aby wyłączyć' : '⚙ Zarządzaj zdjęciami'}
+            </button>
+          </div>
+        )}
       </header>
 
       {/* ─── ZASADA ─── */}
@@ -561,7 +759,7 @@ export default function ZnakowaniePage() {
               <strong style={{ color: t.accentLight }}>Najlepsze wzory:</strong> Typografia, grafika flat, ilustracje wektorowe, znaki brandowe.<br />
               <strong style={{ color: t.accentLight }}>Słabiej:</strong> Zdjęcia, subtelne malarskie przejścia, ultra-drobna kreska.
             </Callout>
-            <PhotoGallery photos={PHOTOS.plastizol} t={t} />
+            <PhotoGallery photos={getPhotos('plastizol')} t={t} onPhotoClick={setLightbox} {...ep('plastizol')} />
           </TechCard>
 
           <TechCard icon="💧" title="Farby Wodne" subtitle="Water-based — barwnik wnika we włókno, miękki chwyt" t={t}>
@@ -574,7 +772,7 @@ export default function ZnakowaniePage() {
               pros={['Ultra-miękki chwyt — nadruk „w" materiale', 'Oddychające, ekologiczne', 'Bardzo dobry detal na wysokich meshach', 'Idealne na premium T-shirty jasne/średnie']}
               cons={['Trudniejszy proces — zasychanie w sicie', 'Na ciemnych wymaga białego poddruku', 'Mniej tolerancyjna niż plastizol', 'Na syntetykach i blendach więcej ryzyk']}
               t={t} />
-            <PhotoGallery photos={PHOTOS.farby_wodne} t={t} />
+            <PhotoGallery photos={getPhotos('farby_wodne')} t={t} onPhotoClick={setLightbox} {...ep('farby_wodne')} />
           </TechCard>
 
           <TechCard icon="⚗️" title="Wywab (Discharge)" subtitle="Gamechanger na ciemnych — odbarwia tkaninę i wprowadza nowy kolor" t={t}>
@@ -590,7 +788,7 @@ export default function ZnakowaniePage() {
             <Callout icon="⚠️" t={t}>
               <strong style={{ color: t.accentLight }}>Pułapka:</strong> Różni producenci barwią koszulki różnymi barwnikami. Ta sama „czarna" koszulka od dwóch marek może się rozładować do zupełnie innego koloru. Zawsze test na realnym blanku!
             </Callout>
-            <PhotoGallery photos={PHOTOS.discharge} t={t} />
+            <PhotoGallery photos={getPhotos('discharge')} t={t} onPhotoClick={setLightbox} {...ep('discharge')} />
           </TechCard>
 
           <TechCard icon="🧊" title="Puff / 3D" subtitle="Farba puchnąca — wypukły, gąbczasty efekt" t={t}>
@@ -602,7 +800,7 @@ export default function ZnakowaniePage() {
               pros={['Wow-efekt — widoczna, dotykalna wypukłość', 'Świetne na grubą typografię, ikony', 'Dobrze na bawełnie i stabilnych dzianinach']}
               cons={['Brak detalu — cienkie linie zlewają się', 'Efekt zależny od grubości warstwy i temperatury', 'Nie do małych fontów i skomplikowanych kształtów']}
               t={t} />
-            <PhotoGallery photos={PHOTOS.puff} t={t} />
+            <PhotoGallery photos={getPhotos('puff')} t={t} onPhotoClick={setLightbox} {...ep('puff')} />
           </TechCard>
 
           <TechCard icon="🔲" title="High Density (HD 3D)" subtitle="Ostre, kanciaste, twarde krawędzie — jak gumowa naszywka" t={t}>
@@ -614,7 +812,7 @@ export default function ZnakowaniePage() {
               pros={['Efekt gumowej naszywki bez naszywki', 'Ostre krawędzie, kontrolowana wysokość', 'Premium look na małych elementach']}
               cons={['Nie do ilustracji, zdjęć, złożonych kompozycji', 'Wymaga prostych brył, większych kształtów', 'Na cienkich T-shirtach może być za ciężki']}
               t={t} />
-            <PhotoGallery photos={PHOTOS.high_density} t={t} />
+            <PhotoGallery photos={getPhotos('high_density')} t={t} onPhotoClick={setLightbox} {...ep('high_density')} />
           </TechCard>
 
           <TechCard icon="🎯" title="CMYK / Druk Procesowy" subtitle="4 sita, przezroczyste farby, raster — pełne kolory z minimalnej liczby matryc" t={t}>
@@ -634,7 +832,7 @@ export default function ZnakowaniePage() {
             <Callout icon="🔥" t={t}>
               <strong style={{ color: t.accentLight }}>Ciemna koszulka + CMYK = błoto.</strong> Farby przezroczyste na białym poddruku dają zgaszone, brudne kolory. Do zdjęć na ciemnym materiale jedyna opcja to <strong>Simulated Process</strong> — patrz niżej.
             </Callout>
-            <PhotoGallery photos={PHOTOS.cmyk} t={t} />
+            <PhotoGallery photos={getPhotos('cmyk')} t={t} onPhotoClick={setLightbox} {...ep('cmyk')} />
           </TechCard>
 
           <TechCard icon="🌗" title="Simulated Process (Symulacja)" subtitle="6–10 kryjących farb spotowych rastrowanych — fotorealizm na ciemnym tle" t={t}>
@@ -651,7 +849,7 @@ export default function ZnakowaniePage() {
             <Callout icon="💡" t={t}>
               <strong style={{ color: t.accentLight }}>Kiedy zamiast Symulacji:</strong> Jeśli klient chce pełnokolorowe zdjęcie na &lt;50 sztukach — zawsze DTG lub DTF. Sitodruk (CMYK lub Symulacja) opłaca się od ~100–200 szt., gdy jakość i trwałość mają wartość premium.
             </Callout>
-            <PhotoGallery photos={PHOTOS.simulated} t={t} />
+            <PhotoGallery photos={getPhotos('simulated')} t={t} onPhotoClick={setLightbox} {...ep('simulated')} />
           </TechCard>
 
           <TechCard icon="✨" title="Inne efekty sitodruku" subtitle="Metaliczne, brokatowe, odblaskowe, świecące, crack, foil…" t={t}>
@@ -684,7 +882,7 @@ export default function ZnakowaniePage() {
             <Callout icon="🚨" t={t}>
               <strong style={{ color: t.accentLight }}>Najczęstszy błąd:</strong> Projektowanie haftu jak nadruku. Wymaga uproszczenia, pogrubienia, ograniczenia kolorów.
             </Callout>
-            <PhotoGallery photos={PHOTOS.haft} t={t} />
+            <PhotoGallery photos={getPhotos('haft')} t={t} onPhotoClick={setLightbox} {...ep('haft')} />
           </TechCard>
           <VideoGrid videos={VIDEOS.haft} t={t} />
         </div>
@@ -704,7 +902,7 @@ export default function ZnakowaniePage() {
               pros={['Pełen kolor, zdjęcia, gradienty', 'Brak kosztów matryc — od 1 szt.', 'Świetny detal i przejścia tonalne']}
               cons={['Przy dużych nakładach przegrywa z sitem', 'Ciemne koszulki = pretreat + ślad', 'Najlepiej na bawełnie, słabiej na syntetykach']}
               t={t} />
-            <PhotoGallery photos={PHOTOS.dtg} t={t} />
+            <PhotoGallery photos={getPhotos('dtg')} t={t} onPhotoClick={setLightbox} {...ep('dtg')} />
           </TechCard>
 
           <TechCard icon="📋" title="DTF — Direct to Film" subtitle="Największy hit — druk na folii PET + proszek klejowy + prasa" t={t}>
@@ -716,7 +914,7 @@ export default function ZnakowaniePage() {
               pros={['Ekstremalnie wszechstronny materiałowo', 'Ostre kolory, pełne przejścia tonalne', 'Bardzo trwałe (często bardziej niż DTG)', 'Bawełna, poliester, nylon, softshell, skóra']}
               cons={['Wyczuwalna warstwa „naklejki"', 'Mniej oddychające niż wodny/discharge', 'Duże aple mniej szlachetne od premium sita']}
               t={t} />
-            <PhotoGallery photos={PHOTOS.dtf} t={t} />
+            <PhotoGallery photos={getPhotos('dtf')} t={t} onPhotoClick={setLightbox} {...ep('dtf')} />
           </TechCard>
 
           <VideoGrid videos={VIDEOS.dtg} t={t} />
@@ -739,7 +937,7 @@ export default function ZnakowaniePage() {
             <Callout icon="📐" t={t}>
               <strong style={{ color: t.accentLight }}>Dla grafików:</strong> Fullprint to nie „front 30 × 40 cm". Projektuj pod wykroje, szwy, tolerancje szycia. Model cut-and-sew.
             </Callout>
-            <PhotoGallery photos={PHOTOS.sublimacja} t={t} />
+            <PhotoGallery photos={getPhotos('sublimacja')} t={t} onPhotoClick={setLightbox} {...ep('sublimacja')} />
           </TechCard>
           <VideoGrid videos={VIDEOS.sublimacja} t={t} />
         </div>
@@ -759,7 +957,7 @@ export default function ZnakowaniePage() {
               pros={['Wysoka trwałość, ostre krawędzie', 'Szybkie wdrożenie', 'Wszechstronność materiałowa']}
               cons={['Tylko wektory — brak przejść tonalnych', 'Wiele kolorów = wiele warstw = grubość', 'Przy dużych aplach efekt „foliowy"']}
               t={t} />
-            <PhotoGallery photos={PHOTOS.flex} t={t} />
+            <PhotoGallery photos={getPhotos('flex')} t={t} onPhotoClick={setLightbox} {...ep('flex')} />
           </TechCard>
 
           <TechCard icon="🔄" title="Transfer sitodrukowy" subtitle="Sitodruk na nośniku → wgrzanie w odzież" t={t}>
