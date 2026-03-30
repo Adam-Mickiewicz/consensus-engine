@@ -5,12 +5,19 @@
     },
     "app/api/cron/sync-orders/route.js": {
       "maxDuration": 300
+    },
+    "app/api/cron/process-video-jobs/route.js": {
+      "maxDuration": 60
     }
   },
   "crons": [
     {
       "path": "/api/cron/sync-orders",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/process-video-jobs",
+      "schedule": "* * * * *"
     }
   ]
 }
