@@ -83,21 +83,40 @@ export async function GET(request) {
 
         console.log('Sora status response:', JSON.stringify(statusData, null, 2));
         if (statusData.status === 'completed') {
-          const videos = statusData.data || [];
-          for (let i = 0; i < videos.length; i++) {
-            const videoUrl = videos[i]?.url;
-            if (!videoUrl) continue;
-            const videoRes = await fetch(videoUrl);
-            const videoBuffer = await videoRes.arrayBuffer();
-            const fileName = `${job.id}_${i}.mp4`;
-            await supabase.storage
-              .from('bms-outputs')
-              .upload(fileName, Buffer.from(videoBuffer), { contentType: 'video/mp4', upsert: true });
-            const { data: urlData } = supabase.storage
-              .from('bms-outputs')
-              .getPublicUrl(fileName);
-            outputUrls.push(urlData.publicUrl);
+          // Sora nie zwraca URL w status response
+          // Trzeba pobrać content bezpośrednio przez osobny endpoint
+          const videoId = statusData.id;
+
+          const downloadRes = await fetch(
+            `https://api.openai.com/v1/videos/${videoId}/content`,
+            { headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` } }
+          );
+
+          if (!downloadRes.ok) {
+            // Spróbuj alternatywnego endpointu
+            const downloadRes2 = await fetch(
+              `https://api.openai.com/v1/videos/${videoId}`,
+              { headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` } }
+            );
+            const data2 = await downloadRes2.json();
+            console.log('Sora video full data:', JSON.stringify(data2, null, 2));
+            throw new Error(`Sora download failed: ${downloadRes.status}`);
           }
+
+          const videoBuffer = await downloadRes.arrayBuffer();
+          console.log('Sora video buffer size:', videoBuffer.byteLength);
+
+          const fileName = `${job.id}_0.mp4`;
+          await supabase.storage
+            .from('bms-outputs')
+            .upload(fileName, Buffer.from(videoBuffer), { contentType: 'video/mp4', upsert: true });
+
+          const { data: urlData } = supabase.storage
+            .from('bms-outputs')
+            .getPublicUrl(fileName);
+
+          outputUrls.push(urlData.publicUrl);
+
           await supabase.from('bms_jobs').update({
             status: 'done',
             output_urls: outputUrls,
