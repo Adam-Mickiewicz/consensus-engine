@@ -187,6 +187,7 @@ export async function DELETE(request) {
     await Promise.all([
       sb.from('user_roles').delete().eq('user_id', user_id),
       sb.from('user_permissions').delete().eq('user_id', user_id),
+      sb.from('bms_tool_permissions').delete().eq('user_id', user_id),
     ]);
 
     const { error } = await sb.auth.admin.deleteUser(user_id);
