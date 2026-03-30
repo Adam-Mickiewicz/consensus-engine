@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDarkMode } from '../../hooks/useDarkMode';
 import Nav from '../../components/Nav';
 import { supabase } from '../../../lib/supabase';
@@ -312,6 +312,56 @@ function VideoGrid({ videos, t }) {
   );
 }
 
+function AddPhotoForm({ newPhoto, onNewPhotoChange, onConfirmAdd, onCancelAdd, t }) {
+  const fileRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+
+  async function handleFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError('');
+    const ext = file.name.split('.').pop();
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { data, error } = await supabase.storage.from('znakowanie').upload(path, file, { upsert: false });
+    if (error) { setUploadError(error.message); setUploading(false); return; }
+    const { data: { publicUrl } } = supabase.storage.from('znakowanie').getPublicUrl(data.path);
+    onNewPhotoChange({ ...newPhoto, url: publicUrl });
+    setUploading(false);
+  }
+
+  const inputStyle = { width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgCard, color: t.text, fontSize: 13, marginBottom: 8, boxSizing: 'border-box' };
+
+  return (
+    <div style={{ marginTop: 12, padding: 16, borderRadius: 10, border: `1px solid ${t.accent}40`, background: t.accentGlow }}>
+      <div style={{ fontSize: 12, color: t.textDim, marginBottom: 8 }}>Zdjęcie</div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        <input type="url" value={newPhoto?.url || ''} onChange={e => onNewPhotoChange({ ...newPhoto, url: e.target.value })} placeholder="Wklej URL..." style={{ ...inputStyle, flex: 1, marginBottom: 0 }} />
+        <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{
+          padding: '8px 14px', borderRadius: 8, border: `1px solid ${t.accent}`,
+          background: 'transparent', color: t.accent, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: 600,
+        }}>
+          {uploading ? '⏳ Upload...' : '📁 Wybierz plik'}
+        </button>
+        <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
+      </div>
+      {newPhoto?.url && (
+        <img src={newPhoto.url} alt="podgląd" referrerPolicy="no-referrer" style={{ width: '100%', maxHeight: 120, objectFit: 'cover', borderRadius: 8, marginBottom: 8, display: 'block' }} onError={e => e.currentTarget.style.display = 'none'} />
+      )}
+      {uploadError && <div style={{ fontSize: 11, color: t.red, marginBottom: 8 }}>{uploadError}</div>}
+      <div style={{ fontSize: 12, color: t.textDim, marginBottom: 6 }}>Tytuł / alt (krótko)</div>
+      <input type="text" value={newPhoto?.alt || ''} onChange={e => onNewPhotoChange({ ...newPhoto, alt: e.target.value })} placeholder="Np. Sitodruk plastizolowy na ciemnym podłożu" style={inputStyle} />
+      <div style={{ fontSize: 12, color: t.textDim, marginBottom: 6 }}>Opis / info <span style={{ opacity: 0.5 }}>(opcjonalne)</span></div>
+      <textarea value={newPhoto?.description || ''} onChange={e => onNewPhotoChange({ ...newPhoto, description: e.target.value })} placeholder={'Podłoże: bawełna 100%\nIlość kolorów: 4\nTechnika: plastizol'} rows={3} style={{ ...inputStyle, marginBottom: 12, resize: 'vertical', fontFamily: 'inherit' }} />
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button onClick={onConfirmAdd} disabled={!newPhoto?.url?.trim() || uploading} style={{ padding: '8px 20px', borderRadius: 8, background: t.accent, border: 'none', color: '#fff', fontSize: 13, cursor: 'pointer' }}>Zapisz</button>
+        <button onClick={onCancelAdd} style={{ padding: '8px 20px', borderRadius: 8, background: 'transparent', border: `1px solid ${t.border}`, color: t.textDim, fontSize: 13, cursor: 'pointer' }}>Anuluj</button>
+      </div>
+    </div>
+  );
+}
+
 function parseDesc(text) {
   if (!text?.trim()) return [];
   return text.split('\n').map(line => {
@@ -469,40 +519,7 @@ function PhotoGallery({ photos, t, onPhotoClick, editMode, onDelete, onSaveDescr
       </div>
 
       {editMode && addingActive && (
-        <div style={{ marginTop: 12, padding: 16, borderRadius: 10, border: `1px solid ${t.accent}40`, background: t.accentGlow }}>
-          <div style={{ fontSize: 12, color: t.textDim, marginBottom: 6 }}>URL zdjęcia</div>
-          <input
-            type="url"
-            value={newPhoto?.url || ''}
-            onChange={e => onNewPhotoChange({ ...newPhoto, url: e.target.value })}
-            placeholder="https://..."
-            style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgCard, color: t.text, fontSize: 13, marginBottom: 8, boxSizing: 'border-box' }}
-          />
-          <div style={{ fontSize: 12, color: t.textDim, marginBottom: 6 }}>Tytuł / alt (krótko)</div>
-          <input
-            type="text"
-            value={newPhoto?.alt || ''}
-            onChange={e => onNewPhotoChange({ ...newPhoto, alt: e.target.value })}
-            placeholder="Np. Sitodruk plastizolowy na ciemnym podłożu"
-            style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgCard, color: t.text, fontSize: 13, marginBottom: 8, boxSizing: 'border-box' }}
-          />
-          <div style={{ fontSize: 12, color: t.textDim, marginBottom: 6 }}>Opis / info <span style={{ opacity: 0.5 }}>(opcjonalne — pojawi się pod zdjęciem)</span></div>
-          <textarea
-            value={newPhoto?.description || ''}
-            onChange={e => onNewPhotoChange({ ...newPhoto, description: e.target.value })}
-            placeholder="Dodatkowe info, np. technika, szczegóły, uwagi..."
-            rows={3}
-            style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgCard, color: t.text, fontSize: 13, marginBottom: 12, boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }}
-          />
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={onConfirmAdd} disabled={!newPhoto?.url?.trim()} style={{ padding: '8px 20px', borderRadius: 8, background: t.accent, border: 'none', color: '#fff', fontSize: 13, cursor: 'pointer' }}>
-              Zapisz
-            </button>
-            <button onClick={onCancelAdd} style={{ padding: '8px 20px', borderRadius: 8, background: 'transparent', border: `1px solid ${t.border}`, color: t.textDim, fontSize: 13, cursor: 'pointer' }}>
-              Anuluj
-            </button>
-          </div>
-        </div>
+        <AddPhotoForm newPhoto={newPhoto} onNewPhotoChange={onNewPhotoChange} onConfirmAdd={onConfirmAdd} onCancelAdd={onCancelAdd} t={t} />
       )}
     </div>
   );
