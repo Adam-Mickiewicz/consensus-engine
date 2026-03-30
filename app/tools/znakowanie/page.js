@@ -312,50 +312,113 @@ function VideoGrid({ videos, t }) {
   );
 }
 
-function PhotoGallery({ photos, t, onPhotoClick, editMode, onDelete, onStartAdd, onCancelAdd, addingActive, newPhoto, onNewPhotoChange, onConfirmAdd }) {
+function parseDesc(text) {
+  if (!text?.trim()) return [];
+  return text.split('\n').map(line => {
+    const idx = line.indexOf(':');
+    if (idx > 0) return { key: line.slice(0, idx).trim(), val: line.slice(idx + 1).trim() };
+    return { key: null, val: line.trim() };
+  }).filter(l => l.val);
+}
+
+function DescCard({ text, t }) {
+  const lines = parseDesc(text);
+  if (!lines.length) return null;
+  return (
+    <div style={{
+      borderTop: `2px solid ${t.yellow}`,
+      background: t.yellow + '10',
+      padding: '8px 10px',
+    }}>
+      {lines.map((l, i) => (
+        <div key={i} style={{ fontSize: 11, lineHeight: 1.65 }}>
+          {l.key
+            ? <><span style={{ color: t.yellow, fontWeight: 700 }}>{l.key}:</span>{' '}<span style={{ color: t.text }}>{l.val}</span></>
+            : <span style={{ color: t.textDim }}>{l.val}</span>
+          }
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PhotoGallery({ photos, t, onPhotoClick, editMode, onDelete, onSaveDescription, onStartAdd, onCancelAdd, addingActive, newPhoto, onNewPhotoChange, onConfirmAdd }) {
   const [expanded, setExpanded] = useState(false);
+  const [editingKey, setEditingKey] = useState(null);
+  const [editingText, setEditingText] = useState('');
   const visible = expanded ? photos : photos.slice(0, 3);
   return (
     <div style={{ margin: '20px 0' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-        {visible.map((p, i) => (
-          <div key={p.id || i} style={{
-            borderRadius: 10, overflow: 'hidden', border: `1px solid ${t.border}`,
-            background: t.bgCardAlt, position: 'relative',
-            cursor: editMode ? 'default' : 'zoom-in',
-          }}
-            onClick={() => !editMode && onPhotoClick?.({ url: p.url, alt: p.alt, description: p.description })}
-          >
-            <div style={{ aspectRatio: '4/3', overflow: 'hidden', position: 'relative' }}>
-              <img src={p.url} alt={p.alt}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                referrerPolicy="no-referrer"
-                onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement.innerHTML = `<span style="font-size:11px;color:#888;padding:8px;text-align:center;display:block">${p.alt}</span>`; }}
-              />
-              {editMode && (
-                <button
-                  onClick={e => { e.stopPropagation(); onDelete?.(p.id, p._isLocal, p._localIdx); }}
-                  title="Usuń zdjęcie"
-                  style={{
-                    position: 'absolute', top: 5, right: 5,
-                    width: 26, height: 26, borderRadius: '50%',
-                    background: 'rgba(200,0,0,0.88)', border: '2px solid rgba(255,255,255,0.5)',
-                    color: '#fff', fontSize: 16, lineHeight: 1, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: 700,
-                  }}
-                >×</button>
+        {visible.map((p, i) => {
+          const key = p.id || ('local-' + i);
+          const isEditing = editingKey === key;
+          return (
+            <div key={key} style={{
+              borderRadius: 10, overflow: 'hidden', border: `1px solid ${t.border}`,
+              background: t.bgCardAlt,
+              cursor: editMode ? 'default' : 'zoom-in',
+            }}
+              onClick={() => !editMode && onPhotoClick?.({ url: p.url, alt: p.alt, description: p.description })}
+            >
+              <div style={{ aspectRatio: '4/3', overflow: 'hidden', position: 'relative' }}>
+                <img src={p.url} alt={p.alt}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  referrerPolicy="no-referrer"
+                  onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement.innerHTML = `<span style="font-size:11px;color:#888;padding:8px;text-align:center;display:block">${p.alt}</span>`; }}
+                />
+                {editMode && (
+                  <>
+                    <button
+                      onClick={e => { e.stopPropagation(); onDelete?.(p.id, p._isLocal, p._localIdx); }}
+                      title="Usuń zdjęcie"
+                      style={{
+                        position: 'absolute', top: 5, right: 5, width: 26, height: 26, borderRadius: '50%',
+                        background: 'rgba(200,0,0,0.88)', border: '2px solid rgba(255,255,255,0.5)',
+                        color: '#fff', fontSize: 16, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700,
+                      }}
+                    >×</button>
+                    <button
+                      onClick={e => { e.stopPropagation(); setEditingKey(key); setEditingText(p.description || ''); }}
+                      title="Edytuj opis"
+                      style={{
+                        position: 'absolute', top: 5, right: 36, width: 26, height: 26, borderRadius: '50%',
+                        background: 'rgba(184,118,58,0.9)', border: '2px solid rgba(255,255,255,0.5)',
+                        color: '#fff', fontSize: 13, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >✎</button>
+                  </>
+                )}
+              </div>
+              {isEditing ? (
+                <div style={{ padding: 10, borderTop: `2px solid ${t.yellow}`, background: t.yellow + '10' }} onClick={e => e.stopPropagation()}>
+                  <textarea
+                    value={editingText}
+                    onChange={e => setEditingText(e.target.value)}
+                    placeholder={'Podłoże: bawełna 100%\nIlość kolorów: 4\nTechnika: plastizol\nMiękkość chwytu: 3/5'}
+                    rows={4}
+                    autoFocus
+                    style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: `1px solid ${t.border}`, background: t.bgCard, color: t.text, fontSize: 11, resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 8 }}
+                  />
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      onClick={() => { onSaveDescription?.(p.id, p._isLocal, p._localIdx, editingText); setEditingKey(null); }}
+                      style={{ flex: 1, padding: '5px 0', borderRadius: 6, background: t.accent, border: 'none', color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 700 }}
+                    >Zapisz</button>
+                    <button
+                      onClick={() => setEditingKey(null)}
+                      style={{ flex: 1, padding: '5px 0', borderRadius: 6, background: 'transparent', border: `1px solid ${t.border}`, color: t.textDim, fontSize: 11, cursor: 'pointer' }}
+                    >Anuluj</button>
+                  </div>
+                </div>
+              ) : (
+                <DescCard text={p.description} t={t} />
               )}
             </div>
-            {p.description && (
-              <div style={{
-                padding: '8px 10px', fontSize: 11, color: t.textDim, lineHeight: 1.5,
-                borderTop: `1px solid ${t.border}`,
-                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-              }}>{p.description}</div>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
@@ -453,10 +516,19 @@ function Lightbox({ photo, onClose, t }) {
           style={{ maxWidth: '90vw', maxHeight: '82vh', objectFit: 'contain', borderRadius: 10, display: 'block' }}
         />
         {photo.alt && (
-          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 10, textAlign: 'center', maxWidth: 700 }}>{photo.alt}</div>
+          <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, marginTop: 10, textAlign: 'center', maxWidth: 700 }}>{photo.alt}</div>
         )}
         {photo.description && (
-          <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, marginTop: 8, textAlign: 'center', maxWidth: 700, lineHeight: 1.6, background: 'rgba(255,255,255,0.07)', borderRadius: 8, padding: '10px 16px' }}>{photo.description}</div>
+          <div style={{ marginTop: 10, maxWidth: 560, width: '100%', borderRadius: 10, overflow: 'hidden', border: `2px solid ${t.yellow}`, background: t.yellow + '12' }}>
+            {parseDesc(photo.description).map((l, i) => (
+              <div key={i} style={{ padding: '5px 14px', fontSize: 13, lineHeight: 1.7, borderBottom: i < parseDesc(photo.description).length - 1 ? `1px solid ${t.yellow}28` : 'none' }}>
+                {l.key
+                  ? <><span style={{ color: t.yellow, fontWeight: 700 }}>{l.key}:</span>{' '}<span style={{ color: '#fff' }}>{l.val}</span></>
+                  : <span style={{ color: 'rgba(255,255,255,0.7)' }}>{l.val}</span>
+                }
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
@@ -629,12 +701,38 @@ export default function ZnakowaniePage() {
     setNewPhoto({ url: '', alt: '' });
   }
 
+  async function handleSaveDescription(section, photoId, isLocal, localIdx, description) {
+    if (isLocal) {
+      const toSeed = (PHOTOS[section] || []).map((p, i) => ({
+        section, url: p.url, alt: p.alt,
+        description: i === localIdx ? description : '',
+        sort_order: i,
+      }));
+      const res = await fetch('/api/znakowanie/photos/bulk', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(toSeed),
+      });
+      const seeded = await res.json();
+      setDbPhotos(prev => ({ ...prev, [section]: seeded }));
+    } else {
+      await fetch(`/api/znakowanie/photos/${photoId}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description }),
+      });
+      setDbPhotos(prev => ({
+        ...prev,
+        [section]: prev[section].map(p => p.id === photoId ? { ...p, description } : p),
+      }));
+    }
+  }
+
   function ep(section) {
     if (!editMode) return {};
     return {
       editMode: true,
       onDelete: (id, isLocal, localIdx) => handleDeletePhoto(section, id, isLocal, localIdx),
-      onStartAdd: () => { setAddingTo(section); setNewPhoto({ url: '', alt: '' }); },
+      onSaveDescription: (id, isLocal, localIdx, desc) => handleSaveDescription(section, id, isLocal, localIdx, desc),
+      onStartAdd: () => { setAddingTo(section); setNewPhoto({ url: '', alt: '', description: '' }); },
       onCancelAdd: () => setAddingTo(null),
       addingActive: addingTo === section,
       newPhoto,
