@@ -36,8 +36,16 @@ export async function POST(request) {
       return Response.json({ error: 'model_id i prompt są wymagane' }, { status: 400 });
     }
 
-    if (!MODEL_MAP[model_id]) {
-      return Response.json({ error: `Model ${model_id} nie obsługuje Veo API` }, { status: 400 });
+    const isVeo = ['veo31','veo31fast','veo3','veo3fast'].includes(model_id)
+    const isSora = ['sora2','sora2pro'].includes(model_id)
+
+    if (!isVeo && !isSora) {
+      return Response.json({ error: `Nieznany model: ${model_id}` }, { status: 400 })
+    }
+
+    // Dla Veo sprawdź MODEL_MAP
+    if (isVeo && !MODEL_MAP[model_id]) {
+      return Response.json({ error: `Brak mapowania modelu Veo: ${model_id}` }, { status: 400 })
     }
 
     const output_expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
