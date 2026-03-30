@@ -4,8 +4,8 @@ export const dynamic = 'force-dynamic';
 
 // Model ID → Google model string
 const MODEL_MAP = {
-  'veo31':     'veo-3.1-generate-preview',
-  'veo31fast': 'veo-3.1-fast-generate-preview',
+  'veo31':     'veo-3.0-generate-001',
+  'veo31fast': 'veo-3.0-fast-generate-001',
   'veo3':      'veo-3.0-generate-001',
   'veo3fast':  'veo-3.0-fast-generate-001',
 };
@@ -92,32 +92,40 @@ async function generateVideoAsync(jobId, modelId, prompt, params, referenceUrls,
     const durationSeconds = parseInt(params?.duration) || 8;
     const numberOfVideos = parseInt(params?.variants) || 1;
 
-    const requestBody = {
-      model: googleModel,
-      prompt: fullPrompt,
-      config: {
-        aspect_ratio: aspectRatio,
-        number_of_videos: numberOfVideos,
-        duration_seconds: durationSeconds,
-        enhance_prompt: true,
-      },
-    };
-
     // Image-to-video: dołącz pierwsze zdjęcie bazowe jako base64
+    let imageBase64 = null;
+    let imageMimeType = 'image/jpeg';
     if (referenceUrls && referenceUrls.length > 0) {
       try {
         const imageRes = await fetch(referenceUrls[0]);
         const imageBuffer = await imageRes.arrayBuffer();
-        const base64 = Buffer.from(imageBuffer).toString('base64');
-        const mimeType = imageRes.headers.get('content-type') || 'image/jpeg';
-        requestBody.image = { image_bytes: base64, mime_type: mimeType };
+        imageBase64 = Buffer.from(imageBuffer).toString('base64');
+        imageMimeType = imageRes.headers.get('content-type') || 'image/jpeg';
       } catch (imgErr) {
         console.warn('[generate-video] Could not fetch reference image:', imgErr.message);
       }
     }
 
+    const requestBody = {
+      instances: [{
+        prompt: fullPrompt,
+        ...(imageBase64 ? {
+          image: {
+            bytesBase64Encoded: imageBase64,
+            mimeType: imageMimeType,
+          },
+        } : {}),
+      }],
+      parameters: {
+        aspectRatio: aspectRatio,
+        sampleCount: numberOfVideos,
+        durationSeconds: durationSeconds,
+        enhancePrompt: true,
+      },
+    };
+
     const apiKey = process.env.GOOGLE_AI_API_KEY;
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateVideo?key=${apiKey}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:predictLongRunning?key=${apiKey}`;
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -154,13 +162,13 @@ async function generateVideoAsync(jobId, modelId, prompt, params, referenceUrls,
     if (!videoData) throw new Error('Timeout — Veo nie odpowiedział w ciągu 10 minut');
 
     // Wyciągnij wygenerowane wideo i uploaduj do Storage
-    const generatedVideos = videoData.generatedSamples || videoData.videos || [];
+    const generatedVideos = videoData.videos || videoData.generatedSamples || [];
     const outputUrls = [];
 
     for (let i = 0; i < generatedVideos.length; i++) {
       const video = generatedVideos[i];
-      const videoUri = video.video?.uri || video.uri;
-      const videoBytes = video.video?.videoBytes || video.videoBytes;
+      const videoUri = video.uri || video.video?.uri;
+      const videoBytes = video.bytesBase64Encoded || video.video?.bytesBase64Encoded;
       const fileName = `${jobId}_${i}.mp4`;
 
       try {
