@@ -59,9 +59,9 @@ export async function GET(request) {
       // === SORA ===
       const soraModel = SORA_MAP[job.model_id];
       const aspectRatioMap = {
-        '16:9': '1920x1080',
-        '9:16': '1080x1920',
-        '1:1':  '1080x1080',
+        '16:9': '1280x720',
+        '9:16': '720x1280',
+        '1:1':  '1280x720',
       };
       const resolution = aspectRatioMap[job.params?.orientation] || '1080x1920';
       const duration = parseInt(job.params?.duration) || 8;
