@@ -1,49 +1,74 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Nav from "../../../components/Nav";
-import ModelSelector from "../components/ModelSelector";
-import PromptSandbox from "../components/PromptSandbox";
-import CostEstimator from "../components/CostEstimator";
 import AttachmentPanel from "../components/AttachmentPanel";
 import PresetPanel from "../components/PresetPanel";
 
 const ACCENT = "#b8763a";
-const ORIENTATIONS = ["1:1", "4:3", "3:4", "16:9", "9:16"];
-const VARIANT_OPTIONS = ["1", "2", "4"];
 
-function ToggleGroup({ options, value, onChange }) {
+const RESOLUTION_LABELS = {
+  "1024x1024": "1K (1024px)",
+  "2048x2048": "2K (2048px)",
+  "4096x4096": "4K (4096px)",
+  "1792x1024": "16:9 HD",
+  "1024x1792": "9:16 HD",
+  "1536x1024": "16:9",
+  "1024x1536": "9:16",
+  "auto": "Auto",
+};
+
+const QUALITY_LABELS = {
+  "low": "Szybka",
+  "medium": "Standardowa",
+  "high": "Wysoka",
+  "hd": "HD",
+  "standard": "Standard",
+  "auto": "Auto",
+};
+
+const STYLE_OPTIONS = [
+  "Fotorealistyczny", "Ilustracja", "Fotografia produktowa",
+  "Cinematic", "Animowany", "Minimalistyczny", "Vintage", "Szkic",
+];
+
+const BADGE_COLORS = {
+  green:  { bg: "#e8f5e9", text: "#2e7d32" },
+  purple: { bg: "#f3e5f5", text: "#7b1fa2" },
+  amber:  { bg: "#fff8e1", text: "#f57f17" },
+  red:    { bg: "#fce4ec", text: "#c62828" },
+};
+
+function ToggleGroup({ options, value, onChange, labelFn }) {
   return (
     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
       {options.map(opt => (
-        <button key={opt} onClick={() => onChange(opt)} style={{
-          padding: "7px 14px", fontSize: 12,
-          border: `1px solid ${value === opt ? ACCENT : "#ddd"}`,
-          borderRadius: 6, background: value === opt ? "#fdf7f2" : "#fff",
-          color: value === opt ? ACCENT : "#555", cursor: "pointer",
-          fontWeight: value === opt ? 600 : 400, transition: "all 0.15s",
-        }}>
-          {opt}
+        <button
+          key={opt}
+          onClick={() => onChange(opt)}
+          style={{
+            padding: "6px 14px", fontSize: 12,
+            border: `1px solid ${value === opt ? ACCENT : "#ddd"}`,
+            borderRadius: 6,
+            background: value === opt ? "#fdf7f2" : "#fff",
+            color: value === opt ? ACCENT : "#555",
+            cursor: "pointer",
+            fontWeight: value === opt ? 600 : 400,
+            transition: "all 0.15s",
+          }}
+        >
+          {labelFn ? labelFn(opt) : opt}
         </button>
       ))}
     </div>
   );
 }
 
-function ParamRow({ label, children }) {
-  return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 16 }}>
-      <div style={{ width: 130, flexShrink: 0, fontSize: 13, color: "#555", paddingTop: 7, fontWeight: 500 }}>{label}</div>
-      <div style={{ flex: 1 }}>{children}</div>
-    </div>
-  );
-}
-
 function Section({ title, children }) {
   return (
-    <div style={{ marginBottom: 24, background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 20 }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: "#555", marginBottom: 14, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+    <div style={{ marginBottom: 20, background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 20 }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: "#888", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
         {title}
       </div>
       {children}
@@ -51,94 +76,143 @@ function Section({ title, children }) {
   );
 }
 
+function calculateCost(model, params) {
+  if (!model) return "0.00";
+  const variants = parseInt(params?.variants) || 1;
+  return (parseFloat(model.price_per_unit) * variants).toFixed(2);
+}
+
 export default function ImagesPage() {
-  const router = useRouter();
-  const [sessionId] = useState(() => crypto.randomUUID());
+  const sessionId = useRef(`img-${Date.now()}`).current;
+
+  const [models, setModels] = useState([]);
+  const [modelsLoading, setModelsLoading] = useState(true);
   const [selectedModel, setSelectedModel] = useState(null);
-  const [params, setParams] = useState({ orientation: "1:1", resolution: "", variants: "1" });
-  const [prompt, setPrompt] = useState("");
   const [attachments, setAttachments] = useState([]);
+
+  const [params, setParams] = useState({
+    orientation: "1:1",
+    resolution: "",
+    style: "Fotorealistyczny",
+    quality: "",
+    variants: "1",
+  });
+
+  const [prompt, setPrompt] = useState("");
+  const [aiModel, setAiModel] = useState("claude");
+  const [aiInstruction, setAiInstruction] = useState("");
+  const [enhancing, setEnhancing] = useState(false);
+  const [alternatives, setAlternatives] = useState([]);
   const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
   const [toast, setToast] = useState(null);
-  const promptRef = useRef("");
-
-  function setParam(key, val) { setParams(p => ({ ...p, [key]: val })); }
-
-  function handleModelChange(model) {
-    setSelectedModel(model);
-    if (model?.capabilities?.resolutions?.[0]) {
-      setParam("resolution", model.capabilities.resolutions[0]);
-    }
-  }
 
   function showToast(msg, type = "success") {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 3500);
+    setTimeout(() => setToast(null), 4000);
   }
 
-  function computeCost() {
-    if (!selectedModel) return 0;
-    return (selectedModel.price_per_unit * (parseInt(params.variants) || 1)).toFixed(2);
+  function setParam(key, val) {
+    setParams(p => ({ ...p, [key]: val }));
   }
 
-  function getCurrentConfig() {
-    return {
-      model_id: selectedModel?.model_id,
-      params,
-      prompt_template: prompt,
-    };
+  useEffect(() => {
+    async function fetchModels() {
+      try {
+        const res = await fetch("/api/brand-media/models?category=image");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const list = data.models || [];
+        setModels(list);
+        if (list.length) handleModelChange(list[0]);
+      } catch (err) {
+        console.error("Models fetch error:", err);
+      } finally {
+        setModelsLoading(false);
+      }
+    }
+    fetchModels();
+  }, []);
+
+  function handleModelChange(model) {
+    setSelectedModel(model);
+    const cap = model.capabilities || {};
+    setParams(prev => ({
+      ...prev,
+      resolution: cap.resolutions?.[0] || "",
+      quality: cap.quality?.[0] || "",
+      orientation: cap.orientations?.[0] || "1:1",
+    }));
+    setAlternatives([]);
   }
 
   function handlePresetApply(preset) {
-    if (preset.model_id) setSelectedModel({ model_id: preset.model_id });
     if (preset.params) setParams(p => ({ ...p, ...preset.params }));
-    if (preset.prompt_template) {
-      setPrompt(preset.prompt_template);
-      promptRef.current = preset.prompt_template;
+    if (preset.prompt_template) setPrompt(preset.prompt_template);
+  }
+
+  function getCurrentConfig() {
+    return { model_id: selectedModel?.model_id, params, prompt_template: prompt };
+  }
+
+  async function handleEnhancePrompt() {
+    if (!prompt.trim()) return;
+    setEnhancing(true);
+    setAlternatives([]);
+    try {
+      const res = await fetch("/api/brand-media/enhance-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt,
+          instruction: aiInstruction,
+          model: aiModel,
+          context: { jobType: "image", selectedModel: selectedModel?.model_id, params },
+        }),
+      });
+      const data = await res.json();
+      if (data.enhanced) setPrompt(data.enhanced);
+      if (data.alternatives?.length) setAlternatives(data.alternatives);
+    } catch {
+      showToast("Błąd ulepszania promptu", "error");
+    } finally {
+      setEnhancing(false);
     }
   }
 
-  const hasTemplateVars = prompt.includes("{{");
-
   async function handleSubmit() {
-    if (!selectedModel) { setSubmitError("Wybierz model."); return; }
-    if (!promptRef.current.trim()) { setSubmitError("Wpisz prompt."); return; }
-
+    if (!selectedModel) { showToast("Wybierz model", "error"); return; }
+    if (!prompt.trim()) { showToast("Wpisz prompt", "error"); return; }
     setSubmitting(true);
-    setSubmitError("");
-
     try {
       const res = await fetch("/api/brand-media/generate-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model_id: selectedModel.model_id,
-          prompt: promptRef.current,
-          params,
-          reference_urls: attachments.map(a => a.url),
+          prompt,
+          params: { ...params },
           attachment_ids: attachments.map(a => a.id),
-          estimated_cost: parseFloat(computeCost()),
+          estimated_cost: parseFloat(calculateCost(selectedModel, params)),
         }),
       });
-
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || `HTTP ${res.status}`);
+        const d = await res.json();
+        throw new Error(d.error || `HTTP ${res.status}`);
       }
-
-      showToast("Job dodany do kolejki");
-      setTimeout(() => router.push("/tools/brand-media-studio?tab=queue"), 1000);
+      showToast("Grafika dodana do kolejki!");
+      setPrompt("");
+      setAlternatives([]);
     } catch (err) {
-      console.error("generate-image error:", err);
-      setSubmitError("Błąd: " + err.message);
+      showToast("Błąd: " + err.message, "error");
     } finally {
       setSubmitting(false);
     }
   }
 
-  const availableOrientations = selectedModel?.capabilities?.orientations || ORIENTATIONS;
-  const availableResolutions = selectedModel?.capabilities?.resolutions || [];
+  const cap = selectedModel?.capabilities || {};
+  const availableOrientations = cap.orientations || ["1:1", "16:9", "9:16"];
+  const availableResolutions = cap.resolutions || [];
+  const availableQuality = cap.quality || [];
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8f8f6", fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
@@ -146,112 +220,252 @@ export default function ImagesPage() {
 
       {toast && (
         <div style={{
-          position: "fixed", top: 60, right: 20, zIndex: 200,
-          background: toast.type === "success" ? "#2e7d32" : "#c62828",
-          color: "#fff", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 500,
-          boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+          position: "fixed", bottom: 24, right: 24, zIndex: 1000,
+          background: toast.type === "success" ? ACCENT : "#ef4444",
+          color: "#fff", padding: "12px 20px", borderRadius: 8,
+          fontSize: 13, boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
         }}>
           {toast.msg}
         </div>
       )}
 
-      <div style={{ padding: "28px 32px", maxWidth: 900, margin: "0 auto" }}>
+      <div style={{ padding: "28px 32px", maxWidth: 800, margin: "0 auto" }}>
         <div style={{ fontSize: 12, color: "#aaa", marginBottom: 20 }}>
           <Link href="/tools/brand-media-studio" style={{ color: "#aaa", textDecoration: "none" }}>Brand Media Studio</Link>
           {" / "}
           <span style={{ color: "#555" }}>Generowanie obrazów</span>
         </div>
-
-        <h1 style={{ fontSize: 22, fontWeight: 500, margin: "0 0 16px", color: "#1a1a1a" }}>
-          🖼 Generowanie obrazów
+        <h1 style={{ fontSize: 22, fontWeight: 500, margin: "0 0 24px", color: "#1a1a1a" }}>
+          🎨 Generowanie obrazów
         </h1>
 
         {/* Presety */}
-        <div style={{ marginBottom: 8 }}>
+        <Section title="Presety">
           <PresetPanel jobType="image" onApply={handlePresetApply} currentConfig={getCurrentConfig()} />
-        </div>
+        </Section>
 
         {/* Materiały źródłowe */}
-        <Section title="1. Materiały źródłowe">
+        <Section title="Materiały źródłowe">
           <AttachmentPanel sessionId={sessionId} onChange={setAttachments} maxFiles={20} />
+          <div style={{ fontSize: 11, color: "#aaa", marginTop: 8 }}>
+            Wgrane pliki zostaną przekazane modelowi jako referencja wizualna
+          </div>
         </Section>
 
         {/* Model */}
-        <Section title="2. Wybierz model">
-          <ModelSelector category="image" selectedModelId={selectedModel?.model_id} onModelChange={handleModelChange} />
+        <Section title="Model">
+          {modelsLoading ? (
+            <div style={{ fontSize: 13, color: "#888" }}>Ładowanie modeli...</div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
+              {models.map(model => {
+                const isSelected = model.model_id === selectedModel?.model_id;
+                const badgeStyle = BADGE_COLORS[model.badge_color] || BADGE_COLORS.amber;
+                return (
+                  <div
+                    key={model.model_id}
+                    onClick={() => handleModelChange(model)}
+                    style={{
+                      border: `${isSelected ? "1.5px" : "1px"} solid ${isSelected ? ACCENT : "#eee"}`,
+                      borderRadius: 10, padding: "14px 16px", cursor: "pointer",
+                      background: isSelected ? "#fdf7f2" : "#fff",
+                      transition: "border-color 0.15s, background 0.15s",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                      <span style={{ fontWeight: 600, fontSize: 14, color: "#1a1a1a" }}>{model.model_name}</span>
+                      {model.badge && (
+                        <span style={{
+                          fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 10,
+                          background: badgeStyle.bg, color: badgeStyle.text,
+                        }}>
+                          {model.badge}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 13, color: ACCENT, fontWeight: 500, marginBottom: 4 }}>
+                      ${parseFloat(model.price_per_unit).toFixed(2)} / {model.unit_label}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#999" }}>
+                      {model.capabilities?.resolutions?.slice(0, 3).map(r => RESOLUTION_LABELS[r] || r).join(" · ")}
+                    </div>
+                    <div style={{ fontSize: 10, color: "#bbb", marginTop: 2, textTransform: "capitalize" }}>
+                      {model.provider}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </Section>
 
         {/* Parametry */}
         {selectedModel && (
-          <Section title="3. Parametry">
-            <ParamRow label="Orientacja">
+          <Section title="Parametry">
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 6, fontWeight: 500 }}>Orientacja / proporcje</div>
               <ToggleGroup options={availableOrientations} value={params.orientation} onChange={v => setParam("orientation", v)} />
-            </ParamRow>
-            {availableResolutions.length > 0 && (
-              <ParamRow label="Rozdzielczość">
-                <select value={params.resolution} onChange={e => setParam("resolution", e.target.value)}
-                  style={{ padding: "7px 10px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, outline: "none" }}>
-                  {availableResolutions.map(r => <option key={r}>{r}</option>)}
-                </select>
-              </ParamRow>
+            </div>
+
+            {availableResolutions.length > 1 && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 6, fontWeight: 500 }}>Rozdzielczość</div>
+                <ToggleGroup
+                  options={availableResolutions}
+                  value={params.resolution}
+                  onChange={v => setParam("resolution", v)}
+                  labelFn={r => RESOLUTION_LABELS[r] || r}
+                />
+              </div>
             )}
-            <ParamRow label="Warianty">
-              <ToggleGroup options={VARIANT_OPTIONS} value={params.variants} onChange={v => setParam("variants", v)} />
-            </ParamRow>
+
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 6, fontWeight: 500 }}>Styl wizualny</div>
+              <select
+                value={params.style}
+                onChange={e => setParam("style", e.target.value)}
+                style={{ padding: "7px 10px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, outline: "none", background: "#fff", cursor: "pointer" }}
+              >
+                {STYLE_OPTIONS.map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+
+            {availableQuality.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 6, fontWeight: 500 }}>Jakość</div>
+                <ToggleGroup
+                  options={availableQuality}
+                  value={params.quality}
+                  onChange={v => setParam("quality", v)}
+                  labelFn={q => QUALITY_LABELS[q] || q}
+                />
+              </div>
+            )}
+
+            <div>
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 6, fontWeight: 500 }}>Liczba wariantów</div>
+              <ToggleGroup options={["1", "2", "4"]} value={params.variants} onChange={v => setParam("variants", v)} />
+            </div>
           </Section>
         )}
 
         {/* Prompt */}
-        <Section title="4. Prompt">
+        <Section title="Prompt">
           <textarea
             value={prompt}
-            onChange={e => { setPrompt(e.target.value); promptRef.current = e.target.value; }}
-            placeholder="Opisz obraz, który chcesz wygenerować... np. 'Colorful literary socks arranged on a wooden shelf with books, warm studio lighting, product photography, minimal background'"
+            onChange={e => setPrompt(e.target.value)}
+            placeholder="Opisz grafikę którą chcesz wygenerować..."
             style={{
-              width: "100%", minHeight: 100, padding: "12px 14px",
+              width: "100%", minHeight: 140, padding: "12px 14px",
               border: "1px solid #ddd", borderRadius: 8, fontSize: 14,
               resize: "vertical", boxSizing: "border-box", outline: "none",
-              fontFamily: "inherit", lineHeight: 1.6, marginBottom: 12,
+              fontFamily: "inherit", lineHeight: 1.6, marginBottom: 16,
             }}
           />
-          {hasTemplateVars && (
-            <div style={{
-              fontSize: 12, color: "#854d0e", background: "#fef9c3",
-              borderLeft: "3px solid #eab308", borderRadius: "0 6px 6px 0",
-              padding: "8px 12px", marginBottom: 12,
-            }}>
-              Zastąp <strong>{"{{zmienne}}"}</strong> nazwą produktu lub opisem przed generowaniem.
+
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: "#888", marginBottom: 6, fontWeight: 500 }}>Model AI do ulepszania</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {[
+                { id: "claude", label: "Claude Sonnet" },
+                { id: "gpt-4o", label: "GPT-4o" },
+                { id: "gpt-4.1", label: "GPT-4.1" },
+                { id: "o3", label: "o3" },
+              ].map(m => (
+                <button
+                  key={m.id}
+                  onClick={() => setAiModel(m.id)}
+                  style={{
+                    padding: "5px 12px", borderRadius: 20, fontSize: 12, cursor: "pointer",
+                    background: aiModel === m.id ? ACCENT : "transparent",
+                    color: aiModel === m.id ? "#fff" : "#666",
+                    border: aiModel === m.id ? `1px solid ${ACCENT}` : "1px solid #ddd",
+                    fontWeight: aiModel === m.id ? 500 : 400,
+                  }}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: "#888", marginBottom: 6, fontWeight: 500 }}>Instrukcja dla AI (opcjonalna)</div>
+            <textarea
+              value={aiInstruction}
+              onChange={e => setAiInstruction(e.target.value)}
+              placeholder="np. 'zaproponuj 3 warianty stylistyczne'"
+              style={{
+                width: "100%", minHeight: 50, padding: "8px 10px",
+                border: "1px solid #ddd", borderRadius: 8,
+                fontSize: 13, resize: "vertical", fontFamily: "inherit",
+                boxSizing: "border-box", outline: "none",
+              }}
+            />
+          </div>
+
+          <button
+            onClick={handleEnhancePrompt}
+            disabled={enhancing || !prompt.trim()}
+            style={{
+              padding: "8px 16px", fontSize: 13, borderRadius: 6,
+              border: `1px solid ${ACCENT}`, background: "#fff",
+              color: enhancing ? "#ccc" : ACCENT,
+              cursor: enhancing || !prompt.trim() ? "not-allowed" : "pointer",
+            }}
+          >
+            {enhancing ? "Generuję..." : "✦ Ulepsz prompt"}
+          </button>
+
+          {alternatives.length > 0 && (
+            <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ fontSize: 11, color: "#888", fontWeight: 500 }}>Propozycje AI — kliknij aby użyć:</div>
+              {alternatives.map((alt, i) => (
+                <div
+                  key={i}
+                  onClick={() => setPrompt(alt)}
+                  style={{
+                    padding: "10px 14px",
+                    border: prompt === alt ? `1.5px solid ${ACCENT}` : "1px solid #eee",
+                    borderRadius: 8, fontSize: 13, lineHeight: 1.5,
+                    cursor: "pointer", background: prompt === alt ? "#fdf6ee" : "#fff",
+                    color: "#333",
+                  }}
+                >
+                  <div style={{ fontSize: 10, color: ACCENT, fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Wariant {i + 1}
+                  </div>
+                  {alt}
+                </div>
+              ))}
             </div>
           )}
-          <PromptSandbox
-            mainPrompt={prompt}
-            onUsePrompt={p => { setPrompt(p); promptRef.current = p; }}
-            context={{ selectedModel, params }}
-          />
+
+          {selectedModel && (
+            <div style={{ fontSize: 12, color: "#888", marginTop: 12 }}>
+              Szacowany koszt:{" "}
+              <strong style={{ color: ACCENT }}>~${calculateCost(selectedModel, params)}</strong>
+              <span style={{ color: "#bbb", marginLeft: 4 }}>
+                ({selectedModel.model_name} · {params.variants} wariant)
+              </span>
+            </div>
+          )}
         </Section>
 
-        {/* Action bar */}
-        <div style={{
-          position: "sticky", bottom: 0, background: "#fff", border: "1px solid #eee",
-          borderRadius: 12, padding: "14px 20px", display: "flex", alignItems: "center",
-          justifyContent: "space-between", boxShadow: "0 -4px 20px rgba(0,0,0,0.06)",
-        }}>
-          <CostEstimator model={selectedModel} params={params} />
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            {submitError && <span style={{ fontSize: 12, color: "#c62828" }}>{submitError}</span>}
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              style={{
-                padding: "9px 20px", fontSize: 13, fontWeight: 600,
-                background: submitting ? "#f0e8df" : ACCENT,
-                border: "none", borderRadius: 6, color: "#fff", cursor: submitting ? "not-allowed" : "pointer",
-              }}
-            >
-              {submitting ? "Dodaję..." : "Generuj obraz →"}
-            </button>
-          </div>
-        </div>
+        {/* Generuj */}
+        <button
+          onClick={handleSubmit}
+          disabled={submitting || !selectedModel || !prompt.trim()}
+          style={{
+            width: "100%", padding: "14px 20px", fontSize: 15, fontWeight: 600,
+            background: submitting || !selectedModel || !prompt.trim() ? "#f0e8df" : ACCENT,
+            border: "none", borderRadius: 12, color: "#fff",
+            cursor: submitting || !selectedModel || !prompt.trim() ? "not-allowed" : "pointer",
+            marginBottom: 32, letterSpacing: "0.02em",
+          }}
+        >
+          {submitting ? "Dodaję do kolejki..." : "🎨 Generuj grafikę"}
+        </button>
       </div>
     </div>
   );

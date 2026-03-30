@@ -301,8 +301,69 @@ export async function GET(request) {
         'imagen4ultra': 'imagen-4.0-ultra-generate-001',
         'imagen3':      'imagen-3.0-generate-002',
       };
-      const googleModel = IMAGE_MODEL_MAP[job.model_id];
-      if (!googleModel) throw new Error(`Nieznany model obrazu: ${job.model_id}`);
+      const OPENAI_IMAGE_MODELS = ['dalle3', 'gpt4o-image'];
+
+      if (OPENAI_IMAGE_MODELS.includes(job.model_id)) {
+        // === DALL-E 3 ===
+        if (job.model_id === 'dalle3') {
+          const orientationToSize = { '1:1': '1024x1024', '16:9': '1792x1024', '9:16': '1024x1792' };
+          const size = orientationToSize[job.params?.orientation] || '1024x1024';
+          const quality = job.params?.quality || 'standard';
+
+          const res = await fetch('https://api.openai.com/v1/images/generations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` },
+            body: JSON.stringify({ model: 'dall-e-3', prompt: job.prompt, n: 1, size, quality, response_format: 'url' }),
+          });
+          if (!res.ok) { const err = await res.text(); throw new Error(`DALL-E error ${res.status}: ${err}`); }
+          const data = await res.json();
+          for (let i = 0; i < (data.data || []).length; i++) {
+            const imageUrl = data.data[i]?.url;
+            if (!imageUrl) continue;
+            const imgRes = await fetch(imageUrl);
+            const imgBuffer = await imgRes.arrayBuffer();
+            const fileName = `${job.id}_${i}.png`;
+            await supabase.storage.from('bms-outputs').upload(fileName, Buffer.from(imgBuffer), { contentType: 'image/png', upsert: true });
+            const { data: urlData } = supabase.storage.from('bms-outputs').getPublicUrl(fileName);
+            outputUrls.push(urlData.publicUrl);
+          }
+        }
+
+        // === GPT-4o Image ===
+        if (job.model_id === 'gpt4o-image') {
+          const orientationToSize = { '1:1': '1024x1024', '16:9': '1536x1024', '9:16': '1024x1536' };
+          const size = orientationToSize[job.params?.orientation] || 'auto';
+          const quality = job.params?.quality || 'auto';
+          const n = parseInt(job.params?.variants) || 1;
+
+          const res = await fetch('https://api.openai.com/v1/images/generations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` },
+            body: JSON.stringify({ model: 'gpt-image-1', prompt: job.prompt, n, size, quality }),
+          });
+          if (!res.ok) { const err = await res.text(); throw new Error(`GPT-4o Image error ${res.status}: ${err}`); }
+          const data = await res.json();
+          for (let i = 0; i < (data.data || []).length; i++) {
+            const b64 = data.data[i]?.b64_json;
+            if (!b64) continue;
+            const buffer = Buffer.from(b64, 'base64');
+            const fileName = `${job.id}_${i}.png`;
+            await supabase.storage.from('bms-outputs').upload(fileName, buffer, { contentType: 'image/png', upsert: true });
+            const { data: urlData } = supabase.storage.from('bms-outputs').getPublicUrl(fileName);
+            outputUrls.push(urlData.publicUrl);
+          }
+        }
+
+        await supabase.from('bms_jobs').update({
+          status: 'done',
+          output_urls: outputUrls,
+          thumbnail_url: outputUrls[0] || null,
+          updated_at: new Date().toISOString(),
+        }).eq('id', job.id);
+
+      } else {
+        const googleModel = IMAGE_MODEL_MAP[job.model_id];
+        if (!googleModel) throw new Error(`Nieznany model obrazu: ${job.model_id}`);
 
       const requestBody = {
         instances: [{ prompt: job.prompt || '' }],
@@ -348,6 +409,8 @@ export async function GET(request) {
         thumbnail_url: outputUrls[0] || null,
         updated_at: new Date().toISOString(),
       }).eq('id', job.id);
+
+      } // end else (Imagen)
 
     } else {
       throw new Error(`Nieznany typ joba: ${job.job_type} / model: ${job.model_id}`);
