@@ -13,6 +13,7 @@ const TOOLS = [
   { href: "/tools/marketing-brief", label: "Akcje marketingowe", icon: "📋" },
   { href: "/tools/brand-settings", label: "Ustawienia marki", icon: "🏷️" },
   { href: "/tools/znakowanie", label: "Znakowanie odzieży", icon: "👕" },
+  { href: "/tools/brand-media-studio", label: "Brand Media Studio", icon: "🎬", badge: "Beta" },
 ];
 
 const LIGHT = {
@@ -121,6 +122,11 @@ export default function Nav({ current }) {
               >
                 <span style={{ fontSize: 15, width: 20, textAlign: "center" }}>{tool.icon}</span>
                 {tool.label}
+                {tool.badge && (
+                  <span style={{ marginLeft: "auto", fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 8, background: "#fff8e1", color: "#f57f17", letterSpacing: "0.04em" }}>
+                    {tool.badge}
+                  </span>
+                )}
               </Link>
             ))}
           </div>
