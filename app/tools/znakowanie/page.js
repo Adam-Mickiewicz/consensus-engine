@@ -850,8 +850,8 @@ export default function ZnakowaniePage() {
 
       {/* ─── HERO ─── */}
       <header style={{
-        minHeight: '70vh', display: 'flex', flexDirection: 'column', justifyContent: 'center',
-        alignItems: 'center', textAlign: 'center', padding: '80px 24px',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        alignItems: 'center', textAlign: 'center', padding: '80px 24px 48px',
         background: `radial-gradient(ellipse at 30% 20%, ${t.accent}12 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, ${t.accent}08 0%, transparent 50%), ${t.bg}`,
       }}>
         <div style={{
