@@ -183,13 +183,16 @@ export async function GET(request) {
         if (opData.error) throw new Error(`Veo error: ${opData.error.message}`);
 
         console.log('Veo operation done, full response:', JSON.stringify(opData.response, null, 2));
+        console.log('response keys:', Object.keys(opData.response || {}));
+        console.log('generateVideoResponse:', JSON.stringify(opData.response?.generateVideoResponse, null, 2));
 
         const generatedVideos = opData.response?.generateVideoResponse?.generatedSamples ||
                                 opData.response?.generatedSamples ||
                                 opData.response?.videos ||
                                 [];
 
-        console.log('generatedVideos count:', generatedVideos.length);
+        console.log('generatedVideos array:', JSON.stringify(generatedVideos, null, 2));
+        console.log('generatedVideos length:', generatedVideos.length);
         console.log('first video keys:', generatedVideos[0] ? Object.keys(generatedVideos[0]) : 'none');
         for (let i = 0; i < generatedVideos.length; i++) {
           const video = generatedVideos[i];
