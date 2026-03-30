@@ -141,12 +141,21 @@ export async function PATCH(request) {
 
     // Aktualizacja dostępu do narzędzia
     if (body.user_id && body.tool !== undefined && body.can_access !== undefined) {
-      const { error } = await sb.from('bms_tool_permissions').upsert(
+      console.log('PATCH permissions:', {
+        user_id: body.user_id,
+        tool: body.tool,
+        can_access: body.can_access
+      })
+
+      const { data, error } = await sb.from('bms_tool_permissions').upsert(
         { user_id: body.user_id, tool: body.tool, can_access: body.can_access },
         { onConflict: 'user_id,tool' }
-      );
-      if (error) throw new Error(error.message);
-      return NextResponse.json({ success: true });
+      ).select()
+
+      console.log('UPSERT result:', { data, error })
+
+      if (error) throw new Error(error.message)
+      return NextResponse.json({ success: true, data })
     }
 
     return NextResponse.json({ error: 'Nieprawidłowe parametry' }, { status: 400 });
