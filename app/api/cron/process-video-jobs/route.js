@@ -81,6 +81,7 @@ export async function GET(request) {
         );
         const statusData = await statusRes.json();
 
+        console.log('Sora status response:', JSON.stringify(statusData, null, 2));
         if (statusData.status === 'completed') {
           const videos = statusData.data || [];
           for (let i = 0; i < videos.length; i++) {
@@ -106,7 +107,10 @@ export async function GET(request) {
           return Response.json({ message: `Job ${job.id} gotowy, outputs: ${outputUrls.length}` });
 
         } else if (statusData.status === 'failed') {
-          throw new Error(`Sora job failed: ${statusData.error || 'unknown'}`);
+          const errMsg = typeof statusData.error === 'object'
+            ? JSON.stringify(statusData.error)
+            : (statusData.error || 'unknown');
+          throw new Error(`Sora job failed: ${errMsg}`);
         } else {
           // Nadal w toku
           return Response.json({ message: `Job ${job.id} w toku (Sora status: ${statusData.status})` });
