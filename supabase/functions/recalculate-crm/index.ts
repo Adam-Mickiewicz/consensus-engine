@@ -14,6 +14,12 @@ Deno.serve(async (req) => {
   await supabase.rpc('recalculate_all_ltv')
   await supabase.rpc('refresh_crm_views')
 
+  // Fire and forget — nie czekamy na zakończenie przeliczania taksonomii
+  fetch('https://consensus-engine-chi.vercel.app/api/admin/recalculate-taxonomy', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + Deno.env.get('CRON_SECRET') },
+  }).catch(() => {})
+
   return new Response(JSON.stringify({ ok: true }), {
     headers: { 'Content-Type': 'application/json' }
   })
