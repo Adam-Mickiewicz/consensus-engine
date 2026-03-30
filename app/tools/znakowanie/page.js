@@ -342,23 +342,49 @@ function DescCard({ text, t }) {
   );
 }
 
-function PhotoGallery({ photos, t, onPhotoClick, editMode, onDelete, onSaveDescription, onStartAdd, onCancelAdd, addingActive, newPhoto, onNewPhotoChange, onConfirmAdd }) {
+function PhotoGallery({ photos, t, onPhotoClick, editMode, onDelete, onSaveDescription, onReorder, onStartAdd, onCancelAdd, addingActive, newPhoto, onNewPhotoChange, onConfirmAdd }) {
   const [expanded, setExpanded] = useState(false);
   const [editingKey, setEditingKey] = useState(null);
   const [editingText, setEditingText] = useState('');
+  const [dragIdx, setDragIdx] = useState(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
   const visible = expanded ? photos : photos.slice(0, 3);
+
+  function handleDrop(toIdx) {
+    if (dragIdx === null || dragIdx === toIdx) { setDragIdx(null); setDragOverIdx(null); return; }
+    const newVisible = [...visible];
+    const [moved] = newVisible.splice(dragIdx, 1);
+    newVisible.splice(toIdx, 0, moved);
+    const newPhotos = expanded ? newVisible : [...newVisible, ...photos.slice(3)];
+    onReorder?.(newPhotos);
+    setDragIdx(null);
+    setDragOverIdx(null);
+  }
+
   return (
     <div style={{ margin: '20px 0' }}>
+      {editMode && <div style={{ fontSize: 11, color: t.textDim, marginBottom: 6, opacity: 0.7 }}>⠿ Przeciągnij zdjęcia, aby zmienić kolejność</div>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
         {visible.map((p, i) => {
           const key = p.id || ('local-' + i);
           const isEditing = editingKey === key;
+          const isDragging = dragIdx === i;
+          const isOver = dragOverIdx === i && dragIdx !== i;
           return (
-            <div key={key} style={{
-              borderRadius: 10, overflow: 'hidden', border: `1px solid ${t.border}`,
-              background: t.bgCardAlt,
-              cursor: editMode ? 'default' : 'zoom-in',
-            }}
+            <div key={key}
+              draggable={editMode}
+              onDragStart={e => { setDragIdx(i); e.dataTransfer.effectAllowed = 'move'; }}
+              onDragOver={e => { e.preventDefault(); setDragOverIdx(i); }}
+              onDrop={e => { e.preventDefault(); handleDrop(i); }}
+              onDragEnd={() => { setDragIdx(null); setDragOverIdx(null); }}
+              style={{
+                borderRadius: 10, overflow: 'hidden',
+                border: isOver ? `2px solid ${t.accent}` : `1px solid ${t.border}`,
+                background: t.bgCardAlt,
+                cursor: editMode ? 'grab' : 'zoom-in',
+                opacity: isDragging ? 0.4 : 1,
+                transition: 'opacity 0.15s, border 0.1s',
+              }}
               onClick={() => !editMode && onPhotoClick?.({ url: p.url, alt: p.alt, description: p.description })}
             >
               <div style={{ aspectRatio: '4/3', overflow: 'hidden', position: 'relative' }}>
@@ -701,6 +727,24 @@ export default function ZnakowaniePage() {
     setNewPhoto({ url: '', alt: '' });
   }
 
+  async function handleReorder(section, newPhotos) {
+    setDbPhotos(prev => ({ ...prev, [section]: newPhotos }));
+    if (newPhotos.some(p => p._isLocal)) {
+      const toSeed = newPhotos.map((p, i) => ({ section, url: p.url, alt: p.alt, description: p.description || '', sort_order: i }));
+      const res = await fetch('/api/znakowanie/photos/bulk', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(toSeed),
+      });
+      const seeded = await res.json();
+      setDbPhotos(prev => ({ ...prev, [section]: seeded }));
+      return;
+    }
+    await fetch('/api/znakowanie/photos/reorder', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newPhotos.map((p, i) => ({ id: p.id, sort_order: i }))),
+    });
+  }
+
   async function handleSaveDescription(section, photoId, isLocal, localIdx, description) {
     if (isLocal) {
       const toSeed = (PHOTOS[section] || []).map((p, i) => ({
@@ -732,6 +776,7 @@ export default function ZnakowaniePage() {
       editMode: true,
       onDelete: (id, isLocal, localIdx) => handleDeletePhoto(section, id, isLocal, localIdx),
       onSaveDescription: (id, isLocal, localIdx, desc) => handleSaveDescription(section, id, isLocal, localIdx, desc),
+      onReorder: (newPhotos) => handleReorder(section, newPhotos),
       onStartAdd: () => { setAddingTo(section); setNewPhoto({ url: '', alt: '', description: '' }); },
       onCancelAdd: () => setAddingTo(null),
       addingActive: addingTo === section,
