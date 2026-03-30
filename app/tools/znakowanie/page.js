@@ -732,7 +732,7 @@ export default function ZnakowaniePage() {
       </header>
 
       {/* ─── ZASADA ─── */}
-      <section style={sectionStyle}>
+      <section style={{ ...sectionStyle, padding: '32px 0' }}>
         <div style={containerStyle}>
           <Callout icon="💡" t={t}>
             <strong style={{ color: t.accentLight }}>Nie istnieje jedna „najlepsza" metoda znakowania.</strong> Dobór wynika z pięciu rzeczy: nakładu, charakteru grafiki, materiału, koloru podłoża i pożądanego efektu dotykowego.
