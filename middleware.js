@@ -75,7 +75,7 @@ export async function middleware(request) {
   if (matchedTool) {
     const toolId = TOOL_PATH_MAP[matchedTool];
     const { data: perm } = await supabase
-      .from('user_permissions')
+      .from('bms_tool_permissions')
       .select('can_access')
       .eq('user_id', user.id)
       .eq('tool', toolId)

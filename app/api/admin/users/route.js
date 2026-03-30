@@ -48,7 +48,7 @@ export async function GET(request) {
       sb.auth.admin.listUsers({ perPage: 200 }),
       sb.from('user_roles').select('user_id, role'),
       sb.from('user_permissions').select('user_id, access_level').eq('category', 'admin').eq('access_level', 'write'),
-      sb.from('user_permissions').select('user_id, tool, can_access').not('tool', 'is', null),
+      sb.from('bms_tool_permissions').select('user_id, tool, can_access'),
       sb.from('totp_secrets').select('user_id, verified'),
       sb.from('tools_registry').select('tool_id, tool_name, category').eq('is_active', true).order('category').order('tool_name'),
     ]);
@@ -141,7 +141,7 @@ export async function PATCH(request) {
 
     // Aktualizacja dostępu do narzędzia
     if (body.user_id && body.tool !== undefined && body.can_access !== undefined) {
-      const { error } = await sb.from('user_permissions').upsert(
+      const { error } = await sb.from('bms_tool_permissions').upsert(
         { user_id: body.user_id, tool: body.tool, can_access: body.can_access },
         { onConflict: 'user_id,tool' }
       );
