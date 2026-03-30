@@ -261,34 +261,30 @@ async function generateVideoSora(jobId, modelId, prompt, params, referenceUrls, 
       fullPrompt += `\n\nBackground music: ${musicBrief}`;
     }
 
-    const requestBody = {
-      model: soraModel,
-      prompt: fullPrompt,
-      n: parseInt(params?.variants) || 1,
-      size: resolution,
-      duration: duration,
-    };
+    const formData = new FormData();
+    formData.append('model', soraModel);
+    formData.append('prompt', fullPrompt);
+    formData.append('size', resolution);
+    formData.append('seconds', String(duration));
+    formData.append('n', String(parseInt(params?.variants) || 1));
 
     // Dodaj obraz bazowy jeśli jest (image-to-video)
     if (referenceUrls && referenceUrls.length > 0) {
       try {
         const imageRes = await fetch(referenceUrls[0]);
-        const imageBuffer = await imageRes.arrayBuffer();
-        const base64 = Buffer.from(imageBuffer).toString('base64');
-        const mimeType = imageRes.headers.get('content-type') || 'image/jpeg';
-        requestBody.image = `data:${mimeType};base64,${base64}`;
+        const imageBlob = await imageRes.blob();
+        formData.append('image', imageBlob, 'reference.jpg');
       } catch (imgErr) {
         console.warn('[generate-video/sora] Could not fetch reference image:', imgErr.message);
       }
     }
 
-    const response = await fetch('https://api.openai.com/v1/videos/generate', {
+    const response = await fetch('https://api.openai.com/v1/videos', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
       },
-      body: JSON.stringify(requestBody),
+      body: formData,
     });
 
     if (!response.ok) {
