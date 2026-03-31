@@ -73,7 +73,7 @@ const Icons: Record<string, ReactElement> = {
 
 export default function AppSidebar() {
   const pathname = usePathname();
-  const [darkRaw] = useDarkMode();
+  const { isDark: darkRaw } = useDarkMode();
   const dark = darkRaw as boolean;
   const t = dark ? DARK : LIGHT;
 
