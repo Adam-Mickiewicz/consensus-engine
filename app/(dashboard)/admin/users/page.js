@@ -11,24 +11,17 @@ function getSupabase() {
   );
 }
 
-function Toggle({ checked, onChange, disabled }) {
+function Toast({ msg, type }) {
+  if (!msg) return null;
   return (
-    <button
-      onClick={() => !disabled && onChange(!checked)}
-      disabled={disabled}
-      style={{
-        width: 36, height: 20, borderRadius: 10, border: "none", cursor: disabled ? "not-allowed" : "pointer",
-        background: checked ? ACCENT : "#ccc", position: "relative", transition: "background 0.2s", padding: 0,
-        opacity: disabled ? 0.5 : 1,
-      }}
-    >
-      <span style={{
-        position: "absolute", top: 2, left: checked ? 18 : 2,
-        width: 16, height: 16, borderRadius: "50%", background: "#fff",
-        transition: "left 0.2s", display: "block",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-      }} />
-    </button>
+    <div style={{
+      position: "fixed", bottom: 24, right: 24, zIndex: 9999,
+      background: type === "error" ? "#c62828" : "#2e7d32",
+      color: "#fff", padding: "10px 18px", borderRadius: 8,
+      fontSize: 13, fontWeight: 500, boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+    }}>
+      {msg}
+    </div>
   );
 }
 
@@ -42,8 +35,16 @@ export default function AdminUsersPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviting, setInviting] = useState(false);
   const [inviteMsg, setInviteMsg] = useState(null);
-  const [saving, setSaving] = useState({});
-  const [expandedTools, setExpandedTools] = useState({});
+  const [savingRole, setSavingRole] = useState({});
+  const [editingUser, setEditingUser] = useState(null);
+  const [pendingPerms, setPendingPerms] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const getJwt = useCallback(async () => {
     const sb = getSupabase();
@@ -86,7 +87,7 @@ export default function AdminUsersPage() {
 
   async function patchRole(userId, role) {
     const key = `role_${userId}`;
-    setSaving(s => ({ ...s, [key]: true }));
+    setSavingRole(s => ({ ...s, [key]: true }));
     try {
       const jwt = await getJwt();
       await fetch("/api/admin/users", {
@@ -96,34 +97,40 @@ export default function AdminUsersPage() {
       });
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u));
     } finally {
-      setSaving(s => ({ ...s, [key]: false }));
+      setSavingRole(s => ({ ...s, [key]: false }));
     }
   }
 
-  async function patchToolPerm(userId, toolId, canAccess) {
-    const key = `tool_${userId}_${toolId}`;
-    setSaving(s => ({ ...s, [key]: true }));
+  const handleSavePerms = async (userId) => {
+    setSaving(true);
     try {
       const jwt = await getJwt();
-      const res = await fetch("/api/admin/users", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwt}` },
-        body: JSON.stringify({ user_id: userId, tool: toolId, can_access: canAccess }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        console.error('PATCH tool perm error:', res.status, err);
-        alert('Błąd zapisu: ' + (err.error || res.status));
+      const results = await Promise.all(
+        Object.entries(pendingPerms).map(([tool, can_access]) =>
+          fetch("/api/admin/users", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwt}` },
+            body: JSON.stringify({ user_id: userId, tool, can_access }),
+          })
+        )
+      );
+      const failed = results.filter(r => !r.ok);
+      if (failed.length > 0) {
+        showToast(`Błąd zapisu (${failed.length} operacji)`, "error");
         return;
       }
       setUsers(prev => prev.map(u => {
         if (u.id !== userId) return u;
-        return { ...u, tool_permissions: { ...u.tool_permissions, [toolId]: canAccess } };
+        return { ...u, tool_permissions: { ...pendingPerms } };
       }));
+      setEditingUser(null);
+      showToast("Uprawnienia zapisane!");
+    } catch (e) {
+      showToast("Błąd zapisu: " + e.message, "error");
     } finally {
-      setSaving(s => ({ ...s, [key]: false }));
+      setSaving(false);
     }
-  }
+  };
 
   async function deleteUser(userId, email) {
     if (!confirm(`Usunąć użytkownika ${email}? Tej operacji nie można cofnąć.`)) return;
@@ -166,13 +173,6 @@ export default function AdminUsersPage() {
     }
   }
 
-  // Group tools by category
-  const toolsByCategory = tools.reduce((acc, t) => {
-    if (!acc[t.category]) acc[t.category] = [];
-    acc[t.category].push(t);
-    return acc;
-  }, {});
-
   if (loading) return (
     <div style={{ padding: 60, textAlign: "center", color: "#888", fontSize: 14 }}>
       Ładowanie...
@@ -192,6 +192,8 @@ export default function AdminUsersPage() {
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px" }}>
+      <Toast msg={toast?.msg} type={toast?.type} />
+
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: "#1a1a1a" }}>
@@ -275,116 +277,170 @@ export default function AdminUsersPage() {
           <tbody>
             {users.map(u => {
               const isSelf = u.id === authUser?.id;
-              const toolsExpanded = expandedTools[u.id];
+              const accessCount = Object.values(u.tool_permissions || {}).filter(Boolean).length;
 
               return (
-                <tr key={u.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
-                  {/* Email */}
-                  <td style={td}>
-                    <div style={{ fontWeight: 500, color: "#1a1a1a" }}>{u.email}</div>
-                    {isSelf && <div style={{ fontSize: 10, color: ACCENT, marginTop: 1 }}>To jesteś Ty</div>}
-                  </td>
+                <>
+                  <tr key={u.id} style={{ borderBottom: editingUser === u.id ? "none" : "1px solid #f5f5f5" }}>
+                    {/* Email */}
+                    <td style={td}>
+                      <div style={{ fontWeight: 500, color: "#1a1a1a" }}>{u.email}</div>
+                      {isSelf && <div style={{ fontSize: 10, color: ACCENT, marginTop: 1 }}>To jesteś Ty</div>}
+                    </td>
 
-                  {/* Role */}
-                  <td style={td}>
-                    <select
-                      value={u.role}
-                      disabled={isSelf || saving[`role_${u.id}`]}
-                      onChange={e => patchRole(u.id, e.target.value)}
-                      style={{
-                        padding: "4px 8px", borderRadius: 5, fontSize: 12,
-                        border: "1px solid #ddd", background: "#fff",
-                        cursor: isSelf ? "not-allowed" : "pointer",
-                        color: u.role === "admin" ? "#c62828" : u.role === "editor" ? "#1565c0" : "#555",
-                        fontWeight: 600, opacity: isSelf ? 0.6 : 1,
-                      }}
-                    >
-                      <option value="viewer">viewer</option>
-                      <option value="editor">editor</option>
-                      <option value="admin">admin</option>
-                    </select>
-                  </td>
-
-                  {/* Tool permissions */}
-                  <td style={td}>
-                    {tools.length === 0 ? (
-                      <span style={{ color: "#bbb", fontSize: 11 }}>Brak narzędzi</span>
-                    ) : (
-                      <div>
-                        <button
-                          onClick={() => setExpandedTools(prev => ({ ...prev, [u.id]: !prev[u.id] }))}
-                          style={{
-                            fontSize: 11, color: ACCENT, background: "none", border: `1px solid ${ACCENT}50`,
-                            borderRadius: 4, padding: "3px 8px", cursor: "pointer",
-                          }}
-                        >
-                          {toolsExpanded ? "Zwiń" : `Pokaż narzędzia (${tools.length})`}
-                        </button>
-
-                        {toolsExpanded && (
-                          <div style={{ marginTop: 8 }}>
-                            {Object.entries(toolsByCategory).map(([cat, catTools]) => (
-                              <div key={cat} style={{ marginBottom: 8 }}>
-                                <div style={{ fontSize: 10, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
-                                  {cat}
-                                </div>
-                                {catTools.map(t => {
-                                  const canAccess = u.tool_permissions?.[t.tool_id] ?? false;
-                                  const key = `tool_${u.id}_${t.tool_id}`;
-                                  return (
-                                    <div key={t.tool_id} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                                      <Toggle
-                                        checked={canAccess}
-                                        onChange={val => patchToolPerm(u.id, t.tool_id, val)}
-                                        disabled={saving[key]}
-                                      />
-                                      <span style={{ fontSize: 11, color: "#444" }}>{t.tool_name}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </td>
-
-                  {/* TOTP */}
-                  <td style={td}>
-                    <span style={{
-                      fontSize: 11, padding: "2px 7px", borderRadius: 10,
-                      background: u.totp_verified ? "#e8f5e9" : "#f5f5f5",
-                      color: u.totp_verified ? "#2e7d32" : "#aaa",
-                    }}>
-                      {u.totp_verified ? "✓ aktywny" : "brak"}
-                    </span>
-                  </td>
-
-                  {/* Last sign in */}
-                  <td style={td}>
-                    <span style={{ color: "#888", fontSize: 11 }}>
-                      {u.last_sign_in
-                        ? new Date(u.last_sign_in).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })
-                        : "—"}
-                    </span>
-                  </td>
-
-                  {/* Actions */}
-                  <td style={td}>
-                    {!isSelf && (
-                      <button
-                        onClick={() => deleteUser(u.id, u.email)}
+                    {/* Role */}
+                    <td style={td}>
+                      <select
+                        value={u.role}
+                        disabled={isSelf || savingRole[`role_${u.id}`]}
+                        onChange={e => patchRole(u.id, e.target.value)}
                         style={{
-                          fontSize: 11, color: "#c62828", border: "1px solid #f0b8b8",
-                          borderRadius: 4, padding: "3px 8px", background: "none", cursor: "pointer",
+                          padding: "4px 8px", borderRadius: 5, fontSize: 12,
+                          border: "1px solid #ddd", background: "#fff",
+                          cursor: isSelf ? "not-allowed" : "pointer",
+                          color: u.role === "admin" ? "#c62828" : u.role === "editor" ? "#1565c0" : "#555",
+                          fontWeight: 600, opacity: isSelf ? 0.6 : 1,
                         }}
                       >
-                        Usuń
+                        <option value="viewer">viewer</option>
+                        <option value="editor">editor</option>
+                        <option value="admin">admin</option>
+                      </select>
+                    </td>
+
+                    {/* Tool permissions summary */}
+                    <td style={td}>
+                      <span style={{ fontSize: 12, color: "#555" }}>
+                        {accessCount} / {tools.length} narzędzi
+                      </span>
+                      <button
+                        onClick={() => {
+                          if (editingUser === u.id) {
+                            setEditingUser(null);
+                            return;
+                          }
+                          const current = u.tool_permissions || {};
+                          setPendingPerms(tools.reduce((acc, t) => ({
+                            ...acc, [t.tool_id]: current[t.tool_id] ?? true,
+                          }), {}));
+                          setEditingUser(u.id);
+                        }}
+                        style={{
+                          marginLeft: 8, padding: "3px 10px",
+                          border: "1px solid #ddd", borderRadius: 6,
+                          fontSize: 11, background: editingUser === u.id ? "#f5f5f5" : "transparent",
+                          cursor: "pointer", color: "#555",
+                        }}
+                      >
+                        {editingUser === u.id ? "Zwiń" : "Edytuj"}
                       </button>
-                    )}
-                  </td>
-                </tr>
+                    </td>
+
+                    {/* TOTP */}
+                    <td style={td}>
+                      <span style={{
+                        fontSize: 11, padding: "2px 7px", borderRadius: 10,
+                        background: u.totp_verified ? "#e8f5e9" : "#f5f5f5",
+                        color: u.totp_verified ? "#2e7d32" : "#aaa",
+                      }}>
+                        {u.totp_verified ? "✓ aktywny" : "brak"}
+                      </span>
+                    </td>
+
+                    {/* Last sign in */}
+                    <td style={td}>
+                      <span style={{ color: "#888", fontSize: 11 }}>
+                        {u.last_sign_in
+                          ? new Date(u.last_sign_in).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })
+                          : "—"}
+                      </span>
+                    </td>
+
+                    {/* Actions */}
+                    <td style={td}>
+                      {!isSelf && (
+                        <button
+                          onClick={() => deleteUser(u.id, u.email)}
+                          style={{
+                            fontSize: 11, color: "#c62828", border: "1px solid #f0b8b8",
+                            borderRadius: 4, padding: "3px 8px", background: "none", cursor: "pointer",
+                          }}
+                        >
+                          Usuń
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+
+                  {/* Permissions editor row */}
+                  {editingUser === u.id && (
+                    <tr key={`${u.id}_perms`}>
+                      <td colSpan={6} style={{ padding: 0, borderBottom: "1px solid #f5f5f5" }}>
+                        <div style={{
+                          padding: "16px 20px",
+                          background: "#fafafa",
+                          borderTop: "1px solid #eee",
+                        }}>
+                          <div style={{
+                            fontSize: 12, fontWeight: 600,
+                            color: "#555", marginBottom: 12,
+                          }}>
+                            Dostęp do narzędzi — {u.email}
+                          </div>
+
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 32px", marginBottom: 16 }}>
+                            {tools.map(t => (
+                              <label key={t.tool_id} style={{
+                                display: "flex", alignItems: "center", gap: 8,
+                                cursor: "pointer", fontSize: 13, color: "#1a1a1a",
+                                minWidth: 220,
+                              }}>
+                                <input
+                                  type="checkbox"
+                                  checked={pendingPerms[t.tool_id] ?? true}
+                                  onChange={e => setPendingPerms(prev => ({
+                                    ...prev,
+                                    [t.tool_id]: e.target.checked,
+                                  }))}
+                                  style={{ width: 16, height: 16, cursor: "pointer", accentColor: ACCENT }}
+                                />
+                                {t.tool_name}
+                                <span style={{ fontSize: 11, color: "#aaa" }}>({t.category})</span>
+                              </label>
+                            ))}
+                          </div>
+
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <button
+                              onClick={() => handleSavePerms(u.id)}
+                              disabled={saving}
+                              style={{
+                                padding: "7px 16px",
+                                background: saving ? "#ccc" : ACCENT,
+                                color: "#fff", border: "none",
+                                borderRadius: 6, fontSize: 13,
+                                cursor: saving ? "default" : "pointer",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {saving ? "Zapisuję..." : "Zapisz uprawnienia"}
+                            </button>
+                            <button
+                              onClick={() => setEditingUser(null)}
+                              style={{
+                                padding: "7px 16px", background: "transparent",
+                                border: "1px solid #ddd", borderRadius: 6,
+                                fontSize: 13, cursor: "pointer", color: "#555",
+                              }}
+                            >
+                              Anuluj
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
               );
             })}
           </tbody>
