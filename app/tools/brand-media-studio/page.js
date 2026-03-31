@@ -36,7 +36,7 @@ const MODULES = [
     statusColor: { bg: "#e8f5e9", text: "#2e7d32" },
   },
   {
-    href: "/tools/brand-media-studio/repurpose",
+    href: null,
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="17 1 21 5 17 9"/>
@@ -47,8 +47,8 @@ const MODULES = [
     ),
     title: "Repurpose formatów",
     desc: "Automatycznie dostosuj obrazy do różnych formatów (1:1, 9:16, 16:9 itd.) za pomocą Sharp.js.",
-    status: "Gotowy",
-    statusColor: { bg: "#e8f5e9", text: "#2e7d32" },
+    status: "Wkrótce",
+    statusColor: { bg: "#f5f5f5", text: "#9e9e9e" },
   },
   {
     href: null,
