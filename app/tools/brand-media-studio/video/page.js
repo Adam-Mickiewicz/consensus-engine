@@ -309,12 +309,28 @@ export default function VideoPage() {
         {/* ── TRYB GENERATING ── */}
         {mode === 'generating' && (
           <div style={{ marginBottom: 32 }}>
+            <style>{`
+              @keyframes unicornFloat {
+                0%   { transform: translate(-50%,-55%) scale(1)   rotate(-6deg); }
+                100% { transform: translate(-50%,-55%) scale(1.1) rotate(6deg);  }
+              }
+              @keyframes fly0 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(75px,-65px)  scale(0);opacity:0} }
+              @keyframes fly1 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(-75px,-65px) scale(0);opacity:0} }
+              @keyframes fly2 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(0,-95px)     scale(0);opacity:0} }
+              @keyframes fly3 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(95px,10px)   scale(0);opacity:0} }
+              @keyframes fly4 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(-95px,10px)  scale(0);opacity:0} }
+              @keyframes fly5 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(55px,-90px)  scale(0);opacity:0} }
+              @keyframes fly6 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(-55px,-90px) scale(0);opacity:0} }
+              @keyframes fly7 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(30px,-100px) scale(0);opacity:0} }
+              @keyframes bmsBar { 0%{transform:translateX(-100%)} 100%{transform:translateX(350%)} }
+            `}</style>
+
             <div style={{
               width: '100%',
               maxWidth: params.orientation === '9:16' ? '300px' : '500px',
               aspectRatio,
               margin: '0 auto',
-              background: 'var(--color-background-secondary, #f0ede8)',
+              background: 'linear-gradient(135deg, #fdf4ff 0%, #fff8f0 50%, #f0f8ff 100%)',
               borderRadius: '16px',
               overflow: 'hidden',
               display: 'flex',
@@ -324,50 +340,70 @@ export default function VideoPage() {
               gap: '16px',
               position: 'relative',
             }}>
-              <div style={{
-                display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)',
-                gap: '3px', width: '140px', height: '140px',
-              }}>
-                {Array.from({ length: 64 }).map((_, i) => (
+              <div style={{ position: 'relative', width: 160, height: 160 }}>
+                {[
+                  { color: '#ff6bb5', anim: 'fly0', dur: 1.0, delay: 0.0,  size: 10 },
+                  { color: '#b86bff', anim: 'fly1', dur: 1.2, delay: 0.15, size: 8  },
+                  { color: '#ffd700', anim: 'fly2', dur: 0.9, delay: 0.3,  size: 12 },
+                  { color: '#6bdbff', anim: 'fly3', dur: 1.1, delay: 0.0,  size: 7  },
+                  { color: '#ff8c42', anim: 'fly4', dur: 1.0, delay: 0.45, size: 9  },
+                  { color: '#a8ff6b', anim: 'fly5', dur: 0.8, delay: 0.6,  size: 11 },
+                  { color: '#ff6b6b', anim: 'fly6', dur: 1.3, delay: 0.1,  size: 8  },
+                  { color: '#6bffd4', anim: 'fly7', dur: 1.0, delay: 0.75, size: 10 },
+                  { color: '#ff6bb5', anim: 'fly2', dur: 1.1, delay: 0.9,  size: 6  },
+                  { color: '#ffd700', anim: 'fly0', dur: 0.9, delay: 0.5,  size: 13 },
+                  { color: '#b86bff', anim: 'fly3', dur: 1.2, delay: 0.25, size: 7  },
+                  { color: '#ff8c42', anim: 'fly6', dur: 1.0, delay: 0.7,  size: 9  },
+                ].map((p, i) => (
                   <div key={i} style={{
-                    borderRadius: '2px',
-                    background: ['#b8763a', '#e8c99a', '#f5e6d3', '#d4956a', '#8b5a2b'][i % 5],
-                    animation: `bmsPixel ${0.5 + (i % 7) * 0.15}s ease-in-out infinite alternate`,
-                    animationDelay: `${(i * 0.04) % 1}s`,
-                    opacity: 0.3 + (i % 4) * 0.2,
+                    position: 'absolute',
+                    left: '50%', top: '60%',
+                    width: p.size, height: p.size,
+                    borderRadius: '50%',
+                    background: p.color,
+                    marginLeft: -p.size / 2,
+                    marginTop: -p.size / 2,
+                    animation: `${p.anim} ${p.dur}s ease-out infinite`,
+                    animationDelay: `${p.delay}s`,
+                    boxShadow: `0 0 6px ${p.color}`,
                   }} />
                 ))}
+                <div style={{
+                  position: 'absolute', left: '50%', top: '55%',
+                  fontSize: 72, lineHeight: 1,
+                  animation: 'unicornFloat 1.4s ease-in-out infinite alternate',
+                  userSelect: 'none',
+                }}>🦄</div>
               </div>
-              <style>{`@keyframes bmsPixel{0%{transform:scale(0.7);opacity:0.3}100%{transform:scale(1);opacity:1}}`}</style>
 
               <div style={{ textAlign: 'center', padding: '0 16px' }}>
-                <div style={{ fontSize: '14px', fontWeight: '500', color: 'var(--color-text-primary, #1a1a1a)', marginBottom: '4px' }}>
+                <div style={{ fontSize: '14px', fontWeight: '500', color: '#1a1a1a', marginBottom: '4px' }}>
                   {activeJob?.status === 'queued' ? 'Przygotowuję generowanie...' : 'Generuję wideo...'}
                 </div>
-                <div style={{ fontSize: '12px', color: 'var(--color-text-secondary, #666)', marginBottom: '4px' }}>
+                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
                   {selectedModel?.model_name} · {params?.duration} · ~${calculateCost(selectedModel, params)} USD
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--color-text-tertiary, #aaa)' }}>
+                <div style={{ fontSize: '11px', color: '#aaa' }}>
                   Generowanie wideo trwa zwykle 2–5 minut
                 </div>
               </div>
 
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0,
-                height: '3px', background: 'var(--color-background-secondary, #f0ede8)', overflow: 'hidden',
+                height: '3px', background: 'rgba(0,0,0,0.06)', overflow: 'hidden',
               }}>
                 <div style={{
-                  height: '100%', width: '40%', background: '#b8763a',
+                  height: '100%', width: '40%',
+                  background: 'linear-gradient(90deg, #ff6bb5, #b86bff, #ffd700)',
                   animation: 'bmsBar 1.5s ease-in-out infinite',
                 }} />
               </div>
-              <style>{`@keyframes bmsBar{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}`}</style>
             </div>
 
             <div style={{ textAlign: 'center', marginTop: '12px' }}>
               <button onClick={handleCancel} style={{
                 background: 'transparent', border: 'none', cursor: 'pointer',
-                fontSize: '12px', color: 'var(--color-text-tertiary, #aaa)',
+                fontSize: '12px', color: '#aaa',
                 textDecoration: 'underline',
               }}>Anuluj</button>
             </div>
