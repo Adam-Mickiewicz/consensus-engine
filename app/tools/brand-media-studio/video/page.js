@@ -390,6 +390,7 @@ export default function VideoPage() {
               @keyframes fly6 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(-55px,-90px) scale(0);opacity:0} }
               @keyframes fly7 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(30px,-100px) scale(0);opacity:0} }
               @keyframes bmsBar { 0%{transform:translateX(-100%)} 100%{transform:translateX(350%)} }
+              @keyframes borderHue { 0%{filter:hue-rotate(0deg)} 100%{filter:hue-rotate(360deg)} }
             `}</style>
 
             <div style={{
@@ -397,16 +398,23 @@ export default function VideoPage() {
               maxWidth: params.orientation === '9:16' ? '300px' : '500px',
               aspectRatio,
               margin: '0 auto',
-              background: 'linear-gradient(135deg, #fdf4ff 0%, #fff8f0 50%, #f0f8ff 100%)',
-              borderRadius: '16px',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '16px',
+              borderRadius: '18px',
               position: 'relative',
             }}>
+              {/* Animated rainbow border */}
+              <div style={{
+                position: 'absolute', inset: 0, borderRadius: '18px',
+                background: 'conic-gradient(from 0deg, #ff6bb5, #b86bff, #ffd700, #6bdbff, #ff8c42, #a8ff6b, #ff6bb5)',
+                animation: 'borderHue 3s linear infinite',
+              }} />
+
+              <div style={{
+                position: 'absolute', inset: 3, borderRadius: '16px', overflow: 'hidden',
+                background: 'linear-gradient(135deg, #fdf4ff 0%, #fff8f0 50%, #f0f8ff 100%)',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                gap: '16px',
+              }}>
               <div style={{ position: 'relative', width: 160, height: 160 }}>
                 {[
                   { color: '#ff6bb5', anim: 'fly0', dur: 1.0, delay: 0.0,  size: 10 },
@@ -465,7 +473,8 @@ export default function VideoPage() {
                   animation: 'bmsBar 1.5s ease-in-out infinite',
                 }} />
               </div>
-            </div>
+              </div>{/* /inner content */}
+            </div>{/* /outer wrapper */}
 
             <div style={{ textAlign: 'center', marginTop: '12px' }}>
               <button onClick={handleCancel} style={{
