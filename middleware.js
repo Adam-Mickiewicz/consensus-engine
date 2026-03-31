@@ -14,6 +14,8 @@ const TOOL_PATH_MAP = {
   '/newsletter-builder':       'newsletter-builder',
   '/design-judge':             'design-judge',
   '/debate':                   'debate',
+  '/crm':                      'crm',
+  '/stock-research':           'stock-research',
 };
 
 export async function middleware(request) {
