@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useDarkMode } from '../../hooks/useDarkMode';
 import Nav from '../../components/Nav';
 import { supabase } from '../../../lib/supabase';
 
@@ -666,8 +665,7 @@ function SectionHeader({ num, title, lead, t }) {
 // ─── Main Page ───
 
 export default function ZnakowaniePage() {
-  const { isDark } = useDarkMode();
-  const t = isDark ? dark : light;
+  const t = light;
   const [activeSection, setActiveSection] = useState('');
 
   // Photo management

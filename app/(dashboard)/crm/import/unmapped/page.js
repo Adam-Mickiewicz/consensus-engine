@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useDarkMode } from "../../../../hooks/useDarkMode";
 
 const LIGHT = {
   surface: "#ffffff", border: "#ddd9d2",
@@ -25,7 +24,7 @@ function SortIcon({ col, current, order }) {
 }
 
 export default function UnmappedPage() {
-  const { isDark: dark } = useDarkMode();
+  const dark = false;
   const t = dark ? DARK : LIGHT;
 
   const [rows, setRows]         = useState([]);

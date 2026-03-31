@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
-import { useDarkMode } from "../hooks/useDarkMode";
 
 const TOOLS = [
   { href: "/debate", label: "Consensus Engine", icon: "⚡" },
@@ -29,7 +28,6 @@ const DARK = {
 
 export default function Nav({ current }) {
   const [open, setOpen] = useState(false);
-  const { isDark, toggleTheme } = useDarkMode();
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -59,7 +57,7 @@ export default function Nav({ current }) {
     setUser(null);
   };
 
-  const t = isDark ? DARK : LIGHT;
+  const t = LIGHT;
 
   return (
     <>
@@ -74,8 +72,6 @@ export default function Nav({ current }) {
         .ce-nav-burger.open span:nth-child(3) { transform: rotate(-45deg) translate(4px, -4px); }
         .ce-nav-back { font-size: 12px; color: ${t.textSub}; text-decoration: none; display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; transition: background 0.1s, color 0.1s; font-family: var(--font-geist-sans), system-ui, sans-serif; }
         .ce-nav-back:hover { background: ${t.toggleBg}; color: ${t.text}; }
-        .ce-nav-theme { background: ${t.toggleBg}; border: 1px solid ${t.border}; color: ${t.textSub}; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; font-family: inherit; transition: border-color 0.15s; }
-        .ce-nav-theme:hover { border-color: ${t.accent}; }
         .ce-nav-overlay { position: fixed; inset: 44px 0 0 0; z-index: 99; display: flex; justify-content: flex-start; }
         .ce-nav-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.15); }
         .ce-nav-menu { position: relative; width: 240px; background: ${t.surface}; border-right: 1px solid ${t.border}; overflow-y: auto; padding: 8px 0; box-shadow: 4px 0 24px rgba(0,0,0,0.08); }
@@ -101,9 +97,6 @@ export default function Nav({ current }) {
           </Link>
         </div>
         <div className="ce-nav-right">
-          <button className="ce-nav-theme" onClick={toggleTheme}>
-            {isDark ? "☀ Jasny" : "☾ Ciemny"}
-          </button>
           {user ? (
             <button onClick={handleSignOut} style={{ background: "#f0faf4", border: "1px solid #a8dbb8", borderRadius: 6, padding: "4px 12px", fontSize: 11, color: "#2d7a4f", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
               <span style={{ fontSize: 13 }}>●</span> Zalogowany

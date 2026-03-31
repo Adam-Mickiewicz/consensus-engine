@@ -1,7 +1,6 @@
 "use client";
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { useDarkMode } from "../../../hooks/useDarkMode";
 import { supabase } from "../../../../lib/supabase";
 
 const LIGHT = {
@@ -48,7 +47,7 @@ type SyncLogRow = {
 };
 
 export default function ImportPage() {
-  const { isDark: dark } = useDarkMode();
+  const dark = false;
   const t = (dark ? DARK : LIGHT) as typeof LIGHT;
 
   const [files, setFiles] = useState<FileEntry[]>([]);

@@ -2,7 +2,6 @@
 import { useState, type ReactElement } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useDarkMode } from "../../app/hooks/useDarkMode";
 
 const LIGHT = {
   surface: "#ffffff", border: "#ddd9d2",
@@ -73,9 +72,7 @@ const Icons: Record<string, ReactElement> = {
 
 export default function AppSidebar() {
   const pathname = usePathname();
-  const { isDark: darkRaw } = useDarkMode();
-  const dark = darkRaw as boolean;
-  const t = dark ? DARK : LIGHT;
+  const t = LIGHT;
 
   // Detect active root segment
   const segment = pathname.split("/").filter(Boolean)[0] ?? "";

@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { useDarkMode } from "../../../hooks/useDarkMode";
 import Link from "next/link";
 
 const LIGHT = {
@@ -119,7 +118,7 @@ function ModelBadge({ model, t }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function AIMonitoringPage() {
-  const [dark] = useDarkMode();
+  const dark = false;
   const t = dark ? DARK : LIGHT;
 
   const [days, setDays]     = useState(30);

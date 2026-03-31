@@ -1,7 +1,6 @@
 "use client";
 import React, { use, useState, useEffect } from "react";
 import Link from "next/link";
-import { useDarkMode } from "../../../../hooks/useDarkMode";
 import PIIAccessButton from "../../../../../components/auth/PIIAccessButton";
 import PIIMasked from "../../../../../components/crm/PIIMasked";
 
@@ -817,8 +816,7 @@ function ProfileSkeleton({ t }: { t: typeof DARK }) {
 
 export default function ClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { isDark: darkRaw } = useDarkMode();
-  const dark = darkRaw as boolean;
+  const dark = false;
   const t = dark ? DARK : LIGHT;
 
   const [profile, setProfile]     = useState<Profile | null>(null);

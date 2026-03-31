@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useDarkMode } from "../../../../hooks/useDarkMode";
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
 const LIGHT = {
@@ -360,7 +359,7 @@ function Methodology({ t }) {
 
 // ── Główna strona ─────────────────────────────────────────────────────────────
 export default function PredictivePage() {
-  const [dark] = useDarkMode();
+  const dark = false;
   const t = dark ? DARK : LIGHT;
 
   const [summary,     setSummary]     = useState(null);

@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useDarkMode } from "../../../../hooks/useDarkMode";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -410,8 +409,7 @@ function PromoBadge({ type }: { type?: string }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function BehaviorPage() {
-  const { isDark: darkRaw } = useDarkMode();
-  const dark = darkRaw as boolean;
+  const dark = false;
   const t = dark ? DARK : LIGHT;
 
   const [tab, setTab] = useState<TabKey>("segments");

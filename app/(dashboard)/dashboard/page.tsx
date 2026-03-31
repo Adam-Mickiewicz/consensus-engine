@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { useDarkMode } from "../../hooks/useDarkMode";
 
 const LIGHT = {
   bg: "#f5f4f0", surface: "#ffffff", border: "#ddd9d2",
@@ -21,7 +20,7 @@ const CARDS = [
 ];
 
 export default function DashboardHome() {
-  const { isDark: dark } = useDarkMode();
+  const dark = false;
   const t = dark ? DARK : LIGHT;
 
   return (

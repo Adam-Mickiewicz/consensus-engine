@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Nav from "../components/Nav";
-import { useDarkMode } from "../hooks/useDarkMode";
 import { supabase } from "../../lib/supabase";
 import { saveConversation, loadConversations, loadConversation, deleteConversation } from "../../lib/supabase";
 
@@ -79,7 +78,7 @@ function timeAgo(ts) {
 
 export default function DebatePage() {
   const router = useRouter();
-  const { isDark: dark, toggleTheme: toggleDark } = useDarkMode();
+  const dark = false;
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);

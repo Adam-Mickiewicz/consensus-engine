@@ -1,10 +1,9 @@
 "use client";
 import { useState } from "react";
-import { useDarkMode } from "../../../hooks/useDarkMode";
 import { supabase } from "../../../../lib/supabase";
 
 export default function TwoFASetupPage() {
-  const [dark] = useDarkMode();
+  const dark = false;
   const t = {
     text:    dark ? "#e0ddd8" : "#0f172a",
     sub:     dark ? "#6a6560" : "#64748b",

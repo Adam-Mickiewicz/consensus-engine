@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { useDarkMode } from "../../hooks/useDarkMode";
 
 const LIGHT = {
   surface: "#ffffff", border: "#ddd9d2",
@@ -88,7 +87,7 @@ const MODULES = [
 ];
 
 export default function CrmPage() {
-  const { isDark: dark } = useDarkMode();
+  const dark = false;
   const t = dark ? DARK : LIGHT;
 
   return (

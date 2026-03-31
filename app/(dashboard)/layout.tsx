@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AppSidebar from "../../components/nav/AppSidebar";
-import { useDarkMode } from "../hooks/useDarkMode";
 import { supabase } from "../../lib/supabase";
 
 const LIGHT = {
@@ -16,8 +15,7 @@ const DARK = {
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isDark: dark, toggleTheme } = useDarkMode();
-  const t = dark ? DARK : LIGHT;
+  const t = LIGHT;
   const router = useRouter();
 
   const [authChecked, setAuthChecked] = useState(false);
@@ -47,8 +45,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!authChecked) {
     return (
-      <div style={{ minHeight: "100vh", background: dark ? DARK.bg : LIGHT.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ color: dark ? DARK.textSub : LIGHT.textSub, fontSize: 13, fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
+      <div style={{ minHeight: "100vh", background: LIGHT.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ color: LIGHT.textSub, fontSize: 13, fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
           Sprawdzanie sesji…
         </div>
       </div>
@@ -61,8 +59,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .dl-bar { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; height: 44px; background: ${t.bg}; border-bottom: 1px solid ${t.border}; font-family: var(--font-geist-sans), system-ui, sans-serif; }
         .dl-logo { font-size: 13px; color: ${t.text}; text-decoration: none; font-weight: 600; }
         .dl-right { display: flex; align-items: center; gap: 8px; }
-        .dl-theme { background: ${t.toggleBg}; border: 1px solid ${t.border}; color: ${t.textSub}; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; font-family: inherit; }
-        .dl-theme:hover { border-color: ${t.accent}; }
         .dl-signout { background: none; border: 1px solid ${t.border}; color: ${t.textSub}; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; font-family: inherit; }
         .dl-signout:hover { border-color: ${t.accent}; color: ${t.accent}; }
         .dl-body { display: flex; min-height: calc(100vh - 44px); background: ${t.bg}; }
@@ -75,9 +71,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {userEmail && (
             <span style={{ fontSize: 11, color: t.textSub }}>{userEmail}</span>
           )}
-          <button className="dl-theme" onClick={toggleTheme}>
-            {dark ? "☀ Jasny" : "☾ Ciemny"}
-          </button>
           <button className="dl-signout" onClick={handleSignOut}>
             Wyloguj
           </button>

@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useDarkMode } from "../../../hooks/useDarkMode";
 import EdroneExportDocs from "@/components/crm/EdroneExportDocs";
 
 const DARK = {
@@ -60,8 +59,7 @@ const SORT_COLS = [
 ];
 
 export default function ClientsView() {
-  const { isDark: darkRaw } = useDarkMode();
-  const dark = darkRaw as boolean;
+  const dark = false;
   const t = dark ? DARK : LIGHT;
 
   const router     = useRouter();

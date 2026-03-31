@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useDarkMode } from "@/app/hooks/useDarkMode";
 
 const LIGHT = {
   surface: "#ffffff", border: "#ddd9d2",
@@ -114,8 +113,7 @@ const TAG_TABLES = [
 
 export default function EdroneExportDocs() {
   const [open, setOpen] = useState(false);
-  const [dark] = useDarkMode();
-  const t = dark ? DARK : LIGHT;
+  const t = LIGHT;
 
   const sectionStyle = {
     marginBottom: 20,

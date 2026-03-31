@@ -1,8 +1,7 @@
 "use client";
-import { useDarkMode } from "../../hooks/useDarkMode";
 
 export default function ReportsPage() {
-  const { isDark: dark } = useDarkMode();
+  const dark = false;
   const text = dark ? "#e0ddd8" : "#1a1814";
   const sub = dark ? "#6a6560" : "#7a7570";
   return (

@@ -1,13 +1,11 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import Nav from "../../components/Nav";
-import { useDarkMode } from "../../hooks/useDarkMode";
 
 // ─── STAŁE ───────────────────────────────────────────────────────────────────
 
 const ACCENT = "#b8763a";
 const LIGHT_T = { bg: "#f5f2ee", card: "#fff", subtle: "#f9f7f5", border: "#e0dbd4", borderAlt: "#e8e0d8", borderLight: "#ddd", text: "#1a1a1a", textSub: "#555", muted: "#888", codeBg: "#fafaf8", codeLang: "#f0ece6" };
-const DARK_T  = { bg: "#0c0c0c", card: "#141414", subtle: "#1c1c1c", border: "#282828", borderAlt: "#222222", borderLight: "#232323", text: "#e0ddd8", textSub: "#8a8580", muted: "#6a6560", codeBg: "#1a1a1a", codeLang: "#1e1e1e" };
 const ThemeCtx = React.createContext({ isDark: false, t: LIGHT_T });
 const FORMAT_TYPES = ["Grafika statyczna", "Zdjęcie", "Wideo", "Animacja wideo AI", "Animacja HTML5"];
 
@@ -674,8 +672,7 @@ function parseBold(text) {
 }
 
 export default function MarketingBrief() {
-  const { isDark } = useDarkMode();
-  const t = isDark ? DARK_T : LIGHT_T;
+  const t = LIGHT_T;
   const [briefs, setBriefs] = useState([]);
   const [view, setView] = useState("list"); // list | form
   const [editId, setEditId] = useState(null);
@@ -1514,20 +1511,7 @@ Copy: ${brief.copyProposals || "—"}`;
   const panelHead = { padding: "10px 16px", background: t.subtle, borderBottom: `1px solid ${t.border}`, fontSize: 11, color: t.textSub, fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: 700, display: "flex", justifyContent: "space-between", alignItems: "center" };
 
   return (
-    <ThemeCtx.Provider value={{ isDark, t }}>
-    {isDark && (
-      <style>{`
-        .mb-root input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
-        .mb-root textarea,
-        .mb-root select {
-          background: #141414 !important;
-          color: #e0ddd8 !important;
-          border-color: #232323 !important;
-        }
-        .mb-root option { background: #141414; color: #e0ddd8; }
-        .mb-root ::placeholder { color: #6a6560 !important; }
-      `}</style>
-    )}
+    <ThemeCtx.Provider value={{ isDark: false, t }}>
     <Nav current="/tools/marketing-brief" />
     <div className="mb-root" style={{ minHeight: "100vh", background: t.bg, fontFamily: "'IBM Plex Mono', monospace", display: "flex" }}>
 

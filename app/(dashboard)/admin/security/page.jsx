@@ -1,11 +1,10 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { useDarkMode } from "../../../hooks/useDarkMode";
 import { supabase } from "../../../../lib/supabase";
 
 // This page fetches directly from Supabase client-side via the API route
 export default function SecurityPage() {
-  const [dark] = useDarkMode();
+  const dark = false;
   const t = {
     text:   dark ? "#e0ddd8" : "#0f172a",
     sub:    dark ? "#6a6560" : "#64748b",

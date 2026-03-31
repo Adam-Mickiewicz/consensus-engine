@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useDarkMode } from "../../../hooks/useDarkMode";
 import EdroneExportDocs from "@/components/crm/EdroneExportDocs";
 
 const DARK = {
@@ -65,8 +64,7 @@ function Skeleton({ t }: { t: typeof DARK }) {
 const PER_PAGE = 50;
 
 function WinbackContent() {
-  const { isDark: darkRaw } = useDarkMode();
-  const dark = darkRaw as boolean;
+  const dark = false;
   const t = dark ? DARK : LIGHT;
 
   const router     = useRouter();

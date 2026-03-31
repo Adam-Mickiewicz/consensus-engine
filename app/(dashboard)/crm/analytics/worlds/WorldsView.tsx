@@ -1,5 +1,4 @@
 "use client";
-import { useDarkMode } from "../../../../hooks/useDarkMode";
 
 const LIGHT = {
   surface: "#ffffff", border: "#ddd9d2",
@@ -27,7 +26,7 @@ export type WorldsData = {
 } | null;
 
 export default function WorldsView({ data }: { data: WorldsData }) {
-  const { isDark: dark } = useDarkMode();
+  const dark = false;
   const t = (dark ? DARK : LIGHT) as typeof LIGHT;
 
   if (!data) {

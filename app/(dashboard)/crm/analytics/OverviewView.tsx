@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { useDarkMode } from "../../../hooks/useDarkMode";
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 const LIGHT = {
@@ -115,7 +114,7 @@ function RevenueTrend({ rows, t }: { rows: { month: string; revenue: number }[];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function OverviewView() {
-  const { isDark: dark } = useDarkMode();
+  const dark = false;
   const t = (dark ? DARK : LIGHT) as typeof LIGHT;
 
   const [sData, setSData]         = useState<StaticData | null>(null);
