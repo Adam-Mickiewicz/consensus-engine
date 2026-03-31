@@ -234,16 +234,7 @@ async function fastInsert(rawOrders, productsMap, sb) {
     }
   }
 
-  // 5. Upsert client_product_events
-  for (let i = 0; i < eventRows.length; i += UPSERT_BATCH) {
-    const batch = eventRows.slice(i, i + UPSERT_BATCH);
-    const { error } = await sb
-      .from('client_product_events')
-      .upsert(batch, { onConflict: 'order_id,ean,product_name', ignoreDuplicates: true });
-    if (error) throw new Error(`upsert client_product_events: ${error.message}`);
-  }
-
-  // 6. Upsert clients_360 — merge z istniejącymi danymi
+  // 5. Upsert clients_360 — merge z istniejącymi danymi
   const clientIds = [...clientOrderMap.keys()];
   const existingMap = new Map();
   for (let i = 0; i < clientIds.length; i += UPSERT_BATCH) {
@@ -283,6 +274,15 @@ async function fastInsert(rawOrders, productsMap, sb) {
       .from('clients_360')
       .upsert(clientRows.slice(i, i + UPSERT_BATCH), { onConflict: 'client_id', ignoreDuplicates: false });
     if (error) throw new Error(`upsert clients_360: ${error.message}`);
+  }
+
+  // 6. Upsert client_product_events
+  for (let i = 0; i < eventRows.length; i += UPSERT_BATCH) {
+    const batch = eventRows.slice(i, i + UPSERT_BATCH);
+    const { error } = await sb
+      .from('client_product_events')
+      .upsert(batch, { onConflict: 'order_id,ean,product_name', ignoreDuplicates: true });
+    if (error) throw new Error(`upsert client_product_events: ${error.message}`);
   }
 
   return { clients: clientIds.length, events: eventRows.length };
