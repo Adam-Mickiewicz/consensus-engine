@@ -5,12 +5,12 @@ import { supabase } from "../lib/supabase";
 import useUserPermissions from "./hooks/useUserPermissions";
 
 const CATEGORIES = [
-  { href: "/crm",      icon: "👥", label: "CRM klientów",   desc: "Analityka 360°, baza klientów, winback i import danych." },
-  { href: "/products", icon: "📦", label: "CRM produktowy", desc: "Katalog produktów, oferty i zarządzanie asortymentem." },
-  { href: "/b2b",      icon: "🤝", label: "B2B",            desc: "Partnerzy handlowi, kontrakty i współpraca B2B." },
-  { href: "/tools",    icon: "🔧", label: "Narzędzia",      desc: "Newsletter Builder, Sock Designer i inne narzędzia." },
-  { href: "/reports",  icon: "📊", label: "Raporty",        desc: "Analizy, zestawienia sprzedaży i eksporty danych." },
-  { href: "/admin",    icon: "⚙️", label: "Admin",          desc: "Zarządzanie dostępem i ustawienia systemu." },
+  { href: "/crm",      toolId: "crm",         icon: "👥", label: "CRM klientów",   desc: "Analityka 360°, baza klientów, winback i import danych." },
+  { href: "/products", toolId: "crm",         icon: "📦", label: "CRM produktowy", desc: "Katalog produktów, oferty i zarządzanie asortymentem." },
+  { href: "/b2b",      toolId: "b2b",         icon: "🤝", label: "B2B",            desc: "Partnerzy handlowi, kontrakty i współpraca B2B." },
+  { href: "/tools",    toolId: null,          icon: "🔧", label: "Narzędzia",      desc: "Newsletter Builder, Sock Designer i inne narzędzia." },
+  { href: "/reports",  toolId: "raporty",     icon: "📊", label: "Raporty",        desc: "Analizy, zestawienia sprzedaży i eksporty danych." },
+  { href: "/admin",    toolId: "admin-panel", icon: "⚙️", label: "Admin",          desc: "Zarządzanie dostępem i ustawienia systemu." },
 ];
 
 const TOOLS = [
@@ -85,11 +85,20 @@ const TOOL_IDS = {
   '/sock-designer':            'sock-designer',
   '/newsletter-builder':       'newsletter-builder',
   '/design-judge':             'design-judge',
+  '/tools/countdown':          'countdown',
   '/tools/marketing-brief':    'marketing-brief',
   '/tools/brand-settings':     'brand-settings',
   '/tools/znakowanie':         'znakowanie',
   '/tools/brand-media-studio': 'brand-media-studio',
   '/crm':                      'crm',
+  '/crm/clients':              'crm',
+  '/crm/products':             'crm',
+  '/products':                 'crm',
+  '/b2b':                      'b2b',
+  '/reports':                  'raporty',
+  '/admin':                    'admin-panel',
+  '/admin/users':              'admin-panel',
+  '/stock-research':           'stock-research',
 };
 
 export default function Home() {
@@ -187,7 +196,7 @@ export default function Home() {
           {/* Kategorie platformy */}
           <div className="ce-section-label">Platforma</div>
           <div className="ce-cat-grid">
-            {CATEGORIES.filter(c => !TOOL_IDS[c.href] || canAccess(TOOL_IDS[c.href])).map((c) => (
+            {CATEGORIES.filter(c => canAccess(c.toolId)).map((c) => (
               <Link key={c.href} href={c.href} className="ce-cat-tile">
                 <span className="ce-cat-icon">{c.icon}</span>
                 <span className="ce-cat-name">{c.label}</span>

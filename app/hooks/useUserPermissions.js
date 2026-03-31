@@ -2,9 +2,9 @@
 import { useState, useEffect } from 'react'
 
 export default function useUserPermissions() {
-  const [permissions, setPermissions] = useState(null)
+  const [permissions, setPermissions] = useState({})
   const [role, setRole] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     fetch('/api/user/permissions')
@@ -12,18 +12,18 @@ export default function useUserPermissions() {
       .then(data => {
         setPermissions(data.permissions || {})
         setRole(data.role)
-        setLoading(false)
+        setReady(true)
       })
-      .catch(() => setLoading(false))
+      .catch(() => setReady(true))
   }, [])
 
   const canAccess = (toolId) => {
+    if (!ready) return false  // ukryj wszystko dopóki nie załadowane
     if (!toolId) return true
     if (role === 'admin') return true
-    if (permissions === null) return true
     if (!(toolId in permissions)) return true
     return permissions[toolId]
   }
 
-  return { permissions, role, loading, canAccess }
+  return { permissions, role, loading: !ready, canAccess, ready }
 }
