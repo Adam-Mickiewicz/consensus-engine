@@ -243,6 +243,7 @@ export default function ImagesPage() {
     if (!selectedModel) { showToast("Wybierz model", "error"); return; }
     if (!prompt.trim()) { showToast("Wpisz prompt", "error"); return; }
     setMode("generating");
+    window.scrollTo({ top: 0, behavior: "smooth" });
     try {
       const data = await submitGeneration();
       const jobId = data.job_id ?? data.id;
