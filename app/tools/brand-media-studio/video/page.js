@@ -6,6 +6,7 @@ import Nav from "../../../components/Nav";
 import ModelSelector from "../components/ModelSelector";
 import MusicPanel from "../components/MusicPanel";
 import PresetPanel from "../components/PresetPanel";
+import PresetVariables from "../components/PresetVariables";
 
 const ACCENT = "#b8763a";
 
@@ -107,6 +108,8 @@ export default function VideoPage() {
     variants: "1",
   });
   const [prompt, setPrompt] = useState("");
+  const [presetVariables, setPresetVariables] = useState([]);
+  const [presetTemplate, setPresetTemplate] = useState("");
   const [baseImages, setBaseImages] = useState([]);
   const [musicConfig, setMusicConfig] = useState({ mode: "none" });
   const [submitting, setSubmitting] = useState(false);
@@ -146,7 +149,11 @@ export default function VideoPage() {
 
   function handlePresetApply(preset) {
     if (preset.params) setParams(p => ({ ...p, ...preset.params }));
-    if (preset.prompt_template) setPrompt(preset.prompt_template);
+    setPresetTemplate(preset.prompt_template || '');
+    setPresetVariables(preset.variables || []);
+    if (!preset.variables?.length) {
+      setPrompt(preset.prompt_template || '');
+    }
   }
 
   async function handleEnhancePrompt() {
@@ -395,6 +402,14 @@ export default function VideoPage() {
             <div style={{ fontSize: 13, fontWeight: 600, color: "#555", marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.06em" }}>
               Prompt
             </div>
+
+            {presetVariables.length > 0 && (
+              <PresetVariables
+                variables={presetVariables}
+                promptTemplate={presetTemplate}
+                onPromptChange={setPrompt}
+              />
+            )}
 
             <textarea
               value={prompt}

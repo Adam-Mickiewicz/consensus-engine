@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Nav from "../../../components/Nav";
 import AttachmentPanel from "../components/AttachmentPanel";
 import PresetPanel from "../components/PresetPanel";
+import PresetVariables from "../components/PresetVariables";
 
 const ACCENT = "#b8763a";
 
@@ -99,6 +100,8 @@ export default function ImagesPage() {
   });
 
   const [prompt, setPrompt] = useState("");
+  const [presetVariables, setPresetVariables] = useState([]);
+  const [presetTemplate, setPresetTemplate] = useState("");
   const [aiModel, setAiModel] = useState("claude");
   const [aiInstruction, setAiInstruction] = useState("");
   const [enhancing, setEnhancing] = useState(false);
@@ -146,8 +149,16 @@ export default function ImagesPage() {
   }
 
   function handlePresetApply(preset) {
+    if (preset.model_id) {
+      const model = models.find(m => m.model_id === preset.model_id);
+      if (model) handleModelChange(model);
+    }
     if (preset.params) setParams(p => ({ ...p, ...preset.params }));
-    if (preset.prompt_template) setPrompt(preset.prompt_template);
+    setPresetTemplate(preset.prompt_template || '');
+    setPresetVariables(preset.variables || []);
+    if (!preset.variables?.length) {
+      setPrompt(preset.prompt_template || '');
+    }
   }
 
   function getCurrentConfig() {
@@ -243,6 +254,14 @@ export default function ImagesPage() {
         <Section title="Presety">
           <PresetPanel jobType="image" onApply={handlePresetApply} currentConfig={getCurrentConfig()} />
         </Section>
+
+        {presetVariables.length > 0 && (
+          <PresetVariables
+            variables={presetVariables}
+            promptTemplate={presetTemplate}
+            onPromptChange={setPrompt}
+          />
+        )}
 
         {/* Materiały źródłowe */}
         <Section title="Materiały źródłowe">
