@@ -4,8 +4,8 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 const MODEL_MAP = {
-  'veo31':     'veo-3.0-generate-001',
-  'veo31fast': 'veo-3.0-fast-generate-001',
+  'veo31':     'veo-3.1-generate-001',
+  'veo31fast': 'veo-3.1-fast-generate-001',
   'veo3':      'veo-3.0-generate-001',
   'veo3fast':  'veo-3.0-fast-generate-001',
 };
@@ -134,6 +134,48 @@ export async function GET(request) {
           return Response.json({ message: `Job ${job.id} w toku (Sora status: ${statusData.status})` });
         }
 
+      } else if (job.params?.extend_from_job_id) {
+        // Extend — pierwsze wywołanie rozszerzenia Sora
+        const { data: parentJob } = await supabase
+          .from('bms_jobs')
+          .select('params')
+          .eq('id', job.params.extend_from_job_id)
+          .single();
+
+        const soraVideoId = parentJob?.params?.external_job_id;
+        if (!soraVideoId) throw new Error('Parent job nie ma external_job_id — nie można przedłużyć');
+
+        const extDuration = parseInt(job.params?.duration) || 8;
+
+        const extRes = await fetch('https://api.openai.com/v1/videos/extensions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+          body: JSON.stringify({
+            video: { id: soraVideoId },
+            prompt: job.prompt || '',
+            seconds: extDuration,
+          }),
+        });
+
+        if (!extRes.ok) {
+          const err = await extRes.text();
+          throw new Error(`Sora extension error ${extRes.status}: ${err}`);
+        }
+
+        const extData = await extRes.json();
+        const extJobId = extData.id;
+        if (!extJobId) throw new Error('Brak ID z Sora extension');
+
+        await supabase.from('bms_jobs').update({
+          params: { ...job.params, external_job_id: extJobId },
+          updated_at: new Date().toISOString(),
+        }).eq('id', job.id);
+
+        return Response.json({ message: `Extension ${job.id} uruchomiony w Sora (${extJobId})` });
+
       } else {
         // Pierwsze wywołanie — uruchom Sora
         const formData = new FormData();
@@ -258,6 +300,59 @@ export async function GET(request) {
         }).eq('id', job.id);
 
         return Response.json({ message: `Job ${job.id} gotowy, outputs: ${outputUrls.length}` });
+
+      } else if (job.params?.extend_from_job_id) {
+        // Extend — pierwsze wywołanie rozszerzenia Veo 3.1
+        const { data: parentJob } = await supabase
+          .from('bms_jobs')
+          .select('output_urls')
+          .eq('id', job.params.extend_from_job_id)
+          .single();
+
+        const parentVideoUrl = parentJob?.output_urls?.[0];
+        if (!parentVideoUrl) throw new Error('Parent job nie ma gotowego wideo do przedłużenia');
+
+        const videoRes = await fetch(parentVideoUrl);
+        if (!videoRes.ok) throw new Error(`Nie udało się pobrać wideo źródłowego: ${videoRes.status}`);
+        const videoBuffer = await videoRes.arrayBuffer();
+        const videoBase64 = Buffer.from(videoBuffer).toString('base64');
+
+        const extRequestBody = {
+          instances: [{
+            prompt: fullPrompt,
+            video: {
+              bytesBase64Encoded: videoBase64,
+              mimeType: 'video/mp4',
+            },
+          }],
+          parameters: {
+            aspectRatio,
+            sampleCount: 1,
+          },
+        };
+
+        const extApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:predictLongRunning?key=${process.env.GOOGLE_AI_API_KEY}`;
+        const extResponse = await fetch(extApiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(extRequestBody),
+        });
+
+        if (!extResponse.ok) {
+          const errText = await extResponse.text();
+          throw new Error(`Veo extend error ${extResponse.status}: ${errText}`);
+        }
+
+        const extResult = await extResponse.json();
+        const extOperationName = extResult.name;
+        if (!extOperationName) throw new Error('Brak operation name z Veo extend');
+
+        await supabase.from('bms_jobs').update({
+          params: { ...job.params, external_job_id: extOperationName },
+          updated_at: new Date().toISOString(),
+        }).eq('id', job.id);
+
+        return Response.json({ message: `Extension ${job.id} uruchomiony w Veo (${extOperationName})` });
 
       } else {
         // Pierwsze wywołanie — uruchom Veo

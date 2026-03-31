@@ -119,6 +119,13 @@ export default function VideoPage() {
   const [aiModel, setAiModel] = useState("claude");
   const [aiInstruction, setAiInstruction] = useState("");
 
+  const [showExtend, setShowExtend] = useState(false);
+  const [extendPrompt, setExtendPrompt] = useState('');
+  const [extendDuration, setExtendDuration] = useState('8s');
+  const [extendGenerating, setExtendGenerating] = useState(false);
+  const [extendedParts, setExtendedParts] = useState([]);
+  const extendPollingRef = useRef(null);
+
   function setParam(key, val) {
     setParams(p => ({ ...p, [key]: val }));
   }
@@ -144,7 +151,10 @@ export default function VideoPage() {
   }
 
   useEffect(() => {
-    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      if (extendPollingRef.current) clearInterval(extendPollingRef.current);
+    };
   }, []);
 
   function startPolling(jobId) {
@@ -259,10 +269,67 @@ export default function VideoPage() {
 
   function handleReset() {
     if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+    if (extendPollingRef.current) { clearInterval(extendPollingRef.current); extendPollingRef.current = null; }
     setMode('idle');
     setActiveJob(null);
     setPrompt('');
     setStep(1);
+    setShowExtend(false);
+    setExtendedParts([]);
+    setExtendPrompt('');
+  }
+
+  async function handleExtend() {
+    if (!activeJob?.id || extendGenerating) return;
+    setExtendGenerating(true);
+    setShowExtend(false);
+    try {
+      const res = await fetch('/api/brand-media/generate-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model_id: selectedModel.model_id,
+          prompt: extendPrompt.trim() || '',
+          params: { ...params, duration: extendDuration },
+          extend_from_job_id: extendedParts.length > 0
+            ? extendedParts[extendedParts.length - 1].id
+            : activeJob.id,
+          estimated_cost: parseFloat(calculateCost(selectedModel, { ...params, duration: extendDuration })),
+        }),
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || `HTTP ${res.status}`); }
+      const data = await res.json();
+      const jobId = data.job_id ?? data.id;
+      if (!jobId) throw new Error('Brak job_id');
+
+      const newPart = { id: jobId, status: 'queued', output_urls: [] };
+      setExtendedParts(prev => [...prev, newPart]);
+
+      if (extendPollingRef.current) clearInterval(extendPollingRef.current);
+      extendPollingRef.current = setInterval(async () => {
+        try {
+          const r = await fetch(`/api/brand-media/jobs/${jobId}`);
+          const d = await r.json();
+          const job = d.job ?? d;
+          setExtendedParts(prev => prev.map(p => p.id === jobId ? job : p));
+          if (job.status === 'done' || job.status === 'failed') {
+            clearInterval(extendPollingRef.current);
+            extendPollingRef.current = null;
+            setExtendGenerating(false);
+            if (job.status === 'done') {
+              showToast('Rozszerzenie gotowe!');
+              setExtendPrompt('');
+              setExtendDuration('8s');
+            } else {
+              showToast('Błąd rozszerzenia: ' + (job.error_message || 'nieznany'), 'error');
+            }
+          }
+        } catch (e) { console.error('Extend polling error:', e); }
+      }, 10000);
+    } catch (err) {
+      setExtendGenerating(false);
+      showToast('Błąd: ' + err.message, 'error');
+    }
   }
 
   async function handleRerun() {
@@ -413,44 +480,132 @@ export default function VideoPage() {
         {/* ── TRYB DONE ── */}
         {mode === 'done' && activeJob?.output_urls?.[0] && (
           <div style={{ maxWidth: '500px', margin: '0 auto', marginBottom: 32 }}>
-            <div style={{
-              borderRadius: '16px', overflow: 'hidden', background: '#000',
-              marginBottom: '16px',
-              aspectRatio,
-            }}>
-              <video
-                src={activeJob.output_urls[0]}
-                controls autoPlay muted loop
-                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-              />
-            </div>
 
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
-              <a href={activeJob.output_urls[0]} download style={{
-                padding: '8px 16px', background: '#b8763a', color: '#fff',
-                borderRadius: '8px', fontSize: '13px', textDecoration: 'none',
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
-              }}>⬇ Pobierz</a>
+            {/* Część 1 — oryginał */}
+            {[activeJob, ...extendedParts.filter(p => p.status === 'done' && p.output_urls?.[0])].map((job, i) => (
+              <div key={job.id} style={{ marginBottom: 16 }}>
+                {(extendedParts.filter(p => p.status === 'done').length > 0) && (
+                  <div style={{ fontSize: 11, color: '#aaa', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
+                    Część {i + 1}
+                  </div>
+                )}
+                <div style={{ borderRadius: '16px', overflow: 'hidden', background: '#000', aspectRatio }}>
+                  <video
+                    src={job.output_urls[0]}
+                    controls autoPlay={i === 0} muted loop
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                  />
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <a href={job.output_urls[0]} download style={{
+                    padding: '6px 12px', background: 'transparent',
+                    border: '0.5px solid #ddd', color: '#555',
+                    borderRadius: '6px', fontSize: '12px', textDecoration: 'none',
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                  }}>⬇ Pobierz część {i + 1}</a>
+                </div>
+              </div>
+            ))}
 
+            {/* Queued/processing extensions */}
+            {extendedParts.filter(p => p.status === 'queued' || p.status === 'processing').map((p, i) => (
+              <div key={p.id} style={{
+                borderRadius: '12px', border: '1px dashed #e0d8d0',
+                padding: '20px', textAlign: 'center', marginBottom: 16,
+                background: '#fdf9f6',
+              }}>
+                <div style={{ fontSize: 13, color: '#b8763a', marginBottom: 4 }}>
+                  🦄 Generuję część {extendedParts.indexOf(p) + 2}...
+                </div>
+                <div style={{ fontSize: 11, color: '#aaa' }}>
+                  {p.status === 'queued' ? 'W kolejce' : 'Przetwarzanie'} · sprawdzam co 10s
+                </div>
+              </div>
+            ))}
+
+            {/* Akcje */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: 16 }}>
               <button onClick={handleRerun} style={{
-                padding: '8px 16px', border: '0.5px solid var(--color-border-secondary, #e0e0e0)',
+                padding: '8px 16px', border: '0.5px solid #e0e0e0',
                 borderRadius: '8px', fontSize: '13px', background: 'transparent',
-                cursor: 'pointer', color: 'var(--color-text-primary, #1a1a1a)',
+                cursor: 'pointer', color: '#1a1a1a',
               }}>↺ Re-run</button>
 
-              <button onClick={() => showToast('Funkcja Extend — wkrótce!')} style={{
-                padding: '8px 16px', border: '0.5px solid #b8763a',
-                borderRadius: '8px', fontSize: '13px', background: 'transparent',
-                cursor: 'pointer', color: '#b8763a',
-              }}>+ Extend</button>
+              {selectedModel?.capabilities?.extend && !extendGenerating && (
+                <button onClick={() => setShowExtend(v => !v)} style={{
+                  padding: '8px 16px', border: `0.5px solid ${ACCENT}`,
+                  borderRadius: '8px', fontSize: '13px', background: showExtend ? '#fdf7f2' : 'transparent',
+                  cursor: 'pointer', color: ACCENT,
+                }}>↗ Przedłuż wideo</button>
+              )}
+
+              {extendGenerating && (
+                <div style={{
+                  padding: '8px 16px', border: '0.5px solid #e0d8d0',
+                  borderRadius: '8px', fontSize: '13px', color: '#b8763a',
+                  background: '#fdf9f6',
+                }}>🦄 Generuję rozszerzenie...</div>
+              )}
             </div>
+
+            {/* Panel extend */}
+            {showExtend && !extendGenerating && (
+              <div style={{
+                border: '1px solid #eee', borderRadius: 12, padding: 16,
+                marginBottom: 16, background: '#fafafa',
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 12 }}>
+                  ↗ Przedłuż wideo
+                </div>
+
+                <div style={{ fontSize: 12, color: '#666', marginBottom: 6, fontWeight: 500 }}>
+                  Jak kontynuować? (zostaw puste dla naturalnej kontynuacji)
+                </div>
+                <textarea
+                  value={extendPrompt}
+                  onChange={e => setExtendPrompt(e.target.value)}
+                  placeholder="np. kamera odjeżdża, ujawniając szerszy krajobraz..."
+                  style={{
+                    width: '100%', minHeight: 70, padding: '8px 10px',
+                    border: '1px solid #ddd', borderRadius: 8, fontSize: 13,
+                    resize: 'vertical', fontFamily: 'inherit',
+                    boxSizing: 'border-box', outline: 'none', marginBottom: 12,
+                  }}
+                />
+
+                <div style={{ fontSize: 12, color: '#666', marginBottom: 8, fontWeight: 500 }}>Dodaj sekund:</div>
+                <ToggleGroup
+                  options={['5s', '8s', '10s', '20s']}
+                  value={extendDuration}
+                  onChange={setExtendDuration}
+                  small
+                />
+
+                <div style={{ fontSize: 11, color: '#aaa', marginTop: 8, marginBottom: 12 }}>
+                  Max 20s/raz · max 6 rozszerzeń · łącznie max 120s
+                </div>
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={handleExtend} style={{
+                    padding: '8px 18px', background: ACCENT, color: '#fff',
+                    border: 'none', borderRadius: 8, fontSize: 13,
+                    cursor: 'pointer', fontWeight: 500,
+                  }}>Generuj rozszerzenie</button>
+                  <button onClick={() => setShowExtend(false)} style={{
+                    padding: '8px 14px', background: 'transparent',
+                    border: '0.5px solid #ddd', borderRadius: 8, fontSize: 13,
+                    cursor: 'pointer', color: '#666',
+                  }}>Anuluj</button>
+                </div>
+              </div>
+            )}
 
             <button onClick={handleReset} style={{
               width: '100%', padding: '10px',
-              border: '0.5px solid var(--color-border-tertiary, #ddd)',
+              border: '0.5px solid #ddd',
               borderRadius: '8px', fontSize: '13px',
               background: 'transparent', cursor: 'pointer',
-              color: 'var(--color-text-secondary, #666)',
+              color: '#888',
             }}>← Zacznij od nowa</button>
           </div>
         )}
