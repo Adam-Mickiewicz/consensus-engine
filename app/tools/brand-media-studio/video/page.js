@@ -95,6 +95,7 @@ export default function VideoPage() {
   const [step, setStep] = useState(1);
   const totalSteps = 4;
 
+  const [mode, setMode] = useState('idle'); // 'idle' | 'generating' | 'done'
   const [selectedModel, setSelectedModel] = useState(null);
   const [params, setParams] = useState({
     orientation: "9:16",
@@ -110,7 +111,6 @@ export default function VideoPage() {
   const [presetTemplate, setPresetTemplate] = useState("");
   const [baseImages, setBaseImages] = useState([]);
   const [musicConfig, setMusicConfig] = useState({ mode: "none" });
-  const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
   const [activeJob, setActiveJob] = useState(null);
   const pollingRef = useRef(null);
@@ -140,7 +140,7 @@ export default function VideoPage() {
 
   function showToast(msg, type = "success") {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 3500);
+    setTimeout(() => setToast(null), 4000);
   }
 
   useEffect(() => {
@@ -155,15 +155,22 @@ export default function VideoPage() {
         const data = await res.json();
         const job = data.job ?? data;
         setActiveJob(job);
-        if (job.status === 'done' || job.status === 'failed') {
+        if (job.status === 'done') {
           clearInterval(pollingRef.current);
           pollingRef.current = null;
-          if (job.status === 'done') showToast('Wideo gotowe!');
+          setMode('done');
+          showToast('Wideo gotowe!');
+        }
+        if (job.status === 'failed') {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+          setMode('idle');
+          showToast('Błąd generowania: ' + (job.error_message || 'nieznany błąd'), 'error');
         }
       } catch (e) {
         console.error('Polling error:', e);
       }
-    }, 5000);
+    }, 10000);
   }
 
   function getCurrentConfig() {
@@ -204,9 +211,9 @@ export default function VideoPage() {
     }
   }
 
-  async function handleSubmit() {
+  async function handleGenerate() {
     if (!selectedModel || !prompt.trim()) return;
-    setSubmitting(true);
+    setMode('generating');
     try {
       const body = {
         model_id: selectedModel.model_id,
@@ -239,10 +246,28 @@ export default function VideoPage() {
         showToast("Job dodany do kolejki");
       }
     } catch (err) {
-      showToast("Błąd: " + err.message, "error");
-    } finally {
-      setSubmitting(false);
+      setMode('idle');
+      showToast('Błąd: ' + err.message, 'error');
     }
+  }
+
+  function handleCancel() {
+    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+    setMode('idle');
+    setActiveJob(null);
+  }
+
+  function handleReset() {
+    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+    setMode('idle');
+    setActiveJob(null);
+    setPrompt('');
+    setStep(1);
+  }
+
+  async function handleRerun() {
+    setActiveJob(null);
+    await handleGenerate();
   }
 
   const cap = selectedModel?.capabilities || {};
@@ -251,6 +276,10 @@ export default function VideoPage() {
   const availableResolutions = cap.resolutions || [];
   const estimatedCost = calculateCost(selectedModel, params);
 
+  const aspectRatio = params.orientation === '9:16' ? '9/16'
+    : params.orientation === '1:1' ? '1/1'
+    : '16/9';
+
   return (
     <div style={{ minHeight: "100vh", background: "#f8f8f6", fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
       <Nav current="/tools/brand-media-studio" />
@@ -258,7 +287,7 @@ export default function VideoPage() {
       {toast && (
         <div style={{
           position: "fixed", bottom: 24, right: 24, zIndex: 1000,
-          background: toast.type === "success" ? ACCENT : "#ef4444",
+          background: toast.type === "error" ? "#ef4444" : "#1D9E75",
           color: "#fff", padding: "12px 20px", borderRadius: 8,
           fontSize: 13, boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
         }}>
@@ -277,398 +306,464 @@ export default function VideoPage() {
           🎬 Generowanie wideo
         </h1>
 
-        <ProgressBar step={step} total={totalSteps} />
+        {/* ── TRYB GENERATING ── */}
+        {mode === 'generating' && (
+          <div style={{ marginBottom: 32 }}>
+            <div style={{
+              width: '100%',
+              maxWidth: params.orientation === '9:16' ? '300px' : '500px',
+              aspectRatio,
+              margin: '0 auto',
+              background: 'var(--color-background-secondary, #f0ede8)',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '16px',
+              position: 'relative',
+            }}>
+              <div style={{
+                display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)',
+                gap: '3px', width: '140px', height: '140px',
+              }}>
+                {Array.from({ length: 64 }).map((_, i) => (
+                  <div key={i} style={{
+                    borderRadius: '2px',
+                    background: ['#b8763a', '#e8c99a', '#f5e6d3', '#d4956a', '#8b5a2b'][i % 5],
+                    animation: `bmsPixel ${0.5 + (i % 7) * 0.15}s ease-in-out infinite alternate`,
+                    animationDelay: `${(i * 0.04) % 1}s`,
+                    opacity: 0.3 + (i % 4) * 0.2,
+                  }} />
+                ))}
+              </div>
+              <style>{`@keyframes bmsPixel{0%{transform:scale(0.7);opacity:0.3}100%{transform:scale(1);opacity:1}}`}</style>
 
-        {/* KROK 1 — Model */}
-        {step === 1 && (
-          <div style={{ background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 24 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#555", marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Wybierz model
+              <div style={{ textAlign: 'center', padding: '0 16px' }}>
+                <div style={{ fontSize: '14px', fontWeight: '500', color: 'var(--color-text-primary, #1a1a1a)', marginBottom: '4px' }}>
+                  {activeJob?.status === 'queued' ? 'Przygotowuję generowanie...' : 'Generuję wideo...'}
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--color-text-secondary, #666)', marginBottom: '4px' }}>
+                  {selectedModel?.model_name} · {params?.duration} · ~${calculateCost(selectedModel, params)} USD
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--color-text-tertiary, #aaa)' }}>
+                  Generowanie wideo trwa zwykle 2–5 minut
+                </div>
+              </div>
+
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                height: '3px', background: 'var(--color-background-secondary, #f0ede8)', overflow: 'hidden',
+              }}>
+                <div style={{
+                  height: '100%', width: '40%', background: '#b8763a',
+                  animation: 'bmsBar 1.5s ease-in-out infinite',
+                }} />
+              </div>
+              <style>{`@keyframes bmsBar{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}`}</style>
             </div>
-            <div style={{ marginBottom: 20 }}>
-              <PresetPanel jobType="video" onApply={handlePresetApply} currentConfig={getCurrentConfig()} />
+
+            <div style={{ textAlign: 'center', marginTop: '12px' }}>
+              <button onClick={handleCancel} style={{
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                fontSize: '12px', color: 'var(--color-text-tertiary, #aaa)',
+                textDecoration: 'underline',
+              }}>Anuluj</button>
             </div>
-            <ModelSelector
-              category="video"
-              selectedModelId={selectedModel?.model_id}
-              onModelChange={handleModelChange}
-            />
           </div>
         )}
 
-        {/* KROK 2 — Parametry */}
-        {step === 2 && (
-          <div style={{ background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 24 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#555", marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Parametry wideo
+        {/* ── TRYB DONE ── */}
+        {mode === 'done' && activeJob?.output_urls?.[0] && (
+          <div style={{ maxWidth: '500px', margin: '0 auto', marginBottom: 32 }}>
+            <div style={{
+              borderRadius: '16px', overflow: 'hidden', background: '#000',
+              marginBottom: '16px',
+              aspectRatio,
+            }}>
+              <video
+                src={activeJob.output_urls[0]}
+                controls autoPlay muted loop
+                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+              />
             </div>
 
-            <ParamRow label="Orientacja">
-              <ToggleGroup options={availableOrientations} value={params.orientation} onChange={v => setParam("orientation", v)} />
-            </ParamRow>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
+              <a href={activeJob.output_urls[0]} download style={{
+                padding: '8px 16px', background: '#b8763a', color: '#fff',
+                borderRadius: '8px', fontSize: '13px', textDecoration: 'none',
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+              }}>⬇ Pobierz</a>
 
-            <ParamRow label="Długość">
-              <div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {availableDurations.length > 0
-                    ? availableDurations.map(d => (
-                      <button
-                        key={d}
-                        onClick={() => setParam("duration", `${d}s`)}
-                        style={{
-                          padding: "7px 14px", fontSize: 12,
-                          border: `1px solid ${params.duration === `${d}s` ? ACCENT : "#ddd"}`,
-                          borderRadius: 6,
-                          background: params.duration === `${d}s` ? "#fdf7f2" : "#fff",
-                          color: params.duration === `${d}s` ? ACCENT : "#555",
-                          cursor: "pointer", fontWeight: params.duration === `${d}s` ? 600 : 400,
-                        }}
-                      >
-                        {d}s
-                      </button>
-                    ))
-                    : <span style={{ fontSize: 12, color: "#aaa" }}>Brak danych</span>
-                  }
-                </div>
-                {cap.extend && (
-                  <div style={{ fontSize: 11, color: "#888", marginTop: 6, padding: "6px 10px", background: "#fafafa", borderRadius: 6, borderLeft: `2px solid #e8ddd0` }}>
-                    Extend do <strong>{cap.extend_max_seconds}s</strong> dostępny po wygenerowaniu.
-                  </div>
-                )}
+              <button onClick={handleRerun} style={{
+                padding: '8px 16px', border: '0.5px solid var(--color-border-secondary, #e0e0e0)',
+                borderRadius: '8px', fontSize: '13px', background: 'transparent',
+                cursor: 'pointer', color: 'var(--color-text-primary, #1a1a1a)',
+              }}>↺ Re-run</button>
+
+              <button onClick={() => showToast('Funkcja Extend — wkrótce!')} style={{
+                padding: '8px 16px', border: '0.5px solid #b8763a',
+                borderRadius: '8px', fontSize: '13px', background: 'transparent',
+                cursor: 'pointer', color: '#b8763a',
+              }}>+ Extend</button>
+            </div>
+
+            <button onClick={handleReset} style={{
+              width: '100%', padding: '10px',
+              border: '0.5px solid var(--color-border-tertiary, #ddd)',
+              borderRadius: '8px', fontSize: '13px',
+              background: 'transparent', cursor: 'pointer',
+              color: 'var(--color-text-secondary, #666)',
+            }}>← Zacznij od nowa</button>
+          </div>
+        )}
+
+        {/* ── WIZARD — ukryty/przyciemniony poza trybem idle ── */}
+        <div style={{
+          opacity: mode === 'idle' ? 1 : mode === 'generating' ? 0.4 : 0,
+          pointerEvents: mode === 'idle' ? 'auto' : 'none',
+          transition: 'opacity 0.3s',
+          visibility: mode === 'done' ? 'hidden' : 'visible',
+        }}>
+          <ProgressBar step={step} total={totalSteps} />
+
+          {/* KROK 1 — Model */}
+          {step === 1 && (
+            <div style={{ background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 24 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#555", marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Wybierz model
               </div>
-            </ParamRow>
+              <div style={{ marginBottom: 20 }}>
+                <PresetPanel jobType="video" onApply={handlePresetApply} currentConfig={getCurrentConfig()} />
+              </div>
+              <ModelSelector
+                category="video"
+                selectedModelId={selectedModel?.model_id}
+                onModelChange={handleModelChange}
+              />
+            </div>
+          )}
 
-            {availableResolutions.length > 1 && (
-              <ParamRow label="Rozdzielczość">
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <div style={{ display: "flex", gap: 4 }}>
-                    {availableResolutions.map(res => (
-                      <button
-                        key={res}
-                        onClick={() => setParam("resolution", res)}
-                        style={{
-                          flex: 1, padding: "5px 8px",
-                          border: params.resolution === res ? `1.5px solid ${ACCENT}` : "1px solid #ddd",
-                          borderRadius: 6, fontSize: 12, cursor: "pointer",
-                          background: params.resolution === res ? "#fdf7f2" : "#fff",
-                          color: params.resolution === res ? ACCENT : "#666",
-                          fontWeight: params.resolution === res ? 500 : 400,
-                        }}
-                      >
-                        {res}
-                      </button>
-                    ))}
+          {/* KROK 2 — Parametry */}
+          {step === 2 && (
+            <div style={{ background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 24 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#555", marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Parametry wideo
+              </div>
+
+              <ParamRow label="Orientacja">
+                <ToggleGroup options={availableOrientations} value={params.orientation} onChange={v => setParam("orientation", v)} />
+              </ParamRow>
+
+              <ParamRow label="Długość">
+                <div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {availableDurations.length > 0
+                      ? availableDurations.map(d => (
+                        <button
+                          key={d}
+                          onClick={() => setParam("duration", `${d}s`)}
+                          style={{
+                            padding: "7px 14px", fontSize: 12,
+                            border: `1px solid ${params.duration === `${d}s` ? ACCENT : "#ddd"}`,
+                            borderRadius: 6,
+                            background: params.duration === `${d}s` ? "#fdf7f2" : "#fff",
+                            color: params.duration === `${d}s` ? ACCENT : "#555",
+                            cursor: "pointer", fontWeight: params.duration === `${d}s` ? 600 : 400,
+                          }}
+                        >
+                          {d}s
+                        </button>
+                      ))
+                      : <span style={{ fontSize: 12, color: "#aaa" }}>Brak danych</span>
+                    }
                   </div>
-                  {params.resolution === "4K" && selectedModel?.capabilities?.price_4k && (
-                    <div style={{
-                      fontSize: 11, color: ACCENT, marginTop: 4,
-                      padding: "4px 8px", background: "#fdf7f2", borderRadius: 4,
-                    }}>
-                      4K: ${selectedModel.capabilities.price_4k}/sek. (vs ${selectedModel.price_per_unit}/sek. dla 1080p)
+                  {cap.extend && (
+                    <div style={{ fontSize: 11, color: "#888", marginTop: 6, padding: "6px 10px", background: "#fafafa", borderRadius: 6, borderLeft: `2px solid #e8ddd0` }}>
+                      Extend do <strong>{cap.extend_max_seconds}s</strong> dostępny po wygenerowaniu.
                     </div>
                   )}
                 </div>
               </ParamRow>
-            )}
 
-            <ParamRow label="Ruch kamery">
-              <Select value={params.camera_move} onChange={v => setParam("camera_move", v)} options={CAMERA_MOVES} />
-            </ParamRow>
-            <ParamRow label="Styl wizualny">
-              <Select value={params.visual_style} onChange={v => setParam("visual_style", v)} options={VISUAL_STYLES} />
-            </ParamRow>
-            <ParamRow label="Oświetlenie">
-              <Select value={params.lighting} onChange={v => setParam("lighting", v)} options={LIGHTINGS} />
-            </ParamRow>
-            <ParamRow label="Warianty">
-              <ToggleGroup options={VARIANT_OPTIONS} value={params.variants} onChange={v => setParam("variants", v)} small />
-            </ParamRow>
-
-            <ParamRow label="Muzyka">
-              <MusicPanel modelCapabilities={cap} onMusicChange={setMusicConfig} />
-            </ParamRow>
-
-            {selectedModel?.max_ref_images > 0 && (
-              <ParamRow label="Zdjęcia bazowe">
-                <div>
-                  <div style={{ fontSize: 11, color: "#888", marginBottom: 8 }}>Max {selectedModel.max_ref_images} zdjęć</div>
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    {Array.from({ length: selectedModel.max_ref_images }).map((_, i) => {
-                      const img = baseImages[i];
-                      return (
-                        <div key={i}
+              {availableResolutions.length > 1 && (
+                <ParamRow label="Rozdzielczość">
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {availableResolutions.map(res => (
+                        <button
+                          key={res}
+                          onClick={() => setParam("resolution", res)}
                           style={{
-                            width: 64, height: 64, border: `2px dashed ${img ? ACCENT : "#ddd"}`,
-                            borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
-                            cursor: "pointer", overflow: "hidden", background: img ? "transparent" : "#fafafa",
-                          }}
-                          onClick={() => {
-                            if (img) {
-                              setBaseImages(prev => prev.filter((_, pi) => pi !== i));
-                            } else {
-                              const url = window.prompt("URL zdjęcia bazowego:");
-                              if (url) setBaseImages(prev => { const next = [...prev]; next[i] = { url }; return next; });
-                            }
+                            flex: 1, padding: "5px 8px",
+                            border: params.resolution === res ? `1.5px solid ${ACCENT}` : "1px solid #ddd",
+                            borderRadius: 6, fontSize: 12, cursor: "pointer",
+                            background: params.resolution === res ? "#fdf7f2" : "#fff",
+                            color: params.resolution === res ? ACCENT : "#666",
+                            fontWeight: params.resolution === res ? 500 : 400,
                           }}
                         >
-                          {img
-                            ? <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                            : <span style={{ fontSize: 20, color: "#ccc" }}>+</span>
-                          }
-                        </div>
-                      );
-                    })}
+                          {res}
+                        </button>
+                      ))}
+                    </div>
+                    {params.resolution === "4K" && selectedModel?.capabilities?.price_4k && (
+                      <div style={{
+                        fontSize: 11, color: ACCENT, marginTop: 4,
+                        padding: "4px 8px", background: "#fdf7f2", borderRadius: 4,
+                      }}>
+                        4K: ${selectedModel.capabilities.price_4k}/sek. (vs ${selectedModel.price_per_unit}/sek. dla 1080p)
+                      </div>
+                    )}
                   </div>
-                </div>
+                </ParamRow>
+              )}
+
+              <ParamRow label="Ruch kamery">
+                <Select value={params.camera_move} onChange={v => setParam("camera_move", v)} options={CAMERA_MOVES} />
               </ParamRow>
-            )}
-          </div>
-        )}
+              <ParamRow label="Styl wizualny">
+                <Select value={params.visual_style} onChange={v => setParam("visual_style", v)} options={VISUAL_STYLES} />
+              </ParamRow>
+              <ParamRow label="Oświetlenie">
+                <Select value={params.lighting} onChange={v => setParam("lighting", v)} options={LIGHTINGS} />
+              </ParamRow>
+              <ParamRow label="Warianty">
+                <ToggleGroup options={VARIANT_OPTIONS} value={params.variants} onChange={v => setParam("variants", v)} small />
+              </ParamRow>
 
-        {/* KROK 3 — Prompt */}
-        {step === 3 && (
-          <div style={{ background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 24 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#555", marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Prompt
+              <ParamRow label="Muzyka">
+                <MusicPanel modelCapabilities={cap} onMusicChange={setMusicConfig} />
+              </ParamRow>
+
+              {selectedModel?.max_ref_images > 0 && (
+                <ParamRow label="Zdjęcia bazowe">
+                  <div>
+                    <div style={{ fontSize: 11, color: "#888", marginBottom: 8 }}>Max {selectedModel.max_ref_images} zdjęć</div>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      {Array.from({ length: selectedModel.max_ref_images }).map((_, i) => {
+                        const img = baseImages[i];
+                        return (
+                          <div key={i}
+                            style={{
+                              width: 64, height: 64, border: `2px dashed ${img ? ACCENT : "#ddd"}`,
+                              borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+                              cursor: "pointer", overflow: "hidden", background: img ? "transparent" : "#fafafa",
+                            }}
+                            onClick={() => {
+                              if (img) {
+                                setBaseImages(prev => prev.filter((_, pi) => pi !== i));
+                              } else {
+                                const url = window.prompt("URL zdjęcia bazowego:");
+                                if (url) setBaseImages(prev => { const next = [...prev]; next[i] = { url }; return next; });
+                              }
+                            }}
+                          >
+                            {img
+                              ? <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              : <span style={{ fontSize: 20, color: "#ccc" }}>+</span>
+                            }
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </ParamRow>
+              )}
             </div>
+          )}
 
-            {presetVariables.length > 0 && (
-              <PresetVariables
-                variables={presetVariables}
-                promptTemplate={presetTemplate}
-                onPromptChange={setPrompt}
-              />
-            )}
-
-            <textarea
-              value={prompt}
-              onChange={e => setPrompt(e.target.value)}
-              placeholder="Opisz co ma się dziać w wideo... np. skarpety leżą na drewnianym blacie, delikatny wiatr porusza tkaniną"
-              style={{
-                width: "100%", minHeight: 200, padding: "12px 14px",
-                border: "1px solid #ddd", borderRadius: 8, fontSize: 14,
-                resize: "vertical", boxSizing: "border-box", outline: "none",
-                fontFamily: "inherit", lineHeight: 1.6, marginBottom: 16,
-              }}
-            />
-
-            {/* Model AI */}
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 11, color: "#888", marginBottom: 6, fontWeight: 500 }}>Model AI do ulepszania</div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {[
-                  { id: "claude", label: "Claude Sonnet" },
-                  { id: "gpt-4o", label: "GPT-4o" },
-                  { id: "gpt-4.1", label: "GPT-4.1" },
-                  { id: "o3", label: "o3" },
-                ].map(m => (
-                  <button
-                    key={m.id}
-                    onClick={() => setAiModel(m.id)}
-                    style={{
-                      padding: "5px 12px", borderRadius: 20, fontSize: 12, cursor: "pointer",
-                      background: aiModel === m.id ? ACCENT : "transparent",
-                      color: aiModel === m.id ? "#fff" : "#666",
-                      border: aiModel === m.id ? `1px solid ${ACCENT}` : "1px solid #ddd",
-                      fontWeight: aiModel === m.id ? 500 : 400,
-                    }}
-                  >
-                    {m.label}
-                  </button>
-                ))}
+          {/* KROK 3 — Prompt */}
+          {step === 3 && (
+            <div style={{ background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 24 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#555", marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Prompt
               </div>
-            </div>
 
-            {/* Instrukcja dla AI */}
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 11, color: "#888", marginBottom: 6, fontWeight: 500 }}>Instrukcja dla AI (opcjonalna)</div>
+              {presetVariables.length > 0 && (
+                <PresetVariables
+                  variables={presetVariables}
+                  promptTemplate={presetTemplate}
+                  onPromptChange={setPrompt}
+                />
+              )}
+
               <textarea
-                value={aiInstruction}
-                onChange={e => setAiInstruction(e.target.value)}
-                placeholder="np. 'zaproponuj 3 warianty — minimalistyczny, narracyjny i energiczny' lub 'skup się na produkcie, styl lifestyle'"
+                value={prompt}
+                onChange={e => setPrompt(e.target.value)}
+                placeholder="Opisz co ma się dziać w wideo... np. skarpety leżą na drewnianym blacie, delikatny wiatr porusza tkaniną"
                 style={{
-                  width: "100%", minHeight: 60, padding: 10,
-                  border: "1px solid #ddd", borderRadius: 8,
-                  fontSize: 13, resize: "vertical", fontFamily: "inherit",
-                  boxSizing: "border-box", outline: "none",
+                  width: "100%", minHeight: 200, padding: "12px 14px",
+                  border: "1px solid #ddd", borderRadius: 8, fontSize: 14,
+                  resize: "vertical", boxSizing: "border-box", outline: "none",
+                  fontFamily: "inherit", lineHeight: 1.6, marginBottom: 16,
                 }}
               />
-            </div>
 
-            <button
-              onClick={handleEnhancePrompt}
-              disabled={enhancing || !prompt.trim()}
-              style={{
-                padding: "8px 16px", fontSize: 13, borderRadius: 6,
-                border: `1px solid ${ACCENT}`, background: "#fff",
-                color: enhancing ? "#ccc" : ACCENT,
-                cursor: enhancing || !prompt.trim() ? "not-allowed" : "pointer",
-              }}
-            >
-              {enhancing ? "Generuję..." : "✦ Ulepsz prompt (AI)"}
-            </button>
-
-            {alternatives.length > 0 && (
-              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ fontSize: 11, color: "#888", fontWeight: 500 }}>Propozycje AI — kliknij aby użyć:</div>
-                {alternatives.map((alt, i) => (
-                  <div
-                    key={i}
-                    onClick={() => setPrompt(alt)}
-                    style={{
-                      padding: "10px 14px",
-                      border: prompt === alt ? `1.5px solid ${ACCENT}` : "1px solid #eee",
-                      borderRadius: 8, fontSize: 13, lineHeight: 1.5,
-                      cursor: "pointer", background: prompt === alt ? "#fdf6ee" : "#fff",
-                      color: "#333", transition: "border-color 0.15s",
-                    }}
-                  >
-                    <div style={{ fontSize: 10, color: ACCENT, fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                      Wariant {i + 1}
-                    </div>
-                    {alt}
-                  </div>
-                ))}
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: "#888", marginBottom: 6, fontWeight: 500 }}>Model AI do ulepszania</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {[
+                    { id: "claude", label: "Claude Sonnet" },
+                    { id: "gpt-4o", label: "GPT-4o" },
+                    { id: "gpt-4.1", label: "GPT-4.1" },
+                    { id: "o3", label: "o3" },
+                  ].map(m => (
+                    <button
+                      key={m.id}
+                      onClick={() => setAiModel(m.id)}
+                      style={{
+                        padding: "5px 12px", borderRadius: 20, fontSize: 12, cursor: "pointer",
+                        background: aiModel === m.id ? ACCENT : "transparent",
+                        color: aiModel === m.id ? "#fff" : "#666",
+                        border: aiModel === m.id ? `1px solid ${ACCENT}` : "1px solid #ddd",
+                        fontWeight: aiModel === m.id ? 500 : 400,
+                      }}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            )}
 
-            <div style={{ fontSize: 12, color: "#888", marginTop: 12 }}>
-              Szacowany koszt generowania wideo:{" "}
-              <strong style={{ color: ACCENT }}>~${calculateCost(selectedModel, params)}</strong>
-              <span style={{ color: "#bbb", marginLeft: 4 }}>
-                ({selectedModel?.model_name} · {params?.duration} · {params?.variants || 1} wariant)
-              </span>
-            </div>
-          </div>
-        )}
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: "#888", marginBottom: 6, fontWeight: 500 }}>Instrukcja dla AI (opcjonalna)</div>
+                <textarea
+                  value={aiInstruction}
+                  onChange={e => setAiInstruction(e.target.value)}
+                  placeholder="np. 'zaproponuj 3 warianty — minimalistyczny, narracyjny i energiczny' lub 'skup się na produkcie, styl lifestyle'"
+                  style={{
+                    width: "100%", minHeight: 60, padding: 10,
+                    border: "1px solid #ddd", borderRadius: 8,
+                    fontSize: 13, resize: "vertical", fontFamily: "inherit",
+                    boxSizing: "border-box", outline: "none",
+                  }}
+                />
+              </div>
 
-        {/* KROK 4 — Generuj */}
-        {step === 4 && (
-          <div style={{ background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 24 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#555", marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Podsumowanie i generowanie
-            </div>
-
-            <div style={{
-              background: "#fafafa", border: "1px solid #eee", borderRadius: 8,
-              padding: "12px 16px", marginBottom: 20, fontSize: 13, color: "#555",
-              display: "flex", gap: 16, flexWrap: "wrap",
-            }}>
-              <span><strong>Model:</strong> {selectedModel?.model_name || selectedModel?.model_id}</span>
-              <span><strong>Format:</strong> {params.orientation} · {params.duration}</span>
-              <span><strong>Warianty:</strong> {params.variants}</span>
-              <span style={{ color: ACCENT }}><strong>Koszt:</strong> ~${estimatedCost}</span>
-            </div>
-
-            <div style={{ fontSize: 12, color: "#888", marginBottom: 6 }}>Prompt (możesz edytować):</div>
-            <textarea
-              value={prompt}
-              onChange={e => setPrompt(e.target.value)}
-              style={{
-                width: "100%", minHeight: 140, padding: "12px 14px",
-                border: "1px solid #ddd", borderRadius: 8, fontSize: 14,
-                resize: "vertical", boxSizing: "border-box", outline: "none",
-                fontFamily: "inherit", lineHeight: 1.6, marginBottom: 20,
-              }}
-            />
-
-            {!activeJob ? (
               <button
-                onClick={handleSubmit}
-                disabled={submitting || !prompt.trim()}
+                onClick={handleEnhancePrompt}
+                disabled={enhancing || !prompt.trim()}
+                style={{
+                  padding: "8px 16px", fontSize: 13, borderRadius: 6,
+                  border: `1px solid ${ACCENT}`, background: "#fff",
+                  color: enhancing ? "#ccc" : ACCENT,
+                  cursor: enhancing || !prompt.trim() ? "not-allowed" : "pointer",
+                }}
+              >
+                {enhancing ? "Generuję..." : "✦ Ulepsz prompt (AI)"}
+              </button>
+
+              {alternatives.length > 0 && (
+                <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ fontSize: 11, color: "#888", fontWeight: 500 }}>Propozycje AI — kliknij aby użyć:</div>
+                  {alternatives.map((alt, i) => (
+                    <div
+                      key={i}
+                      onClick={() => setPrompt(alt)}
+                      style={{
+                        padding: "10px 14px",
+                        border: prompt === alt ? `1.5px solid ${ACCENT}` : "1px solid #eee",
+                        borderRadius: 8, fontSize: 13, lineHeight: 1.5,
+                        cursor: "pointer", background: prompt === alt ? "#fdf6ee" : "#fff",
+                        color: "#333", transition: "border-color 0.15s",
+                      }}
+                    >
+                      <div style={{ fontSize: 10, color: ACCENT, fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        Wariant {i + 1}
+                      </div>
+                      {alt}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ fontSize: 12, color: "#888", marginTop: 12 }}>
+                Szacowany koszt generowania wideo:{" "}
+                <strong style={{ color: ACCENT }}>~${calculateCost(selectedModel, params)}</strong>
+                <span style={{ color: "#bbb", marginLeft: 4 }}>
+                  ({selectedModel?.model_name} · {params?.duration} · {params?.variants || 1} wariant)
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* KROK 4 — Generuj */}
+          {step === 4 && (
+            <div style={{ background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 24 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#555", marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Podsumowanie i generowanie
+              </div>
+
+              <div style={{
+                background: "#fafafa", border: "1px solid #eee", borderRadius: 8,
+                padding: "12px 16px", marginBottom: 20, fontSize: 13, color: "#555",
+                display: "flex", gap: 16, flexWrap: "wrap",
+              }}>
+                <span><strong>Model:</strong> {selectedModel?.model_name || selectedModel?.model_id}</span>
+                <span><strong>Format:</strong> {params.orientation} · {params.duration}</span>
+                <span><strong>Warianty:</strong> {params.variants}</span>
+                <span style={{ color: ACCENT }}><strong>Koszt:</strong> ~${estimatedCost}</span>
+              </div>
+
+              <div style={{ fontSize: 12, color: "#888", marginBottom: 6 }}>Prompt (możesz edytować):</div>
+              <textarea
+                value={prompt}
+                onChange={e => setPrompt(e.target.value)}
+                style={{
+                  width: "100%", minHeight: 140, padding: "12px 14px",
+                  border: "1px solid #ddd", borderRadius: 8, fontSize: 14,
+                  resize: "vertical", boxSizing: "border-box", outline: "none",
+                  fontFamily: "inherit", lineHeight: 1.6, marginBottom: 20,
+                }}
+              />
+
+              <button
+                onClick={handleGenerate}
+                disabled={!prompt.trim() || !selectedModel}
                 style={{
                   width: "100%", padding: "14px 20px", fontSize: 15, fontWeight: 600,
-                  background: submitting ? "#f0e8df" : ACCENT,
+                  background: (!prompt.trim() || !selectedModel) ? "#f0e8df" : ACCENT,
                   border: "none", borderRadius: 8, color: "#fff",
-                  cursor: submitting ? "not-allowed" : "pointer",
+                  cursor: (!prompt.trim() || !selectedModel) ? "not-allowed" : "pointer",
                   letterSpacing: "0.02em",
                 }}
               >
-                {submitting ? "Dodaję do kolejki..." : "🎬 Generuj wideo"}
+                🎬 Generuj wideo
               </button>
-            ) : (
-              <div style={{ border: '1px solid #eee', borderRadius: 12, overflow: 'hidden' }}>
-                <div style={{
-                  padding: '12px 16px', background: '#fafafa', borderBottom: '1px solid #eee',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: '#333' }}>
-                    {activeJob.status === 'queued' && '⏳ W kolejce...'}
-                    {activeJob.status === 'processing' && '⚙️ Generowanie...'}
-                    {activeJob.status === 'done' && '✓ Gotowe!'}
-                    {activeJob.status === 'failed' && '✗ Błąd'}
-                  </div>
-                </div>
+            </div>
+          )}
 
-                {(activeJob.status === 'queued' || activeJob.status === 'processing') && (
-                  <div style={{ height: 3, background: '#f0e8df', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', background: ACCENT, borderRadius: 2, animation: 'bmsProgress 1.5s ease-in-out infinite', width: '40%' }} />
-                    <style>{`@keyframes bmsProgress{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}`}</style>
-                  </div>
-                )}
-
-                {activeJob.status === 'done' && activeJob.output_urls?.[0] && (
-                  <div>
-                    <video
-                      src={activeJob.output_urls[0]}
-                      controls autoPlay muted loop
-                      style={{ width: '100%', display: 'block', background: '#000' }}
-                    />
-                    <div style={{ padding: '12px 16px', background: '#fafafa', display: 'flex', gap: 8 }}>
-                      <a href={activeJob.output_urls[0]} download style={{
-                        padding: '6px 14px', background: ACCENT, color: '#fff',
-                        borderRadius: 6, fontSize: 12, textDecoration: 'none',
-                      }}>⬇ Pobierz</a>
-                      <button
-                        onClick={() => {
-                          setActiveJob(null);
-                          if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
-                          setStep(1);
-                        }}
-                        style={{ padding: '6px 14px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12, background: 'transparent', cursor: 'pointer', color: '#555' }}
-                      >+ Generuj kolejne</button>
-                    </div>
-                  </div>
-                )}
-
-                {activeJob.status === 'failed' && (
-                  <div style={{ padding: 16, color: '#ef4444', fontSize: 13 }}>
-                    {activeJob.error_message || 'Nieznany błąd'}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Nawigacja */}
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20 }}>
-          <button
-            onClick={() => setStep(s => s - 1)}
-            disabled={step === 1}
-            style={{
-              padding: "9px 20px", fontSize: 13, borderRadius: 6,
-              border: "1px solid #ddd", background: "#fff", color: step === 1 ? "#ccc" : "#555",
-              cursor: step === 1 ? "not-allowed" : "pointer",
-            }}
-          >
-            ← Wstecz
-          </button>
-
-          {step < totalSteps && (
+          {/* Nawigacja */}
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20 }}>
             <button
-              onClick={() => setStep(s => s + 1)}
-              disabled={step === 1 && !selectedModel}
+              onClick={() => setStep(s => s - 1)}
+              disabled={step === 1}
               style={{
-                padding: "9px 20px", fontSize: 13, fontWeight: 600, borderRadius: 6,
-                background: (step === 1 && !selectedModel) ? "#f0e8df" : ACCENT,
-                border: "none", color: "#fff",
-                cursor: (step === 1 && !selectedModel) ? "not-allowed" : "pointer",
+                padding: "9px 20px", fontSize: 13, borderRadius: 6,
+                border: "1px solid #ddd", background: "#fff", color: step === 1 ? "#ccc" : "#555",
+                cursor: step === 1 ? "not-allowed" : "pointer",
               }}
             >
-              Dalej →
+              ← Wstecz
             </button>
-          )}
+
+            {step < totalSteps && (
+              <button
+                onClick={() => setStep(s => s + 1)}
+                disabled={step === 1 && !selectedModel}
+                style={{
+                  padding: "9px 20px", fontSize: 13, fontWeight: 600, borderRadius: 6,
+                  background: (step === 1 && !selectedModel) ? "#f0e8df" : ACCENT,
+                  border: "none", color: "#fff",
+                  cursor: (step === 1 && !selectedModel) ? "not-allowed" : "pointer",
+                }}
+              >
+                Dalej →
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
