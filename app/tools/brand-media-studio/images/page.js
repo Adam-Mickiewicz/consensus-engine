@@ -640,9 +640,10 @@ export default function ImagesPage() {
               placeholder="Opisz grafikę którą chcesz wygenerować..."
               style={{
                 width: "100%", minHeight: 140, padding: "12px 14px",
-                border: "1px solid #ddd", borderRadius: 8, fontSize: 14,
+                border: `1.5px solid ${ACCENT}`, borderRadius: 8, fontSize: 14,
                 resize: "vertical", boxSizing: "border-box", outline: "none",
                 fontFamily: "inherit", lineHeight: 1.6, marginBottom: 16,
+                background: "#fdf8f3",
               }}
             />
 
