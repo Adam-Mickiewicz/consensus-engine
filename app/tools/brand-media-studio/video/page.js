@@ -1,7 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Nav from "../../../components/Nav";
 import ModelSelector from "../components/ModelSelector";
 import MusicPanel from "../components/MusicPanel";
@@ -93,7 +92,6 @@ function ProgressBar({ step, total }) {
 }
 
 export default function VideoPage() {
-  const router = useRouter();
   const [step, setStep] = useState(1);
   const totalSteps = 4;
 
@@ -114,6 +112,8 @@ export default function VideoPage() {
   const [musicConfig, setMusicConfig] = useState({ mode: "none" });
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
+  const [activeJob, setActiveJob] = useState(null);
+  const pollingRef = useRef(null);
   const [enhancing, setEnhancing] = useState(false);
   const [alternatives, setAlternatives] = useState([]);
   const [aiModel, setAiModel] = useState("claude");
@@ -141,6 +141,29 @@ export default function VideoPage() {
   function showToast(msg, type = "success") {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
+  }
+
+  useEffect(() => {
+    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
+  }, []);
+
+  function startPolling(jobId) {
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    pollingRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/brand-media/jobs/${jobId}`);
+        const data = await res.json();
+        const job = data.job ?? data;
+        setActiveJob(job);
+        if (job.status === 'done' || job.status === 'failed') {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+          if (job.status === 'done') showToast('Wideo gotowe!');
+        }
+      } catch (e) {
+        console.error('Polling error:', e);
+      }
+    }, 5000);
   }
 
   function getCurrentConfig() {
@@ -207,8 +230,14 @@ export default function VideoPage() {
         throw new Error(d.error || `HTTP ${res.status}`);
       }
 
-      showToast("Job dodany do kolejki");
-      setTimeout(() => router.push("/tools/brand-media-studio?tab=queue"), 1000);
+      const data = await res.json();
+      const jobId = data.job_id ?? data.id;
+      if (jobId) {
+        setActiveJob({ id: jobId, status: 'queued', output_urls: [] });
+        startPolling(jobId);
+      } else {
+        showToast("Job dodany do kolejki");
+      }
     } catch (err) {
       showToast("Błąd: " + err.message, "error");
     } finally {

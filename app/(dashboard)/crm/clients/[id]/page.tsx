@@ -817,7 +817,7 @@ function ProfileSkeleton({ t }: { t: typeof DARK }) {
 
 export default function ClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [darkRaw] = useDarkMode();
+  const { isDark: darkRaw } = useDarkMode();
   const dark = darkRaw as boolean;
   const t = dark ? DARK : LIGHT;
 

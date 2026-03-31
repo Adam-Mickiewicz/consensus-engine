@@ -65,7 +65,7 @@ function Skeleton({ t }: { t: typeof DARK }) {
 const PER_PAGE = 50;
 
 function WinbackContent() {
-  const [darkRaw] = useDarkMode();
+  const { isDark: darkRaw } = useDarkMode();
   const dark = darkRaw as boolean;
   const t = dark ? DARK : LIGHT;
 

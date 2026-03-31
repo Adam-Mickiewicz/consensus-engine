@@ -21,7 +21,7 @@ const CARDS = [
 ];
 
 export default function DashboardHome() {
-  const [dark] = useDarkMode();
+  const { isDark: dark } = useDarkMode();
   const t = dark ? DARK : LIGHT;
 
   return (

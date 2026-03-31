@@ -16,9 +16,7 @@ const DARK = {
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const result = useDarkMode();
-  const dark = result[0] as boolean;
-  const toggleTheme = result[1] as () => void;
+  const { isDark: dark, toggleTheme } = useDarkMode();
   const t = dark ? DARK : LIGHT;
   const router = useRouter();
 

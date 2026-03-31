@@ -60,7 +60,7 @@ const SORT_COLS = [
 ];
 
 export default function ClientsView() {
-  const [darkRaw] = useDarkMode();
+  const { isDark: darkRaw } = useDarkMode();
   const dark = darkRaw as boolean;
   const t = dark ? DARK : LIGHT;
 

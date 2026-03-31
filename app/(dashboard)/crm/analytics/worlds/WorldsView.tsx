@@ -27,7 +27,7 @@ export type WorldsData = {
 } | null;
 
 export default function WorldsView({ data }: { data: WorldsData }) {
-  const [dark] = useDarkMode();
+  const { isDark: dark } = useDarkMode();
   const t = (dark ? DARK : LIGHT) as typeof LIGHT;
 
   if (!data) {

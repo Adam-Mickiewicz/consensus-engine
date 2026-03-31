@@ -108,10 +108,35 @@ export default function ImagesPage() {
   const [alternatives, setAlternatives] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
+  const [activeJob, setActiveJob] = useState(null);
+  const pollingRef = useRef(null);
+
+  useEffect(() => {
+    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
+  }, []);
 
   function showToast(msg, type = "success") {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4000);
+  }
+
+  function startPolling(jobId) {
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    pollingRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/brand-media/jobs/${jobId}`);
+        const data = await res.json();
+        const job = data.job ?? data;
+        setActiveJob(job);
+        if (job.status === 'done' || job.status === 'failed') {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+          if (job.status === 'done') showToast('Grafika gotowa!');
+        }
+      } catch (e) {
+        console.error('Polling error:', e);
+      }
+    }, 5000);
   }
 
   function setParam(key, val) {
@@ -210,8 +235,14 @@ export default function ImagesPage() {
         const d = await res.json();
         throw new Error(d.error || `HTTP ${res.status}`);
       }
-      showToast("Grafika dodana do kolejki!");
-      setPrompt("");
+      const data = await res.json();
+      const jobId = data.job_id ?? data.id;
+      if (jobId) {
+        setActiveJob({ id: jobId, status: 'queued', output_urls: [] });
+        startPolling(jobId);
+      } else {
+        showToast("Grafika dodana do kolejki!");
+      }
       setAlternatives([]);
     } catch (err) {
       showToast("Błąd: " + err.message, "error");
@@ -470,6 +501,56 @@ export default function ImagesPage() {
             </div>
           )}
         </Section>
+
+        {/* Status joba */}
+        {activeJob && (
+          <div style={{ border: '1px solid #eee', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
+            <div style={{
+              padding: '12px 16px', background: '#fafafa', borderBottom: '1px solid #eee',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: '#333' }}>
+                {activeJob.status === 'queued' && '⏳ W kolejce...'}
+                {activeJob.status === 'processing' && '⚙️ Generowanie...'}
+                {activeJob.status === 'done' && '✓ Gotowe!'}
+                {activeJob.status === 'failed' && '✗ Błąd'}
+              </div>
+              <button
+                onClick={() => {
+                  setActiveJob(null);
+                  if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+                }}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 18, lineHeight: 1, padding: 0 }}
+              >×</button>
+            </div>
+
+            {(activeJob.status === 'queued' || activeJob.status === 'processing') && (
+              <div style={{ height: 3, background: '#f0e8df', overflow: 'hidden' }}>
+                <div style={{ height: '100%', background: ACCENT, borderRadius: 2, animation: 'bmsProgress 1.5s ease-in-out infinite', width: '40%' }} />
+                <style>{`@keyframes bmsProgress{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}`}</style>
+              </div>
+            )}
+
+            {activeJob.status === 'done' && activeJob.output_urls?.length > 0 && (
+              <div style={{ padding: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+                {activeJob.output_urls.map((url, i) => (
+                  <div key={i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden' }}>
+                    <img src={url} alt={`Wariant ${i + 1}`} style={{ width: '100%', display: 'block' }} />
+                    <div style={{ position: 'absolute', bottom: 8, right: 8 }}>
+                      <a href={url} download style={{ padding: '5px 10px', background: 'rgba(0,0,0,0.7)', color: '#fff', borderRadius: 6, fontSize: 11, textDecoration: 'none' }}>⬇ Pobierz</a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activeJob.status === 'failed' && (
+              <div style={{ padding: 16, color: '#ef4444', fontSize: 13 }}>
+                {activeJob.error_message || 'Nieznany błąd'}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Generuj */}
         <button

@@ -2,7 +2,7 @@
 import { useDarkMode } from "../../hooks/useDarkMode";
 
 export default function AdminPage() {
-  const [dark] = useDarkMode();
+  const { isDark: dark } = useDarkMode();
   const text = dark ? "#e0ddd8" : "#1a1814";
   const sub = dark ? "#6a6560" : "#7a7570";
   const accent = "#b8763a";

@@ -25,7 +25,7 @@ function SortIcon({ col, current, order }) {
 }
 
 export default function UnmappedPage() {
-  const [dark] = useDarkMode();
+  const { isDark: dark } = useDarkMode();
   const t = dark ? DARK : LIGHT;
 
   const [rows, setRows]         = useState([]);

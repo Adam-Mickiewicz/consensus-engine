@@ -115,7 +115,7 @@ function RevenueTrend({ rows, t }: { rows: { month: string; revenue: number }[];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function OverviewView() {
-  const [dark] = useDarkMode();
+  const { isDark: dark } = useDarkMode();
   const t = (dark ? DARK : LIGHT) as typeof LIGHT;
 
   const [sData, setSData]         = useState<StaticData | null>(null);

@@ -48,7 +48,7 @@ type SyncLogRow = {
 };
 
 export default function ImportPage() {
-  const [dark] = useDarkMode();
+  const { isDark: dark } = useDarkMode();
   const t = (dark ? DARK : LIGHT) as typeof LIGHT;
 
   const [files, setFiles] = useState<FileEntry[]>([]);

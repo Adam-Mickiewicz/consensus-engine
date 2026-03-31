@@ -88,7 +88,7 @@ const MODULES = [
 ];
 
 export default function CrmPage() {
-  const [dark] = useDarkMode();
+  const { isDark: dark } = useDarkMode();
   const t = dark ? DARK : LIGHT;
 
   return (

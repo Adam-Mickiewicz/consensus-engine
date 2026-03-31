@@ -410,7 +410,7 @@ function PromoBadge({ type }: { type?: string }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function BehaviorPage() {
-  const [darkRaw] = useDarkMode();
+  const { isDark: darkRaw } = useDarkMode();
   const dark = darkRaw as boolean;
   const t = dark ? DARK : LIGHT;
 
