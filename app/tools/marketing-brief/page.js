@@ -70,10 +70,12 @@ const CHANNELS = [
   {
     id: "slider_main",
     label: "🖥️ Slider strona główna",
-    tooltip: "Baner na sliderze strony głównej. Wymiar: 799×670 px.",
+    tooltip: "Baner na sliderze strony głównej.",
     formats: [
       { id: "slider_main_1", label: "799×670 px" },
+      { id: "slider_main_2", label: "1212×670 px" },
     ],
+    slidesLabel: "Liczba slajdów",
   },
   {
     id: "slider_category",
@@ -82,6 +84,7 @@ const CHANNELS = [
     formats: [
       { id: "slider_cat_1", label: "385×250 px" },
     ],
+    slidesLabel: "Liczba slajdów",
   },
   {
     id: "popup",
@@ -335,6 +338,20 @@ function ChannelPanel({ channel, cfg, onChange }) {
           <input type="url" value={cfg.sketchUrl || ""} onChange={e => onChange({ ...cfg, sketchUrl: e.target.value })}
             placeholder="https://..."
             style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 12, fontFamily: "inherit", boxSizing: "border-box" }} />
+        </Field>
+      )}
+
+      {/* LICZBA SLAJDÓW dla sliderów */}
+      {channel.slidesLabel && (
+        <Field label={channel.slidesLabel}>
+          <input
+            type="number"
+            min="1"
+            max="20"
+            value={cfg.slides || "1"}
+            onChange={e => onChange({ ...cfg, slides: e.target.value })}
+            style={{ width: 80, background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: "inherit" }}
+          />
         </Field>
       )}
 
