@@ -94,6 +94,7 @@ export default function BrandMediaStudioPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("tab") === "queue") setActiveTab("Kolejka jobów");
+    if (params.get("tab") === "library") setActiveTab("Biblioteka");
   }, []);
 
   return (

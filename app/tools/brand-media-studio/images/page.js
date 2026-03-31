@@ -340,9 +340,23 @@ export default function ImagesPage() {
           {" / "}
           <span style={{ color: "#555" }}>Generowanie obrazów</span>
         </div>
-        <h1 style={{ fontSize: 22, fontWeight: 500, margin: "0 0 24px", color: "#1a1a1a" }}>
-          🎨 Generowanie obrazów
-        </h1>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 500, margin: 0, color: "#1a1a1a" }}>
+            🎨 Generowanie obrazów
+          </h1>
+          <div style={{ display: "flex", gap: 6 }}>
+            <Link href="/tools/brand-media-studio?tab=queue" style={{
+              padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 500,
+              border: "1px solid #e5e5e5", background: "#fff", color: "#555",
+              textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5,
+            }}>📋 Kolejka</Link>
+            <Link href="/tools/brand-media-studio?tab=library" style={{
+              padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 500,
+              border: "1px solid #e5e5e5", background: "#fff", color: "#555",
+              textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5,
+            }}>🖼 Biblioteka</Link>
+          </div>
+        </div>
 
         {/* ── TRYB: generating ── */}
         {mode === "generating" && (
