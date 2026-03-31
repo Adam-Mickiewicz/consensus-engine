@@ -1,10 +1,14 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import Nav from "../../components/Nav";
+import { useDarkMode } from "../../hooks/useDarkMode";
 
 // ─── STAŁE ───────────────────────────────────────────────────────────────────
 
 const ACCENT = "#b8763a";
+const LIGHT_T = { bg: "#f5f2ee", card: "#fff", subtle: "#f9f7f5", border: "#e0dbd4", borderAlt: "#e8e0d8", borderLight: "#ddd", text: "#1a1a1a", textSub: "#555", muted: "#888", codeBg: "#fafaf8", codeLang: "#f0ece6" };
+const DARK_T  = { bg: "#0c0c0c", card: "#141414", subtle: "#1c1c1c", border: "#282828", borderAlt: "#222222", borderLight: "#232323", text: "#e0ddd8", textSub: "#8a8580", muted: "#6a6560", codeBg: "#1a1a1a", codeLang: "#1e1e1e" };
+const ThemeCtx = React.createContext({ isDark: false, t: LIGHT_T });
 const FORMAT_TYPES = ["Grafika statyczna", "Zdjęcie", "Wideo", "Animacja wideo AI", "Animacja HTML5"];
 
 const CHANNELS = [
@@ -145,7 +149,8 @@ const defaultBrief = () => ({
 // ─── UI KOMPONENTY ─────────────────────────────────────────────────────────
 
 function Label({ children }) {
-  return <div style={{ fontSize: "10px", fontWeight: 700, color: "#888", letterSpacing: 1.2, marginBottom: 5, textTransform: "uppercase", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>{children}</div>;
+  const { t } = React.useContext(ThemeCtx);
+  return <div style={{ fontSize: "10px", fontWeight: 700, color: t.muted, letterSpacing: 1.2, marginBottom: 5, textTransform: "uppercase", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>{children}</div>;
 }
 
 function Tooltip({ text, children }) {
@@ -166,13 +171,15 @@ function Tooltip({ text, children }) {
 }
 
 function Input({ value, onChange, placeholder, type = "text", style }) {
+  const { t } = React.useContext(ThemeCtx);
   return <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-    style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 13, color: "#1a1a1a", fontFamily: "inherit", boxSizing: "border-box", ...style }} />;
+    style={{ width: "100%", background: t.card, border: `1px solid ${t.borderLight}`, borderRadius: 6, padding: "8px 10px", fontSize: 13, color: t.text, fontFamily: "inherit", boxSizing: "border-box", ...style }} />;
 }
 
 function Textarea({ value, onChange, placeholder, rows = 3 }) {
+  const { t } = React.useContext(ThemeCtx);
   return <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
-    style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 13, color: "#1a1a1a", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />;
+    style={{ width: "100%", background: t.card, border: `1px solid ${t.borderLight}`, borderRadius: 6, padding: "8px 10px", fontSize: 13, color: t.text, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />;
 }
 
 function Field({ label, children, style }) {
@@ -180,10 +187,11 @@ function Field({ label, children, style }) {
 }
 
 function Section({ title, children, accent }) {
+  const { t } = React.useContext(ThemeCtx);
   return (
-    <div style={{ background: "#fff", border: "1px solid #e0dbd4", borderRadius: 10, overflow: "hidden", marginBottom: 16 }}>
-      <div style={{ padding: "10px 16px", background: accent ? ACCENT : "#f9f7f5", borderBottom: "1px solid #e0dbd4" }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: accent ? "#fff" : "#555", fontFamily: "var(--font-open-sans), system-ui, sans-serif", letterSpacing: 0.5 }}>{title}</div>
+    <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 10, overflow: "hidden", marginBottom: 16 }}>
+      <div style={{ padding: "10px 16px", background: accent ? ACCENT : t.subtle, borderBottom: `1px solid ${t.border}` }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: accent ? "#fff" : t.textSub, fontFamily: "var(--font-open-sans), system-ui, sans-serif", letterSpacing: 0.5 }}>{title}</div>
       </div>
       <div style={{ padding: 16 }}>{children}</div>
     {/* IMAGE EDITOR MODAL */}
@@ -192,15 +200,17 @@ function Section({ title, children, accent }) {
 }
 
 function CheckPill({ label, checked, onChange }) {
+  const { t } = React.useContext(ThemeCtx);
   return (
     <button onClick={() => onChange(!checked)}
-      style={{ padding: "5px 10px", borderRadius: 20, border: `1px solid ${checked ? ACCENT : "#ddd"}`, background: checked ? ACCENT + "15" : "#f9f9f9", color: checked ? ACCENT : "#888", fontSize: 11, cursor: "pointer", fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: checked ? 700 : 400 }}>
+      style={{ padding: "5px 10px", borderRadius: 20, border: `1px solid ${checked ? ACCENT : t.borderLight}`, background: checked ? ACCENT + "15" : t.subtle, color: checked ? ACCENT : t.muted, fontSize: 11, cursor: "pointer", fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: checked ? 700 : 400 }}>
       {label}
     </button>
   );
 }
 
 function ChannelPanel({ channel, cfg, onChange }) {
+  const { t } = React.useContext(ThemeCtx);
   const toggleFormat = (fmtId) => {
     const cur = cfg.selectedFormats || [];
     onChange({ ...cfg, selectedFormats: cur.includes(fmtId) ? cur.filter(x => x !== fmtId) : [...cur, fmtId] });
@@ -231,7 +241,7 @@ function ChannelPanel({ channel, cfg, onChange }) {
       {selectedFmts.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {selectedFmts.map(fmt => (
-            <div key={fmt.id} style={{ background: "#f9f7f5", border: "1px solid #e0dbd4", borderRadius: 8, overflow: "hidden" }}>
+            <div key={fmt.id} style={{ background: t.subtle, border: `1px solid ${t.border}`, borderRadius: 8, overflow: "hidden" }}>
               <div style={{ padding: "7px 12px", background: ACCENT + "12", borderBottom: "1px solid #e0dbd4", display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: ACCENT, fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>{fmt.label}</span>
                 {fmt.isCarousel && <span style={{ fontSize: 10, color: "#aaa", fontStyle: "italic" }}>karuzela — opisz całość</span>}
@@ -278,7 +288,7 @@ function ChannelPanel({ channel, cfg, onChange }) {
                       const selectedTypes = Array.isArray(getFormatData(fmt.id, "types", [])) ? getFormatData(fmt.id, "types", []) : [];
                       const notesForTypes = selectedTypes.length > 0 ? selectedTypes : ["ogólny"];
                       return notesForTypes.map(typ => (
-                        <div key={typ} style={{ background: typ === "ogólny" ? "#fff" : "#f9f7f5", border: "1px solid #e8e0d8", borderRadius: 6, padding: "8px 10px" }}>
+                        <div key={typ} style={{ background: typ === "ogólny" ? t.card : t.subtle, border: `1px solid ${t.borderAlt}`, borderRadius: 6, padding: "8px 10px" }}>
                           {typ !== "ogólny" && (
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                               <span style={{ fontSize: 10, fontWeight: 700, color: "#555", fontFamily: "var(--font-open-sans), system-ui, sans-serif", textTransform: "uppercase" }}>{typ}</span>
@@ -664,6 +674,8 @@ function parseBold(text) {
 }
 
 export default function MarketingBrief() {
+  const { isDark } = useDarkMode();
+  const t = isDark ? DARK_T : LIGHT_T;
   const [briefs, setBriefs] = useState([]);
   const [view, setView] = useState("list"); // list | form
   const [editId, setEditId] = useState(null);
@@ -1498,13 +1510,26 @@ Copy: ${brief.copyProposals || "—"}`;
 
   const activeChannels = CHANNELS.filter(c => brief.channels[c.id]?.active);
 
-  const panelStyle = { background: "#fff", border: "1px solid #e0dbd4", borderRadius: 10, overflow: "hidden", marginBottom: 16 };
-  const panelHead = { padding: "10px 16px", background: "#f9f7f5", borderBottom: "1px solid #e0dbd4", fontSize: 11, color: "#555", fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: 700, display: "flex", justifyContent: "space-between", alignItems: "center" };
+  const panelStyle = { background: t.card, border: `1px solid ${t.border}`, borderRadius: 10, overflow: "hidden", marginBottom: 16 };
+  const panelHead = { padding: "10px 16px", background: t.subtle, borderBottom: `1px solid ${t.border}`, fontSize: 11, color: t.textSub, fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: 700, display: "flex", justifyContent: "space-between", alignItems: "center" };
 
   return (
-    <>
+    <ThemeCtx.Provider value={{ isDark, t }}>
+    {isDark && (
+      <style>{`
+        .mb-root input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+        .mb-root textarea,
+        .mb-root select {
+          background: #141414 !important;
+          color: #e0ddd8 !important;
+          border-color: #232323 !important;
+        }
+        .mb-root option { background: #141414; color: #e0ddd8; }
+        .mb-root ::placeholder { color: #6a6560 !important; }
+      `}</style>
+    )}
     <Nav current="/tools/marketing-brief" />
-    <div style={{ minHeight: "100vh", background: "#f5f2ee", fontFamily: "'IBM Plex Mono', monospace", display: "flex" }}>
+    <div className="mb-root" style={{ minHeight: "100vh", background: t.bg, fontFamily: "'IBM Plex Mono', monospace", display: "flex" }}>
 
       {/* SIDEBAR */}
 
@@ -1517,8 +1542,8 @@ Copy: ${brief.copyProposals || "—"}`;
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                 <div>
-                  <div style={{ fontFamily: "var(--font-dm-serif), 'DM Serif Display', Georgia, serif", fontSize: 28, fontWeight: 400, color: "#1a1814", marginBottom: 4, lineHeight: 1.2 }}>📋 Akcje marketingowe</div>
-                  <div style={{ fontSize: 12, color: "#888" }}>Historia briefów dla zespołu kreatywnego</div>
+                  <div style={{ fontFamily: "var(--font-dm-serif), 'DM Serif Display', Georgia, serif", fontSize: 28, fontWeight: 400, color: t.text, marginBottom: 4, lineHeight: 1.2 }}>📋 Akcje marketingowe</div>
+                  <div style={{ fontSize: 12, color: t.muted }}>Historia briefów dla zespołu kreatywnego</div>
                 </div>
                 <button onClick={openNew} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                   + Nowy brief
@@ -1528,7 +1553,7 @@ Copy: ${brief.copyProposals || "—"}`;
 
             {loading && <div style={{ color: "#aaa", fontSize: 13 }}>Ładowanie...</div>}
             {!loading && briefs.length === 0 && (
-              <div style={{ background: "#fff", border: "1px solid #e0dbd4", borderRadius: 10, padding: 40, textAlign: "center", color: "#aaa" }}>
+              <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 10, padding: 40, textAlign: "center", color: t.muted }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
                 <div style={{ fontSize: 14, marginBottom: 8 }}>Brak briefów</div>
                 <div style={{ fontSize: 12 }}>Kliknij "+ Nowy brief" aby zacząć</div>
@@ -1536,10 +1561,10 @@ Copy: ${brief.copyProposals || "—"}`;
             )}
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {briefs.map(b => (
-                <div key={b.id} style={{ background: "#fff", border: "1px solid #e0dbd4", borderRadius: 10, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div key={b.id} style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 10, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a", marginBottom: 4 }}>{b.title}</div>
-                    <div style={{ fontSize: 11, color: "#aaa" }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: t.text, marginBottom: 4 }}>{b.title}</div>
+                    <div style={{ fontSize: 11, color: t.muted }}>
                       {b.data?.dateStart && b.data?.dateEnd ? `${b.data.dateStart} → ${b.data.dateEnd}` : "Brak dat"}
                       {" · "}
                       {CHANNELS.filter(c => b.data?.channels?.[c.id]?.active).length} kanałów
@@ -1549,7 +1574,7 @@ Copy: ${brief.copyProposals || "—"}`;
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button onClick={() => { navigator.clipboard.writeText(window.location.origin + "/tools/marketing-brief?id=" + b.id); alert("✅ Link skopiowany!"); }}
-                      style={{ background: "none", color: "#888", border: "1px solid #ddd", borderRadius: 6, padding: "6px 12px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }} title="Kopiuj link">🔗</button>
+                      style={{ background: "none", color: t.muted, border: `1px solid ${t.borderLight}`, borderRadius: 6, padding: "6px 12px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }} title="Kopiuj link">🔗</button>
                     <button onClick={() => openEdit(b)} style={{ background: ACCENT + "15", color: ACCENT, border: `1px solid ${ACCENT}40`, borderRadius: 6, padding: "6px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>Edytuj</button>
                     <button onClick={() => deleteBrief(b.id)} style={{ background: "none", color: "#ccc", border: "1px solid #eee", borderRadius: 6, padding: "6px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>Usuń</button>
                   </div>
@@ -1566,8 +1591,8 @@ Copy: ${brief.copyProposals || "—"}`;
             {/* Nagłówek */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
               <div>
-                <button onClick={() => { setView("list"); if (typeof window !== "undefined") window.history.replaceState({}, "", "/tools/marketing-brief"); }} style={{ background: "none", border: "none", color: "#aaa", fontSize: 12, cursor: "pointer", fontFamily: "inherit", marginBottom: 8, padding: 0 }}>← Lista briefów</button>
-                <div style={{ fontSize: 18, fontWeight: 700, color: "#1a1a1a" }}>{editId ? "Edytuj brief" : "Nowy brief"}</div>
+                <button onClick={() => { setView("list"); if (typeof window !== "undefined") window.history.replaceState({}, "", "/tools/marketing-brief"); }} style={{ background: "none", border: "none", color: t.muted, fontSize: 12, cursor: "pointer", fontFamily: "inherit", marginBottom: 8, padding: 0 }}>← Lista briefów</button>
+                <div style={{ fontSize: 18, fontWeight: 700, color: t.text }}>{editId ? "Edytuj brief" : "Nowy brief"}</div>
                 {(brief.priority || 0) >= 4 && (
                   <div style={{ marginTop: 6, background: "#e63946", borderRadius: 6, padding: "4px 12px", fontSize: 11, fontWeight: 800, color: "#fff", letterSpacing: 0.5, display: "inline-flex", alignItems: "center", gap: 6 }}>
                     {"★".repeat(brief.priority || 0)} {(brief.priority || 0) === 5 ? "MEGA PRIORYTET" : "WYSOKI PRIORYTET"}
@@ -2182,6 +2207,6 @@ Copy: ${brief.copyProposals || "—"}`;
       />
     )}
     </div>
-      </>
+    </ThemeCtx.Provider>
   );
 }
