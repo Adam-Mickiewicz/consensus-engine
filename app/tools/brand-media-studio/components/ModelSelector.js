@@ -81,32 +81,39 @@ export default function ModelSelector({ category, onModelChange, selectedModelId
                 <span style={{ fontWeight: 600, fontSize: 14, color: '#1a1a1a' }}>
                   {model.model_name}
                 </span>
-                {model.badge && (
-                  <span style={{
-                    fontSize: 10,
-                    fontWeight: 600,
-                    padding: '2px 7px',
-                    borderRadius: 10,
-                    background: badgeStyle.bg,
-                    color: badgeStyle.text,
-                    letterSpacing: '0.04em',
-                  }}>
-                    {model.badge}
-                  </span>
-                )}
+                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                  {model.capabilities?.extend && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 600,
+                      padding: '2px 6px', borderRadius: 10,
+                      background: '#f0f7ff', color: '#1565c0',
+                      letterSpacing: '0.03em',
+                    }}>↗ Extend</span>
+                  )}
+                  {model.badge && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 600,
+                      padding: '2px 7px', borderRadius: 10,
+                      background: badgeStyle.bg, color: badgeStyle.text,
+                      letterSpacing: '0.04em',
+                    }}>
+                      {model.badge}
+                    </span>
+                  )}
+                </div>
               </div>
               <div style={{ fontSize: 13, color: ACCENT, fontWeight: 500 }}>
                 ${model.price_per_unit.toFixed(2)} / {model.unit_label}
               </div>
               <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>
                 {model.capabilities?.resolutions?.length > 0 && (
-                  <span>{model.capabilities.resolutions.join(' / ')}</span>
+                  <span>{model.capabilities.resolutions.join(' · ')}</span>
                 )}
-                {model.capabilities?.max_duration && (
-                  <span> · max {model.capabilities.max_duration}s</span>
+                {model.capabilities?.durations?.length > 0 && (
+                  <span> · {model.capabilities.durations[0]}–{model.capabilities.durations[model.capabilities.durations.length - 1]}s</span>
                 )}
-                {model.unit_label && (
-                  <span> · {model.unit_label}</span>
+                {model.capabilities?.extend && (
+                  <span> · extend do {model.capabilities.extend_max_seconds}s</span>
                 )}
               </div>
             </div>

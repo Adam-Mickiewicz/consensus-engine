@@ -20,7 +20,7 @@ const MODELS = [
     capabilities: {
       orientations: ['9:16', '16:9'],
       durations: [5, 8, 10],
-      resolutions: [],
+      resolutions: ['720p', '1080p'],
       extend: true,
       extend_max_seconds: 120,
     },
@@ -38,7 +38,7 @@ const MODELS = [
     capabilities: {
       orientations: ['9:16', '16:9'],
       durations: [5, 8, 10],
-      resolutions: [],
+      resolutions: ['720p', '1080p'],
       extend: true,
       extend_max_seconds: 120,
     },
