@@ -285,6 +285,13 @@ async function fastInsert(rawOrders, productsMap, sb) {
     if (error) throw new Error(`upsert client_product_events: ${error.message}`);
   }
 
+  await sb.from('sync_log').insert({
+    source: 'sync_orders',
+    status: 'success',
+    rows_upserted: eventRows.length,
+    meta: { orders: rawOrders.length, clients: clientIds.length },
+  });
+
   return { clients: clientIds.length, events: eventRows.length };
 }
 
@@ -362,6 +369,12 @@ export async function GET(request) {
         status: 'error',
         rows_upserted: 0,
         meta: { error: err.message, duration_ms: Date.now() - startedAt },
+      });
+      await sb.from('sync_log').insert({
+        source: 'sync_orders',
+        status: 'error',
+        rows_upserted: 0,
+        error_message: err.message,
       });
     } catch (_) { /* sync_log insert failure nie powinno ukrywać oryginalnego błędu */ }
 
