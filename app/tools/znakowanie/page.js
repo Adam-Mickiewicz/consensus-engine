@@ -666,7 +666,7 @@ function SectionHeader({ num, title, lead, t }) {
 // ─── Main Page ───
 
 export default function ZnakowaniePage() {
-  const [isDark] = useDarkMode();
+  const { isDark } = useDarkMode();
   const t = isDark ? dark : light;
   const [activeSection, setActiveSection] = useState('');
 

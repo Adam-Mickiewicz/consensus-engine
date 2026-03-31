@@ -79,7 +79,7 @@ function timeAgo(ts) {
 
 export default function DebatePage() {
   const router = useRouter();
-  const [dark, toggleDark] = useDarkMode();
+  const { isDark: dark, toggleTheme: toggleDark } = useDarkMode();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);

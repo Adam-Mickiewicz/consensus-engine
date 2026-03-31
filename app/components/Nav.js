@@ -29,12 +29,11 @@ const DARK = {
 
 export default function Nav({ current }) {
   const [open, setOpen] = useState(false);
-  const [dark, setDark] = useState(false);
+  const { isDark, toggleTheme } = useDarkMode();
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    if (localStorage.getItem("ce-theme") === "dark") setDark(true);
     supabase.auth.getUser().then(({ data }) => {
       const u = data?.user || null;
       setUser(u);
@@ -60,14 +59,7 @@ export default function Nav({ current }) {
     setUser(null);
   };
 
-  const toggleTheme = () => {
-    setDark(d => {
-      localStorage.setItem("ce-theme", d ? "light" : "dark");
-      return !d;
-    });
-  };
-
-  const t = dark ? DARK : LIGHT;
+  const t = isDark ? DARK : LIGHT;
 
   return (
     <>
@@ -110,7 +102,7 @@ export default function Nav({ current }) {
         </div>
         <div className="ce-nav-right">
           <button className="ce-nav-theme" onClick={toggleTheme}>
-            {dark ? "☀ Jasny" : "☾ Ciemny"}
+            {isDark ? "☀ Jasny" : "☾ Ciemny"}
           </button>
           {user ? (
             <button onClick={handleSignOut} style={{ background: "#f0faf4", border: "1px solid #a8dbb8", borderRadius: 6, padding: "4px 12px", fontSize: 11, color: "#2d7a4f", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>

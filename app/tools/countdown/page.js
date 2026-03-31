@@ -399,7 +399,7 @@ export default function CountdownGenerator() {
   const [deadline, setDeadline] = useState("2026-04-01T23:59:59");
   const [tplKey, setTplKey] = useState("classic");
   const [cfg, setCfg] = useState({ bg: "#b63b2f", text: "#ffffff", labelText: "#5b5b5b", separator: "#ffffff", radius: 4, border: false, borderColor: "#ffffff" });
-  const [dark, toggleDark] = useDarkMode();
+  const { isDark: dark, toggleTheme: toggleDark } = useDarkMode();
   const [activeTab, setActiveTab] = useState("slider");
   const [jsModified, setJsModified] = useState(false);
   const [customJs, setCustomJs] = useState("");
