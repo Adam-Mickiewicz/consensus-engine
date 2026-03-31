@@ -16,13 +16,14 @@ function SkeletonCard() {
 }
 
 function ExpiryBadge({ days }) {
-  if (days === null || days === undefined || days > 7) return null;
+  if (days === null || days === undefined) return null;
   const isUrgent = days <= 3;
+  const isWarning = days <= 7;
   return (
     <div style={{
       position: "absolute", top: 6, right: 6,
-      background: isUrgent ? "#fee2e2" : "#fef9c3",
-      color: isUrgent ? "#991b1b" : "#854d0e",
+      background: isUrgent ? "#fee2e2" : isWarning ? "#fef9c3" : "rgba(0,0,0,0.55)",
+      color: isUrgent ? "#991b1b" : isWarning ? "#854d0e" : "#fff",
       fontSize: 10, fontWeight: 600, padding: "2px 6px", borderRadius: 4,
     }}>
       Wygasa za {days}d
@@ -30,7 +31,85 @@ function ExpiryBadge({ days }) {
   );
 }
 
-function LibraryCard({ item, onDelete, onRerun, onExtend, onEdit }) {
+function Lightbox({ item, onClose }) {
+  const isVideo = item.job_type === "video";
+  const url = item.output_urls?.[0];
+
+  useEffect(() => {
+    function onKey(e) { if (e.key === "Escape") onClose(); }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 2000,
+        display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
+      }}
+    >
+      <div onClick={e => e.stopPropagation()} style={{ maxWidth: "90vw", maxHeight: "90vh", position: "relative" }}>
+        {isVideo && url ? (
+          <video
+            src={url}
+            controls
+            autoPlay
+            style={{ maxWidth: "85vw", maxHeight: "85vh", borderRadius: 10, display: "block" }}
+          />
+        ) : url ? (
+          <img
+            src={url}
+            alt=""
+            style={{ maxWidth: "85vw", maxHeight: "85vh", borderRadius: 10, display: "block", objectFit: "contain" }}
+          />
+        ) : (
+          <div style={{ color: "#fff", fontSize: 14 }}>Brak podglądu</div>
+        )}
+
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          style={{
+            position: "absolute", top: -14, right: -14,
+            width: 32, height: 32, borderRadius: "50%",
+            background: "#fff", border: "none", cursor: "pointer",
+            fontSize: 18, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+          }}
+        >×</button>
+
+        {/* Prompt below */}
+        {item.prompt && (
+          <div style={{
+            marginTop: 12, color: "#ddd", fontSize: 12, lineHeight: 1.5,
+            maxWidth: "85vw", overflow: "hidden",
+            display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical",
+          }}>
+            {item.prompt}
+          </div>
+        )}
+
+        {/* Download */}
+        {url && (
+          <div style={{ marginTop: 10 }}>
+            <a
+              href={url}
+              download
+              onClick={e => e.stopPropagation()}
+              style={{
+                display: "inline-block", padding: "6px 14px", borderRadius: 6,
+                background: ACCENT, color: "#fff", fontSize: 12, textDecoration: "none", fontWeight: 500,
+              }}
+            >⬇ Pobierz</a>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LibraryCard({ item, onDelete, onRerun, onExtend, onEdit, onOpen }) {
   const [expanded, setExpanded] = useState(false);
   const expires = item.expires_in_days;
   const isVideo = item.job_type === "video";
@@ -38,22 +117,24 @@ function LibraryCard({ item, onDelete, onRerun, onExtend, onEdit }) {
 
   return (
     <div style={{ border: "1px solid #eee", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
-      {/* Preview */}
-      <div style={{
-        position: "relative",
-        aspectRatio: isVideo ? "16/9" : "1/1",
-        background: "#111",
-        overflow: "hidden",
-      }}>
+      {/* Preview — clickable */}
+      <div
+        onClick={() => onOpen(item)}
+        style={{
+          position: "relative",
+          aspectRatio: isVideo ? "16/9" : "1/1",
+          background: "#111",
+          overflow: "hidden",
+          cursor: "zoom-in",
+        }}
+      >
         {isVideo && item.output_urls?.[0] ? (
           <video
             src={item.output_urls[0]}
-            controls
-            autoPlay
             muted
             loop
             playsInline
-            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+            style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none" }}
           />
         ) : item.output_urls?.[0] || item.thumbnail_url ? (
           <img
@@ -77,6 +158,19 @@ function LibraryCard({ item, onDelete, onRerun, onExtend, onEdit }) {
           {isVideo ? "WIDEO" : "OBRAZ"}
         </div>
 
+        {/* Hover overlay hint */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "rgba(0,0,0,0)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          transition: "background 0.15s",
+        }}
+          onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.18)"}
+          onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0)"}
+        >
+          <span style={{ color: "#fff", fontSize: 22, opacity: 0, pointerEvents: "none" }}>⊕</span>
+        </div>
+
         <ExpiryBadge days={expires} />
       </div>
 
@@ -86,6 +180,14 @@ function LibraryCard({ item, onDelete, onRerun, onExtend, onEdit }) {
           {item.bms_model_config?.model_name || item.model_id}
           {item.params?.orientation && ` · ${item.params.orientation}`}
           {item.params?.duration && ` · ${item.params.duration}`}
+          {expires != null && (
+            <span style={{
+              marginLeft: 6,
+              color: expires <= 3 ? "#991b1b" : expires <= 7 ? "#854d0e" : "#aaa",
+            }}>
+              · usuwa się za {expires}d
+            </span>
+          )}
         </div>
 
         {item.prompt && (
@@ -313,6 +415,7 @@ export default function LibraryGrid({ jobType: initialJobType = "all" }) {
   const [hasMore, setHasMore] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [rerunItem, setRerunItem] = useState(null);
+  const [lightboxItem, setLightboxItem] = useState(null);
   const [toast, setToast] = useState(null);
   const searchTimer = useRef(null);
 
@@ -399,6 +502,10 @@ export default function LibraryGrid({ jobType: initialJobType = "all" }) {
         </div>
       )}
 
+      {lightboxItem && (
+        <Lightbox item={lightboxItem} onClose={() => setLightboxItem(null)} />
+      )}
+
       {editingItem && (
         <EditModal item={editingItem} onSave={handleEditSave} onClose={() => setEditingItem(null)} />
       )}
@@ -455,6 +562,7 @@ export default function LibraryGrid({ jobType: initialJobType = "all" }) {
                 onRerun={setRerunItem}
                 onExtend={handleExtend}
                 onEdit={setEditingItem}
+                onOpen={setLightboxItem}
               />
             ))}
           </div>
