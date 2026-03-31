@@ -280,6 +280,7 @@ export default function ImagesPage() {
 
   async function handleEnhanceAndEdit() {
     if (!prompt.trim()) return;
+    setEnhancing(true);
     try {
       const enhRes = await fetch("/api/brand-media/enhance-prompt", {
         method: "POST",
@@ -297,6 +298,8 @@ export default function ImagesPage() {
     } catch (err) {
       showToast("Błąd ulepszania: " + err.message, "error");
       setMode("idle");
+    } finally {
+      setEnhancing(false);
     }
   }
 
@@ -496,11 +499,27 @@ export default function ImagesPage() {
                 cursor: "pointer", color: "var(--color-text-primary, #1a1a1a)",
               }}>↺ Re-run</button>
 
-              <button onClick={handleEnhanceAndEdit} style={{
-                padding: "8px 16px", border: `0.5px solid ${ACCENT}`,
-                borderRadius: 8, fontSize: 13, background: "transparent",
-                cursor: "pointer", color: ACCENT,
-              }}>✦ Ulepsz prompt</button>
+              <button
+                onClick={handleEnhanceAndEdit}
+                disabled={enhancing}
+                style={{
+                  padding: "8px 16px", border: `0.5px solid ${enhancing ? "#ddd" : ACCENT}`,
+                  borderRadius: 8, fontSize: 13,
+                  background: enhancing ? "#fdf8f3" : "transparent",
+                  cursor: enhancing ? "not-allowed" : "pointer",
+                  color: enhancing ? "#c9a06e" : ACCENT,
+                  transition: "all 0.15s",
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                }}
+              >
+                {enhancing ? (
+                  <>
+                    <span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>⟳</span>
+                    Ulepszam...
+                    <style>{`@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}`}</style>
+                  </>
+                ) : "✦ Ulepsz prompt"}
+              </button>
             </div>
 
             <button onClick={handleReset} style={{
