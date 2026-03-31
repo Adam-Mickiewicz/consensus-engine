@@ -572,19 +572,72 @@ export default function VideoPage() {
               }}
             />
 
-            <button
-              onClick={handleSubmit}
-              disabled={submitting || !prompt.trim()}
-              style={{
-                width: "100%", padding: "14px 20px", fontSize: 15, fontWeight: 600,
-                background: submitting ? "#f0e8df" : ACCENT,
-                border: "none", borderRadius: 8, color: "#fff",
-                cursor: submitting ? "not-allowed" : "pointer",
-                letterSpacing: "0.02em",
-              }}
-            >
-              {submitting ? "Dodaję do kolejki..." : "🎬 Generuj wideo"}
-            </button>
+            {!activeJob ? (
+              <button
+                onClick={handleSubmit}
+                disabled={submitting || !prompt.trim()}
+                style={{
+                  width: "100%", padding: "14px 20px", fontSize: 15, fontWeight: 600,
+                  background: submitting ? "#f0e8df" : ACCENT,
+                  border: "none", borderRadius: 8, color: "#fff",
+                  cursor: submitting ? "not-allowed" : "pointer",
+                  letterSpacing: "0.02em",
+                }}
+              >
+                {submitting ? "Dodaję do kolejki..." : "🎬 Generuj wideo"}
+              </button>
+            ) : (
+              <div style={{ border: '1px solid #eee', borderRadius: 12, overflow: 'hidden' }}>
+                <div style={{
+                  padding: '12px 16px', background: '#fafafa', borderBottom: '1px solid #eee',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: '#333' }}>
+                    {activeJob.status === 'queued' && '⏳ W kolejce...'}
+                    {activeJob.status === 'processing' && '⚙️ Generowanie...'}
+                    {activeJob.status === 'done' && '✓ Gotowe!'}
+                    {activeJob.status === 'failed' && '✗ Błąd'}
+                  </div>
+                </div>
+
+                {(activeJob.status === 'queued' || activeJob.status === 'processing') && (
+                  <div style={{ height: 3, background: '#f0e8df', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', background: ACCENT, borderRadius: 2, animation: 'bmsProgress 1.5s ease-in-out infinite', width: '40%' }} />
+                    <style>{`@keyframes bmsProgress{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}`}</style>
+                  </div>
+                )}
+
+                {activeJob.status === 'done' && activeJob.output_urls?.[0] && (
+                  <div>
+                    <video
+                      src={activeJob.output_urls[0]}
+                      controls autoPlay muted loop
+                      style={{ width: '100%', display: 'block', background: '#000' }}
+                    />
+                    <div style={{ padding: '12px 16px', background: '#fafafa', display: 'flex', gap: 8 }}>
+                      <a href={activeJob.output_urls[0]} download style={{
+                        padding: '6px 14px', background: ACCENT, color: '#fff',
+                        borderRadius: 6, fontSize: 12, textDecoration: 'none',
+                      }}>⬇ Pobierz</a>
+                      <button
+                        onClick={() => {
+                          setActiveJob(null);
+                          if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+                          setStep(1);
+                        }}
+                        style={{ padding: '6px 14px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12, background: 'transparent', cursor: 'pointer', color: '#555' }}
+                      >+ Generuj kolejne</button>
+                    </div>
+                  </div>
+                )}
+
+                {activeJob.status === 'failed' && (
+                  <div style={{ padding: 16, color: '#ef4444', fontSize: 13 }}>
+                    {activeJob.error_message || 'Nieznany błąd'}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
