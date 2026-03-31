@@ -11,7 +11,7 @@ import { createHash } from 'crypto';
 import { encrypt } from '../../../../lib/crypto/pii.js';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 800;
 
 // ─── Shoper config ─────────────────────────────────────────────────────────────
 

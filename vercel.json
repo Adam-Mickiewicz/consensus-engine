@@ -4,7 +4,7 @@
       "maxDuration": 30
     },
     "app/api/cron/sync-orders/route.js": {
-      "maxDuration": 300
+      "maxDuration": 800
     },
     "app/api/cron/process-video-jobs/route.js": {
       "maxDuration": 60
