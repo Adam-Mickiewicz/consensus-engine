@@ -111,7 +111,7 @@ function HBar({ items, total, color = ACCENT, t }: {
             onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}
             style={{ display: "grid", gridTemplateColumns: "130px 1fr 60px 50px", alignItems: "center", gap: 8, padding: "3px 0" }}
           >
-            <span style={{ fontSize: 11, color: hovered === i ? t.text : t.textSub, truncate: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{it.tag}</span>
+            <span style={{ fontSize: 11, color: hovered === i ? t.text : t.textSub, textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{it.tag}</span>
             <div style={{ background: t.border, borderRadius: 3, height: 7, overflow: "hidden" }}>
               <div style={{ width: `${barW}%`, height: "100%", background: color, borderRadius: 3, transition: "width 0.4s" }} />
             </div>
