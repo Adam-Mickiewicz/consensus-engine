@@ -2,6 +2,7 @@
 import { useState, type ReactElement } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import useUserPermissions from "../../app/hooks/useUserPermissions";
 
 const LIGHT = {
   surface: "#ffffff", border: "#ddd9d2",
@@ -70,9 +71,15 @@ const Icons: Record<string, ReactElement> = {
   ),
 };
 
+const SIDEBAR_TOOL_IDS: Record<string, string> = {
+  '/newsletter-builder': 'newsletter-builder',
+  '/sock-designer':      'sock-designer',
+};
+
 export default function AppSidebar() {
   const pathname = usePathname();
   const t = LIGHT;
+  const { canAccess, loading: permsLoading } = useUserPermissions();
 
   // Detect active root segment
   const segment = pathname.split("/").filter(Boolean)[0] ?? "";
@@ -112,16 +119,18 @@ export default function AppSidebar() {
         {subs.length === 0 ? (
           <div className="as-empty">Brak podkategorii</div>
         ) : (
-          subs.map((s) => (
-            <Link
-              key={s.href}
-              href={s.href}
-              className={"as-item" + (pathname === s.href || (s.href !== "/crm/analytics" && pathname.startsWith(s.href)) ? " active" : "")}
-            >
-              <span>{s.label}</span>
-              {s.admin && <span className="as-badge">admin</span>}
-            </Link>
-          ))
+          subs
+            .filter(s => permsLoading || !SIDEBAR_TOOL_IDS[s.href] || canAccess(SIDEBAR_TOOL_IDS[s.href]))
+            .map((s) => (
+              <Link
+                key={s.href}
+                href={s.href}
+                className={"as-item" + (pathname === s.href || (s.href !== "/crm/analytics" && pathname.startsWith(s.href)) ? " active" : "")}
+              >
+                <span>{s.label}</span>
+                {s.admin && <span className="as-badge">admin</span>}
+              </Link>
+            ))
         )}
 
         <div className="as-footer">

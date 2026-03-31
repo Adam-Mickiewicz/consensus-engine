@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
+import useUserPermissions from "./hooks/useUserPermissions";
 
 const CATEGORIES = [
   { href: "/crm",      icon: "👥", label: "CRM klientów",   desc: "Analityka 360°, baza klientów, winback i import danych." },
@@ -79,9 +80,22 @@ const TOOLS = [
   },
 ];
 
+const TOOL_IDS = {
+  '/debate':                   'debate',
+  '/sock-designer':            'sock-designer',
+  '/newsletter-builder':       'newsletter-builder',
+  '/design-judge':             'design-judge',
+  '/tools/marketing-brief':    'marketing-brief',
+  '/tools/brand-settings':     'brand-settings',
+  '/tools/znakowanie':         'znakowanie',
+  '/tools/brand-media-studio': 'brand-media-studio',
+  '/crm':                      'crm',
+};
+
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState(null);
+  const { canAccess } = useUserPermissions();
 
   useEffect(() => {
     setMounted(true);
@@ -173,7 +187,7 @@ export default function Home() {
           {/* Kategorie platformy */}
           <div className="ce-section-label">Platforma</div>
           <div className="ce-cat-grid">
-            {CATEGORIES.map((c) => (
+            {CATEGORIES.filter(c => !TOOL_IDS[c.href] || canAccess(TOOL_IDS[c.href])).map((c) => (
               <Link key={c.href} href={c.href} className="ce-cat-tile">
                 <span className="ce-cat-icon">{c.icon}</span>
                 <span className="ce-cat-name">{c.label}</span>
@@ -187,7 +201,7 @@ export default function Home() {
           {/* Narzędzia AI */}
           <div className="ce-section-label">Narzędzia AI</div>
           <div className="ce-grid">
-            {TOOLS.map((tool, i) => (
+            {TOOLS.filter(tool => !TOOL_IDS[tool.href] || canAccess(TOOL_IDS[tool.href])).map((tool, i) => (
               <Link
                 key={tool.href}
                 href={tool.href}
