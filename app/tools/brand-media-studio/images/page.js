@@ -72,20 +72,76 @@ function JobCard({ job, onLightbox }) {
         </span>
       </div>
 
-      {/* Pixel animation when pending */}
+      {/* Unicorn animation when pending */}
       {(job.status === "queued" || job.status === "processing") && (
-        <div style={{ aspectRatio: "1/1", background: "#fafaf8", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 3, width: 80, height: 80 }}>
-            {Array.from({ length: 36 }).map((_, i) => (
-              <div key={i} style={{
-                borderRadius: 2,
-                background: ["#b8763a", "#e8c99a", "#f5e6d3"][i % 3],
-                animation: `bmsPixel ${0.5 + (i % 5) * 0.1}s ease-in-out infinite alternate`,
-                animationDelay: `${(i * 0.05) % 1}s`,
-              }} />
-            ))}
+        <>
+          <style>{`
+            @keyframes unicornFloat {
+              0%   { transform: translate(-50%,-55%) scale(1)   rotate(-6deg); }
+              100% { transform: translate(-50%,-55%) scale(1.1) rotate(6deg);  }
+            }
+            @keyframes fly0 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(75px,-65px)  scale(0);opacity:0} }
+            @keyframes fly1 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(-75px,-65px) scale(0);opacity:0} }
+            @keyframes fly2 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(0,-95px)     scale(0);opacity:0} }
+            @keyframes fly3 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(95px,10px)   scale(0);opacity:0} }
+            @keyframes fly4 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(-95px,10px)  scale(0);opacity:0} }
+            @keyframes fly5 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(55px,-90px)  scale(0);opacity:0} }
+            @keyframes fly6 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(-55px,-90px) scale(0);opacity:0} }
+            @keyframes fly7 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(30px,-100px) scale(0);opacity:0} }
+            @keyframes bmsBarJob { 0%{transform:translateX(-100%)} 100%{transform:translateX(350%)} }
+            @keyframes borderHueJob { 0%{filter:hue-rotate(0deg)} 100%{filter:hue-rotate(360deg)} }
+          `}</style>
+          <div style={{ aspectRatio: "1/1", position: "relative", borderRadius: 0, overflow: "hidden" }}>
+            {/* Rainbow border */}
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "conic-gradient(from 0deg, #ff6bb5, #b86bff, #ffd700, #6bdbff, #ff8c42, #a8ff6b, #ff6bb5)",
+              animation: "borderHueJob 3s linear infinite",
+            }} />
+            <div style={{
+              position: "absolute", inset: 3, borderRadius: 0, overflow: "hidden",
+              background: "linear-gradient(135deg, #fdf4ff 0%, #fff8f0 50%, #f0f8ff 100%)",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12,
+            }}>
+              <div style={{ position: "relative", width: 120, height: 120 }}>
+                {[
+                  { color: "#ff6bb5", anim: "fly0", dur: 1.0, delay: 0.0,  size: 8  },
+                  { color: "#b86bff", anim: "fly1", dur: 1.2, delay: 0.15, size: 6  },
+                  { color: "#ffd700", anim: "fly2", dur: 0.9, delay: 0.3,  size: 9  },
+                  { color: "#6bdbff", anim: "fly3", dur: 1.1, delay: 0.0,  size: 5  },
+                  { color: "#ff8c42", anim: "fly4", dur: 1.0, delay: 0.45, size: 7  },
+                  { color: "#a8ff6b", anim: "fly5", dur: 0.8, delay: 0.6,  size: 8  },
+                  { color: "#ff6b6b", anim: "fly6", dur: 1.3, delay: 0.1,  size: 6  },
+                  { color: "#6bffd4", anim: "fly7", dur: 1.0, delay: 0.75, size: 7  },
+                  { color: "#ff6bb5", anim: "fly2", dur: 1.1, delay: 0.9,  size: 5  },
+                  { color: "#ffd700", anim: "fly0", dur: 0.9, delay: 0.5,  size: 9  },
+                ].map((p, i) => (
+                  <div key={i} style={{
+                    position: "absolute", left: "50%", top: "60%",
+                    width: p.size, height: p.size, borderRadius: "50%",
+                    background: p.color, marginLeft: -p.size / 2, marginTop: -p.size / 2,
+                    animation: `${p.anim} ${p.dur}s ease-out infinite`,
+                    animationDelay: `${p.delay}s`,
+                    boxShadow: `0 0 6px ${p.color}`,
+                  }} />
+                ))}
+                <div style={{
+                  position: "absolute", left: "50%", top: "55%",
+                  fontSize: 52, lineHeight: 1,
+                  animation: "unicornFloat 1.4s ease-in-out infinite alternate",
+                  userSelect: "none",
+                }}>🦄</div>
+              </div>
+              <div style={{ fontSize: 11, color: "#888", textAlign: "center" }}>
+                {job.status === "queued" ? "W kolejce..." : "Generuję..."}
+              </div>
+              {/* Progress bar */}
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: "rgba(0,0,0,0.06)", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: "40%", background: "linear-gradient(90deg, #ff6bb5, #b86bff, #ffd700)", animation: "bmsBarJob 1.5s ease-in-out infinite" }} />
+              </div>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Result image */}
