@@ -227,7 +227,10 @@ function RevenueTrend({ revenue }: { revenue: RevenueRow[] }) {
 
   useEffect(() => { renderChartFnRef.current = renderChart; }, [renderChart]);
   useEffect(() => {
-    if (window.Chart) { renderChart(); return; }
+    if (window.Chart) {
+      renderChart();
+      return () => { if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; } };
+    }
     if (!scriptAddedRef.current) {
       scriptAddedRef.current = true;
       const script = document.createElement('script');
@@ -235,7 +238,7 @@ function RevenueTrend({ revenue }: { revenue: RevenueRow[] }) {
       script.onload = () => renderChartFnRef.current();
       document.head.appendChild(script);
     }
-    return () => { if (chartRef.current) { chartRef.current.destroy(); } };
+    return () => { if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; } };
   }, [renderChart]);
 
   return (
@@ -686,7 +689,11 @@ export default function ExecutiveDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [dateRange, setDateRange] = useState({ from: '', to: '', label: 'Ostatnie 90d' });
+  const [dateRange, setDateRange] = useState(() => {
+    const to = new Date().toISOString().split('T')[0];
+    const from = new Date(Date.now() - 90 * 86400000).toISOString().split('T')[0];
+    return { from, to, label: 'Ostatnie 90d' };
+  });
 
   // Custom dashboard state
   const [dashboardMode, setDashboardMode] = useState<'general' | 'custom'>('general');
@@ -728,7 +735,7 @@ export default function ExecutiveDashboard() {
         setData(d); setLastRefresh(new Date()); setLoading(false);
       })
       .catch((e: Error) => { setError(e.message); setLoading(false); });
-  }, [dateRange]);
+  }, [dateRange.from, dateRange.to]);
 
   useEffect(() => { load(); }, [load]);
 
