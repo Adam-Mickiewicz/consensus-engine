@@ -111,6 +111,8 @@ function Lightbox({ item, onClose }) {
 
 function LibraryCard({ item, onDelete, onRerun, onExtend, onEdit, onOpen }) {
   const [expanded, setExpanded] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState(null);
+  const [downloadOpen, setDownloadOpen] = useState(false);
   const expires = item.expires_in_days;
   const isVideo = item.job_type === "video";
   const title = item.title || (item.prompt ? item.prompt.slice(0, 40) + (item.prompt.length > 40 ? "…" : "") : "Bez tytułu");
@@ -119,13 +121,13 @@ function LibraryCard({ item, onDelete, onRerun, onExtend, onEdit, onOpen }) {
     <div style={{ border: "1px solid #eee", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
       {/* Preview — clickable */}
       <div
-        onClick={() => onOpen(item)}
+        onClick={() => isVideo && onOpen(item)}
         style={{
           position: "relative",
           aspectRatio: isVideo ? "16/9" : "1/1",
           background: "#111",
           overflow: "hidden",
-          cursor: "zoom-in",
+          cursor: isVideo ? "zoom-in" : "default",
         }}
       >
         {isVideo && item.output_urls?.[0] ? (
@@ -136,11 +138,23 @@ function LibraryCard({ item, onDelete, onRerun, onExtend, onEdit, onOpen }) {
             playsInline
             style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none" }}
           />
+        ) : item.output_urls?.length > 1 ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gridTemplateRows: "repeat(2,1fr)", gap: "2px", width: "100%", height: "100%" }}>
+            {item.output_urls.slice(0, 4).map((url, i) => (
+              <img
+                key={i}
+                src={url}
+                style={{ width: "100%", height: "100%", objectFit: "cover", cursor: "zoom-in" }}
+                onClick={e => { e.stopPropagation(); setLightboxUrl(url); }}
+              />
+            ))}
+          </div>
         ) : item.output_urls?.[0] || item.thumbnail_url ? (
           <img
             src={item.thumbnail_url || item.output_urls[0]}
             alt={title}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            style={{ width: "100%", height: "100%", objectFit: "cover", cursor: "zoom-in" }}
+            onClick={e => { e.stopPropagation(); setLightboxUrl(item.output_urls[0]); }}
           />
         ) : (
           <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#555", fontSize: 13 }}>
@@ -216,18 +230,32 @@ function LibraryCard({ item, onDelete, onRerun, onExtend, onEdit, onOpen }) {
 
         {/* Actions */}
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {item.output_urls?.[0] && (
-            <a
-              href={item.output_urls[0]}
-              download
-              style={{
-                padding: "5px 10px", borderRadius: 6, fontSize: 11,
-                background: ACCENT, color: "#fff", textDecoration: "none", fontWeight: 500,
-              }}
+          {item.output_urls?.length > 1 ? (
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setDownloadOpen(d => !d)}
+                style={{ padding: "5px 10px", borderRadius: 6, fontSize: 11, background: ACCENT, color: "#fff", border: "none", cursor: "pointer", fontWeight: 500 }}
+              >
+                ⬇ Pobierz ({item.output_urls.length})
+              </button>
+              {downloadOpen && (
+                <div style={{ position: "absolute", bottom: "110%", left: 0, background: "#fff", border: "0.5px solid #eee", borderRadius: 8, padding: 8, minWidth: 160, zIndex: 10, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+                  {item.output_urls.map((url, i) => (
+                    <a key={i} href={url} download={`wariant-${i + 1}.png`}
+                      style={{ display: "block", padding: "6px 10px", fontSize: 12, color: "#333", textDecoration: "none" }}
+                      onClick={() => setDownloadOpen(false)}
+                    >⬇ Wariant {i + 1}</a>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : item.output_urls?.[0] ? (
+            <a href={item.output_urls[0]} download
+              style={{ padding: "5px 10px", borderRadius: 6, fontSize: 11, background: ACCENT, color: "#fff", textDecoration: "none", fontWeight: 500 }}
             >
               ⬇ Pobierz
             </a>
-          )}
+          ) : null}
 
           <button
             onClick={() => onRerun(item)}
@@ -274,6 +302,25 @@ function LibraryCard({ item, onDelete, onRerun, onExtend, onEdit, onOpen }) {
           </button>
         </div>
       </div>
+
+      {lightboxUrl && (
+        <div
+          onClick={() => setLightboxUrl(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 3000, background: "rgba(0,0,0,0.88)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ position: "relative", maxWidth: "90vw", maxHeight: "90vh" }}>
+            <img src={lightboxUrl} style={{ maxWidth: "100%", maxHeight: "90vh", borderRadius: 12, display: "block" }} />
+            <div style={{ position: "absolute", bottom: -48, left: 0, right: 0, display: "flex", gap: 8, justifyContent: "center" }}>
+              <a href={lightboxUrl} download style={{ padding: "8px 20px", background: ACCENT, color: "#fff", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>⬇ Pobierz</a>
+              <button onClick={() => setLightboxUrl(null)} style={{ padding: "8px 20px", background: "rgba(255,255,255,0.15)", color: "#fff", borderRadius: 8, fontSize: 13, border: "none", cursor: "pointer" }}>Zamknij</button>
+            </div>
+          </div>
+          <button
+            onClick={() => setLightboxUrl(null)}
+            style={{ position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", fontSize: 20, cursor: "pointer", width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}
+          >×</button>
+        </div>
+      )}
     </div>
   );
 }

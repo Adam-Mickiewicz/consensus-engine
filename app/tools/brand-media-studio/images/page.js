@@ -108,6 +108,7 @@ export default function ImagesPage() {
   const [alternatives, setAlternatives] = useState([]);
   const [toast, setToast] = useState(null);
   const [activeJob, setActiveJob] = useState(null);
+  const [lightboxUrl, setLightboxUrl] = useState(null);
   const pollingRef = useRef(null);
 
   useEffect(() => {
@@ -474,12 +475,46 @@ export default function ImagesPage() {
           <div style={{ maxWidth: 500, margin: "0 auto 32px" }}>
             <div style={{
               display: "grid",
-              gridTemplateColumns: activeJob.output_urls?.length > 1 ? "repeat(2, 1fr)" : "1fr",
+              gridTemplateColumns: activeJob.output_urls?.length > 1 ? "repeat(2,1fr)" : "1fr",
               gap: 8, marginBottom: 16,
             }}>
               {activeJob.output_urls?.map((url, i) => (
-                <div key={i} style={{ borderRadius: 12, overflow: "hidden", background: "#000" }}>
-                  <img src={url} alt={`Wariant ${i + 1}`} style={{ width: "100%", display: "block" }} />
+                <div key={i} style={{ position: "relative", borderRadius: 12, overflow: "hidden" }}>
+                  <img
+                    src={url}
+                    alt={`Wariant ${i + 1}`}
+                    style={{ width: "100%", display: "block", cursor: "pointer" }}
+                    onClick={() => setLightboxUrl(url)}
+                  />
+                  <div style={{
+                    position: "absolute", bottom: 0, left: 0, right: 0,
+                    padding: "8px",
+                    background: "linear-gradient(transparent, rgba(0,0,0,0.6))",
+                    display: "flex", gap: "6px", justifyContent: "center",
+                  }}>
+                    <a
+                      href={url}
+                      download={`wariant-${i + 1}.png`}
+                      onClick={e => e.stopPropagation()}
+                      style={{
+                        padding: "5px 12px",
+                        background: "rgba(255,255,255,0.9)",
+                        color: "#333", borderRadius: "6px",
+                        fontSize: "12px", textDecoration: "none",
+                        display: "inline-flex", alignItems: "center", gap: "4px",
+                      }}
+                    >⬇ Pobierz</a>
+                    <button
+                      onClick={e => { e.stopPropagation(); setLightboxUrl(url); }}
+                      style={{
+                        padding: "5px 12px",
+                        background: "rgba(255,255,255,0.9)",
+                        color: "#333", borderRadius: "6px",
+                        fontSize: "12px", border: "none", cursor: "pointer",
+                        display: "inline-flex", alignItems: "center", gap: "4px",
+                      }}
+                    >⤢ Powiększ</button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -770,6 +805,57 @@ export default function ImagesPage() {
           </button>
         </div>
       </div>
+
+      {lightboxUrl && (
+        <div
+          onClick={() => setLightboxUrl(null)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 1000,
+            background: "rgba(0,0,0,0.85)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "24px",
+          }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ position: "relative", maxWidth: "90vw", maxHeight: "90vh" }}>
+            <img
+              src={lightboxUrl}
+              style={{ maxWidth: "100%", maxHeight: "90vh", borderRadius: 12, display: "block" }}
+            />
+            <div style={{
+              position: "absolute", bottom: -48, left: 0, right: 0,
+              display: "flex", gap: 8, justifyContent: "center",
+            }}>
+              <a
+                href={lightboxUrl}
+                download
+                style={{
+                  padding: "8px 20px", background: ACCENT,
+                  color: "#fff", borderRadius: 8, fontSize: 13,
+                  textDecoration: "none",
+                }}
+              >⬇ Pobierz</a>
+              <button
+                onClick={() => setLightboxUrl(null)}
+                style={{
+                  padding: "8px 20px", background: "rgba(255,255,255,0.15)",
+                  color: "#fff", borderRadius: 8, fontSize: 13,
+                  border: "none", cursor: "pointer",
+                }}
+              >Zamknij</button>
+            </div>
+          </div>
+          <button
+            onClick={() => setLightboxUrl(null)}
+            style={{
+              position: "absolute", top: 16, right: 16,
+              background: "rgba(255,255,255,0.15)", border: "none",
+              color: "#fff", fontSize: 20, cursor: "pointer",
+              width: 36, height: 36, borderRadius: "50%",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >×</button>
+        </div>
+      )}
     </div>
   );
 }
