@@ -29,7 +29,7 @@
     },
     {
       "path": "/api/cron/recalculate-scores",
-      "schedule": "0 7 * * *"
+      "schedule": "30 10 * * *"
     }
   ]
 }
