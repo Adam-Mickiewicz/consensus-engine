@@ -265,11 +265,118 @@ function CrossSellTab({ crossSell }: { crossSell: CrossSellRow[] }) {
   );
 }
 
+interface LaunchProduct {
+  ean: number; product_name: string; launch_date: string; product_group: string | null;
+  collection: string | null; days_since_launch: number; orders: number; unique_buyers: number;
+  new_customer_buyers: number; repeat_customer_buyers: number; total_revenue: number;
+  total_quantity: number; repeat_buyer_pct: number | null;
+}
+interface LaunchSummary {
+  total_launches: number; total_revenue: number; total_buyers: number;
+  avg_repeat_pct: number; new_customer_attracted: number;
+}
+
+function LaunchMonitorTab() {
+  const [products, setProducts] = useState<LaunchProduct[]>([]);
+  const [summary, setSummary] = useState<LaunchSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const sk: React.CSSProperties = { background: 'linear-gradient(90deg,#e8e0d8 25%,#f0ece6 50%,#e8e0d8 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite', borderRadius: 8 };
+
+  useEffect(() => {
+    fetch('/api/crm/launch-monitor')
+      .then(r => r.json())
+      .then(d => { setProducts(d.products || []); setSummary(d.summary || null); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading) return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>{[1,2,3,4].map(i => <div key={i} style={{ ...sk, height: 80 }} />)}</div>
+      <div style={{ ...sk, height: 400 }} />
+    </div>
+  );
+
+  if (products.length === 0) return (
+    <div style={{ textAlign: 'center', padding: 40, color: '#6b6b6b', fontSize: 13 }}>
+      <div style={{ fontSize: 32, marginBottom: 12 }}>📦</div>
+      Brak produktów z datą premiery w ostatnich 12 miesiącach.<br />
+      Uzupełnij <code>launch_date</code> w tabeli <code>products</code>.
+    </div>
+  );
+
+  // Benchmark: avg revenue per product in first 30d
+  const benchmark30d = products.length > 0
+    ? products.reduce((s, p) => s + (p.days_since_launch <= 30 ? p.total_revenue : p.total_revenue * 30 / Math.max(p.days_since_launch, 1)), 0) / products.length
+    : 0;
+
+  return (
+    <div>
+      {/* KPI row */}
+      {summary && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 20 }}>
+          {[
+            { label: 'Premiery 12m', value: summary.total_launches.toString() },
+            { label: 'Łączny revenue', value: formatPLN(summary.total_revenue) },
+            { label: 'Unikalnych kupców', value: summary.total_buyers.toLocaleString('pl-PL') },
+            { label: 'Nowych klientów', value: summary.new_customer_attracted.toLocaleString('pl-PL') + (summary.total_buyers > 0 ? ' (' + Math.round(summary.new_customer_attracted / summary.total_buyers * 100) + '%)' : '') },
+          ].map(({ label, value }) => (
+            <div key={label} style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+              <div style={{ fontSize: 11, color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>{label}</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: '#b8763a' }}>{value}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Benchmark note */}
+      <div style={{ fontSize: 12, color: '#6b6b6b', marginBottom: 12 }}>
+        Benchmark avg revenue 30d: <strong style={{ color: '#1a1a1a' }}>{formatPLN(benchmark30d)}</strong> ·
+        Zielony &gt;150% · Czerwony &lt;80%
+      </div>
+
+      {/* Table */}
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 12 }}>
+          <thead>
+            <tr style={{ background: '#faf8f5', borderBottom: '2px solid #e8e0d8' }}>
+              {['Produkt','Premiera','Dni','Revenue','Kupcy','Nowi kl.','Repeat%','vs benchmark'].map(h => (
+                <th key={h} style={{ padding: '8px 10px', fontSize: 10, color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: h === 'Produkt' ? 'left' : 'right', whiteSpace: 'nowrap' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {products.map((p, i) => {
+              const revPer30d = p.total_revenue * 30 / Math.max(p.days_since_launch, 1);
+              const vsBenchmark = benchmark30d > 0 ? Math.round(revPer30d / benchmark30d * 100) : 0;
+              const benchColor = vsBenchmark > 150 ? '#2d8a4e' : vsBenchmark < 80 ? '#dd4444' : '#1a1a1a';
+              return (
+                <tr key={p.ean} style={{ borderBottom: '1px solid #f0ece6' }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#faf8f5'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
+                  <td style={{ padding: '8px 10px', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: i < 3 ? 700 : 400 }}>{p.product_name || '—'}</td>
+                  <td style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap', color: '#6b6b6b' }}>{new Date(p.launch_date).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' })}</td>
+                  <td style={{ padding: '8px 10px', textAlign: 'right', color: '#6b6b6b' }}>{p.days_since_launch}</td>
+                  <td style={{ padding: '8px 10px', textAlign: 'right', color: '#b8763a', fontWeight: 600 }}>{formatPLN(p.total_revenue)}</td>
+                  <td style={{ padding: '8px 10px', textAlign: 'right' }}>{p.unique_buyers.toLocaleString('pl-PL')}</td>
+                  <td style={{ padding: '8px 10px', textAlign: 'right', color: '#2d8a4e' }}>{p.new_customer_buyers.toLocaleString('pl-PL')}</td>
+                  <td style={{ padding: '8px 10px', textAlign: 'right', color: (p.repeat_buyer_pct ?? 0) >= 30 ? '#2d8a4e' : '#1a1a1a' }}>{p.repeat_buyer_pct != null ? p.repeat_buyer_pct + '%' : '—'}</td>
+                  <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: benchColor }}>{vsBenchmark}%</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 const TABS = [
   { id: 'products', label: 'Produkty' },
   { id: 'worlds', label: 'Światy' },
   { id: 'seasons', label: 'Sezonowość' },
   { id: 'crosssell', label: 'Cross-sell' },
+  { id: 'launch', label: '🚀 Launch Monitor' },
 ];
 
 export default function ProductsPage() {
@@ -338,6 +445,7 @@ export default function ProductsPage() {
         {activeTab === 'worlds' && <WorldsTab worlds={data.worlds} />}
         {activeTab === 'seasons' && <SeasonsTab seasons={data.seasons} />}
         {activeTab === 'crosssell' && <CrossSellTab crossSell={data.crossSell} />}
+        {activeTab === 'launch' && <LaunchMonitorTab />}
       </div>
     </div>
   );

@@ -4,10 +4,10 @@ import { getServiceClient } from '../../../../../lib/supabase/server';
 export const dynamic = 'force-dynamic';
 
 function buildQuery(sb, params) {
-  const { segment, risk, world, ltv_min, ltv_max, search, sort, date_from, date_to, rfm_segment, rfm_r, rfm_f } = params;
+  const { segment, risk, world, ltv_min, ltv_max, search, sort, date_from, date_to, rfm_segment, rfm_r, rfm_f, lead_temp, gift_label } = params;
 
   let q = sb.from('clients_360').select(
-    'client_id,legacy_segment,risk_level,ltv,orders_count,last_order,first_order,top_domena,winback_priority,rfm_segment,rfm_total_score,customer_health_score,purchase_probability_30d',
+    'client_id,legacy_segment,risk_level,ltv,orders_count,last_order,first_order,top_domena,winback_priority,rfm_segment,rfm_total_score,customer_health_score,purchase_probability_30d,lead_temperature,gift_label',
     { count: 'exact' }
   );
 
@@ -22,6 +22,8 @@ function buildQuery(sb, params) {
   if (rfm_segment) q = q.eq('rfm_segment', rfm_segment);
   if (rfm_r)       q = q.eq('rfm_recency_score', parseInt(rfm_r));
   if (rfm_f)       q = q.eq('rfm_frequency_score', parseInt(rfm_f));
+  if (lead_temp)   q = q.eq('lead_temperature', lead_temp);
+  if (gift_label)  q = q.eq('gift_label', gift_label);
 
   switch (sort) {
     case 'ltv_asc':         q = q.order('ltv',         { ascending: true  }); break;
@@ -51,6 +53,8 @@ export async function GET(request) {
       rfm_segment: searchParams.get('rfm_segment')  || '',
       rfm_r:       searchParams.get('rfm_r')        || '',
       rfm_f:       searchParams.get('rfm_f')        || '',
+      lead_temp:   searchParams.get('lead_temp')    || '',
+      gift_label:  searchParams.get('gift_label_f') || '',
     };
     const occasion  = searchParams.get('occasion') || '';
     const page      = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);

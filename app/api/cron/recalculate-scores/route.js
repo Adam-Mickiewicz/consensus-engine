@@ -9,17 +9,26 @@ export async function GET(request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const [rfm, pred] = await Promise.all([
+  const [rfm, pred, gift, lead] = await Promise.all([
     supabase.rpc('recalculate_rfm_scores'),
     supabase.rpc('recalculate_predictive_scores'),
+    supabase.rpc('recalculate_gift_scores'),
+    supabase.rpc('recalculate_lead_scores'),
   ]);
 
   // Refresh matviews after scoring
-  await supabase.rpc('refresh_view_rfm_distribution');
+  await Promise.all([
+    supabase.rpc('refresh_view_rfm_distribution'),
+    supabase.rpc('refresh_view_lead_distribution'),
+    supabase.rpc('refresh_view_gift_distribution'),
+    supabase.rpc('refresh_view_launch_monitor'),
+  ]);
 
   return Response.json({
     rfm: rfm.error ? { error: rfm.error.message } : rfm.data,
     predictive: pred.error ? { error: pred.error.message } : pred.data,
+    gift: gift.error ? { error: gift.error.message } : gift.data,
+    lead: lead.error ? { error: lead.error.message } : lead.data,
     timestamp: new Date().toISOString(),
   });
 }

@@ -38,6 +38,8 @@ interface ClientRow {
   rfm_segment: string | null;
   customer_health_score: number | null;
   purchase_probability_30d: number | null;
+  lead_temperature: string | null;
+  gift_label: string | null;
 }
 
 function Skeleton({ t }: { t: typeof DARK }) {
@@ -80,7 +82,9 @@ export default function ClientsView() {
   const date_from = searchParams.get("date_from") || "";
   const date_to  = searchParams.get("date_to")    || "";
   const occasion     = searchParams.get("occasion")    || "";
-  const rfm_segment  = searchParams.get("rfm_segment") || "";
+  const rfm_segment    = searchParams.get("rfm_segment")    || "";
+  const lead_temp      = searchParams.get("lead_temp")      || "";
+  const gift_label_f   = searchParams.get("gift_label")     || "";
 
   // Local-only (debounced) state for search
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
@@ -122,7 +126,7 @@ export default function ClientsView() {
 
   function resetFilters() {
     const p = new URLSearchParams(searchParams.toString());
-    ["segment","risk","world","ltv_min","ltv_max","search","date_from","date_to","occasion","rfm_segment","rfm_r","rfm_f","page","sort"].forEach(k => p.delete(k));
+    ["segment","risk","world","ltv_min","ltv_max","search","date_from","date_to","occasion","rfm_segment","rfm_r","rfm_f","lead_temp","gift_label","page","sort"].forEach(k => p.delete(k));
     setSearchInput("");
     router.push(`${pathname}?${p.toString()}`);
   }
@@ -183,7 +187,7 @@ export default function ClientsView() {
     }
   }
 
-  const hasFilters = !!(segment || risk || world || ltv_min || ltv_max || searchInput || date_from || date_to || occasion || rfm_segment);
+  const hasFilters = !!(segment || risk || world || ltv_min || ltv_max || searchInput || date_from || date_to || occasion || rfm_segment || lead_temp || gift_label_f);
 
   const thStyle = (col: string) => ({
     cursor: SORT_COLS.find(c => c.key === col) ? "pointer" : "default",
@@ -303,6 +307,25 @@ export default function ClientsView() {
               {["Champions","Loyal","Potential Loyal","Recent","Promising","Need Attention","About to Sleep","At Risk","Cant Lose","Hibernating","Lost","Other"].map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
+          <div className="cl-filter-group">
+            <span className="cl-filter-label">Lead temp</span>
+            <select className="cl-select" value={lead_temp} onChange={e => setParam("lead_temp", e.target.value)}>
+              <option value="">Wszystkie</option>
+              <option value="Hot">🔥 Hot</option>
+              <option value="Warm">🟡 Warm</option>
+              <option value="Cool">🔵 Cool</option>
+              <option value="Cold">❄️ Cold</option>
+            </select>
+          </div>
+          <div className="cl-filter-group">
+            <span className="cl-filter-label">Gift</span>
+            <select className="cl-select" value={gift_label_f} onChange={e => setParam("gift_label", e.target.value)}>
+              <option value="">Wszystkie</option>
+              <option value="Głównie prezenty">🎁 Gł. prezenty</option>
+              <option value="Mix: siebie + prezenty">🔀 Mix</option>
+              <option value="Głównie dla siebie">👤 Dla siebie</option>
+            </select>
+          </div>
           {hasFilters && (
             <button className="cl-btn cl-btn-ghost" onClick={resetFilters} style={{ alignSelf: "flex-end" }}>Resetuj</button>
           )}
@@ -330,6 +353,8 @@ export default function ClientsView() {
                   <th>Top domena</th>
                   <th>RFM</th>
                   <th style={{ textAlign: "right" }}>Prob 30d</th>
+                  <th>Lead</th>
+                  <th>Gift</th>
                   <th>Winback</th>
                   <th></th>
                 </tr>
@@ -374,6 +399,15 @@ export default function ClientsView() {
                           {Number(c.purchase_probability_30d).toFixed(1)}%
                         </span>
                       ) : "—"}
+                    </td>
+                    <td>
+                      {c.lead_temperature ? (() => {
+                        const tc: Record<string, { bg: string }> = { Hot: { bg: '#dd4444' }, Warm: { bg: '#e6a817' }, Cool: { bg: '#3577b3' }, Cold: { bg: '#999' } };
+                        return <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 4, fontSize: 10, fontWeight: 700, background: tc[c.lead_temperature]?.bg ?? '#999', color: '#fff', whiteSpace: 'nowrap' }}>{c.lead_temperature}</span>;
+                      })() : '—'}
+                    </td>
+                    <td style={{ fontSize: 11, color: t.textSub, whiteSpace: 'nowrap' }}>
+                      {c.gift_label === 'Głównie prezenty' ? '🎁' : c.gift_label === 'Mix: siebie + prezenty' ? '🔀' : c.gift_label === 'Głównie dla siebie' ? '👤' : '—'}
                     </td>
                     <td>
                       {c.winback_priority ? (

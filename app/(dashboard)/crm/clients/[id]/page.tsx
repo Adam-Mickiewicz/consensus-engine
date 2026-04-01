@@ -26,6 +26,9 @@ const SEG_COLORS: Record<string, string> = {
 const RISK_COLORS: Record<string, string> = {
   OK: "#2d8a4e", Risk: "#e6a817", HighRisk: "#dd4444", Lost: "#999999",
 };
+const TEMP_COLORS: Record<string, string> = {
+  Hot: "#dd4444", Warm: "#e6a817", Cool: "#3577b3", Cold: "#999999",
+};
 const SEASON_COLORS: Record<string, string> = {
   wiosna: "#22c55e", spring: "#22c55e",
   lato: "#fbbf24", summer: "#fbbf24",
@@ -65,6 +68,10 @@ interface Profile {
   customer_health_score: number | null;
   purchase_probability_30d: number | null;
   predicted_ltv_12m: number | null;
+  gift_score: number | null;
+  gift_label: string | null;
+  lead_score: number | null;
+  lead_temperature: string | null;
 }
 interface EventRow {
   id: number;
@@ -852,8 +859,8 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
         setTaxonomy(d.taxonomy ?? null);
         setPrediction(d.prediction ?? null);
         if (d.barometer) setBarometer(d.barometer);
-        setGiftScore(d.giftScore ?? 0);
-        setGiftLabel(d.giftLabel ?? "Głównie dla siebie");
+        setGiftScore(d.profile?.gift_score ?? d.giftScore ?? 0);
+        setGiftLabel(d.profile?.gift_label ?? d.giftLabel ?? "Głównie dla siebie");
         setSeasonBreakdown(d.seasonBreakdown ?? []);
         setNewProductRatio(d.newProductRatio ?? 0);
         setNewProductCount(d.newProductCount ?? 0);
@@ -934,6 +941,8 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
               { label: "Ostatni zakup", val: profile.last_order?.slice(0, 10) ?? "—", color: t.text },
               ...(profile.purchase_probability_30d != null ? [{ label: "Prob. zakupu 30d", val: `${Number(profile.purchase_probability_30d).toFixed(1)}%`, color: Number(profile.purchase_probability_30d) > 50 ? "#2d8a4e" : Number(profile.purchase_probability_30d) > 20 ? "#e6a817" : "#dd4444" }] : []),
               ...(profile.predicted_ltv_12m != null ? [{ label: "Pred. LTV 12m", val: `${Number(profile.predicted_ltv_12m).toLocaleString("pl-PL", { maximumFractionDigits: 0 })} zł`, color: "#3577b3" }] : []),
+              ...(profile.lead_score != null ? [{ label: "Lead Score", val: String(profile.lead_score), color: TEMP_COLORS[profile.lead_temperature ?? ""] ?? t.text }] : []),
+              ...(profile.lead_temperature ? [{ label: "Temperatura", val: profile.lead_temperature, color: TEMP_COLORS[profile.lead_temperature] ?? t.text }] : []),
             ].map(({ label, val, color }) => (
               <div key={label} style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color, fontVariantNumeric: "tabular-nums" }}>{val}</div>
