@@ -241,15 +241,21 @@ export default function ImagesPage() {
               ? { ...j, status: job.status, output_urls: job.output_urls || [] }
               : j
           );
-          if (updated.every(j => j.status === "done" || j.status === "failed")) {
+          if (updated.every(j => (j.status === "done" && j.output_urls?.length > 0) || j.status === "failed")) {
             setMode("done");
           }
           return updated;
         });
-        if (job.status === "done" || job.status === "failed") {
+        if (job.status === "done" && job.output_urls?.length > 0) {
           clearInterval(pollingRefs.current[jobId]);
           delete pollingRefs.current[jobId];
-          if (job.status === "failed") showToast("Błąd: " + (job.error_message || "Nieznany błąd"), "error");
+        } else if (job.status === "failed") {
+          clearInterval(pollingRefs.current[jobId]);
+          delete pollingRefs.current[jobId];
+          showToast("Błąd: " + (job.error_message || "Nieznany błąd"), "error");
+        } else if (job.status === "done" && !job.output_urls?.length) {
+          // done ale brak URL — polluj jeszcze przez chwilę
+          console.log('Job done but no output_urls yet, continuing poll...');
         }
       } catch (e) {
         console.error("Polling error:", e);
