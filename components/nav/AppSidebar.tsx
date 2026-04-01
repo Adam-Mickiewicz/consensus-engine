@@ -23,14 +23,14 @@ interface SubItem {
 
 const SUBCATEGORIES: Record<string, SubItem[]> = {
   crm: [
-    { href: "/crm/analytics",            label: "Executive Dashboard" },
-    { href: "/crm/clients",              label: "Klienci" },
-    { href: "/crm/cohorts",              label: "Kohorty & Retencja" },
-    { href: "/crm/lifecycle",            label: "Lifecycle & Segmenty" },
-    { href: "/crm/products",             label: "Produkty & Światy" },
-    { href: "/crm/winback",              label: "Winback" },
-    { href: "/crm/import",               label: "Import / ETL", admin: true },
-    { href: "/crm/import/unmapped",      label: "Bez taksonomii", admin: true },
+    { href: "/crm/analytics",   label: "Executive Dashboard" },
+    { href: "/crm/clients",     label: "Klienci" },
+    { href: "/crm/cohorts",     label: "Kohorty & Retencja" },
+    { href: "/crm/lifecycle",   label: "Lifecycle & Segmenty" },
+    { href: "/crm/products",    label: "Produkty & Światy" },
+    { href: "/crm/promotions",  label: "Promocje" },
+    { href: "/crm/actions",     label: "Akcje CRM" },
+    { href: "/crm/import",      label: "Import / ETL", admin: true },
   ],
   products: [],
   b2b: [],
