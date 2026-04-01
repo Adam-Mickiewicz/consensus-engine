@@ -2,12 +2,16 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import DateRangePicker from '../components/DateRangePicker';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface KPIs {
   active_90d: number;
   repeaters_90d: number;
   buyers_90d: number;
+  active_in_range: number;
+  repeaters_in_range: number;
+  buyers_in_range: number;
   at_risk_revenue: number;
   at_risk_count: number;
   winback_vip_count: number;
@@ -95,19 +99,23 @@ function KpiCard({ label, value, subtitle, accent }: { label: string; value: str
 
 // ─── KPI Row ──────────────────────────────────────────────────────────────────
 function KpiRow({ kpis, promo, revenue }: { kpis: KPIs; promo: Promo; revenue: RevenueRow[] }) {
-  const repeatRate = kpis.buyers_90d > 0 ? (kpis.repeaters_90d / kpis.buyers_90d * 100).toFixed(1) : '0.0';
+  const activeClients = (kpis as any).active_in_range ?? kpis.active_90d ?? 0;
+  const repeaters = (kpis as any).repeaters_in_range ?? kpis.repeaters_90d ?? 0;
+  const buyers = (kpis as any).buyers_in_range ?? kpis.buyers_90d ?? 0;
+
+  const repeatRate = buyers > 0 ? (repeaters / buyers * 100).toFixed(1) : '0.0';
   const last3Repeat = revenue.slice(-3).reduce((s, r) => s + (r.repeat_revenue || 0), 0);
   const newPct = promo?.new_product_share_pct || 0;
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 4 }}>
-      <KpiCard label="Active 90d" value={formatNumber(kpis.active_90d)} subtitle={`z ${formatNumber(kpis.total_clients)} wszystkich`} />
-      <KpiCard label="Repeat rate 90d" value={repeatRate + '%'} subtitle={`${formatNumber(kpis.repeaters_90d)} powracających`} accent={parseFloat(repeatRate) < 10} />
+      <KpiCard label="Active (zakres)" value={formatNumber(activeClients)} subtitle={`z ${formatNumber(kpis.total_clients)} wszystkich`} />
+      <KpiCard label="Repeat rate" value={repeatRate + '%'} subtitle={`${formatNumber(repeaters)} powracających`} accent={parseFloat(repeatRate) < 10} />
       <KpiCard label="Repeat revenue 90d" value={formatPLN(last3Repeat)} subtitle="ostatnie 3 miesiące" />
       <KpiCard label="At-risk revenue" value={formatPLN(kpis.at_risk_revenue)} subtitle={`${formatNumber(kpis.at_risk_count)} klientów`} accent />
       <KpiCard label="Winback VIP" value={formatNumber(kpis.winback_vip_count)} subtitle={`~${formatPLN(kpis.winback_vip_revenue)} potential`} />
       <KpiCard label="2nd order candidates" value={formatNumber(kpis.second_order_candidates)} subtitle="New, 30-90d window" />
-      <KpiCard label="Promo share 90d" value={(promo?.promo_share_pct || 0) + '%'} subtitle={`${formatPLN(promo?.promo_revenue || 0)} z ${formatPLN(promo?.total_revenue || 0)}`} />
+      <KpiCard label="Promo share" value={(promo?.promo_share_pct || 0) + '%'} subtitle={`${formatPLN(promo?.promo_revenue || 0)} z ${formatPLN(promo?.total_revenue || 0)}`} />
       <KpiCard label="Nowości share" value={newPct.toFixed(0) + '%'} subtitle="udział nowości w sprzedaży" />
     </div>
   );
@@ -233,7 +241,7 @@ function RevenueTrend({ revenue }: { revenue: RevenueRow[] }) {
   return (
     <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', fontFamily: 'IBM Plex Mono, monospace' }}>Revenue trend (18m)</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', fontFamily: 'IBM Plex Mono, monospace' }}>Revenue trend</div>
         <div style={{ display: 'flex', gap: 12, fontSize: 11, color: '#6b6b6b', alignItems: 'center' }}>
           <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#2d8a4e', borderRadius: 2, marginRight: 4 }} />Repeat</span>
           <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#d4cfc7', borderRadius: 2, marginRight: 4 }} />New</span>
@@ -270,7 +278,7 @@ function OpportunityCards({ kpis, promo }: { kpis: KPIs; promo: Promo }) {
     {
       color: '#3577b3',
       title: 'Promo share revenue',
-      desc: 'Udział promo w revenue 90d',
+      desc: 'Udział promo w revenue',
       value: (promo?.promo_share_pct || 0) + '%',
       sub: formatPLN(promo?.promo_revenue || 0) + ' z ' + formatPLN(promo?.total_revenue || 0),
       href: '/crm/clients',
@@ -411,9 +419,11 @@ function generateAlerts(kpis: KPIs, promo: Promo, worlds: WorldRow[]) {
   if (kpis.second_order_candidates > 500) {
     alerts.push({ type: 'warning', text: `${formatNumber(kpis.second_order_candidates)} klientów po 1. zakupie w oknie 30-90 dni — optymalny moment na kampanię 2nd order` });
   }
-  const repeatRate = kpis.buyers_90d > 0 ? (kpis.repeaters_90d / kpis.buyers_90d * 100) : 0;
+  const repeaters = (kpis as any).repeaters_in_range ?? kpis.repeaters_90d ?? 0;
+  const buyers = (kpis as any).buyers_in_range ?? kpis.buyers_90d ?? 0;
+  const repeatRate = buyers > 0 ? (repeaters / buyers * 100) : 0;
   if (repeatRate > 0 && repeatRate < 10) {
-    alerts.push({ type: 'warning', text: `Repeat rate 90d wynosi ${repeatRate.toFixed(1)}% — poniżej benchmarku e-commerce (10-15%)` });
+    alerts.push({ type: 'warning', text: `Repeat rate wynosi ${repeatRate.toFixed(1)}% — poniżej benchmarku e-commerce (10-15%)` });
   }
   return alerts;
 }
@@ -439,11 +449,15 @@ export default function ExecutiveDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [dateRange, setDateRange] = useState({ from: '', to: '', label: 'Ostatnie 90d' });
 
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetch('/api/crm/dashboard')
+    const params = new URLSearchParams();
+    if (dateRange.from) params.set('date_from', dateRange.from);
+    if (dateRange.to) params.set('date_to', dateRange.to);
+    fetch(`/api/crm/dashboard?${params}`)
       .then(r => r.json())
       .then((d: DashboardData & { error?: string }) => {
         if (d.error) throw new Error(d.error);
@@ -452,7 +466,7 @@ export default function ExecutiveDashboard() {
         setLoading(false);
       })
       .catch((e: Error) => { setError(e.message); setLoading(false); });
-  }, []);
+  }, [dateRange]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -464,7 +478,7 @@ export default function ExecutiveDashboard() {
   return (
     <div style={{ padding: '24px', maxWidth: 1400, margin: '0 auto', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: '#1a1a1a', margin: 0, marginBottom: 6 }}>Executive Dashboard</h1>
           <div style={{ fontSize: 13, color: '#6b6b6b' }}>Stan bazy klientów Nadwyraz.com · odświeżono {formatDate(lastRefresh)}</div>
@@ -476,6 +490,8 @@ export default function ExecutiveDashboard() {
           Odśwież
         </button>
       </div>
+
+      <DateRangePicker onChange={setDateRange} defaultPreset="Ostatnie 90d" />
 
       <KpiRow kpis={kpis} promo={promo} revenue={revenue} />
 

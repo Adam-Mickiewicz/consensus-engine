@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
+import DateRangePicker from '../components/DateRangePicker';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface RetentionRow { cohort_month: string; cohort_size: number; months_after: number; active_clients: number; retention_pct: number; }
@@ -249,17 +250,21 @@ export default function CohortsPage() {
   const [data, setData] = useState<CohortData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState({ from: '', to: '', label: 'Cała historia' });
 
   const load = useCallback(() => {
     setLoading(true); setError(null);
-    fetch('/api/crm/cohorts')
+    const params = new URLSearchParams();
+    if (dateRange.from) params.set('date_from', dateRange.from);
+    if (dateRange.to) params.set('date_to', dateRange.to);
+    fetch(`/api/crm/cohorts?${params}`)
       .then(r => r.json())
       .then((d: CohortData & { error?: string }) => {
         if (d.error) throw new Error(d.error);
         setData(d); setLoading(false);
       })
       .catch((e: Error) => { setError(e.message); setLoading(false); });
-  }, []);
+  }, [dateRange]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -277,10 +282,12 @@ export default function CohortsPage() {
 
   return (
     <div style={{ padding: 24, maxWidth: 1400, margin: '0 auto', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif' }}>
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: '#1a1a1a', margin: 0, marginBottom: 6 }}>Kohorty &amp; Retencja</h1>
         <div style={{ fontSize: 13, color: '#6b6b6b' }}>Analiza jakości pozyskiwanych klientów i retencji w czasie</div>
       </div>
+
+      <DateRangePicker onChange={setDateRange} defaultPreset="Cała historia" />
 
       <RetentionHeatmap retention={data.retention} />
 

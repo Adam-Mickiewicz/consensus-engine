@@ -3,6 +3,13 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "../../../../lib/supabase";
 
+// ─── Data overview types ──────────────────────────────────────────────────────
+interface DataOverview {
+  summary: { clients: number; events: number; products: number; promotions: number; dateFrom: string | null; dateTo: string | null };
+  granulation: { period: string; clients: number; orders: number; revenue: number; avg_aov: number }[];
+  quality: { ean_pct: number; promo_pct: number };
+}
+
 const LIGHT = {
   surface: "#ffffff", border: "#ddd9d2",
   text: "#1a1814", textSub: "#7a7570", accent: "#b8763a",
@@ -62,6 +69,10 @@ export default function ImportPage() {
   const [liveResult, setLiveResult] = useState<Record<string, unknown> | null>(null);
   const [liveError, setLiveError] = useState<string | null>(null);
 
+  const [overview, setOverview] = useState<DataOverview | null>(null);
+  const [granularity, setGranularity] = useState('yearly');
+  const [overviewLoading, setOverviewLoading] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addFiles = useCallback((newFiles: FileList | File[]) => {
@@ -99,6 +110,14 @@ export default function ImportPage() {
   }, []);
 
   useEffect(() => { loadSyncLog(); }, [loadSyncLog]);
+
+  useEffect(() => {
+    setOverviewLoading(true);
+    fetch(`/api/crm/import/data-overview?granularity=${granularity}`)
+      .then(r => r.json())
+      .then(d => { setOverview(d); setOverviewLoading(false); })
+      .catch(() => setOverviewLoading(false));
+  }, [granularity]);
 
   async function handleUpload() {
     if (files.length === 0 || status === "running") return;
@@ -403,6 +422,106 @@ export default function ImportPage() {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Przegląd danych */}
+        <div className="imp-block">
+          <div className="imp-section">Przegląd danych</div>
+          {overviewLoading && <div style={{ color: t.textSub, fontSize: 13 }}>Ładowanie…</div>}
+          {!overviewLoading && overview && (
+            <div>
+              {/* Summary KPI cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginBottom: 16 }}>
+                {[
+                  { label: "Klienci", val: overview.summary.clients.toLocaleString("pl-PL") },
+                  { label: "Zamówienia", val: overview.summary.events.toLocaleString("pl-PL") },
+                  { label: "Produkty", val: overview.summary.products.toLocaleString("pl-PL") },
+                  { label: "Promocje", val: overview.summary.promotions.toLocaleString("pl-PL") },
+                  { label: "Okres", val: overview.summary.dateFrom && overview.summary.dateTo
+                    ? `${new Date(overview.summary.dateFrom).getFullYear()}–${new Date(overview.summary.dateTo).getFullYear()}`
+                    : "—" },
+                ].map(k => (
+                  <div key={k.label} className="imp-result-kpi">
+                    <div className="imp-result-val">{k.val}</div>
+                    <div className="imp-result-label">{k.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Granularity buttons */}
+              <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                {[
+                  { key: "yearly", label: "Roczna" },
+                  { key: "quarterly", label: "Kwartalna" },
+                  { key: "monthly", label: "Miesięczna" },
+                ].map(g => (
+                  <button
+                    key={g.key}
+                    onClick={() => setGranularity(g.key)}
+                    style={{
+                      padding: "5px 14px", border: `1px solid ${granularity === g.key ? t.accent : t.border}`,
+                      borderRadius: 4, background: granularity === g.key ? t.accent : t.surface,
+                      color: granularity === g.key ? "#fff" : t.textSub, fontSize: 12,
+                      cursor: "pointer", fontFamily: "IBM Plex Mono, monospace",
+                    }}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Granulation table */}
+              <div className="imp-card" style={{ marginBottom: 16 }}>
+                <table className="imp-log-table">
+                  <thead>
+                    <tr>
+                      <th>Okres</th>
+                      <th style={{ textAlign: "right" }}>Klienci</th>
+                      <th style={{ textAlign: "right" }}>Zamówienia</th>
+                      <th style={{ textAlign: "right" }}>Revenue</th>
+                      <th style={{ textAlign: "right" }}>Śr. AOV</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {overview.granulation.map(row => (
+                      <tr key={row.period}>
+                        <td style={{ fontFamily: "IBM Plex Mono, monospace", fontWeight: 600 }}>{row.period}</td>
+                        <td style={{ textAlign: "right" }}>{Number(row.clients).toLocaleString("pl-PL")}</td>
+                        <td style={{ textAlign: "right" }}>{Number(row.orders).toLocaleString("pl-PL")}</td>
+                        <td style={{ textAlign: "right", color: t.accent, fontWeight: 600 }}>
+                          {Number(row.revenue) >= 1_000_000
+                            ? (Number(row.revenue) / 1_000_000).toFixed(1) + " mln zł"
+                            : Number(row.revenue) >= 1_000
+                            ? Math.round(Number(row.revenue) / 1_000) + " tys. zł"
+                            : Math.round(Number(row.revenue)) + " zł"}
+                        </td>
+                        <td style={{ textAlign: "right", color: t.textSub }}>{Math.round(Number(row.avg_aov))} zł</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Data quality */}
+              <div style={{ fontSize: 12, fontWeight: 600, color: t.textSub, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+                Jakość danych
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {[
+                  { label: "Pokrycie EAN (zamówienia z kodem produktu)", pct: overview.quality.ean_pct, warn: overview.quality.ean_pct < 80 },
+                  { label: "Flaga promo (zamówienia z oznaczeniem promocji)", pct: overview.quality.promo_pct, warn: false },
+                ].map(q => (
+                  <div key={q.label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ flex: 1, fontSize: 12, color: t.text }}>{q.label}</div>
+                    <div style={{ width: 120, height: 6, background: t.border, borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${q.pct}%`, background: q.warn ? "#e6a817" : "#2d8a4e", borderRadius: 3 }} />
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: q.warn ? "#e6a817" : "#2d8a4e", minWidth: 44, textAlign: "right" }}>{q.pct}%</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Historia runów */}

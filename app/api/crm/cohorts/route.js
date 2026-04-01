@@ -2,11 +2,19 @@ import { getServiceClient } from '../../../../lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request) {
   const sb = getServiceClient();
   try {
+    const { searchParams } = new URL(request.url);
+    const dateFrom = searchParams.get('date_from');
+    const dateTo = searchParams.get('date_to');
+
+    let retentionQuery = sb.from('crm_cohort_retention').select('*').order('cohort_month', { ascending: true });
+    if (dateFrom) retentionQuery = retentionQuery.gte('cohort_month', dateFrom);
+    if (dateTo) retentionQuery = retentionQuery.lte('cohort_month', dateTo);
+
     const [retentionRes, timeRes, contextRes] = await Promise.all([
-      sb.from('crm_cohort_retention').select('*').order('cohort_month', { ascending: true }),
+      retentionQuery,
       sb.from('crm_time_to_second_order').select('*'),
       sb.from('crm_cohort_by_context').select('*'),
     ]);

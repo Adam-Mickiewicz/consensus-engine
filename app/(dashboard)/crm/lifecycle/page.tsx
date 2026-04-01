@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
+import DateRangePicker from '../components/DateRangePicker';
 
 interface FunnelRow { stage: string; client_count: number; total_ltv: number; avg_ltv: number; avg_orders: number; }
 interface MatrixRow { legacy_segment: string; risk_level: string; client_count: number; total_ltv: number; avg_ltv: number; avg_orders: number; }
@@ -213,17 +214,21 @@ export default function LifecyclePage() {
   const [data, setData] = useState<LifecycleData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState({ from: '', to: '', label: 'Cała historia' });
 
   const load = useCallback(() => {
     setLoading(true); setError(null);
-    fetch('/api/crm/lifecycle')
+    const params = new URLSearchParams();
+    if (dateRange.from) params.set('date_from', dateRange.from);
+    if (dateRange.to) params.set('date_to', dateRange.to);
+    fetch(`/api/crm/lifecycle?${params}`)
       .then(r => r.json())
       .then((d: LifecycleData & { error?: string }) => {
         if (d.error) throw new Error(d.error);
         setData(d); setLoading(false);
       })
       .catch((e: Error) => { setError(e.message); setLoading(false); });
-  }, []);
+  }, [dateRange]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -239,10 +244,11 @@ export default function LifecyclePage() {
 
   return (
     <div style={{ padding: 24, maxWidth: 1400, margin: '0 auto', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif' }}>
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: '#1a1a1a', margin: 0, marginBottom: 6 }}>Lifecycle &amp; Segmenty</h1>
         <div style={{ fontSize: 13, color: '#6b6b6b' }}>Struktura bazy klientów i przepływy między etapami</div>
       </div>
+      <DateRangePicker onChange={setDateRange} defaultPreset="Cała historia" />
       <FunnelSection funnel={data.funnel} />
       <div style={{ marginTop: 20 }}><MatrixSection matrix={data.matrix} /></div>
       <div style={{ marginTop: 20 }}><RepeatLadder ladder={data.ladder} /></div>

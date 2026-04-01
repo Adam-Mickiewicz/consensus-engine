@@ -1,7 +1,8 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import DateRangePicker from '../components/DateRangePicker';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,6 +43,18 @@ interface SeasonPerformance {
   avg_order_value: number;
   promo_count: number;
   total_count: number;
+}
+
+interface Promotion {
+  id: number;
+  promo_name: string;
+  discount_type: string | null;
+  discount_min: number | null;
+  free_shipping: boolean;
+  start_date: string;
+  end_date: string;
+  season: string[] | null;
+  code_name: string | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -377,16 +390,268 @@ function SeasonTab({ seasons }: { seasons: SeasonPerformance[] }) {
   );
 }
 
+// ─── TAB 4: Calendar ─────────────────────────────────────────────────────────
+
+const UPCOMING_OCCASIONS = [
+  { name: 'Dzień Matki',    month: 5,  day: 26, seasonKey: 'DZIEN_MATKI' },
+  { name: 'Dzień Dziecka',  month: 6,  day: 1,  seasonKey: 'DZIEN_DZIECKA' },
+  { name: 'Dzień Ojca',     month: 6,  day: 23, seasonKey: 'DZIEN_OJCA' },
+  { name: 'Wakacje',        month: 7,  day: 1,  seasonKey: 'WAKACJE' },
+  { name: 'Back to School', month: 9,  day: 1,  seasonKey: 'BACK_TO_SCHOOL' },
+  { name: 'Mikołajki',      month: 12, day: 6,  seasonKey: 'MIKOLAJKI' },
+  { name: 'Gwiazdka',       month: 12, day: 24, seasonKey: 'GWIAZDKA' },
+  { name: 'Walentynki',     month: 2,  day: 14, seasonKey: 'WALENTYNKI' },
+  { name: 'Dzień Kobiet',   month: 3,  day: 8,  seasonKey: 'DZIEN_KOBIET' },
+  { name: 'Wielkanoc',      month: 4,  day: 20, seasonKey: 'WIELKANOC' },
+  { name: 'Dzień Chłopaka', month: 9,  day: 30, seasonKey: 'DZIEN_CHLOPAKA' },
+  { name: 'Black Week',     month: 11, day: 25, seasonKey: 'BLACK_WEEK' },
+];
+
+function promoColor(p: Promotion): string {
+  if (p.free_shipping) return '#3577b3';
+  if (p.discount_type === 'PROCENT') return '#e6a817';
+  return '#b8763a';
+}
+
+function CalendarTab({ promotions, seasons, onRefresh }: { promotions: Promotion[]; seasons: SeasonPerformance[]; onRefresh: () => void }) {
+  const now = new Date();
+  const cutoff = new Date(now.getFullYear() - 1, 0, 1).toISOString().split('T')[0];
+
+  const visiblePromos = [...promotions]
+    .filter(p => p.end_date >= cutoff)
+    .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+
+  // Upcoming occasions within 90 days
+  const upcoming = UPCOMING_OCCASIONS.map(occ => {
+    let occDate = new Date(now.getFullYear(), occ.month - 1, occ.day);
+    if (occDate < now) occDate = new Date(now.getFullYear() + 1, occ.month - 1, occ.day);
+    const daysAway = Math.ceil((occDate.getTime() - now.getTime()) / 86400000);
+    const lastYearPerf = seasons.find(s => s.season === occ.seasonKey && s.year === now.getFullYear() - 1);
+    return { ...occ, occDate, daysAway, lastYearPerf };
+  }).filter(o => o.daysAway <= 90).sort((a, b) => a.daysAway - b.daysAway);
+
+  // Add promotion form
+  const [form, setForm] = useState({
+    promo_name: '', discount_type: 'ŻADNE', discount_value: '', free_shipping: false,
+    start_date: '', end_date: '', season: '', code_name: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitMsg, setSubmitMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    setSubmitMsg(null);
+    try {
+      const res = await fetch('/api/crm/promotions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setSubmitMsg({ ok: false, text: json.error || 'Błąd zapisu' });
+      } else {
+        setSubmitMsg({ ok: true, text: `Promocja "${json.promotion?.promo_name}" dodana pomyślnie` });
+        setForm({ promo_name: '', discount_type: 'ŻADNE', discount_value: '', free_shipping: false, start_date: '', end_date: '', season: '', code_name: '' });
+        onRefresh();
+      }
+    } catch (err) {
+      setSubmitMsg({ ok: false, text: err instanceof Error ? err.message : 'Błąd połączenia' });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const inputStyle: React.CSSProperties = {
+    padding: '7px 10px', border: `1px solid ${T.border}`, borderRadius: 4,
+    fontSize: 13, fontFamily: 'IBM Plex Mono, monospace', color: T.text,
+    background: T.card, width: '100%', boxSizing: 'border-box',
+  };
+  const labelStyle: React.CSSProperties = {
+    fontSize: 11, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.5px',
+    marginBottom: 4, display: 'block', fontFamily: 'IBM Plex Mono, monospace',
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+      {/* Section 1: Timeline */}
+      <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: 20 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 4, fontFamily: 'IBM Plex Mono, monospace' }}>Timeline promocji</div>
+        <div style={{ fontSize: 12, color: T.muted, marginBottom: 16 }}>Ostatni rok + przyszłe · niebieskie = darmowa dostawa · żółte = rabat % · brązowe = inne</div>
+        {visiblePromos.length === 0 && <div style={{ color: T.muted, fontSize: 13 }}>Brak promocji w tym zakresie.</div>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {visiblePromos.map(p => {
+            const isFuture = new Date(p.start_date) > now;
+            const durationDays = Math.max(1, Math.ceil((new Date(p.end_date).getTime() - new Date(p.start_date).getTime()) / 86400000));
+            const barWidth = Math.min(Math.max(durationDays * 4, 40), 300);
+            const color = promoColor(p);
+            return (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 88, fontSize: 10, color: T.muted, fontFamily: 'IBM Plex Mono, monospace', flexShrink: 0, textAlign: 'right' }}>
+                  {new Date(p.start_date).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' })}
+                </div>
+                <div style={{
+                  width: barWidth, height: 28, background: color + '22',
+                  border: `${isFuture ? '2px dashed' : '1px solid'} ${color}`,
+                  borderRadius: 4, display: 'flex', alignItems: 'center', paddingLeft: 8,
+                  flexShrink: 0,
+                }}>
+                  <span style={{ fontSize: 11, color, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: barWidth - 16 }}>
+                    {p.promo_name}
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: T.muted }}>
+                  {durationDays}d
+                  {p.discount_min && <span style={{ marginLeft: 4, color }}>{p.discount_min}%</span>}
+                  {p.free_shipping && <span style={{ marginLeft: 4, color: '#3577b3' }}>FS</span>}
+                  {isFuture && <span style={{ marginLeft: 4, background: '#3577b322', color: '#3577b3', padding: '1px 5px', borderRadius: 4, fontSize: 10 }}>nadchodzi</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Section 2: Upcoming occasions */}
+      {upcoming.length > 0 && (
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: 20 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 4, fontFamily: 'IBM Plex Mono, monospace' }}>Nadchodzące okazje (90 dni)</div>
+          <div style={{ fontSize: 12, color: T.muted, marginBottom: 16 }}>Okazje w ciągu 90 dni z wynikami rok temu</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {upcoming.map(occ => (
+              <div key={occ.seasonKey} style={{
+                display: 'flex', alignItems: 'center', gap: 16,
+                padding: '10px 14px', background: occ.daysAway <= 14 ? 'rgba(230,168,23,0.06)' : T.bg,
+                border: `1px solid ${occ.daysAway <= 14 ? T.warning : T.border}`, borderRadius: 6,
+              }}>
+                <div style={{ minWidth: 120, fontSize: 13, fontWeight: 600, color: T.text }}>{occ.name}</div>
+                <div style={{ minWidth: 80, fontSize: 12, color: T.muted, fontFamily: 'IBM Plex Mono, monospace' }}>
+                  {occ.occDate.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' })}
+                </div>
+                <div style={{ minWidth: 80, fontSize: 12, fontWeight: 600, color: occ.daysAway <= 7 ? T.danger : occ.daysAway <= 14 ? T.warning : T.muted }}>
+                  za {occ.daysAway} dni
+                </div>
+                {occ.lastYearPerf ? (
+                  <div style={{ fontSize: 12, color: T.muted }}>
+                    Rok temu: <strong style={{ color: T.text }}>{formatPLN(occ.lastYearPerf.revenue)}</strong>
+                    <span style={{ marginLeft: 8 }}>{occ.lastYearPerf.orders} zam.</span>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: T.pale }}>brak danych za rok temu</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Section 3: Add promotion form */}
+      <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: 20 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 16, fontFamily: 'IBM Plex Mono, monospace' }}>Dodaj promocję</div>
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+            <div>
+              <label style={labelStyle}>Nazwa promocji *</label>
+              <input
+                type="text" required value={form.promo_name}
+                onChange={e => setForm(f => ({ ...f, promo_name: e.target.value }))}
+                style={inputStyle} placeholder="np. Gwiazdka 2025"
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Typ rabatu</label>
+              <select value={form.discount_type} onChange={e => setForm(f => ({ ...f, discount_type: e.target.value }))} style={inputStyle}>
+                <option value="ŻADNE">ŻADNE</option>
+                <option value="PROCENT">PROCENT</option>
+                <option value="KWOTA">KWOTA</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Wartość rabatu</label>
+              <input
+                type="number" value={form.discount_value}
+                onChange={e => setForm(f => ({ ...f, discount_value: e.target.value }))}
+                style={inputStyle} placeholder="np. 20"
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Kod promocji</label>
+              <input
+                type="text" value={form.code_name}
+                onChange={e => setForm(f => ({ ...f, code_name: e.target.value }))}
+                style={inputStyle} placeholder="np. SUMMER20"
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Data rozpoczęcia *</label>
+              <input
+                type="date" required value={form.start_date}
+                onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Data zakończenia *</label>
+              <input
+                type="date" required value={form.end_date}
+                onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Okazja / sezon</label>
+              <select value={form.season} onChange={e => setForm(f => ({ ...f, season: e.target.value }))} style={inputStyle}>
+                <option value="">— wybierz okazję —</option>
+                {UPCOMING_OCCASIONS.map(o => <option key={o.seasonKey} value={o.seasonKey}>{o.name}</option>)}
+              </select>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <input
+                type="checkbox" id="free_shipping" checked={form.free_shipping}
+                onChange={e => setForm(f => ({ ...f, free_shipping: e.target.checked }))}
+                style={{ width: 16, height: 16, cursor: 'pointer' }}
+              />
+              <label htmlFor="free_shipping" style={{ ...labelStyle, margin: 0, cursor: 'pointer', textTransform: 'none', fontSize: 13 }}>Darmowa dostawa</label>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <button
+              type="submit" disabled={submitting}
+              style={{ padding: '9px 20px', background: T.accent, color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.6 : 1, fontFamily: 'IBM Plex Mono, monospace' }}
+            >
+              {submitting ? 'Zapisuję…' : 'Dodaj promocję'}
+            </button>
+            {submitMsg && (
+              <div style={{ fontSize: 13, color: submitMsg.ok ? T.success : T.danger, fontFamily: 'IBM Plex Mono, monospace' }}>
+                {submitMsg.ok ? '✓ ' : '⚠ '}{submitMsg.text}
+              </div>
+            )}
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+type TabKey = 'scorecard' | 'dependency' | 'seasons' | 'calendar';
+
 export default function PromotionsPage() {
-  const [tab, setTab] = useState<'scorecard' | 'dependency' | 'seasons'>('scorecard');
-  const [data, setData] = useState<{ scorecard: PromoScorecard[]; dependency: PromoDependency[]; seasons: SeasonPerformance[] } | null>(null);
+  const [tab, setTab] = useState<TabKey>('scorecard');
+  const [data, setData] = useState<{ scorecard: PromoScorecard[]; dependency: PromoDependency[]; seasons: SeasonPerformance[]; promotions: Promotion[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState({ from: '', to: '', label: 'Ostatnie 12m' });
 
-  useEffect(() => {
-    fetch('/api/crm/promotions')
+  const load = useCallback(() => {
+    setLoading(true); setError(null);
+    const params = new URLSearchParams();
+    if (dateRange.from) params.set('date_from', dateRange.from);
+    if (dateRange.to) params.set('date_to', dateRange.to);
+    fetch(`/api/crm/promotions?${params}`)
       .then((r) => r.json())
       .then((d) => {
         if (d.error) setError(d.error);
@@ -394,19 +659,23 @@ export default function PromotionsPage() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [dateRange]);
+
+  useEffect(() => { load(); }, [load]);
 
   return (
     <div style={{ padding: 24, background: T.bg, minHeight: '100vh', fontFamily: 'system-ui, sans-serif', color: T.text }}>
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, fontFamily: 'IBM Plex Mono, monospace' }}>
-          Promocje & Incrementality
+          Promocje &amp; Incrementality
         </h1>
         <p style={{ fontSize: 13, color: T.muted, margin: '4px 0 0' }}>
           Ocena wpływu promocji na przychód i retencję
         </p>
       </div>
+
+      <DateRangePicker onChange={setDateRange} defaultPreset="Ostatnie 12m" />
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: 4, width: 'fit-content' }}>
@@ -414,6 +683,7 @@ export default function PromotionsPage() {
           { key: 'scorecard', label: 'Scorecard' },
           { key: 'dependency', label: 'Promo Dependency' },
           { key: 'seasons', label: 'Sezonowość' },
+          { key: 'calendar', label: 'Kalendarz' },
         ] as const).map((t) => (
           <button
             key={t.key}
@@ -445,6 +715,9 @@ export default function PromotionsPage() {
       {!loading && data && tab === 'scorecard' && <ScorecardTab scorecard={data.scorecard} />}
       {!loading && data && tab === 'dependency' && <DependencyTab dependency={data.dependency} />}
       {!loading && data && tab === 'seasons' && <SeasonTab seasons={data.seasons} />}
+      {!loading && data && tab === 'calendar' && (
+        <CalendarTab promotions={data.promotions} seasons={data.seasons} onRefresh={load} />
+      )}
     </div>
   );
 }

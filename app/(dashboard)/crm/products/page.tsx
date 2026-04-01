@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
+import DateRangePicker from '../components/DateRangePicker';
 
 interface ProductRow { product_name: string | null; ean: number | null; times_sold: number; total_quantity: number; total_revenue: number; unique_buyers: number; repeat_buyers: number; buyer_repeat_rate: number; promo_sales: number; promo_share_pct: number; collection: string | null; product_group: string | null; available: boolean | null; }
 interface SeasonRow { season: string; year: number; revenue: number; orders: number; unique_customers: number; avg_order_value: number; promo_count: number; }
@@ -276,17 +277,21 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('products');
+  const [dateRange, setDateRange] = useState({ from: '', to: '', label: 'Ostatnie 12m' });
 
   const load = useCallback(() => {
     setLoading(true); setError(null);
-    fetch('/api/crm/products-analytics?limit=200')
+    const params = new URLSearchParams({ limit: '200' });
+    if (dateRange.from) params.set('date_from', dateRange.from);
+    if (dateRange.to) params.set('date_to', dateRange.to);
+    fetch(`/api/crm/products-analytics?${params}`)
       .then(r => r.json())
       .then((d: ProductsData & { error?: string }) => {
         if (d.error) throw new Error(d.error);
         setData(d); setLoading(false);
       })
       .catch((e: Error) => { setError(e.message); setLoading(false); });
-  }, []);
+  }, [dateRange]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -302,10 +307,12 @@ export default function ProductsPage() {
 
   return (
     <div style={{ padding: 24, maxWidth: 1400, margin: '0 auto', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif' }}>
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: '#1a1a1a', margin: 0, marginBottom: 6 }}>Produkty &amp; Światy</h1>
         <div style={{ fontSize: 13, color: '#6b6b6b' }}>CRM perspective na asortyment i sezonowość</div>
       </div>
+
+      <DateRangePicker onChange={setDateRange} defaultPreset="Ostatnie 12m" />
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '2px solid #e8e0d8', paddingBottom: 0 }}>
         {TABS.map(tab => (
