@@ -7,22 +7,22 @@ import EdroneExportDocs from "@/components/crm/EdroneExportDocs";
 const DARK = {
   bg: "#0f1117", card: "#1a1f2e", border: "#2a3050",
   text: "#e2e8f0", textSub: "#8892a4",
-  accent: "#6366f1", accentHover: "#4f46e5",
+  accent: "#b8763a", accentHover: "#a06830",
   hover: "#1e2438",
 };
 const LIGHT = {
-  bg: "#f1f5f9", card: "#ffffff", border: "#e2e8f0",
-  text: "#0f172a", textSub: "#64748b",
-  accent: "#6366f1", accentHover: "#4f46e5",
-  hover: "#f8fafc",
+  bg: "#f5f2ee", card: "#ffffff", border: "#e8e0d8",
+  text: "#1a1a1a", textSub: "#6b6b6b",
+  accent: "#b8763a", accentHover: "#a06830",
+  hover: "#faf8f5",
 };
 
 const SEG_COLORS: Record<string, string> = {
-  Diamond: "#60a5fa", Platinum: "#a78bfa", Gold: "#fbbf24",
-  Returning: "#34d399", New: "#f87171",
+  Diamond: "#b8763a", Platinum: "#8b7355", Gold: "#c9a84c",
+  Returning: "#3577b3", New: "#999999",
 };
 const RISK_COLORS: Record<string, string> = {
-  OK: "#22c55e", Risk: "#f59e0b", HighRisk: "#f97316", Lost: "#ef4444",
+  OK: "#2d8a4e", Risk: "#e6a817", HighRisk: "#dd4444", Lost: "#999999",
 };
 
 interface ClientRow {
@@ -314,6 +314,7 @@ export default function ClientsView() {
                   <th style={{ textAlign: "right", ...thStyle("ltv") }} onClick={() => setSort("ltv")}>LTV{sortIcon("ltv")}</th>
                   <th style={{ textAlign: "right", ...thStyle("orders") }} onClick={() => setSort("orders")}>Zamówienia{sortIcon("orders")}</th>
                   <th style={thStyle("last_order")} onClick={() => setSort("last_order")}>Ostatni zakup{sortIcon("last_order")}</th>
+                  <th>Dni od zakupu</th>
                   <th style={thStyle("first_order")} onClick={() => setSort("first_order")}>Pierwszy zakup{sortIcon("first_order")}</th>
                   <th>Top domena</th>
                   <th>Winback</th>
@@ -326,20 +327,26 @@ export default function ClientsView() {
                     <td><Link href={`/crm/clients/${c.client_id}`} className="cl-link">{c.client_id}</Link></td>
                     <td>
                       {c.legacy_segment ? (
-                        <span className="cl-badge" style={{ background: (SEG_COLORS[c.legacy_segment] ?? "#6366f1") + "22", color: SEG_COLORS[c.legacy_segment] ?? "#6366f1" }}>{c.legacy_segment}</span>
+                        <span className="cl-badge" style={{ background: SEG_COLORS[c.legacy_segment] ?? "#999", color: "#fff" }}>{c.legacy_segment}</span>
                       ) : "—"}
                     </td>
                     <td>
                       {c.risk_level ? (
-                        <span className="cl-badge" style={{ background: (RISK_COLORS[c.risk_level] ?? "#475569") + "22", color: RISK_COLORS[c.risk_level] ?? "#475569" }}>{c.risk_level}</span>
+                        <span className="cl-badge" style={{ background: RISK_COLORS[c.risk_level] ?? "#999", color: "#fff" }}>{c.risk_level}</span>
                       ) : "—"}
                     </td>
                     <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: t.accent, fontWeight: 600 }}>
                       {c.ltv != null ? `${Number(c.ltv).toLocaleString("pl-PL")} zł` : "—"}
                     </td>
                     <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: t.textSub }}>{c.orders_count ?? "—"}</td>
-                    <td style={{ color: t.textSub, fontSize: 12 }}>{c.last_order ? c.last_order.slice(0, 10) : "—"}</td>
-                    <td style={{ color: t.textSub, fontSize: 12 }}>{c.first_order ? c.first_order.slice(0, 10) : "—"}</td>
+                    <td style={{ color: t.textSub, fontSize: 12 }}>{c.last_order ? new Date(c.last_order).toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}</td>
+                    <td style={{ fontSize: 12, fontVariantNumeric: "tabular-nums" }}>{(() => {
+                      if (!c.last_order) return <span style={{ color: t.textSub }}>—</span>;
+                      const d = Math.round((Date.now() - new Date(c.last_order).getTime()) / 86400000);
+                      const color = d > 180 ? "#dd4444" : d > 90 ? "#e6a817" : t.textSub;
+                      return <span style={{ color, fontWeight: d > 180 ? 600 : 400 }}>{d}d</span>;
+                    })()}</td>
+                    <td style={{ color: t.textSub, fontSize: 12 }}>{c.first_order ? new Date(c.first_order).toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}</td>
                     <td style={{ color: t.textSub, fontSize: 12, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis" }}>{c.top_domena ?? "—"}</td>
                     <td>
                       {c.winback_priority ? (

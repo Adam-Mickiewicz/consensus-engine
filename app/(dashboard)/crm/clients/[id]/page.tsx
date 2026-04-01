@@ -9,22 +9,22 @@ import PIIMasked from "../../../../../components/crm/PIIMasked";
 const DARK = {
   bg: "#0f1117", card: "#1a1f2e", border: "#2a3050",
   text: "#e2e8f0", textSub: "#8892a4",
-  accent: "#6366f1", accentHover: "#4f46e5",
+  accent: "#b8763a", accentHover: "#a06830",
   hover: "#1e2438",
 };
 const LIGHT = {
-  bg: "#f1f5f9", card: "#ffffff", border: "#e2e8f0",
-  text: "#0f172a", textSub: "#64748b",
-  accent: "#6366f1", accentHover: "#4f46e5",
-  hover: "#f8fafc",
+  bg: "#f5f2ee", card: "#ffffff", border: "#e8e0d8",
+  text: "#1a1a1a", textSub: "#6b6b6b",
+  accent: "#b8763a", accentHover: "#a06830",
+  hover: "#faf8f5",
 };
 
 const SEG_COLORS: Record<string, string> = {
-  Diamond: "#60a5fa", Platinum: "#a78bfa", Gold: "#fbbf24",
-  Returning: "#34d399", New: "#f87171",
+  Diamond: "#b8763a", Platinum: "#8b7355", Gold: "#c9a84c",
+  Returning: "#3577b3", New: "#999999",
 };
 const RISK_COLORS: Record<string, string> = {
-  OK: "#22c55e", Risk: "#f59e0b", HighRisk: "#f97316", Lost: "#ef4444",
+  OK: "#2d8a4e", Risk: "#e6a817", HighRisk: "#dd4444", Lost: "#999999",
 };
 const SEASON_COLORS: Record<string, string> = {
   wiosna: "#22c55e", spring: "#22c55e",
@@ -753,11 +753,11 @@ function InterestProfile({ taxonomy, t }: { taxonomy: Taxonomy; t: typeof DARK }
           <div style={subLabel}>Nowości vs evergreen</div>
           <div style={{ height: 8, borderRadius: 4, overflow: "hidden", background: t.border, display: "flex" }}>
             <div style={{ width: `${newRatio}%`, background: "#22c55e", transition: "width 0.4s" }} />
-            <div style={{ flex: 1, background: "#6366f1" }} />
+            <div style={{ flex: 1, background: "#b8763a" }} />
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
             <span style={{ fontSize: 10, color: "#22c55e" }}>Nowości {newRatio}%</span>
-            <span style={{ fontSize: 10, color: "#6366f1" }}>Evergreen {evergreenRatio}%</span>
+            <span style={{ fontSize: 10, color: "#b8763a" }}>Evergreen {evergreenRatio}%</span>
           </div>
         </div>
 
@@ -783,7 +783,7 @@ function InterestProfile({ taxonomy, t }: { taxonomy: Taxonomy; t: typeof DARK }
             <div style={{ fontSize: 9, color: t.textSub, marginTop: 2 }}>Łącznie pozycji zakupowych</div>
           </div>
           <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#6366f1" }}>{evergreenCount}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#b8763a" }}>{evergreenCount}</div>
             <div style={{ fontSize: 9, color: t.textSub, marginTop: 2 }}>Produkty ponadczasowe</div>
           </div>
           <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
@@ -843,7 +843,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   if (loading) return <ProfileSkeleton t={t} />;
   if (error) return (
     <div style={{ fontFamily: "var(--font-geist-sans)", color: t.text }}>
-      <Link href="/crm/clients" style={{ color: t.accent, fontSize: 13, textDecoration: "none" }}>← Wróć do listy</Link>
+      <Link href="/crm/clients" style={{ color: "#b8763a", fontSize: 13, textDecoration: "none" }}>← Wróć do listy</Link>
       <div style={{ marginTop: 16, padding: "14px 18px", background: "#ef444411", border: "1px solid #ef444444", borderRadius: 8, color: "#ef4444" }}>⚠ {error}</div>
     </div>
   );
@@ -869,7 +869,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
       <div className="cp-wrap">
         {/* Back */}
         <div style={{ marginBottom: 14 }}>
-          <Link href="/crm/clients" style={{ color: t.accent, fontSize: 13, textDecoration: "none" }}>← Wróć do listy</Link>
+          <Link href="/crm/clients" style={{ color: "#b8763a", fontSize: 13, textDecoration: "none" }}>← Wróć do listy</Link>
         </div>
 
         {/* VIP Banner */}
@@ -885,10 +885,10 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
             <span style={{ fontFamily: "var(--font-geist-mono), monospace", fontSize: 13, color: t.textSub, background: t.hover, border: `1px solid ${t.border}`, borderRadius: 6, padding: "3px 10px", letterSpacing: "0.04em" }}>
               {profile.client_id}
             </span>
-            {seg && <span className="cp-badge" style={{ background: (SEG_COLORS[seg] ?? t.accent) + "22", color: SEG_COLORS[seg] ?? t.accent }}>{seg}</span>}
-            {risk && <span className="cp-badge" style={{ background: (RISK_COLORS[risk] ?? "#475569") + "22", color: RISK_COLORS[risk] ?? "#475569" }}>{risk}</span>}
+            {seg && <span className="cp-badge" style={{ background: SEG_COLORS[seg] ?? t.accent, color: "#fff" }}>{seg}</span>}
+            {risk && <span className="cp-badge" style={{ background: RISK_COLORS[risk] ?? "#999", color: "#fff" }}>{risk}</span>}
             {profile.winback_priority && (
-              <span className="cp-badge" style={{ background: "#f9731622", color: "#f97316" }}>⚡ Winback</span>
+              <span className="cp-badge" style={{ background: "#dd444422", color: "#dd4444" }}>⚡ Winback</span>
             )}
           </div>
         </div>
