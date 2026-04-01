@@ -399,22 +399,27 @@ export async function GET(request) {
       const OPENAI_IMAGE_MODELS = ['dalle3', 'gpt4o-image'];
 
       if (OPENAI_IMAGE_MODELS.includes(job.model_id)) {
-        // === DALL-E 3 ===
+        // === DALL-E 3 — n>1 requires sequential calls ===
         if (job.model_id === 'dalle3') {
           const orientationToSize = { '1:1': '1024x1024', '16:9': '1792x1024', '9:16': '1024x1792' };
           const size = orientationToSize[job.params?.orientation] || '1024x1024';
           const quality = job.params?.quality || 'standard';
+          const variants = parseInt(job.params?.variants) || 1;
+          const dalleResults = [];
 
-          const res = await fetch('https://api.openai.com/v1/images/generations', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` },
-            body: JSON.stringify({ model: 'dall-e-3', prompt: job.prompt, n: 1, size, quality, response_format: 'url' }),
-          });
-          if (!res.ok) { const err = await res.text(); throw new Error(`DALL-E error ${res.status}: ${err}`); }
-          const data = await res.json();
-          for (let i = 0; i < (data.data || []).length; i++) {
-            const imageUrl = data.data[i]?.url;
-            if (!imageUrl) continue;
+          for (let v = 0; v < variants; v++) {
+            const res = await fetch('https://api.openai.com/v1/images/generations', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` },
+              body: JSON.stringify({ model: 'dall-e-3', prompt: job.prompt, n: 1, size, quality, response_format: 'url' }),
+            });
+            if (!res.ok) { const err = await res.text(); throw new Error(`DALL-E error ${res.status}: ${err}`); }
+            const data = await res.json();
+            if (data.data?.[0]?.url) dalleResults.push(data.data[0].url);
+          }
+
+          for (let i = 0; i < dalleResults.length; i++) {
+            const imageUrl = dalleResults[i];
             const imgRes = await fetch(imageUrl);
             const imgBuffer = await imgRes.arrayBuffer();
             const fileName = `${job.id}_${i}.png`;
