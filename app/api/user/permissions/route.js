@@ -37,5 +37,7 @@ export async function GET(request) {
   return Response.json({
     permissions,
     role: roleData?.role || 'viewer'
+  }, {
+    headers: { 'Cache-Control': 'private, max-age=30' }
   })
 }

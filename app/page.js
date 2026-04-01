@@ -104,7 +104,7 @@ const TOOL_IDS = {
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState(null);
-  const { canAccess } = useUserPermissions();
+  const { canAccess, ready } = useUserPermissions();
 
   useEffect(() => {
     setMounted(true);
@@ -159,6 +159,8 @@ export default function Home() {
         .ce-cat-desc{font-size:11px;color:#7a7570;line-height:1.55;}
         .ce-divider{height:1px;background:#e8e4de;margin:0 0 40px;}
         @media(max-width:640px){.ce-cat-grid{grid-template-columns:1fr 1fr;}}
+        @keyframes shimmer{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
+        .skeleton{background:linear-gradient(90deg,#ede9e2 25%,#f5f2ec 50%,#ede9e2 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:12px;}
       `}</style>
 
       <div className="ce-page">
@@ -195,36 +197,52 @@ export default function Home() {
 
           {/* Kategorie platformy */}
           <div className="ce-section-label">Platforma</div>
-          <div className="ce-cat-grid">
-            {CATEGORIES.filter(c => canAccess(c.toolId)).map((c) => (
-              <Link key={c.href} href={c.href} className="ce-cat-tile">
-                <span className="ce-cat-icon">{c.icon}</span>
-                <span className="ce-cat-name">{c.label}</span>
-                <span className="ce-cat-desc">{c.desc}</span>
-              </Link>
-            ))}
-          </div>
+          {!ready ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "10px", marginBottom: "40px" }}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="skeleton" style={{ height: "90px", opacity: 1 - i * 0.1 }} />
+              ))}
+            </div>
+          ) : (
+            <div className="ce-cat-grid">
+              {CATEGORIES.filter(c => canAccess(c.toolId)).map((c) => (
+                <Link key={c.href} href={c.href} className="ce-cat-tile">
+                  <span className="ce-cat-icon">{c.icon}</span>
+                  <span className="ce-cat-name">{c.label}</span>
+                  <span className="ce-cat-desc">{c.desc}</span>
+                </Link>
+              ))}
+            </div>
+          )}
 
           <div className="ce-divider" />
 
           {/* Narzędzia AI */}
           <div className="ce-section-label">Narzędzia AI</div>
-          <div className="ce-grid">
-            {TOOLS.filter(tool => !TOOL_IDS[tool.href] || canAccess(TOOL_IDS[tool.href])).map((tool, i) => (
-              <Link
-                key={tool.href}
-                href={tool.href}
-                className={`ce-tile${tool.wide ? " ce-wide" : ""}${mounted ? " on" : ""}`}
-                style={{ animationDelay: `${i * 0.07}s` }}
-              >
-                <span className="ce-arrow">↗</span>
-                <div style={{fontSize: tool.wide ? 26 : 20, marginBottom: 14}}>{tool.icon}</div>
-                <div className="ce-tile-label">{tool.label}</div>
-                <div className="ce-tile-name">{tool.name}</div>
-                <p className="ce-tile-desc">{tool.desc}</p>
-              </Link>
-            ))}
-          </div>
+          {!ready ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "12px", paddingBottom: "52px" }}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="skeleton" style={{ height: "160px" }} />
+              ))}
+            </div>
+          ) : (
+            <div className="ce-grid">
+              {TOOLS.filter(tool => !TOOL_IDS[tool.href] || canAccess(TOOL_IDS[tool.href])).map((tool, i) => (
+                <Link
+                  key={tool.href}
+                  href={tool.href}
+                  className={`ce-tile${tool.wide ? " ce-wide" : ""}${mounted ? " on" : ""}`}
+                  style={{ animationDelay: `${i * 0.07}s` }}
+                >
+                  <span className="ce-arrow">↗</span>
+                  <div style={{fontSize: tool.wide ? 26 : 20, marginBottom: 14}}>{tool.icon}</div>
+                  <div className="ce-tile-label">{tool.label}</div>
+                  <div className="ce-tile-name">{tool.name}</div>
+                  <p className="ce-tile-desc">{tool.desc}</p>
+                </Link>
+              ))}
+            </div>
+          )}
 
         </div>
       </div>
