@@ -582,7 +582,6 @@ export default function BehaviorPage() {
                       <MetricTile label="Promo buyers" valA={ga?.promo_buyers_pct ?? 0} valB={gb?.promo_buyers_pct ?? 0} fmt={fmtPct} t={t} />
                       <MetricTile label="Free shipping" valA={ga?.free_shipping_pct ?? 0} valB={gb?.free_shipping_pct ?? 0} fmt={fmtPct} t={t} />
                       <MetricTile label="Nowe produkty" valA={ga?.avg_new_products_ratio ?? 0} valB={gb?.avg_new_products_ratio ?? 0} fmt={fmtPct} t={t} />
-                      <MetricTile label="Evergreen ratio" valA={ga?.avg_evergreen_ratio ?? 0} valB={gb?.avg_evergreen_ratio ?? 0} fmt={fmtPct} t={t} />
                       <MetricTile label="Avg. events" valA={ga?.avg_events ?? 0} valB={gb?.avg_events ?? 0} fmt={n => n.toFixed(1)} t={t} />
                     </div>
                   </div>

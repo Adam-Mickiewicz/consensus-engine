@@ -102,6 +102,16 @@ const CHANNELS = [
       { id: "listing_365x489", label: "365×489 px" },
     ],
   },
+  {
+    id: "newsletter",
+    label: "📨 Newsletter",
+    tooltip: "Grafiki i copy do wysyłki newslettera.",
+    formats: [
+      { id: "newsletter_600x600", label: "600×600" },
+      { id: "newsletter_500x625", label: "500×625" },
+    ],
+    hasSketch: true,
+  },
 ];
 
 const CTA_OPTIONS = ["Kup teraz", "Sprawdź", "Dowiedz się więcej", "Zobacz ofertę", "Skorzystaj", "Zamów", "Odkryj", "Inne"];
@@ -1482,7 +1492,7 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
                 format: fmt.label,
                 rodzaj: typ,
                 iloscGrafik: fmtData["count_" + typ] || 1,
-                iloscCopy: (["email", "slider_main", "slider_category", "popup"].includes(id)) ? 1 : null,
+                iloscCopy: (["email", "newsletter", "slider_main", "slider_category", "popup"].includes(id)) ? 1 : null,
                 uwagi: fmtData["note_" + typ] || fmtData.note || cfg.notes || "",
               });
             }
@@ -1497,16 +1507,14 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
       // Nagłówek arkusza
       const headers = [
         "Promocja",
-        "Medium (Meta/ Google)",
+        "Medium",
         "Format",
         "Rodzaj grafiki",
         "Ilość grafik",
         "Link do grafik",
-        "link do wideo",
+        "Link do wideo",
         "Ilość copy",
-        "early access (Copy - link lub tekst)",
-        "full access",
-        "reminder",
+        "Copy (link lub tekst)",
       ];
 
       const rows = [headers];
@@ -1520,9 +1528,7 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
           "",  // Link do grafik — puste, wypełni grafik
           "",  // link do wideo — puste
           k.iloscCopy ?? "",
-          "",
-          "",
-          "",
+          "",  // Copy (link lub tekst) — wypełni copywriter
         ]);
       });
 
@@ -1536,11 +1542,9 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
         { wch: 22 }, // Rodzaj grafiki
         { wch: 12 }, // Ilość grafik
         { wch: 18 }, // Link do grafik
-        { wch: 16 }, // link do wideo
+        { wch: 16 }, // Link do wideo
         { wch: 12 }, // Ilość copy
-        { wch: 55 }, // early access
-        { wch: 55 }, // full access
-        { wch: 55 }, // reminder
+        { wch: 55 }, // Copy (link lub tekst)
       ];
 
       XLSX.utils.book_append_sheet(wb, ws, "Formaty");

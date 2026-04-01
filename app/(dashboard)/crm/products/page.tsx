@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
 
-interface ProductRow { product_name: string | null; ean: number | null; times_sold: number; total_quantity: number; total_revenue: number; unique_buyers: number; repeat_buyers: number; buyer_repeat_rate: number; promo_sales: number; promo_share_pct: number; collection: string | null; product_group: string | null; evergreen: boolean | null; available: boolean | null; }
+interface ProductRow { product_name: string | null; ean: number | null; times_sold: number; total_quantity: number; total_revenue: number; unique_buyers: number; repeat_buyers: number; buyer_repeat_rate: number; promo_sales: number; promo_share_pct: number; collection: string | null; product_group: string | null; available: boolean | null; }
 interface SeasonRow { season: string; year: number; revenue: number; orders: number; unique_customers: number; avg_order_value: number; promo_count: number; }
 interface CrossSellRow { product_a: string; product_b: string; co_occurrence: number; }
 interface WorldRow { world: string; client_count: number; total_ltv: number; avg_ltv: number; repeat_clients: number; repeat_rate: number; vip_count: number; lost_count: number; avg_orders: number; }
@@ -32,7 +32,6 @@ function ProductsTab({ products }: { products: ProductRow[] }) {
   const [sortBy, setSortBy] = useState<keyof ProductRow>('total_revenue');
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('desc');
   const [filterCollection, setFilterCollection] = useState('');
-  const [filterEvergreen, setFilterEvergreen] = useState(false);
   const [page, setPage] = useState(1);
   const PER_PAGE = 30;
 
@@ -40,7 +39,6 @@ function ProductsTab({ products }: { products: ProductRow[] }) {
 
   const sorted = [...products]
     .filter(p => !filterCollection || p.collection === filterCollection)
-    .filter(p => !filterEvergreen || p.evergreen)
     .sort((a, b) => {
       const av = (a[sortBy] as number) || 0;
       const bv = (b[sortBy] as number) || 0;
@@ -76,10 +74,6 @@ function ProductsTab({ products }: { products: ProductRow[] }) {
           <option value="">Wszystkie kolekcje</option>
           {collections.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#1a1a1a', cursor: 'pointer' }}>
-          <input type="checkbox" checked={filterEvergreen} onChange={e => { setFilterEvergreen(e.target.checked); setPage(1); }} />
-          Tylko evergreen
-        </label>
         <div style={{ marginLeft: 'auto', fontSize: 12, color: '#6b6b6b' }}>{sorted.length} produktów</div>
       </div>
 
@@ -94,7 +88,6 @@ function ProductsTab({ products }: { products: ProductRow[] }) {
               <th style={thStyle('buyer_repeat_rate')} onClick={() => toggleSort('buyer_repeat_rate')}>Repeat%{sortIcon('buyer_repeat_rate')}</th>
               <th style={thStyle('promo_share_pct')} onClick={() => toggleSort('promo_share_pct')}>Promo%{sortIcon('promo_share_pct')}</th>
               <th style={{ ...thStyle('collection'), textAlign: 'left' }}>Kolekcja</th>
-              <th style={{ ...thStyle('evergreen'), textAlign: 'center' }}>Evergreen</th>
             </tr>
           </thead>
           <tbody>
@@ -114,7 +107,6 @@ function ProductsTab({ products }: { products: ProductRow[] }) {
                   <td style={{ padding: '8px 10px', textAlign: 'right', color: p.buyer_repeat_rate >= 50 ? '#2d8a4e' : '#1a1a1a' }}>{p.buyer_repeat_rate ?? '—'}%</td>
                   <td style={{ padding: '8px 10px', textAlign: 'right', color: p.promo_share_pct >= 50 ? '#e6a817' : '#1a1a1a' }}>{p.promo_share_pct ?? '—'}%</td>
                   <td style={{ padding: '8px 10px', fontSize: 11, color: '#6b6b6b', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.collection || '—'}</td>
-                  <td style={{ padding: '8px 10px', textAlign: 'center' }}>{p.evergreen ? '\u2713' : '—'}</td>
                 </tr>
               );
             })}

@@ -80,7 +80,6 @@ interface Taxonomy {
   seasons_counts: Record<string, number> | null;
   product_groups_counts: Record<string, number> | null;
   new_products_ratio: number | null;
-  evergreen_count: number | null;
   promo_count: number | null;
   total_events: number | null;
 }
@@ -660,12 +659,10 @@ function InterestProfile({ taxonomy, t }: { taxonomy: Taxonomy; t: typeof DARK }
 
   const topSegments = (taxonomy.top_segments ?? []) as { segment: string; count: number }[];
 
-  const newRatio       = Math.round(taxonomy.new_products_ratio ?? 0);
-  const evergreenRatio = 100 - newRatio;
-  const totalEvents    = taxonomy.total_events ?? 0;
-  const promoCount     = taxonomy.promo_count ?? 0;
-  const evergreenCount = taxonomy.evergreen_count ?? 0;
-  const promoPct       = totalEvents ? Math.round((promoCount / totalEvents) * 100) : 0;
+  const newRatio    = Math.round(taxonomy.new_products_ratio ?? 0);
+  const totalEvents = taxonomy.total_events ?? 0;
+  const promoCount  = taxonomy.promo_count ?? 0;
+  const promoPct    = totalEvents ? Math.round((promoCount / totalEvents) * 100) : 0;
 
   const blockStyle = {
     background: t.card, border: `1px solid ${t.border}`, borderRadius: 10,
@@ -748,16 +745,15 @@ function InterestProfile({ taxonomy, t }: { taxonomy: Taxonomy; t: typeof DARK }
         {/* Kategorie produktowe */}
         <TagGroup label="Kategorie produktowe" items={productGroups} limit={5} t={t} />
 
-        {/* Nowości vs evergreen */}
+        {/* Nowości share */}
         <div style={{ marginBottom: 12 }}>
-          <div style={subLabel}>Nowości vs evergreen</div>
-          <div style={{ height: 8, borderRadius: 4, overflow: "hidden", background: t.border, display: "flex" }}>
-            <div style={{ width: `${newRatio}%`, background: "#22c55e", transition: "width 0.4s" }} />
-            <div style={{ flex: 1, background: "#b8763a" }} />
+          <div style={subLabel}>Nowości share</div>
+          <div style={{ height: 8, borderRadius: 4, overflow: "hidden", background: t.border }}>
+            <div style={{ height: "100%", width: `${newRatio}%`, background: "#22c55e", transition: "width 0.4s" }} />
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
             <span style={{ fontSize: 10, color: "#22c55e" }}>Nowości {newRatio}%</span>
-            <span style={{ fontSize: 10, color: "#b8763a" }}>Evergreen {evergreenRatio}%</span>
+            <span style={{ fontSize: 10, color: t.textSub }}>Pozostałe {100 - newRatio}%</span>
           </div>
         </div>
 
@@ -781,10 +777,6 @@ function InterestProfile({ taxonomy, t }: { taxonomy: Taxonomy; t: typeof DARK }
           <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
             <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{totalEvents}</div>
             <div style={{ fontSize: 9, color: t.textSub, marginTop: 2 }}>Łącznie pozycji zakupowych</div>
-          </div>
-          <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#b8763a" }}>{evergreenCount}</div>
-            <div style={{ fontSize: 9, color: t.textSub, marginTop: 2 }}>Produkty ponadczasowe</div>
           </div>
           <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
             <div style={{ fontSize: 18, fontWeight: 700, color: "#f59e0b" }}>{promoCount}</div>

@@ -98,7 +98,6 @@ function KpiRow({ kpis, promo, revenue }: { kpis: KPIs; promo: Promo; revenue: R
   const repeatRate = kpis.buyers_90d > 0 ? (kpis.repeaters_90d / kpis.buyers_90d * 100).toFixed(1) : '0.0';
   const last3Repeat = revenue.slice(-3).reduce((s, r) => s + (r.repeat_revenue || 0), 0);
   const newPct = promo?.new_product_share_pct || 0;
-  const evergreenPct = Math.max(0, 100 - newPct).toFixed(0);
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 4 }}>
@@ -109,18 +108,7 @@ function KpiRow({ kpis, promo, revenue }: { kpis: KPIs; promo: Promo; revenue: R
       <KpiCard label="Winback VIP" value={formatNumber(kpis.winback_vip_count)} subtitle={`~${formatPLN(kpis.winback_vip_revenue)} potential`} />
       <KpiCard label="2nd order candidates" value={formatNumber(kpis.second_order_candidates)} subtitle="New, 30-90d window" />
       <KpiCard label="Promo share 90d" value={(promo?.promo_share_pct || 0) + '%'} subtitle={`${formatPLN(promo?.promo_revenue || 0)} z ${formatPLN(promo?.total_revenue || 0)}`} />
-      <KpiCard
-        label="New vs evergreen"
-        value={
-          <span style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span>{newPct.toFixed(0)}% / {evergreenPct}%</span>
-            <div style={{ height: 4, background: '#e8e0d8', borderRadius: 2, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${newPct}%`, background: '#3577b3', borderRadius: 2 }} />
-            </div>
-          </span>
-        }
-        subtitle="nowe / evergreen"
-      />
+      <KpiCard label="Nowości share" value={newPct.toFixed(0) + '%'} subtitle="udział nowości w sprzedaży" />
     </div>
   );
 }

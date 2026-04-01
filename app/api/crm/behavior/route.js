@@ -60,7 +60,6 @@ async function fetchSegments(sb, filters) {
     promo_buyers_pct:       total > 0 ? Math.round(sumField(rows, 'promo_buyers')         / total * 1000) / 10 : 0,
     free_shipping_pct:      total > 0 ? Math.round(sumField(rows, 'free_shipping_buyers') / total * 1000) / 10 : 0,
     avg_new_products_ratio: Math.round(wavg(rows, 'avg_new_products_ratio', 'klientow') * 100) / 100,
-    avg_evergreen_ratio:    Math.round(wavg(rows, 'avg_evergreen_ratio',    'klientow') * 100) / 100,
     avg_events:             Math.round(wavg(rows, 'avg_events',             'klientow') * 100) / 100,
     heatmap,
   };
