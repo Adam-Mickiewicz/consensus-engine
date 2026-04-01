@@ -18,11 +18,12 @@ export default function useUserPermissions() {
   }, [])
 
   const canAccess = (toolId) => {
-    if (!ready) return false  // ukryj wszystko dopóki nie załadowane
+    if (!ready) return false
     if (!toolId) return true
     if (role === 'admin') return true
-    if (!(toolId in permissions)) return true
-    return permissions[toolId]
+    const result = toolId in permissions ? permissions[toolId] : true
+    console.log('canAccess', toolId, '→', result, '| permissions:', JSON.stringify(permissions))
+    return result
   }
 
   return { permissions, role, loading: !ready, canAccess, ready }
