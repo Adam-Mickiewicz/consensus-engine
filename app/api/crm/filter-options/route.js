@@ -22,7 +22,7 @@ export async function GET() {
       .filter(Boolean)
       .sort();
 
-    return NextResponse.json({ worlds, occasions });
+    return NextResponse.json({ worlds, occasions }, { headers: { 'Cache-Control': 'private, max-age=60, stale-while-revalidate=300' } });
   } catch (err) {
     return NextResponse.json({ worlds: [], occasions: [] });
   }

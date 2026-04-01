@@ -38,7 +38,7 @@ export async function GET() {
       orders:   clientsByMonth[month].size,
     }));
 
-    return NextResponse.json({ rows });
+    return NextResponse.json({ rows }, { headers: { 'Cache-Control': 'private, max-age=60, stale-while-revalidate=300' } });
   } catch (err) {
     console.error('[revenue-trend]', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

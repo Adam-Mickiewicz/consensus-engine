@@ -14,7 +14,7 @@ export async function GET() {
       .limit(10);
 
     if (error) throw new Error(error.message);
-    return NextResponse.json({ rows: data ?? [] });
+    return NextResponse.json({ rows: data ?? [] }, { headers: { 'Cache-Control': 'private, max-age=60, stale-while-revalidate=300' } });
   } catch (err) {
     console.error('[top-diamonds]', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

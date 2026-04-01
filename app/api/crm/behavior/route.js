@@ -177,7 +177,7 @@ export async function GET(request) {
       fetchFn(sb, filterB),
     ]);
 
-    return NextResponse.json({ group_a, group_b, tab, promotions_meta: promotionsMeta });
+    return NextResponse.json({ group_a, group_b, tab, promotions_meta: promotionsMeta }, { headers: { 'Cache-Control': 'private, max-age=60, stale-while-revalidate=300' } });
   } catch (err) {
     console.error('[behavior] GET error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

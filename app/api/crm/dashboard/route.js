@@ -29,7 +29,7 @@ export async function GET() {
       worlds: worldsRes.data || [],
       promo: promoRes.data || {},
       errors,
-    });
+    }, { headers: { 'Cache-Control': 'private, max-age=60, stale-while-revalidate=300' } });
   } catch (err) {
     console.error('[crm/dashboard] fatal:', err);
     return Response.json({ error: err.message }, { status: 500 });

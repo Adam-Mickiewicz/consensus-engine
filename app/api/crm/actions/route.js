@@ -59,7 +59,7 @@ export async function GET(request) {
       opportunities: opportunities || [],
       segmentClients,
       errors: [e1].filter(Boolean).map((e) => e.message),
-    });
+    }, { headers: { 'Cache-Control': 'private, max-age=60, stale-while-revalidate=300' } });
   } catch (err) {
     return Response.json({ error: err.message }, { status: 500 });
   }

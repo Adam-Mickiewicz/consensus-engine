@@ -16,7 +16,8 @@ export async function GET(_request, { params }) {
       sb.from('client_product_events')
         .select('id,client_id,ean,product_name,order_date,season,order_id,order_sum,line_total,is_promo,is_new_product,price_category_id')
         .eq('client_id', id)
-        .order('order_date', { ascending: false }),
+        .order('order_date', { ascending: false })
+        .limit(500),
 
       sb.from('client_taxonomy_summary').select('*').eq('client_id', id).maybeSingle(),
 
@@ -89,7 +90,7 @@ export async function GET(_request, { params }) {
       seasonBreakdown,
       newProductRatio,
       newProductCount,
-    });
+    }, { headers: { 'Cache-Control': 'private, max-age=60, stale-while-revalidate=300' } });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Błąd serwera' },

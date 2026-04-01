@@ -31,7 +31,7 @@ export async function GET() {
       risk_level:     clientMap[r.client_id]?.risk_level ?? null,
     }));
 
-    return NextResponse.json({ rows });
+    return NextResponse.json({ rows }, { headers: { 'Cache-Control': 'private, max-age=60, stale-while-revalidate=300' } });
   } catch (err) {
     console.error('[recent-orders]', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

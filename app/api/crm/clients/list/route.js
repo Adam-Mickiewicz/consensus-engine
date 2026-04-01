@@ -92,7 +92,7 @@ export async function GET(request) {
       per_page,
       total_pages: Math.ceil(total / per_page),
       worlds,
-    });
+    }, { headers: { 'Cache-Control': 'private, max-age=60, stale-while-revalidate=300' } });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Błąd serwera' },

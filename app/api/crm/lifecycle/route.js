@@ -22,7 +22,7 @@ export async function GET() {
       ladder: ladderRes.data || [],
       worlds: worldsRes.data || [],
       errors,
-    });
+    }, { headers: { 'Cache-Control': 'private, max-age=60, stale-while-revalidate=300' } });
   } catch (err) {
     return Response.json({ error: err.message }, { status: 500 });
   }
