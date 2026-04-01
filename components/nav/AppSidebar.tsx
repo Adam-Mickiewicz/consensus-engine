@@ -30,6 +30,7 @@ const SUBCATEGORIES: Record<string, SubItem[]> = {
     { href: "/crm/products",    label: "Produkty & Światy" },
     { href: "/crm/promotions",  label: "Promocje" },
     { href: "/crm/actions",     label: "Akcje CRM" },
+    { href: "/crm/compare",    label: "Porównanie grup" },
     { href: "/crm/import",      label: "Import / ETL", admin: true },
   ],
   products: [],
