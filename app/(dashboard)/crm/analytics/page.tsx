@@ -191,6 +191,9 @@ declare global { interface Window { Chart: any; } }
 function RevenueTrend({ revenue }: { revenue: RevenueRow[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<any>(null);
+  const scriptAddedRef = useRef(false);
+  // Always hold the latest renderChart in a ref so CDN onload gets current data
+  const renderChartFnRef = useRef<() => void>(() => {});
 
   const renderChart = useCallback(() => {
     if (!canvasRef.current || !window.Chart || !revenue.length) return;
@@ -221,12 +224,21 @@ function RevenueTrend({ revenue }: { revenue: RevenueRow[] }) {
     });
   }, [revenue]);
 
+  // Keep ref in sync so CDN onload always calls the latest version
+  useEffect(() => { renderChartFnRef.current = renderChart; }, [renderChart]);
+
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Chart) { renderChart(); return; }
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
-    script.onload = renderChart;
-    document.head.appendChild(script);
+    // If Chart.js already loaded, just render
+    if (window.Chart) { renderChart(); return; }
+    // Load CDN script only once
+    if (!scriptAddedRef.current) {
+      scriptAddedRef.current = true;
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+      // Use ref so we always call renderChart with the latest revenue data
+      script.onload = () => renderChartFnRef.current();
+      document.head.appendChild(script);
+    }
     return () => { if (chartRef.current) { chartRef.current.destroy(); } };
   }, [renderChart]);
 
