@@ -12,18 +12,16 @@ const ACCENT = "#b8763a";
 const CAMERA_MOVES = ["Statyczny", "Powolny zoom in", "Powolny zoom out", "Pan lewo → prawo", "Orbit (obrót produktu)", "Dolly forward"];
 const VISUAL_STYLES = ["Product hero (studyjny)", "Lifestyle", "Cinematic", "Animowany / motion", "Dokumentalny"];
 const LIGHTINGS = ["Naturalne (studio)", "Ciepłe (złata godzina)", "Zimne (minimalistyczne)", "Dramatyczne", "Soft (rozmyte tło)"];
-const ORIENTATION_OPTIONS = ["16:9", "9:16", "1:1"];
-const VARIANT_OPTIONS = ["1", "2", "4"];
 const STEP_LABELS = ["Model", "Parametry", "Prompt", "Generuj"];
 
-function calculateCost(model, params) {
-  if (!model) return "0.00";
+function calculateModelCost(model, params) {
+  if (!model) return 0;
   const duration = parseInt(params?.duration) || 4;
   const variants = parseInt(params?.variants) || 1;
   const pricePerSec = params?.resolution === "4K" && model.capabilities?.price_4k
     ? parseFloat(model.capabilities.price_4k)
     : parseFloat(model.price_per_unit);
-  return (pricePerSec * duration * variants).toFixed(2);
+  return pricePerSec * duration * variants;
 }
 
 function ToggleGroup({ options, value, onChange, small }) {
@@ -40,9 +38,7 @@ function ToggleGroup({ options, value, onChange, small }) {
             color: value === opt ? ACCENT : "#555", cursor: "pointer",
             fontWeight: value === opt ? 600 : 400, transition: "all 0.15s",
           }}
-        >
-          {opt}
-        </button>
+        >{opt}</button>
       ))}
     </div>
   );
@@ -91,109 +87,167 @@ function ProgressBar({ step, total }) {
   );
 }
 
+function VideoJobCard({ job, aspectRatio }) {
+  return (
+    <div style={{ borderRadius: 12, overflow: "hidden", border: "0.5px solid #e5e5e5", background: "#fff" }}>
+      <div style={{
+        padding: "8px 12px",
+        background: job.status === "done" ? "#E1F5EE" : "#fafaf8",
+        borderBottom: "0.5px solid #eee",
+        display: "flex", alignItems: "center", gap: 6,
+      }}>
+        <span style={{ fontSize: 11, fontWeight: 500, color: job.status === "done" ? "#0F6E56" : "#666" }}>
+          {job.modelName}
+        </span>
+        <span style={{
+          fontSize: 10, padding: "1px 6px", borderRadius: 10, marginLeft: "auto",
+          background: job.status === "done" ? "#1D9E75" : job.status === "failed" ? "#ef4444" : "#888",
+          color: "#fff",
+        }}>
+          {job.status === "queued" ? "W kolejce"
+            : job.status === "processing" ? "Generuję..."
+            : job.status === "done" ? "✓ Gotowe"
+            : "✗ Błąd"}
+        </span>
+      </div>
+
+      {(job.status === "queued" || job.status === "processing") && (
+        <div style={{ aspectRatio: aspectRatio || "16/9", background: "#fafaf8", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 3, width: 80, height: 80 }}>
+            {Array.from({ length: 36 }).map((_, i) => (
+              <div key={i} style={{
+                borderRadius: 2,
+                background: ["#b8763a", "#e8c99a", "#f5e6d3"][i % 3],
+                animation: `bmsPixel ${0.5 + (i % 5) * 0.1}s ease-in-out infinite alternate`,
+                animationDelay: `${(i * 0.05) % 1}s`,
+              }} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {job.status === "done" && job.output_urls?.[0] && (
+        <div>
+          <div style={{ aspectRatio: aspectRatio || "16/9", background: "#000" }}>
+            <video
+              src={job.output_urls[0]}
+              controls autoPlay muted loop
+              style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+            />
+          </div>
+          <div style={{ padding: 8, display: "flex", gap: 6, borderTop: "0.5px solid #eee" }}>
+            <a href={job.output_urls[0]} download style={{
+              flex: 1, padding: 5, background: ACCENT, color: "#fff",
+              borderRadius: 6, fontSize: 11, textDecoration: "none", textAlign: "center",
+            }}>⬇ Pobierz</a>
+          </div>
+        </div>
+      )}
+
+      {job.status === "failed" && (
+        <div style={{
+          padding: 16, color: "#ef4444", fontSize: 12,
+          textAlign: "center", aspectRatio: aspectRatio || "16/9",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>Błąd generowania</div>
+      )}
+    </div>
+  );
+}
+
 export default function VideoPage() {
   const [step, setStep] = useState(1);
   const totalSteps = 4;
 
-  const [mode, setMode] = useState('idle'); // 'idle' | 'generating' | 'done'
-  const [selectedModel, setSelectedModel] = useState(null);
-  const [params, setParams] = useState({
-    orientation: "9:16",
-    duration: "4s",
-    resolution: "",
+  const [mode, setMode] = useState("idle");
+  const [selectedModels, setSelectedModels] = useState([]);
+
+  // Global params (shared across all models)
+  const [globalParams, setGlobalParams] = useState({
     camera_move: "Statyczny",
     visual_style: "Product hero (studyjny)",
     lighting: "Naturalne (studio)",
-    variants: "1",
   });
+
+  const [baseImages, setBaseImages] = useState([]);
+  const [musicConfig, setMusicConfig] = useState({ mode: "none" });
   const [prompt, setPrompt] = useState("");
   const [presetVariables, setPresetVariables] = useState([]);
   const [presetTemplate, setPresetTemplate] = useState("");
-  const [baseImages, setBaseImages] = useState([]);
-  const [musicConfig, setMusicConfig] = useState({ mode: "none" });
   const [toast, setToast] = useState(null);
-  const [activeJob, setActiveJob] = useState(null);
-  const pollingRef = useRef(null);
+  const [activeJobs, setActiveJobs] = useState([]);
   const [enhancing, setEnhancing] = useState(false);
   const [alternatives, setAlternatives] = useState([]);
   const [aiModel, setAiModel] = useState("claude");
   const [aiInstruction, setAiInstruction] = useState("");
 
+  // Extend (single-model only)
   const [showExtend, setShowExtend] = useState(false);
-  const [extendPrompt, setExtendPrompt] = useState('');
-  const [extendDuration, setExtendDuration] = useState('8s');
+  const [extendPrompt, setExtendPrompt] = useState("");
+  const [extendDuration, setExtendDuration] = useState("8s");
   const [extendGenerating, setExtendGenerating] = useState(false);
   const [extendedParts, setExtendedParts] = useState([]);
   const extendPollingRef = useRef(null);
 
-  function setParam(key, val) {
-    setParams(p => ({ ...p, [key]: val }));
-  }
-
-  function handleModelChange(model) {
-    setSelectedModel(model);
-    if (model?.capabilities?.resolutions?.[0]) {
-      setParam("resolution", model.capabilities.resolutions[0]);
-    }
-  }
+  const pollingRefs = useRef({});
 
   useEffect(() => {
-    if (!selectedModel) return;
-    const cap = selectedModel.capabilities || {};
-    const durations = cap.durations || [];
-    const defaultDur = durations.length > 0 ? durations[0] : (cap.max_duration || 4);
-    setParams(prev => ({ ...prev, duration: `${defaultDur}s` }));
-  }, [selectedModel]);
+    return () => {
+      Object.values(pollingRefs.current).forEach(clearInterval);
+      if (extendPollingRef.current) clearInterval(extendPollingRef.current);
+    };
+  }, []);
+
+  function setGlobalParam(key, val) {
+    setGlobalParams(p => ({ ...p, [key]: val }));
+  }
 
   function showToast(msg, type = "success") {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4000);
   }
 
-  useEffect(() => {
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-      if (extendPollingRef.current) clearInterval(extendPollingRef.current);
-    };
-  }, []);
-
   function startPolling(jobId) {
-    if (pollingRef.current) clearInterval(pollingRef.current);
-    pollingRef.current = setInterval(async () => {
+    const iv = setInterval(async () => {
       try {
         const res = await fetch(`/api/brand-media/jobs/${jobId}`);
         const data = await res.json();
         const job = data.job ?? data;
-        setActiveJob(job);
-        if (job.status === 'done') {
-          clearInterval(pollingRef.current);
-          pollingRef.current = null;
-          setMode('done');
-          showToast('Wideo gotowe!');
-        }
-        if (job.status === 'failed') {
-          clearInterval(pollingRef.current);
-          pollingRef.current = null;
-          setMode('idle');
-          showToast('Błąd generowania: ' + (job.error_message || 'nieznany błąd'), 'error');
+        setActiveJobs(prev => {
+          const updated = prev.map(j =>
+            j.jobId === jobId ? { ...j, status: job.status, output_urls: job.output_urls || [] } : j
+          );
+          if (updated.every(j => j.status === "done" || j.status === "failed")) {
+            setMode("done");
+            if (updated.some(j => j.status === "done")) showToast("Wideo gotowe!");
+          }
+          return updated;
+        });
+        if (job.status === "done" || job.status === "failed") {
+          clearInterval(pollingRefs.current[jobId]);
+          delete pollingRefs.current[jobId];
+          if (job.status === "failed") showToast("Błąd: " + (job.error_message || "nieznany"), "error");
         }
       } catch (e) {
-        console.error('Polling error:', e);
+        console.error("Polling error:", e);
       }
     }, 10000);
+    pollingRefs.current[jobId] = iv;
   }
 
   function getCurrentConfig() {
-    return { model_id: selectedModel?.model_id, params, prompt_template: prompt };
+    return {
+      model_id: selectedModels[0]?.model?.model_id,
+      params: { ...selectedModels[0]?.params, ...globalParams },
+      prompt_template: prompt,
+    };
   }
 
   function handlePresetApply(preset) {
-    if (preset.params) setParams(p => ({ ...p, ...preset.params }));
-    setPresetTemplate(preset.prompt_template || '');
+    if (preset.params) setGlobalParams(p => ({ ...p, ...preset.params }));
+    setPresetTemplate(preset.prompt_template || "");
     setPresetVariables(preset.variables || []);
-    if (!preset.variables?.length) {
-      setPrompt(preset.prompt_template || '');
-    }
+    if (!preset.variables?.length) setPrompt(preset.prompt_template || "");
   }
 
   async function handleEnhancePrompt() {
@@ -205,104 +259,121 @@ export default function VideoPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt,
-          instruction: aiInstruction,
-          model: aiModel,
-          context: { selectedModel: selectedModel?.model_id, params, jobType: "video" },
+          prompt, instruction: aiInstruction, model: aiModel,
+          context: { selectedModel: selectedModels[0]?.model?.model_id, params: selectedModels[0]?.params, jobType: "video" },
         }),
       });
       const data = await res.json();
       if (data.enhanced) setPrompt(data.enhanced);
       if (data.alternatives?.length) setAlternatives(data.alternatives);
-    } catch (err) {
+    } catch {
       showToast("Błąd ulepszania promptu", "error");
     } finally {
       setEnhancing(false);
     }
   }
 
+  async function generateAll() {
+    const jobs = await Promise.all(
+      selectedModels.map(async ({ model, params: mp }) => {
+        try {
+          const body = {
+            model_id: model.model_id,
+            prompt,
+            music_mode: musicConfig.mode,
+            music_brief: musicConfig.mode === "brief"
+              ? `${musicConfig.genre} / ${musicConfig.tempo}${musicConfig.description ? " / " + musicConfig.description : ""}`
+              : null,
+            params: {
+              ...mp,
+              ...globalParams,
+              base_images: baseImages.map(b => b.url),
+            },
+            estimated_cost: calculateModelCost(model, mp).toFixed(2),
+          };
+          const res = await fetch("/api/brand-media/generate-video", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+          const jobId = data.job_id ?? data.id;
+          return { jobId, modelId: model.model_id, modelName: model.model_name, modelParams: mp, status: "queued", output_urls: [] };
+        } catch (err) {
+          return { jobId: null, modelId: model.model_id, modelName: model.model_name, modelParams: mp, status: "failed", output_urls: [] };
+        }
+      })
+    );
+    setActiveJobs(jobs);
+    setExtendedParts([]);
+    jobs.filter(j => j.jobId).forEach(j => startPolling(j.jobId));
+    if (jobs.every(j => !j.jobId)) setMode("idle");
+  }
+
   async function handleGenerate() {
-    if (!selectedModel || !prompt.trim()) return;
-    setMode('generating');
-    try {
-      const body = {
-        model_id: selectedModel.model_id,
-        prompt,
-        music_mode: musicConfig.mode,
-        music_brief: musicConfig.mode === "brief"
-          ? `${musicConfig.genre} / ${musicConfig.tempo}${musicConfig.description ? " / " + musicConfig.description : ""}`
-          : null,
-        params: { ...params, base_images: baseImages.map(b => b.url) },
-        estimated_cost: parseFloat(calculateCost(selectedModel, params)),
-      };
+    if (!selectedModels.length || !prompt.trim()) return;
+    setMode("generating");
+    setAlternatives([]);
+    await generateAll();
+  }
 
-      const res = await fetch("/api/brand-media/generate-video", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.error || `HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
-      const jobId = data.job_id ?? data.id;
-      if (jobId) {
-        setActiveJob({ id: jobId, status: 'queued', output_urls: [] });
-        startPolling(jobId);
-      } else {
-        showToast("Job dodany do kolejki");
-      }
-    } catch (err) {
-      setMode('idle');
-      showToast('Błąd: ' + err.message, 'error');
-    }
+  async function handleRerun() {
+    Object.values(pollingRefs.current).forEach(clearInterval);
+    pollingRefs.current = {};
+    setMode("generating");
+    await generateAll();
   }
 
   function handleCancel() {
-    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
-    setMode('idle');
-    setActiveJob(null);
+    Object.values(pollingRefs.current).forEach(clearInterval);
+    pollingRefs.current = {};
+    setMode("idle");
+    setActiveJobs([]);
   }
 
   function handleReset() {
-    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+    Object.values(pollingRefs.current).forEach(clearInterval);
+    pollingRefs.current = {};
     if (extendPollingRef.current) { clearInterval(extendPollingRef.current); extendPollingRef.current = null; }
-    setMode('idle');
-    setActiveJob(null);
-    setPrompt('');
+    setMode("idle");
+    setActiveJobs([]);
+    setPrompt("");
     setStep(1);
     setShowExtend(false);
     setExtendedParts([]);
-    setExtendPrompt('');
+    setExtendPrompt("");
   }
 
   async function handleExtend() {
-    if (!activeJob?.id || extendGenerating) return;
+    const primaryJob = activeJobs[0];
+    if (!primaryJob?.jobId || extendGenerating) return;
+    const model = selectedModels[0]?.model;
+    const mp = selectedModels[0]?.params;
+    if (!model) return;
+
     setExtendGenerating(true);
     setShowExtend(false);
     try {
-      const res = await fetch('/api/brand-media/generate-video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/brand-media/generate-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model_id: selectedModel.model_id,
-          prompt: extendPrompt.trim() || '',
-          params: { ...params, duration: extendDuration },
+          model_id: model.model_id,
+          prompt: extendPrompt.trim() || "",
+          params: { ...mp, ...globalParams, duration: extendDuration },
           extend_from_job_id: extendedParts.length > 0
             ? extendedParts[extendedParts.length - 1].id
-            : activeJob.id,
-          estimated_cost: parseFloat(calculateCost(selectedModel, { ...params, duration: extendDuration })),
+            : primaryJob.jobId,
+          estimated_cost: calculateModelCost(model, { ...mp, duration: extendDuration }).toFixed(2),
         }),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || `HTTP ${res.status}`); }
       const data = await res.json();
       const jobId = data.job_id ?? data.id;
-      if (!jobId) throw new Error('Brak job_id');
+      if (!jobId) throw new Error("Brak job_id");
 
-      const newPart = { id: jobId, status: 'queued', output_urls: [] };
+      const newPart = { id: jobId, status: "queued", output_urls: [] };
       setExtendedParts(prev => [...prev, newPart]);
 
       if (extendPollingRef.current) clearInterval(extendPollingRef.current);
@@ -312,40 +383,35 @@ export default function VideoPage() {
           const d = await r.json();
           const job = d.job ?? d;
           setExtendedParts(prev => prev.map(p => p.id === jobId ? job : p));
-          if (job.status === 'done' || job.status === 'failed') {
+          if (job.status === "done" || job.status === "failed") {
             clearInterval(extendPollingRef.current);
             extendPollingRef.current = null;
             setExtendGenerating(false);
-            if (job.status === 'done') {
-              showToast('Rozszerzenie gotowe!');
-              setExtendPrompt('');
-              setExtendDuration('8s');
-            } else {
-              showToast('Błąd rozszerzenia: ' + (job.error_message || 'nieznany'), 'error');
-            }
+            if (job.status === "done") { showToast("Rozszerzenie gotowe!"); setExtendPrompt(""); setExtendDuration("8s"); }
+            else showToast("Błąd rozszerzenia: " + (job.error_message || "nieznany"), "error");
           }
-        } catch (e) { console.error('Extend polling error:', e); }
+        } catch (e) { console.error("Extend polling error:", e); }
       }, 10000);
     } catch (err) {
       setExtendGenerating(false);
-      showToast('Błąd: ' + err.message, 'error');
+      showToast("Błąd: " + err.message, "error");
     }
   }
 
-  async function handleRerun() {
-    setActiveJob(null);
-    await handleGenerate();
-  }
+  const totalCost = selectedModels.reduce(
+    (sum, { model, params: mp }) => sum + calculateModelCost(model, mp), 0
+  ).toFixed(2);
 
-  const cap = selectedModel?.capabilities || {};
-  const availableDurations = cap.durations || [];
-  const availableOrientations = cap.orientations || ORIENTATION_OPTIONS;
-  const availableResolutions = cap.resolutions || [];
-  const estimatedCost = calculateCost(selectedModel, params);
+  const canGenerate = selectedModels.length > 0 && prompt.trim().length > 0;
+  const cols = Math.max(activeJobs.length, 1);
 
-  const aspectRatio = params.orientation === '9:16' ? '9/16'
-    : params.orientation === '1:1' ? '1/1'
-    : '16/9';
+  // For extend: only when single model selected and done
+  const canExtend = selectedModels.length === 1 && activeJobs[0]?.status === "done" && selectedModels[0]?.model?.capabilities?.extend;
+  const primaryJobOrientation = activeJobs[0]?.modelParams?.orientation || "16:9";
+  const aspectRatio = primaryJobOrientation === "9:16" ? "9/16" : primaryJobOrientation === "1:1" ? "1/1" : "16/9";
+
+  // Capabilities of first selected model (for music panel, base images)
+  const firstCap = selectedModels[0]?.model?.capabilities || {};
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8f8f6", fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
@@ -362,269 +428,123 @@ export default function VideoPage() {
         </div>
       )}
 
-      <div style={{ padding: "28px 32px", maxWidth: 760, margin: "0 auto" }}>
+      <div style={{ padding: "28px 32px", maxWidth: 900, margin: "0 auto" }}>
         <div style={{ fontSize: 12, color: "#aaa", marginBottom: 20 }}>
           <Link href="/tools/brand-media-studio" style={{ color: "#aaa", textDecoration: "none" }}>Brand Media Studio</Link>
           {" / "}
           <span style={{ color: "#555" }}>Generowanie wideo</span>
         </div>
 
-        <h1 style={{ fontSize: 22, fontWeight: 500, margin: "0 0 28px", color: "#1a1a1a" }}>
-          🎬 Generowanie wideo
-        </h1>
+        <h1 style={{ fontSize: 22, fontWeight: 500, margin: "0 0 28px", color: "#1a1a1a" }}>🎬 Generowanie wideo</h1>
 
         {/* ── TRYB GENERATING ── */}
-        {mode === 'generating' && (
+        {mode === "generating" && (
           <div style={{ marginBottom: 32 }}>
-            <style>{`
-              @keyframes unicornFloat {
-                0%   { transform: translate(-50%,-55%) scale(1)   rotate(-6deg); }
-                100% { transform: translate(-50%,-55%) scale(1.1) rotate(6deg);  }
-              }
-              @keyframes fly0 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(75px,-65px)  scale(0);opacity:0} }
-              @keyframes fly1 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(-75px,-65px) scale(0);opacity:0} }
-              @keyframes fly2 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(0,-95px)     scale(0);opacity:0} }
-              @keyframes fly3 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(95px,10px)   scale(0);opacity:0} }
-              @keyframes fly4 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(-95px,10px)  scale(0);opacity:0} }
-              @keyframes fly5 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(55px,-90px)  scale(0);opacity:0} }
-              @keyframes fly6 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(-55px,-90px) scale(0);opacity:0} }
-              @keyframes fly7 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(30px,-100px) scale(0);opacity:0} }
-              @keyframes bmsBar { 0%{transform:translateX(-100%)} 100%{transform:translateX(350%)} }
-              @keyframes borderHue { 0%{filter:hue-rotate(0deg)} 100%{filter:hue-rotate(360deg)} }
-            `}</style>
-
+            <style>{`@keyframes bmsPixel { 0%{opacity:0.3} 100%{opacity:1} }`}</style>
             <div style={{
-              width: '100%',
-              maxWidth: params.orientation === '9:16' ? '300px' : '500px',
-              aspectRatio,
-              margin: '0 auto',
-              borderRadius: '18px',
-              position: 'relative',
+              display: "grid",
+              gridTemplateColumns: `repeat(${cols}, minmax(200px, 1fr))`,
+              gap: 12, marginBottom: 12,
             }}>
-              {/* Animated rainbow border */}
-              <div style={{
-                position: 'absolute', inset: 0, borderRadius: '18px',
-                background: 'conic-gradient(from 0deg, #ff6bb5, #b86bff, #ffd700, #6bdbff, #ff8c42, #a8ff6b, #ff6bb5)',
-                animation: 'borderHue 3s linear infinite',
-              }} />
-
-              <div style={{
-                position: 'absolute', inset: 3, borderRadius: '16px', overflow: 'hidden',
-                background: 'linear-gradient(135deg, #fdf4ff 0%, #fff8f0 50%, #f0f8ff 100%)',
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-                gap: '16px',
-              }}>
-              <div style={{ position: 'relative', width: 160, height: 160 }}>
-                {[
-                  { color: '#ff6bb5', anim: 'fly0', dur: 1.0, delay: 0.0,  size: 10 },
-                  { color: '#b86bff', anim: 'fly1', dur: 1.2, delay: 0.15, size: 8  },
-                  { color: '#ffd700', anim: 'fly2', dur: 0.9, delay: 0.3,  size: 12 },
-                  { color: '#6bdbff', anim: 'fly3', dur: 1.1, delay: 0.0,  size: 7  },
-                  { color: '#ff8c42', anim: 'fly4', dur: 1.0, delay: 0.45, size: 9  },
-                  { color: '#a8ff6b', anim: 'fly5', dur: 0.8, delay: 0.6,  size: 11 },
-                  { color: '#ff6b6b', anim: 'fly6', dur: 1.3, delay: 0.1,  size: 8  },
-                  { color: '#6bffd4', anim: 'fly7', dur: 1.0, delay: 0.75, size: 10 },
-                  { color: '#ff6bb5', anim: 'fly2', dur: 1.1, delay: 0.9,  size: 6  },
-                  { color: '#ffd700', anim: 'fly0', dur: 0.9, delay: 0.5,  size: 13 },
-                  { color: '#b86bff', anim: 'fly3', dur: 1.2, delay: 0.25, size: 7  },
-                  { color: '#ff8c42', anim: 'fly6', dur: 1.0, delay: 0.7,  size: 9  },
-                ].map((p, i) => (
-                  <div key={i} style={{
-                    position: 'absolute',
-                    left: '50%', top: '60%',
-                    width: p.size, height: p.size,
-                    borderRadius: '50%',
-                    background: p.color,
-                    marginLeft: -p.size / 2,
-                    marginTop: -p.size / 2,
-                    animation: `${p.anim} ${p.dur}s ease-out infinite`,
-                    animationDelay: `${p.delay}s`,
-                    boxShadow: `0 0 6px ${p.color}`,
-                  }} />
-                ))}
-                <div style={{
-                  position: 'absolute', left: '50%', top: '55%',
-                  fontSize: 72, lineHeight: 1,
-                  animation: 'unicornFloat 1.4s ease-in-out infinite alternate',
-                  userSelect: 'none',
-                }}>🦄</div>
-              </div>
-
-              <div style={{ textAlign: 'center', padding: '0 16px' }}>
-                <div style={{ fontSize: '14px', fontWeight: '500', color: '#1a1a1a', marginBottom: '4px' }}>
-                  {activeJob?.status === 'queued' ? 'Przygotowuję generowanie...' : 'Generuję wideo...'}
-                </div>
-                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
-                  {selectedModel?.model_name} · {params?.duration} · ~${calculateCost(selectedModel, params)} USD
-                </div>
-                <div style={{ fontSize: '11px', color: '#aaa' }}>
-                  Generowanie wideo trwa zwykle 2–5 minut
-                </div>
-              </div>
-
-              <div style={{
-                position: 'absolute', bottom: 0, left: 0, right: 0,
-                height: '3px', background: 'rgba(0,0,0,0.06)', overflow: 'hidden',
-              }}>
-                <div style={{
-                  height: '100%', width: '40%',
-                  background: 'linear-gradient(90deg, #ff6bb5, #b86bff, #ffd700)',
-                  animation: 'bmsBar 1.5s ease-in-out infinite',
-                }} />
-              </div>
-              </div>{/* /inner content */}
-            </div>{/* /outer wrapper */}
-
-            <div style={{ textAlign: 'center', marginTop: '12px' }}>
+              {activeJobs.map(job => (
+                <VideoJobCard key={job.jobId || job.modelId} job={job} aspectRatio={aspectRatio} />
+              ))}
+            </div>
+            <div style={{ textAlign: "center", marginTop: 12 }}>
               <button onClick={handleCancel} style={{
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                fontSize: '12px', color: '#aaa',
-                textDecoration: 'underline',
+                background: "transparent", border: "none", cursor: "pointer",
+                fontSize: 12, color: "#aaa", textDecoration: "underline",
               }}>Anuluj</button>
             </div>
           </div>
         )}
 
         {/* ── TRYB DONE ── */}
-        {mode === 'done' && activeJob?.output_urls?.[0] && (
-          <div style={{ maxWidth: '500px', margin: '0 auto', marginBottom: 32 }}>
+        {mode === "done" && activeJobs.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <style>{`@keyframes bmsPixel { 0%{opacity:0.3} 100%{opacity:1} }`}</style>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: `repeat(${cols}, minmax(200px, 1fr))`,
+              gap: 12, marginBottom: 16,
+            }}>
+              {activeJobs.map(job => (
+                <VideoJobCard key={job.jobId || job.modelId} job={job} aspectRatio={aspectRatio} />
+              ))}
+            </div>
 
-            {/* Część 1 — oryginał */}
-            {[activeJob, ...extendedParts.filter(p => p.status === 'done' && p.output_urls?.[0])].map((job, i) => (
-              <div key={job.id} style={{ marginBottom: 16 }}>
-                {(extendedParts.filter(p => p.status === 'done').length > 0) && (
-                  <div style={{ fontSize: 11, color: '#aaa', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
-                    Część {i + 1}
-                  </div>
-                )}
-                <div style={{ borderRadius: '16px', overflow: 'hidden', background: '#000', aspectRatio }}>
-                  <video
-                    src={job.output_urls[0]}
-                    controls autoPlay={i === 0} muted loop
-                    style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-                  />
+            {/* Extended parts (single-model only) */}
+            {extendedParts.filter(p => p.status === "done" && p.output_urls?.[0]).map((p, i) => (
+              <div key={p.id} style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 11, color: "#aaa", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>
+                  Przedłużenie {i + 1}
+                </div>
+                <div style={{ borderRadius: 16, overflow: "hidden", background: "#000", aspectRatio }}>
+                  <video src={p.output_urls[0]} controls muted loop style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
                 </div>
                 <div style={{ marginTop: 8 }}>
-                  <a href={job.output_urls[0]} download style={{
-                    padding: '6px 12px', background: 'transparent',
-                    border: '0.5px solid #ddd', color: '#555',
-                    borderRadius: '6px', fontSize: '12px', textDecoration: 'none',
-                    display: 'inline-flex', alignItems: 'center', gap: 4,
-                  }}>⬇ Pobierz część {i + 1}</a>
+                  <a href={p.output_urls[0]} download style={{ padding: "6px 12px", background: "transparent", border: "0.5px solid #ddd", color: "#555", borderRadius: 6, fontSize: 12, textDecoration: "none" }}>⬇ Pobierz</a>
                 </div>
               </div>
             ))}
 
-            {/* Queued/processing extensions */}
-            {extendedParts.filter(p => p.status === 'queued' || p.status === 'processing').map((p, i) => (
-              <div key={p.id} style={{
-                borderRadius: '12px', border: '1px dashed #e0d8d0',
-                padding: '20px', textAlign: 'center', marginBottom: 16,
-                background: '#fdf9f6',
-              }}>
-                <div style={{ fontSize: 13, color: '#b8763a', marginBottom: 4 }}>
-                  🦄 Generuję część {extendedParts.indexOf(p) + 2}...
-                </div>
-                <div style={{ fontSize: 11, color: '#aaa' }}>
-                  {p.status === 'queued' ? 'W kolejce' : 'Przetwarzanie'} · sprawdzam co 10s
-                </div>
+            {extendedParts.filter(p => p.status === "queued" || p.status === "processing").map((p, i) => (
+              <div key={p.id} style={{ borderRadius: 12, border: "1px dashed #e0d8d0", padding: 20, textAlign: "center", marginBottom: 16, background: "#fdf9f6" }}>
+                <div style={{ fontSize: 13, color: ACCENT, marginBottom: 4 }}>🦄 Generuję przedłużenie...</div>
+                <div style={{ fontSize: 11, color: "#aaa" }}>{p.status === "queued" ? "W kolejce" : "Przetwarzanie"}</div>
               </div>
             ))}
 
-            {/* Akcje */}
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: 16 }}>
-              <button onClick={handleRerun} style={{
-                padding: '8px 16px', border: '0.5px solid #e0e0e0',
-                borderRadius: '8px', fontSize: '13px', background: 'transparent',
-                cursor: 'pointer', color: '#1a1a1a',
-              }}>↺ Re-run</button>
+            {/* Actions */}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+              <button onClick={handleRerun} style={{ padding: "8px 16px", border: "0.5px solid #e0e0e0", borderRadius: 8, fontSize: 13, background: "transparent", cursor: "pointer", color: "#1a1a1a" }}>↺ Re-run</button>
 
-              {selectedModel?.capabilities?.extend && !extendGenerating && (
-                <button onClick={() => setShowExtend(v => !v)} style={{
-                  padding: '8px 16px', border: `0.5px solid ${ACCENT}`,
-                  borderRadius: '8px', fontSize: '13px', background: showExtend ? '#fdf7f2' : 'transparent',
-                  cursor: 'pointer', color: ACCENT,
-                }}>↗ Przedłuż wideo</button>
+              {canExtend && !extendGenerating && (
+                <button onClick={() => setShowExtend(v => !v)} style={{ padding: "8px 16px", border: `0.5px solid ${ACCENT}`, borderRadius: 8, fontSize: 13, background: showExtend ? "#fdf7f2" : "transparent", cursor: "pointer", color: ACCENT }}>
+                  ↗ Przedłuż wideo
+                </button>
               )}
 
               {extendGenerating && (
-                <div style={{
-                  padding: '8px 16px', border: '0.5px solid #e0d8d0',
-                  borderRadius: '8px', fontSize: '13px', color: '#b8763a',
-                  background: '#fdf9f6',
-                }}>🦄 Generuję rozszerzenie...</div>
+                <div style={{ padding: "8px 16px", border: "0.5px solid #e0d8d0", borderRadius: 8, fontSize: 13, color: ACCENT, background: "#fdf9f6" }}>
+                  🦄 Generuję rozszerzenie...
+                </div>
               )}
             </div>
 
-            {/* Panel extend */}
+            {/* Extend panel */}
             {showExtend && !extendGenerating && (
-              <div style={{
-                border: '1px solid #eee', borderRadius: 12, padding: 16,
-                marginBottom: 16, background: '#fafafa',
-              }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 12 }}>
-                  ↗ Przedłuż wideo
-                </div>
-
-                <div style={{ fontSize: 12, color: '#666', marginBottom: 6, fontWeight: 500 }}>
-                  Jak kontynuować? (zostaw puste dla naturalnej kontynuacji)
-                </div>
+              <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 16, marginBottom: 16, background: "#fafafa" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#333", marginBottom: 12 }}>↗ Przedłuż wideo</div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 6, fontWeight: 500 }}>Jak kontynuować?</div>
                 <textarea
                   value={extendPrompt}
                   onChange={e => setExtendPrompt(e.target.value)}
                   placeholder="np. kamera odjeżdża, ujawniając szerszy krajobraz..."
-                  style={{
-                    width: '100%', minHeight: 70, padding: '8px 10px',
-                    border: '1px solid #ddd', borderRadius: 8, fontSize: 13,
-                    resize: 'vertical', fontFamily: 'inherit',
-                    boxSizing: 'border-box', outline: 'none', marginBottom: 12,
-                  }}
+                  style={{ width: "100%", minHeight: 70, padding: "8px 10px", border: "1px solid #ddd", borderRadius: 8, fontSize: 13, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box", outline: "none", marginBottom: 12 }}
                 />
-
-                <div style={{ fontSize: 12, color: '#666', marginBottom: 8, fontWeight: 500 }}>Dodaj sekund:</div>
-                <ToggleGroup
-                  options={['5s', '8s', '10s', '20s']}
-                  value={extendDuration}
-                  onChange={setExtendDuration}
-                  small
-                />
-
-                <div style={{ fontSize: 11, color: '#aaa', marginTop: 8, marginBottom: 12 }}>
-                  Max 20s/raz · max 6 rozszerzeń · łącznie max 120s
-                </div>
-
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={handleExtend} style={{
-                    padding: '8px 18px', background: ACCENT, color: '#fff',
-                    border: 'none', borderRadius: 8, fontSize: 13,
-                    cursor: 'pointer', fontWeight: 500,
-                  }}>Generuj rozszerzenie</button>
-                  <button onClick={() => setShowExtend(false)} style={{
-                    padding: '8px 14px', background: 'transparent',
-                    border: '0.5px solid #ddd', borderRadius: 8, fontSize: 13,
-                    cursor: 'pointer', color: '#666',
-                  }}>Anuluj</button>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 8, fontWeight: 500 }}>Dodaj sekund:</div>
+                <ToggleGroup options={["5s", "8s", "10s", "20s"]} value={extendDuration} onChange={setExtendDuration} small />
+                <div style={{ fontSize: 11, color: "#aaa", marginTop: 8, marginBottom: 12 }}>Max 20s/raz · max 6 rozszerzeń · łącznie max 120s</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={handleExtend} style={{ padding: "8px 18px", background: ACCENT, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 500 }}>Generuj rozszerzenie</button>
+                  <button onClick={() => setShowExtend(false)} style={{ padding: "8px 14px", background: "transparent", border: "0.5px solid #ddd", borderRadius: 8, fontSize: 13, cursor: "pointer", color: "#666" }}>Anuluj</button>
                 </div>
               </div>
             )}
 
-            <button onClick={handleReset} style={{
-              width: '100%', padding: '10px',
-              border: '0.5px solid #ddd',
-              borderRadius: '8px', fontSize: '13px',
-              background: 'transparent', cursor: 'pointer',
-              color: '#888',
-            }}>← Zacznij od nowa</button>
+            <button onClick={handleReset} style={{ width: "100%", padding: 10, border: "0.5px solid #ddd", borderRadius: 8, fontSize: 13, background: "transparent", cursor: "pointer", color: "#888" }}>
+              ← Zacznij od nowa
+            </button>
           </div>
         )}
 
-        {/* ── WIZARD — ukryty/przyciemniony poza trybem idle ── */}
+        {/* ── WIZARD ── */}
         <div style={{
-          opacity: mode === 'idle' ? 1 : mode === 'generating' ? 0.4 : 0,
-          pointerEvents: mode === 'idle' ? 'auto' : 'none',
-          transition: 'opacity 0.3s',
-          visibility: mode === 'done' ? 'hidden' : 'visible',
+          opacity: mode === "idle" ? 1 : mode === "generating" ? 0.4 : 0,
+          pointerEvents: mode === "idle" ? "auto" : "none",
+          transition: "opacity 0.3s",
+          visibility: mode === "done" ? "hidden" : "visible",
         }}>
           <ProgressBar step={step} total={totalSteps} />
 
@@ -639,122 +559,49 @@ export default function VideoPage() {
               </div>
               <ModelSelector
                 category="video"
-                selectedModelId={selectedModel?.model_id}
-                onModelChange={handleModelChange}
+                selectedModels={selectedModels}
+                onModelsChange={setSelectedModels}
               />
             </div>
           )}
 
-          {/* KROK 2 — Parametry */}
+          {/* KROK 2 — Parametry globalne */}
           {step === 2 && (
             <div style={{ background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 24 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#555", marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#555", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                 Parametry wideo
               </div>
-
-              <ParamRow label="Orientacja">
-                <ToggleGroup options={availableOrientations} value={params.orientation} onChange={v => setParam("orientation", v)} />
-              </ParamRow>
-
-              <ParamRow label="Długość">
-                <div>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {availableDurations.length > 0
-                      ? availableDurations.map(d => (
-                        <button
-                          key={d}
-                          onClick={() => setParam("duration", `${d}s`)}
-                          style={{
-                            padding: "7px 14px", fontSize: 12,
-                            border: `1px solid ${params.duration === `${d}s` ? ACCENT : "#ddd"}`,
-                            borderRadius: 6,
-                            background: params.duration === `${d}s` ? "#fdf7f2" : "#fff",
-                            color: params.duration === `${d}s` ? ACCENT : "#555",
-                            cursor: "pointer", fontWeight: params.duration === `${d}s` ? 600 : 400,
-                          }}
-                        >
-                          {d}s
-                        </button>
-                      ))
-                      : <span style={{ fontSize: 12, color: "#aaa" }}>Brak danych</span>
-                    }
-                  </div>
-                  {cap.extend && (
-                    <div style={{ fontSize: 11, color: "#888", marginTop: 6, padding: "6px 10px", background: "#fafafa", borderRadius: 6, borderLeft: `2px solid #e8ddd0` }}>
-                      Extend do <strong>{cap.extend_max_seconds}s</strong> dostępny po wygenerowaniu.
-                    </div>
-                  )}
-                </div>
-              </ParamRow>
-
-              {availableResolutions.length > 1 && (
-                <ParamRow label="Rozdzielczość">
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    <div style={{ display: "flex", gap: 4 }}>
-                      {availableResolutions.map(res => (
-                        <button
-                          key={res}
-                          onClick={() => setParam("resolution", res)}
-                          style={{
-                            flex: 1, padding: "5px 8px",
-                            border: params.resolution === res ? `1.5px solid ${ACCENT}` : "1px solid #ddd",
-                            borderRadius: 6, fontSize: 12, cursor: "pointer",
-                            background: params.resolution === res ? "#fdf7f2" : "#fff",
-                            color: params.resolution === res ? ACCENT : "#666",
-                            fontWeight: params.resolution === res ? 500 : 400,
-                          }}
-                        >
-                          {res}
-                        </button>
-                      ))}
-                    </div>
-                    {params.resolution === "4K" && selectedModel?.capabilities?.price_4k && (
-                      <div style={{
-                        fontSize: 11, color: ACCENT, marginTop: 4,
-                        padding: "4px 8px", background: "#fdf7f2", borderRadius: 4,
-                      }}>
-                        4K: ${selectedModel.capabilities.price_4k}/sek. (vs ${selectedModel.price_per_unit}/sek. dla 1080p)
-                      </div>
-                    )}
-                  </div>
-                </ParamRow>
-              )}
+              <div style={{ fontSize: 12, color: "#aaa", marginBottom: 20 }}>
+                Orientacja, długość i rozdzielczość: ustaw per model w Ustawieniach (⚙) w kroku 1.
+              </div>
 
               <ParamRow label="Ruch kamery">
-                <Select value={params.camera_move} onChange={v => setParam("camera_move", v)} options={CAMERA_MOVES} />
+                <Select value={globalParams.camera_move} onChange={v => setGlobalParam("camera_move", v)} options={CAMERA_MOVES} />
               </ParamRow>
               <ParamRow label="Styl wizualny">
-                <Select value={params.visual_style} onChange={v => setParam("visual_style", v)} options={VISUAL_STYLES} />
+                <Select value={globalParams.visual_style} onChange={v => setGlobalParam("visual_style", v)} options={VISUAL_STYLES} />
               </ParamRow>
               <ParamRow label="Oświetlenie">
-                <Select value={params.lighting} onChange={v => setParam("lighting", v)} options={LIGHTINGS} />
-              </ParamRow>
-              <ParamRow label="Warianty">
-                <ToggleGroup options={VARIANT_OPTIONS} value={params.variants} onChange={v => setParam("variants", v)} small />
+                <Select value={globalParams.lighting} onChange={v => setGlobalParam("lighting", v)} options={LIGHTINGS} />
               </ParamRow>
 
               <ParamRow label="Muzyka">
-                <MusicPanel modelCapabilities={cap} onMusicChange={setMusicConfig} />
+                <MusicPanel modelCapabilities={firstCap} onMusicChange={setMusicConfig} />
               </ParamRow>
 
-              {selectedModel?.max_ref_images > 0 && (
+              {selectedModels[0]?.model?.max_ref_images > 0 && (
                 <ParamRow label="Zdjęcia bazowe">
                   <div>
-                    <div style={{ fontSize: 11, color: "#888", marginBottom: 8 }}>Max {selectedModel.max_ref_images} zdjęć</div>
+                    <div style={{ fontSize: 11, color: "#888", marginBottom: 8 }}>Max {selectedModels[0].model.max_ref_images} zdjęć</div>
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                      {Array.from({ length: selectedModel.max_ref_images }).map((_, i) => {
+                      {Array.from({ length: selectedModels[0].model.max_ref_images }).map((_, i) => {
                         const img = baseImages[i];
                         return (
                           <div key={i}
-                            style={{
-                              width: 64, height: 64, border: `2px dashed ${img ? ACCENT : "#ddd"}`,
-                              borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
-                              cursor: "pointer", overflow: "hidden", background: img ? "transparent" : "#fafafa",
-                            }}
+                            style={{ width: 64, height: 64, border: `2px dashed ${img ? ACCENT : "#ddd"}`, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden", background: img ? "transparent" : "#fafafa" }}
                             onClick={() => {
-                              if (img) {
-                                setBaseImages(prev => prev.filter((_, pi) => pi !== i));
-                              } else {
+                              if (img) setBaseImages(prev => prev.filter((_, pi) => pi !== i));
+                              else {
                                 const url = window.prompt("URL zdjęcia bazowego:");
                                 if (url) setBaseImages(prev => { const next = [...prev]; next[i] = { url }; return next; });
                               }
@@ -782,46 +629,21 @@ export default function VideoPage() {
               </div>
 
               {presetVariables.length > 0 && (
-                <PresetVariables
-                  variables={presetVariables}
-                  promptTemplate={presetTemplate}
-                  onPromptChange={setPrompt}
-                />
+                <PresetVariables variables={presetVariables} promptTemplate={presetTemplate} onPromptChange={setPrompt} />
               )}
 
               <textarea
                 value={prompt}
                 onChange={e => setPrompt(e.target.value)}
-                placeholder="Opisz co ma się dziać w wideo... np. skarpety leżą na drewnianym blacie, delikatny wiatr porusza tkaniną"
-                style={{
-                  width: "100%", minHeight: 200, padding: "12px 14px",
-                  border: `1.5px solid ${ACCENT}`, borderRadius: 8, fontSize: 14,
-                  resize: "vertical", boxSizing: "border-box", outline: "none",
-                  fontFamily: "inherit", lineHeight: 1.6, marginBottom: 16,
-                  background: "#fdf8f3",
-                }}
+                placeholder="Opisz co ma się dziać w wideo..."
+                style={{ width: "100%", minHeight: 200, padding: "12px 14px", border: `1.5px solid ${ACCENT}`, borderRadius: 8, fontSize: 14, resize: "vertical", boxSizing: "border-box", outline: "none", fontFamily: "inherit", lineHeight: 1.6, marginBottom: 16, background: "#fdf8f3" }}
               />
 
               <div style={{ marginBottom: 12 }}>
                 <div style={{ fontSize: 11, color: "#888", marginBottom: 6, fontWeight: 500 }}>Model AI do ulepszania</div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {[
-                    { id: "claude", label: "Claude Sonnet" },
-                    { id: "gpt-4o", label: "GPT-4o" },
-                    { id: "gpt-4.1", label: "GPT-4.1" },
-                    { id: "o3", label: "o3" },
-                  ].map(m => (
-                    <button
-                      key={m.id}
-                      onClick={() => setAiModel(m.id)}
-                      style={{
-                        padding: "5px 12px", borderRadius: 20, fontSize: 12, cursor: "pointer",
-                        background: aiModel === m.id ? ACCENT : "transparent",
-                        color: aiModel === m.id ? "#fff" : "#666",
-                        border: aiModel === m.id ? `1px solid ${ACCENT}` : "1px solid #ddd",
-                        fontWeight: aiModel === m.id ? 500 : 400,
-                      }}
-                    >
+                  {[{ id: "claude", label: "Claude Sonnet" }, { id: "gpt-4o", label: "GPT-4o" }, { id: "gpt-4.1", label: "GPT-4.1" }, { id: "o3", label: "o3" }].map(m => (
+                    <button key={m.id} onClick={() => setAiModel(m.id)} style={{ padding: "5px 12px", borderRadius: 20, fontSize: 12, cursor: "pointer", background: aiModel === m.id ? ACCENT : "transparent", color: aiModel === m.id ? "#fff" : "#666", border: aiModel === m.id ? `1px solid ${ACCENT}` : "1px solid #ddd", fontWeight: aiModel === m.id ? 500 : 400 }}>
                       {m.label}
                     </button>
                   ))}
@@ -830,29 +652,10 @@ export default function VideoPage() {
 
               <div style={{ marginBottom: 12 }}>
                 <div style={{ fontSize: 11, color: "#888", marginBottom: 6, fontWeight: 500 }}>Instrukcja dla AI (opcjonalna)</div>
-                <textarea
-                  value={aiInstruction}
-                  onChange={e => setAiInstruction(e.target.value)}
-                  placeholder="np. 'zaproponuj 3 warianty — minimalistyczny, narracyjny i energiczny' lub 'skup się na produkcie, styl lifestyle'"
-                  style={{
-                    width: "100%", minHeight: 60, padding: 10,
-                    border: "1px solid #ddd", borderRadius: 8,
-                    fontSize: 13, resize: "vertical", fontFamily: "inherit",
-                    boxSizing: "border-box", outline: "none",
-                  }}
-                />
+                <textarea value={aiInstruction} onChange={e => setAiInstruction(e.target.value)} placeholder="np. 'zaproponuj 3 warianty'" style={{ width: "100%", minHeight: 60, padding: 10, border: "1px solid #ddd", borderRadius: 8, fontSize: 13, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box", outline: "none" }} />
               </div>
 
-              <button
-                onClick={handleEnhancePrompt}
-                disabled={enhancing || !prompt.trim()}
-                style={{
-                  padding: "8px 16px", fontSize: 13, borderRadius: 6,
-                  border: `1px solid ${ACCENT}`, background: "#fff",
-                  color: enhancing ? "#ccc" : ACCENT,
-                  cursor: enhancing || !prompt.trim() ? "not-allowed" : "pointer",
-                }}
-              >
+              <button onClick={handleEnhancePrompt} disabled={enhancing || !prompt.trim()} style={{ padding: "8px 16px", fontSize: 13, borderRadius: 6, border: `1px solid ${ACCENT}`, background: "#fff", color: enhancing ? "#ccc" : ACCENT, cursor: enhancing || !prompt.trim() ? "not-allowed" : "pointer" }}>
                 {enhancing ? "Generuję..." : "✦ Ulepsz prompt (AI)"}
               </button>
 
@@ -860,33 +663,13 @@ export default function VideoPage() {
                 <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
                   <div style={{ fontSize: 11, color: "#888", fontWeight: 500 }}>Propozycje AI — kliknij aby użyć:</div>
                   {alternatives.map((alt, i) => (
-                    <div
-                      key={i}
-                      onClick={() => setPrompt(alt)}
-                      style={{
-                        padding: "10px 14px",
-                        border: prompt === alt ? `1.5px solid ${ACCENT}` : "1px solid #eee",
-                        borderRadius: 8, fontSize: 13, lineHeight: 1.5,
-                        cursor: "pointer", background: prompt === alt ? "#fdf6ee" : "#fff",
-                        color: "#333", transition: "border-color 0.15s",
-                      }}
-                    >
-                      <div style={{ fontSize: 10, color: ACCENT, fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        Wariant {i + 1}
-                      </div>
+                    <div key={i} onClick={() => setPrompt(alt)} style={{ padding: "10px 14px", border: prompt === alt ? `1.5px solid ${ACCENT}` : "1px solid #eee", borderRadius: 8, fontSize: 13, lineHeight: 1.5, cursor: "pointer", background: prompt === alt ? "#fdf6ee" : "#fff", color: "#333" }}>
+                      <div style={{ fontSize: 10, color: ACCENT, fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Wariant {i + 1}</div>
                       {alt}
                     </div>
                   ))}
                 </div>
               )}
-
-              <div style={{ fontSize: 12, color: "#888", marginTop: 12 }}>
-                Szacowany koszt generowania wideo:{" "}
-                <strong style={{ color: ACCENT }}>~${calculateCost(selectedModel, params)}</strong>
-                <span style={{ color: "#bbb", marginLeft: 4 }}>
-                  ({selectedModel?.model_name} · {params?.duration} · {params?.variants || 1} wariant)
-                </span>
-              </div>
             </div>
           )}
 
@@ -897,41 +680,34 @@ export default function VideoPage() {
                 Podsumowanie i generowanie
               </div>
 
-              <div style={{
-                background: "#fafafa", border: "1px solid #eee", borderRadius: 8,
-                padding: "12px 16px", marginBottom: 20, fontSize: 13, color: "#555",
-                display: "flex", gap: 16, flexWrap: "wrap",
-              }}>
-                <span><strong>Model:</strong> {selectedModel?.model_name || selectedModel?.model_id}</span>
-                <span><strong>Format:</strong> {params.orientation} · {params.duration}</span>
-                <span><strong>Warianty:</strong> {params.variants}</span>
-                <span style={{ color: ACCENT }}><strong>Koszt:</strong> ~${estimatedCost}</span>
+              <div style={{ background: "#fafafa", border: "1px solid #eee", borderRadius: 8, padding: "12px 16px", marginBottom: 20 }}>
+                {selectedModels.map(({ model, params: mp }) => (
+                  <div key={model.model_id} style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13, color: "#555", marginBottom: 4 }}>
+                    <span><strong>{model.model_name}</strong></span>
+                    <span>{mp.orientation} · {mp.duration} · {mp.variants}x</span>
+                    <span style={{ color: ACCENT }}>~${calculateModelCost(model, mp).toFixed(2)}</span>
+                  </div>
+                ))}
+                {selectedModels.length > 1 && (
+                  <div style={{ fontSize: 13, color: ACCENT, fontWeight: 600, borderTop: "1px solid #eee", paddingTop: 8, marginTop: 4 }}>
+                    Łącznie: ~${totalCost}
+                  </div>
+                )}
               </div>
 
               <div style={{ fontSize: 12, color: "#888", marginBottom: 6 }}>Prompt (możesz edytować):</div>
               <textarea
                 value={prompt}
                 onChange={e => setPrompt(e.target.value)}
-                style={{
-                  width: "100%", minHeight: 140, padding: "12px 14px",
-                  border: "1px solid #ddd", borderRadius: 8, fontSize: 14,
-                  resize: "vertical", boxSizing: "border-box", outline: "none",
-                  fontFamily: "inherit", lineHeight: 1.6, marginBottom: 20,
-                }}
+                style={{ width: "100%", minHeight: 140, padding: "12px 14px", border: "1px solid #ddd", borderRadius: 8, fontSize: 14, resize: "vertical", boxSizing: "border-box", outline: "none", fontFamily: "inherit", lineHeight: 1.6, marginBottom: 20 }}
               />
 
               <button
                 onClick={handleGenerate}
-                disabled={!prompt.trim() || !selectedModel}
-                style={{
-                  width: "100%", padding: "14px 20px", fontSize: 15, fontWeight: 600,
-                  background: (!prompt.trim() || !selectedModel) ? "#f0e8df" : ACCENT,
-                  border: "none", borderRadius: 8, color: "#fff",
-                  cursor: (!prompt.trim() || !selectedModel) ? "not-allowed" : "pointer",
-                  letterSpacing: "0.02em",
-                }}
+                disabled={!canGenerate}
+                style={{ width: "100%", padding: "14px 20px", fontSize: 15, fontWeight: 600, background: !canGenerate ? "#f0e8df" : ACCENT, border: "none", borderRadius: 8, color: "#fff", cursor: !canGenerate ? "not-allowed" : "pointer", letterSpacing: "0.02em" }}
               >
-                🎬 Generuj wideo
+                {!selectedModels.length ? "Wybierz co najmniej 1 model" : "🎬 Generuj wideo"}
               </button>
             </div>
           )}
@@ -941,28 +717,15 @@ export default function VideoPage() {
             <button
               onClick={() => setStep(s => s - 1)}
               disabled={step === 1}
-              style={{
-                padding: "9px 20px", fontSize: 13, borderRadius: 6,
-                border: "1px solid #ddd", background: "#fff", color: step === 1 ? "#ccc" : "#555",
-                cursor: step === 1 ? "not-allowed" : "pointer",
-              }}
-            >
-              ← Wstecz
-            </button>
+              style={{ padding: "9px 20px", fontSize: 13, borderRadius: 6, border: "1px solid #ddd", background: "#fff", color: step === 1 ? "#ccc" : "#555", cursor: step === 1 ? "not-allowed" : "pointer" }}
+            >← Wstecz</button>
 
             {step < totalSteps && (
               <button
                 onClick={() => setStep(s => s + 1)}
-                disabled={step === 1 && !selectedModel}
-                style={{
-                  padding: "9px 20px", fontSize: 13, fontWeight: 600, borderRadius: 6,
-                  background: (step === 1 && !selectedModel) ? "#f0e8df" : ACCENT,
-                  border: "none", color: "#fff",
-                  cursor: (step === 1 && !selectedModel) ? "not-allowed" : "pointer",
-                }}
-              >
-                Dalej →
-              </button>
+                disabled={step === 1 && !selectedModels.length}
+                style={{ padding: "9px 20px", fontSize: 13, fontWeight: 600, borderRadius: 6, background: (step === 1 && !selectedModels.length) ? "#f0e8df" : ACCENT, border: "none", color: "#fff", cursor: (step === 1 && !selectedModels.length) ? "not-allowed" : "pointer" }}
+              >Dalej →</button>
             )}
           </div>
         </div>

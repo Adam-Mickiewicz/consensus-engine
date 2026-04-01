@@ -1,46 +1,33 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Nav from "../../../components/Nav";
+import ModelSelector from "../components/ModelSelector";
 import AttachmentPanel from "../components/AttachmentPanel";
 import PresetPanel from "../components/PresetPanel";
 import PresetVariables from "../components/PresetVariables";
 
 const ACCENT = "#b8763a";
 
-const RESOLUTION_LABELS = {
-  "1024x1024": "1K (1024px)",
-  "2048x2048": "2K (2048px)",
-  "4096x4096": "4K (4096px)",
-  "1792x1024": "16:9 HD",
-  "1024x1792": "9:16 HD",
-  "1536x1024": "16:9",
-  "1024x1536": "9:16",
-  "auto": "Auto",
-};
-
-const QUALITY_LABELS = {
-  "low": "Szybka",
-  "medium": "Standardowa",
-  "high": "Wysoka",
-  "hd": "HD",
-  "standard": "Standard",
-  "auto": "Auto",
-};
-
 const STYLE_OPTIONS = [
   "Fotorealistyczny", "Ilustracja", "Fotografia produktowa",
   "Cinematic", "Animowany", "Minimalistyczny", "Vintage", "Szkic",
 ];
 
-const BADGE_COLORS = {
-  green:  { bg: "#e8f5e9", text: "#2e7d32" },
-  purple: { bg: "#f3e5f5", text: "#7b1fa2" },
-  amber:  { bg: "#fff8e1", text: "#f57f17" },
-  red:    { bg: "#fce4ec", text: "#c62828" },
-};
+function Section({ title, children }) {
+  return (
+    <div style={{ marginBottom: 20, background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 20 }}>
+      {title && (
+        <div style={{ fontSize: 11, fontWeight: 600, color: "#888", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
+          {title}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
 
-function ToggleGroup({ options, value, onChange, labelFn }) {
+function ToggleGroup({ options, value, onChange }) {
   return (
     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
       {options.map(opt => (
@@ -50,55 +37,99 @@ function ToggleGroup({ options, value, onChange, labelFn }) {
           style={{
             padding: "6px 14px", fontSize: 12,
             border: `1px solid ${value === opt ? ACCENT : "#ddd"}`,
-            borderRadius: 6,
-            background: value === opt ? "#fdf7f2" : "#fff",
-            color: value === opt ? ACCENT : "#555",
-            cursor: "pointer",
-            fontWeight: value === opt ? 600 : 400,
-            transition: "all 0.15s",
+            borderRadius: 6, background: value === opt ? "#fdf7f2" : "#fff",
+            color: value === opt ? ACCENT : "#555", cursor: "pointer",
+            fontWeight: value === opt ? 600 : 400, transition: "all 0.15s",
           }}
-        >
-          {labelFn ? labelFn(opt) : opt}
-        </button>
+        >{opt}</button>
       ))}
     </div>
   );
 }
 
-function Section({ title, children }) {
+function JobCard({ job, onLightbox }) {
   return (
-    <div style={{ marginBottom: 20, background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 20 }}>
-      <div style={{ fontSize: 11, fontWeight: 600, color: "#888", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
-        {title}
+    <div style={{ borderRadius: 12, overflow: "hidden", border: "0.5px solid #e5e5e5", background: "#fff" }}>
+      {/* Model header */}
+      <div style={{
+        padding: "8px 12px",
+        background: job.status === "done" ? "#E1F5EE" : "#fafaf8",
+        borderBottom: "0.5px solid #eee",
+        display: "flex", alignItems: "center", gap: 6,
+      }}>
+        <span style={{ fontSize: 11, fontWeight: 500, color: job.status === "done" ? "#0F6E56" : "#666" }}>
+          {job.modelName}
+        </span>
+        <span style={{
+          fontSize: 10, padding: "1px 6px", borderRadius: 10, marginLeft: "auto",
+          background: job.status === "done" ? "#1D9E75" : job.status === "failed" ? "#ef4444" : "#888",
+          color: "#fff",
+        }}>
+          {job.status === "queued" ? "W kolejce"
+            : job.status === "processing" ? "Generuję..."
+            : job.status === "done" ? "✓ Gotowe"
+            : "✗ Błąd"}
+        </span>
       </div>
-      {children}
+
+      {/* Pixel animation when pending */}
+      {(job.status === "queued" || job.status === "processing") && (
+        <div style={{ aspectRatio: "1/1", background: "#fafaf8", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 3, width: 80, height: 80 }}>
+            {Array.from({ length: 36 }).map((_, i) => (
+              <div key={i} style={{
+                borderRadius: 2,
+                background: ["#b8763a", "#e8c99a", "#f5e6d3"][i % 3],
+                animation: `bmsPixel ${0.5 + (i % 5) * 0.1}s ease-in-out infinite alternate`,
+                animationDelay: `${(i * 0.05) % 1}s`,
+              }} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Result image */}
+      {job.status === "done" && job.output_urls?.length > 0 && (
+        <div>
+          <img
+            src={job.output_urls[0]}
+            style={{ width: "100%", display: "block", cursor: "pointer" }}
+            onClick={() => onLightbox(job.output_urls[0])}
+          />
+          <div style={{ padding: 8, display: "flex", gap: 6, borderTop: "0.5px solid #eee" }}>
+            <a href={job.output_urls[0]} download style={{
+              flex: 1, padding: 5, background: ACCENT, color: "#fff",
+              borderRadius: 6, fontSize: 11, textDecoration: "none", textAlign: "center",
+            }}>⬇ Pobierz</a>
+            <button onClick={() => onLightbox(job.output_urls[0])} style={{
+              flex: 1, padding: 5, border: "0.5px solid #ddd",
+              borderRadius: 6, fontSize: 11, background: "transparent", cursor: "pointer",
+            }}>⤢ Powiększ</button>
+          </div>
+        </div>
+      )}
+
+      {/* Error */}
+      {job.status === "failed" && (
+        <div style={{
+          padding: 16, color: "#ef4444", fontSize: 12,
+          textAlign: "center", aspectRatio: "1/1",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          {job.error || "Błąd generowania"}
+        </div>
+      )}
     </div>
   );
-}
-
-function calculateCost(model, params) {
-  if (!model) return "0.00";
-  const variants = parseInt(params?.variants) || 1;
-  return (parseFloat(model.price_per_unit) * variants).toFixed(2);
 }
 
 export default function ImagesPage() {
   const sessionId = useRef(`img-${Date.now()}`).current;
 
-  const [mode, setMode] = useState("idle"); // 'idle' | 'generating' | 'done'
-  const [models, setModels] = useState([]);
-  const [modelsLoading, setModelsLoading] = useState(true);
-  const [selectedModel, setSelectedModel] = useState(null);
+  const [mode, setMode] = useState("idle");
+  const [selectedModels, setSelectedModels] = useState([]);
+  const [style, setStyle] = useState("Fotorealistyczny");
   const [attachments, setAttachments] = useState([]);
-
-  const [params, setParams] = useState({
-    orientation: "1:1",
-    resolution: "",
-    style: "Fotorealistyczny",
-    quality: "",
-    variants: "1",
-  });
-
   const [prompt, setPrompt] = useState("");
   const [presetVariables, setPresetVariables] = useState([]);
   const [presetTemplate, setPresetTemplate] = useState("");
@@ -107,12 +138,12 @@ export default function ImagesPage() {
   const [enhancing, setEnhancing] = useState(false);
   const [alternatives, setAlternatives] = useState([]);
   const [toast, setToast] = useState(null);
-  const [activeJob, setActiveJob] = useState(null);
+  const [activeJobs, setActiveJobs] = useState([]);
   const [lightboxUrl, setLightboxUrl] = useState(null);
-  const pollingRef = useRef(null);
+  const pollingRefs = useRef({});
 
   useEffect(() => {
-    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
+    return () => { Object.values(pollingRefs.current).forEach(clearInterval); };
   }, []);
 
   function showToast(msg, type = "success") {
@@ -121,79 +152,47 @@ export default function ImagesPage() {
   }
 
   function startPolling(jobId) {
-    if (pollingRef.current) clearInterval(pollingRef.current);
-    pollingRef.current = setInterval(async () => {
+    const iv = setInterval(async () => {
       try {
         const res = await fetch(`/api/brand-media/jobs/${jobId}`);
         const data = await res.json();
         const job = data.job ?? data;
-        setActiveJob(job);
-        if (job.status === "done") {
-          clearInterval(pollingRef.current);
-          pollingRef.current = null;
-          setMode("done");
-        }
-        if (job.status === "failed") {
-          clearInterval(pollingRef.current);
-          pollingRef.current = null;
-          setMode("idle");
-          showToast("Błąd: " + (job.error_message || "Nieznany błąd"), "error");
+        setActiveJobs(prev => {
+          const updated = prev.map(j =>
+            j.jobId === jobId
+              ? { ...j, status: job.status, output_urls: job.output_urls || [] }
+              : j
+          );
+          if (updated.every(j => j.status === "done" || j.status === "failed")) {
+            setMode("done");
+          }
+          return updated;
+        });
+        if (job.status === "done" || job.status === "failed") {
+          clearInterval(pollingRefs.current[jobId]);
+          delete pollingRefs.current[jobId];
+          if (job.status === "failed") showToast("Błąd: " + (job.error_message || "Nieznany błąd"), "error");
         }
       } catch (e) {
         console.error("Polling error:", e);
       }
     }, 5000);
-  }
-
-  function setParam(key, val) {
-    setParams(p => ({ ...p, [key]: val }));
-  }
-
-  useEffect(() => {
-    async function fetchModels() {
-      try {
-        const res = await fetch("/api/brand-media/models?category=image");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const list = data.models || [];
-        setModels(list);
-        if (list.length) handleModelChange(list[0]);
-      } catch (err) {
-        console.error("Models fetch error:", err);
-      } finally {
-        setModelsLoading(false);
-      }
-    }
-    fetchModels();
-  }, []);
-
-  function handleModelChange(model) {
-    setSelectedModel(model);
-    const cap = model.capabilities || {};
-    setParams(prev => ({
-      ...prev,
-      resolution: cap.resolutions?.[0] || "",
-      quality: cap.quality?.[0] || "",
-      orientation: cap.orientations?.[0] || "1:1",
-    }));
-    setAlternatives([]);
+    pollingRefs.current[jobId] = iv;
   }
 
   function handlePresetApply(preset) {
-    if (preset.model_id) {
-      const model = models.find(m => m.model_id === preset.model_id);
-      if (model) handleModelChange(model);
-    }
-    if (preset.params) setParams(p => ({ ...p, ...preset.params }));
+    if (preset.params?.style) setStyle(preset.params.style);
     setPresetTemplate(preset.prompt_template || "");
     setPresetVariables(preset.variables || []);
-    if (!preset.variables?.length) {
-      setPrompt(preset.prompt_template || "");
-    }
+    if (!preset.variables?.length) setPrompt(preset.prompt_template || "");
   }
 
   function getCurrentConfig() {
-    return { model_id: selectedModel?.model_id, params, prompt_template: prompt };
+    return {
+      model_id: selectedModels[0]?.model?.model_id,
+      params: selectedModels[0]?.params,
+      prompt_template: prompt,
+    };
   }
 
   async function handleEnhancePrompt() {
@@ -205,10 +204,8 @@ export default function ImagesPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt,
-          instruction: aiInstruction,
-          model: aiModel,
-          context: { jobType: "image", selectedModel: selectedModel?.model_id, params },
+          prompt, instruction: aiInstruction, model: aiModel,
+          context: { jobType: "image", selectedModel: selectedModels[0]?.model?.model_id, params: selectedModels[0]?.params },
         }),
       });
       const data = await res.json();
@@ -221,83 +218,64 @@ export default function ImagesPage() {
     }
   }
 
-  async function submitGeneration() {
-    const res = await fetch("/api/brand-media/generate-image", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model_id: selectedModel.model_id,
-        prompt,
-        params: { ...params },
-        attachment_ids: attachments.map(a => a.id),
-        estimated_cost: parseFloat(calculateCost(selectedModel, params)),
-      }),
-    });
-    if (!res.ok) {
-      const d = await res.json();
-      throw new Error(d.error || `HTTP ${res.status}`);
-    }
-    return res.json();
+  async function generateAll() {
+    const jobs = await Promise.all(
+      selectedModels.map(async ({ model, params }) => {
+        try {
+          const res = await fetch("/api/brand-media/generate-image", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model_id: model.model_id,
+              prompt,
+              params: { ...params, style },
+              attachment_ids: attachments.map(a => a.id),
+              estimated_cost: (parseFloat(model.price_per_unit) * (parseInt(params.variants) || 1)).toFixed(2),
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+          return { jobId: data.job_id ?? data.id, modelId: model.model_id, modelName: model.model_name, status: "queued", output_urls: [] };
+        } catch (err) {
+          return { jobId: null, modelId: model.model_id, modelName: model.model_name, status: "failed", output_urls: [], error: err.message };
+        }
+      })
+    );
+    setActiveJobs(jobs);
+    jobs.filter(j => j.jobId).forEach(j => startPolling(j.jobId));
+    if (jobs.every(j => !j.jobId)) setMode("idle");
   }
 
   async function handleGenerate() {
-    if (!selectedModel) { showToast("Wybierz model", "error"); return; }
-    if (!prompt.trim()) { showToast("Wpisz prompt", "error"); return; }
+    if (!selectedModels.length || !prompt.trim()) return;
     setMode("generating");
+    setAlternatives([]);
     window.scrollTo({ top: 0, behavior: "smooth" });
-    try {
-      const data = await submitGeneration();
-      const jobId = data.job_id ?? data.id;
-      if (jobId) {
-        setActiveJob({ id: jobId, status: "queued", output_urls: [] });
-        startPolling(jobId);
-      } else {
-        setMode("idle");
-        showToast("Grafika dodana do kolejki!");
-      }
-      setAlternatives([]);
-    } catch (err) {
-      setMode("idle");
-      showToast("Błąd: " + err.message, "error");
-    }
+    await generateAll();
   }
 
   async function handleRerun() {
+    Object.values(pollingRefs.current).forEach(clearInterval);
+    pollingRefs.current = {};
     setMode("generating");
-    try {
-      const data = await submitGeneration();
-      const jobId = data.job_id ?? data.id;
-      if (jobId) {
-        setActiveJob({ id: jobId, status: "queued", output_urls: [] });
-        startPolling(jobId);
-      } else {
-        setMode("idle");
-      }
-    } catch (err) {
-      setMode("idle");
-      showToast("Błąd: " + err.message, "error");
-    }
+    await generateAll();
   }
 
   async function handleEnhanceAndEdit() {
     if (!prompt.trim()) return;
     setEnhancing(true);
     try {
-      const enhRes = await fetch("/api/brand-media/enhance-prompt", {
+      const res = await fetch("/api/brand-media/enhance-prompt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt,
-          model: aiModel,
-          context: { jobType: "image", selectedModel: selectedModel?.model_id, params },
-        }),
+        body: JSON.stringify({ prompt, model: aiModel, context: { jobType: "image" } }),
       });
-      const enhData = await enhRes.json();
-      if (enhData.enhanced) setPrompt(enhData.enhanced);
+      const data = await res.json();
+      if (data.enhanced) setPrompt(data.enhanced);
       setMode("idle");
       setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }), 100);
     } catch (err) {
-      showToast("Błąd ulepszania: " + err.message, "error");
+      showToast("Błąd: " + err.message, "error");
       setMode("idle");
     } finally {
       setEnhancing(false);
@@ -305,23 +283,27 @@ export default function ImagesPage() {
   }
 
   function handleCancel() {
-    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+    Object.values(pollingRefs.current).forEach(clearInterval);
+    pollingRefs.current = {};
     setMode("idle");
-    setActiveJob(null);
+    setActiveJobs([]);
   }
 
   function handleReset() {
-    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+    Object.values(pollingRefs.current).forEach(clearInterval);
+    pollingRefs.current = {};
     setMode("idle");
-    setActiveJob(null);
+    setActiveJobs([]);
     setPrompt("");
   }
 
-  const cap = selectedModel?.capabilities || {};
-  const availableOrientations = cap.orientations || ["1:1", "16:9", "9:16"];
-  const availableResolutions = cap.resolutions || [];
-  const availableQuality = cap.quality || [];
-  const costLabel = calculateCost(selectedModel, params);
+  const totalCost = selectedModels.reduce(
+    (sum, { model, params }) => sum + parseFloat(model.price_per_unit) * (parseInt(params.variants) || 1),
+    0
+  ).toFixed(2);
+
+  const canGenerate = selectedModels.length > 0 && prompt.trim().length > 0;
+  const cols = Math.max(activeJobs.length, 1);
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8f8f6", fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
@@ -338,130 +320,34 @@ export default function ImagesPage() {
         </div>
       )}
 
-      <div style={{ padding: "28px 32px", maxWidth: 800, margin: "0 auto" }}>
+      <div style={{ padding: "28px 32px", maxWidth: 900, margin: "0 auto" }}>
         <div style={{ fontSize: 12, color: "#aaa", marginBottom: 20 }}>
           <Link href="/tools/brand-media-studio" style={{ color: "#aaa", textDecoration: "none" }}>Brand Media Studio</Link>
           {" / "}
           <span style={{ color: "#555" }}>Generowanie obrazów</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 500, margin: 0, color: "#1a1a1a" }}>
-            🎨 Generowanie obrazów
-          </h1>
+          <h1 style={{ fontSize: 22, fontWeight: 500, margin: 0, color: "#1a1a1a" }}>🎨 Generowanie obrazów</h1>
           <div style={{ display: "flex", gap: 6 }}>
-            <Link href="/tools/brand-media-studio?tab=queue" style={{
-              padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 500,
-              border: "1px solid #e5e5e5", background: "#fff", color: "#555",
-              textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5,
-            }}>📋 Kolejka</Link>
-            <Link href="/tools/brand-media-studio?tab=library" style={{
-              padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 500,
-              border: "1px solid #e5e5e5", background: "#fff", color: "#555",
-              textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5,
-            }}>🖼 Biblioteka</Link>
+            <Link href="/tools/brand-media-studio?tab=queue" style={{ padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 500, border: "1px solid #e5e5e5", background: "#fff", color: "#555", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5 }}>📋 Kolejka</Link>
+            <Link href="/tools/brand-media-studio?tab=library" style={{ padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 500, border: "1px solid #e5e5e5", background: "#fff", color: "#555", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5 }}>🖼 Biblioteka</Link>
           </div>
         </div>
 
         {/* ── TRYB: generating ── */}
         {mode === "generating" && (
           <div style={{ marginBottom: 32 }}>
-            <style>{`
-              @keyframes unicornFloat {
-                0%   { transform: translate(-50%,-55%) scale(1)   rotate(-6deg); }
-                100% { transform: translate(-50%,-55%) scale(1.1) rotate(6deg);  }
-              }
-              @keyframes fly0 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(75px,-65px)  scale(0);opacity:0} }
-              @keyframes fly1 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(-75px,-65px) scale(0);opacity:0} }
-              @keyframes fly2 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(0,-95px)     scale(0);opacity:0} }
-              @keyframes fly3 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(95px,10px)   scale(0);opacity:0} }
-              @keyframes fly4 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(-95px,10px)  scale(0);opacity:0} }
-              @keyframes fly5 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(55px,-90px)  scale(0);opacity:0} }
-              @keyframes fly6 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(-55px,-90px) scale(0);opacity:0} }
-              @keyframes fly7 { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(30px,-100px) scale(0);opacity:0} }
-              @keyframes bmsBar { 0%{transform:translateX(-100%)} 100%{transform:translateX(350%)} }
-              @keyframes borderHue { 0%{filter:hue-rotate(0deg)} 100%{filter:hue-rotate(360deg)} }
-            `}</style>
-
+            <style>{`@keyframes bmsPixel { 0%{opacity:0.3} 100%{opacity:1} }`}</style>
             <div style={{
-              width: "100%", aspectRatio: "1/1", maxWidth: 500, margin: "0 auto",
-              borderRadius: 18, position: "relative",
+              display: "grid",
+              gridTemplateColumns: `repeat(${cols}, minmax(180px, 1fr))`,
+              gap: 12, marginBottom: 12,
             }}>
-              {/* Animated rainbow border */}
-              <div style={{
-                position: "absolute", inset: 0, borderRadius: 18,
-                background: "conic-gradient(from 0deg, #ff6bb5, #b86bff, #ffd700, #6bdbff, #ff8c42, #a8ff6b, #ff6bb5)",
-                animation: "borderHue 3s linear infinite",
-              }} />
-
-              <div style={{
-                position: "absolute", inset: 3, borderRadius: 16, overflow: "hidden",
-                background: "linear-gradient(135deg, #fdf4ff 0%, #fff8f0 50%, #f0f8ff 100%)",
-                display: "flex", flexDirection: "column",
-                alignItems: "center", justifyContent: "center",
-                gap: 16,
-              }}>
-              {/* Sparkle particles */}
-              <div style={{ position: "relative", width: 160, height: 160 }}>
-                {[
-                  { color: "#ff6bb5", anim: "fly0", dur: 1.0, delay: 0.0,  size: 10 },
-                  { color: "#b86bff", anim: "fly1", dur: 1.2, delay: 0.15, size: 8  },
-                  { color: "#ffd700", anim: "fly2", dur: 0.9, delay: 0.3,  size: 12 },
-                  { color: "#6bdbff", anim: "fly3", dur: 1.1, delay: 0.0,  size: 7  },
-                  { color: "#ff8c42", anim: "fly4", dur: 1.0, delay: 0.45, size: 9  },
-                  { color: "#a8ff6b", anim: "fly5", dur: 0.8, delay: 0.6,  size: 11 },
-                  { color: "#ff6b6b", anim: "fly6", dur: 1.3, delay: 0.1,  size: 8  },
-                  { color: "#6bffd4", anim: "fly7", dur: 1.0, delay: 0.75, size: 10 },
-                  { color: "#ff6bb5", anim: "fly2", dur: 1.1, delay: 0.9,  size: 6  },
-                  { color: "#ffd700", anim: "fly0", dur: 0.9, delay: 0.5,  size: 13 },
-                  { color: "#b86bff", anim: "fly3", dur: 1.2, delay: 0.25, size: 7  },
-                  { color: "#ff8c42", anim: "fly6", dur: 1.0, delay: 0.7,  size: 9  },
-                ].map((p, i) => (
-                  <div key={i} style={{
-                    position: "absolute",
-                    left: "50%", top: "60%",
-                    width: p.size, height: p.size,
-                    borderRadius: "50%",
-                    background: p.color,
-                    marginLeft: -p.size / 2,
-                    marginTop: -p.size / 2,
-                    animation: `${p.anim} ${p.dur}s ease-out infinite`,
-                    animationDelay: `${p.delay}s`,
-                    boxShadow: `0 0 6px ${p.color}`,
-                  }} />
-                ))}
-
-                {/* Unicorn */}
-                <div style={{
-                  position: "absolute", left: "50%", top: "55%",
-                  fontSize: 72, lineHeight: 1,
-                  animation: "unicornFloat 1.4s ease-in-out infinite alternate",
-                  userSelect: "none",
-                }}>🦄</div>
-              </div>
-
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 14, fontWeight: 500, color: "#1a1a1a", marginBottom: 4 }}>
-                  {activeJob?.status === "queued" ? "Przygotowuję generowanie..." : "Generuję grafikę..."}
-                </div>
-                <div style={{ fontSize: 12, color: "#888" }}>
-                  {selectedModel?.model_name} · ~{costLabel} USD
-                </div>
-              </div>
-
-              <div style={{
-                position: "absolute", bottom: 0, left: 0, right: 0,
-                height: 3, background: "rgba(0,0,0,0.06)", overflow: "hidden",
-              }}>
-                <div style={{
-                  height: "100%", width: "40%",
-                  background: "linear-gradient(90deg, #ff6bb5, #b86bff, #ffd700)",
-                  animation: "bmsBar 1.5s ease-in-out infinite",
-                }} />
-              </div>
-              </div>{/* /inner content */}
-            </div>{/* /outer wrapper */}
-
-            <div style={{ textAlign: "center", marginTop: 12 }}>
+              {activeJobs.map(job => (
+                <JobCard key={job.jobId || job.modelId} job={job} onLightbox={setLightboxUrl} />
+              ))}
+            </div>
+            <div style={{ textAlign: "center" }}>
               <button onClick={handleCancel} style={{
                 background: "transparent", border: "none", cursor: "pointer",
                 fontSize: 12, color: "#aaa", textDecoration: "underline",
@@ -471,108 +357,44 @@ export default function ImagesPage() {
         )}
 
         {/* ── TRYB: done ── */}
-        {mode === "done" && activeJob && (
-          <div style={{ maxWidth: 500, margin: "0 auto 32px" }}>
+        {mode === "done" && activeJobs.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <style>{`@keyframes bmsPixel { 0%{opacity:0.3} 100%{opacity:1} }`}</style>
             <div style={{
               display: "grid",
-              gridTemplateColumns: activeJob.output_urls?.length > 1 ? "repeat(2,1fr)" : "1fr",
-              gap: 8, marginBottom: 16,
+              gridTemplateColumns: `repeat(${cols}, minmax(180px, 1fr))`,
+              gap: 12, marginBottom: 16,
             }}>
-              {activeJob.output_urls?.map((url, i) => (
-                <div key={i} style={{ position: "relative", borderRadius: 12, overflow: "hidden" }}>
-                  <img
-                    src={url}
-                    alt={`Wariant ${i + 1}`}
-                    style={{ width: "100%", display: "block", cursor: "pointer" }}
-                    onClick={() => setLightboxUrl(url)}
-                  />
-                  <div style={{
-                    position: "absolute", bottom: 0, left: 0, right: 0,
-                    padding: "8px",
-                    background: "linear-gradient(transparent, rgba(0,0,0,0.6))",
-                    display: "flex", gap: "6px", justifyContent: "center",
-                  }}>
-                    <a
-                      href={url}
-                      download={`wariant-${i + 1}.png`}
-                      onClick={e => e.stopPropagation()}
-                      style={{
-                        padding: "5px 12px",
-                        background: "rgba(255,255,255,0.9)",
-                        color: "#333", borderRadius: "6px",
-                        fontSize: "12px", textDecoration: "none",
-                        display: "inline-flex", alignItems: "center", gap: "4px",
-                      }}
-                    >⬇ Pobierz</a>
-                    <button
-                      onClick={e => { e.stopPropagation(); setLightboxUrl(url); }}
-                      style={{
-                        padding: "5px 12px",
-                        background: "rgba(255,255,255,0.9)",
-                        color: "#333", borderRadius: "6px",
-                        fontSize: "12px", border: "none", cursor: "pointer",
-                        display: "inline-flex", alignItems: "center", gap: "4px",
-                      }}
-                    >⤢ Powiększ</button>
-                  </div>
-                </div>
+              {activeJobs.map(job => (
+                <JobCard key={job.jobId || job.modelId} job={job} onLightbox={setLightboxUrl} />
               ))}
             </div>
-
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
-              {activeJob.output_urls?.[0] && (
-                <a href={activeJob.output_urls[0]} download style={{
-                  padding: "8px 16px", background: ACCENT, color: "#fff",
-                  borderRadius: 8, fontSize: 13, textDecoration: "none",
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                }}>⬇ Pobierz</a>
-              )}
-
+            <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
               <button onClick={handleRerun} style={{
-                padding: "8px 16px", border: "0.5px solid var(--color-border-secondary, #ddd)",
+                padding: "8px 16px", border: "0.5px solid #ddd",
                 borderRadius: 8, fontSize: 13, background: "transparent",
-                cursor: "pointer", color: "var(--color-text-primary, #1a1a1a)",
-              }}>↺ Re-run</button>
-
+                cursor: "pointer", color: "#1a1a1a",
+              }}>↺ Re-run wszystkich</button>
               <button
                 onClick={handleEnhanceAndEdit}
                 disabled={enhancing}
                 style={{
                   padding: "8px 16px", border: `0.5px solid ${enhancing ? "#ddd" : ACCENT}`,
-                  borderRadius: 8, fontSize: 13,
-                  background: enhancing ? "#fdf8f3" : "transparent",
-                  cursor: enhancing ? "not-allowed" : "pointer",
-                  color: enhancing ? "#c9a06e" : ACCENT,
-                  transition: "all 0.15s",
-                  display: "inline-flex", alignItems: "center", gap: 6,
+                  borderRadius: 8, fontSize: 13, background: "transparent",
+                  cursor: enhancing ? "not-allowed" : "pointer", color: enhancing ? "#aaa" : ACCENT,
                 }}
-              >
-                {enhancing ? (
-                  <>
-                    <span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>⟳</span>
-                    Ulepszam...
-                    <style>{`@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}`}</style>
-                  </>
-                ) : "✦ Ulepsz prompt"}
-              </button>
+              >{enhancing ? "Ulepszam..." : "✦ Ulepsz prompt"}</button>
+              <button onClick={handleReset} style={{
+                flex: 1, padding: "8px 16px", border: "0.5px solid #ddd",
+                borderRadius: 8, fontSize: 13, background: "transparent",
+                cursor: "pointer", color: "#888",
+              }}>← Zacznij od nowa</button>
             </div>
-
-            <button onClick={handleReset} style={{
-              width: "100%", padding: 10,
-              border: "0.5px solid var(--color-border-tertiary, #ddd)",
-              borderRadius: 8, fontSize: 13,
-              background: "transparent", cursor: "pointer",
-              color: "var(--color-text-secondary, #888)",
-            }}>← Zacznij od nowa</button>
           </div>
         )}
 
         {/* ── TRYB: idle — formularz ── */}
-        <div style={{
-          opacity: mode === "idle" ? 1 : 0.35,
-          pointerEvents: mode === "idle" ? "auto" : "none",
-          transition: "opacity 0.2s",
-        }}>
+        <div style={{ opacity: mode === "idle" ? 1 : 0.35, pointerEvents: mode === "idle" ? "auto" : "none", transition: "opacity 0.2s" }}>
           <Section title="Presety">
             <PresetPanel jobType="image" onApply={handlePresetApply} currentConfig={getCurrentConfig()} />
           </Section>
@@ -592,100 +414,17 @@ export default function ImagesPage() {
             </div>
           </Section>
 
-          <Section title="Model">
-            {modelsLoading ? (
-              <div style={{ fontSize: 13, color: "#888" }}>Ładowanie modeli...</div>
-            ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
-                {models.map(model => {
-                  const isSelected = model.model_id === selectedModel?.model_id;
-                  const badgeStyle = BADGE_COLORS[model.badge_color] || BADGE_COLORS.amber;
-                  return (
-                    <div
-                      key={model.model_id}
-                      onClick={() => handleModelChange(model)}
-                      style={{
-                        border: `${isSelected ? "1.5px" : "1px"} solid ${isSelected ? ACCENT : "#eee"}`,
-                        borderRadius: 10, padding: "14px 16px", cursor: "pointer",
-                        background: isSelected ? "#fdf7f2" : "#fff",
-                        transition: "border-color 0.15s, background 0.15s",
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                        <span style={{ fontWeight: 600, fontSize: 14, color: "#1a1a1a" }}>{model.model_name}</span>
-                        {model.badge && (
-                          <span style={{
-                            fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 10,
-                            background: badgeStyle.bg, color: badgeStyle.text,
-                          }}>
-                            {model.badge}
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: 13, color: ACCENT, fontWeight: 500, marginBottom: 4 }}>
-                        ${parseFloat(model.price_per_unit).toFixed(2)} / {model.unit_label}
-                      </div>
-                      <div style={{ fontSize: 11, color: "#999" }}>
-                        {model.capabilities?.resolutions?.slice(0, 3).map(r => RESOLUTION_LABELS[r] || r).join(" · ")}
-                      </div>
-                      <div style={{ fontSize: 10, color: "#bbb", marginTop: 2, textTransform: "capitalize" }}>
-                        {model.provider}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+          <Section>
+            <ModelSelector
+              category="image"
+              selectedModels={selectedModels}
+              onModelsChange={setSelectedModels}
+            />
           </Section>
 
-          {selectedModel && (
-            <Section title="Parametry">
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 12, color: "#666", marginBottom: 6, fontWeight: 500 }}>Orientacja / proporcje</div>
-                <ToggleGroup options={availableOrientations} value={params.orientation} onChange={v => setParam("orientation", v)} />
-              </div>
-
-              {availableResolutions.length > 1 && (
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 12, color: "#666", marginBottom: 6, fontWeight: 500 }}>Rozdzielczość</div>
-                  <ToggleGroup
-                    options={availableResolutions}
-                    value={params.resolution}
-                    onChange={v => setParam("resolution", v)}
-                    labelFn={r => RESOLUTION_LABELS[r] || r}
-                  />
-                </div>
-              )}
-
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 12, color: "#666", marginBottom: 6, fontWeight: 500 }}>Styl wizualny</div>
-                <select
-                  value={params.style}
-                  onChange={e => setParam("style", e.target.value)}
-                  style={{ padding: "7px 10px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, outline: "none", background: "#fff", cursor: "pointer" }}
-                >
-                  {STYLE_OPTIONS.map(s => <option key={s}>{s}</option>)}
-                </select>
-              </div>
-
-              {availableQuality.length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 12, color: "#666", marginBottom: 6, fontWeight: 500 }}>Jakość</div>
-                  <ToggleGroup
-                    options={availableQuality}
-                    value={params.quality}
-                    onChange={v => setParam("quality", v)}
-                    labelFn={q => QUALITY_LABELS[q] || q}
-                  />
-                </div>
-              )}
-
-              <div>
-                <div style={{ fontSize: 12, color: "#666", marginBottom: 6, fontWeight: 500 }}>Liczba wariantów</div>
-                <ToggleGroup options={["1", "2", "4"]} value={params.variants} onChange={v => setParam("variants", v)} />
-              </div>
-            </Section>
-          )}
+          <Section title="Styl wizualny">
+            <ToggleGroup options={STYLE_OPTIONS} value={style} onChange={setStyle} />
+          </Section>
 
           <Section title="Prompt">
             <textarea
@@ -720,9 +459,7 @@ export default function ImagesPage() {
                       border: aiModel === m.id ? `1px solid ${ACCENT}` : "1px solid #ddd",
                       fontWeight: aiModel === m.id ? 500 : 400,
                     }}
-                  >
-                    {m.label}
-                  </button>
+                  >{m.label}</button>
                 ))}
               </div>
             </div>
@@ -751,9 +488,7 @@ export default function ImagesPage() {
                 color: enhancing ? "#ccc" : ACCENT,
                 cursor: enhancing || !prompt.trim() ? "not-allowed" : "pointer",
               }}
-            >
-              {enhancing ? "Generuję..." : "✦ Ulepsz prompt"}
-            </button>
+            >{enhancing ? "Generuję..." : "✦ Ulepsz prompt"}</button>
 
             {alternatives.length > 0 && (
               <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
@@ -766,8 +501,7 @@ export default function ImagesPage() {
                       padding: "10px 14px",
                       border: prompt === alt ? `1.5px solid ${ACCENT}` : "1px solid #eee",
                       borderRadius: 8, fontSize: 13, lineHeight: 1.5,
-                      cursor: "pointer", background: prompt === alt ? "#fdf6ee" : "#fff",
-                      color: "#333",
+                      cursor: "pointer", background: prompt === alt ? "#fdf6ee" : "#fff", color: "#333",
                     }}
                   >
                     <div style={{ fontSize: 10, color: ACCENT, fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>
@@ -779,29 +513,32 @@ export default function ImagesPage() {
               </div>
             )}
 
-            {selectedModel && (
+            {selectedModels.length > 0 && (
               <div style={{ fontSize: 12, color: "#888", marginTop: 12 }}>
-                Szacowany koszt:{" "}
-                <strong style={{ color: ACCENT }}>~${costLabel}</strong>
-                <span style={{ color: "#bbb", marginLeft: 4 }}>
-                  ({selectedModel.model_name} · {params.variants} wariant)
-                </span>
+                {selectedModels.map(({ model, params }) => (
+                  <span key={model.model_id} style={{ marginRight: 12 }}>
+                    {model.model_name}: ~${(parseFloat(model.price_per_unit) * (parseInt(params.variants) || 1)).toFixed(2)}
+                  </span>
+                ))}
+                {selectedModels.length > 1 && (
+                  <strong style={{ color: ACCENT }}>Łącznie: ~${totalCost}</strong>
+                )}
               </div>
             )}
           </Section>
 
           <button
             onClick={handleGenerate}
-            disabled={!selectedModel || !prompt.trim()}
+            disabled={!canGenerate}
             style={{
               width: "100%", padding: "14px 20px", fontSize: 15, fontWeight: 600,
-              background: !selectedModel || !prompt.trim() ? "#f0e8df" : ACCENT,
+              background: !canGenerate ? "#f0e8df" : ACCENT,
               border: "none", borderRadius: 12, color: "#fff",
-              cursor: !selectedModel || !prompt.trim() ? "not-allowed" : "pointer",
+              cursor: !canGenerate ? "not-allowed" : "pointer",
               marginBottom: 32, letterSpacing: "0.02em",
             }}
           >
-            🎨 Generuj grafikę
+            {!selectedModels.length ? "Wybierz co najmniej 1 model powyżej" : "🎨 Generuj grafikę"}
           </button>
         </div>
       </div>
@@ -821,38 +558,14 @@ export default function ImagesPage() {
               src={lightboxUrl}
               style={{ maxWidth: "100%", maxHeight: "90vh", borderRadius: 12, display: "block" }}
             />
-            <div style={{
-              position: "absolute", bottom: -48, left: 0, right: 0,
-              display: "flex", gap: 8, justifyContent: "center",
-            }}>
-              <a
-                href={lightboxUrl}
-                download
-                style={{
-                  padding: "8px 20px", background: ACCENT,
-                  color: "#fff", borderRadius: 8, fontSize: 13,
-                  textDecoration: "none",
-                }}
-              >⬇ Pobierz</a>
-              <button
-                onClick={() => setLightboxUrl(null)}
-                style={{
-                  padding: "8px 20px", background: "rgba(255,255,255,0.15)",
-                  color: "#fff", borderRadius: 8, fontSize: 13,
-                  border: "none", cursor: "pointer",
-                }}
-              >Zamknij</button>
+            <div style={{ position: "absolute", bottom: -48, left: 0, right: 0, display: "flex", gap: 8, justifyContent: "center" }}>
+              <a href={lightboxUrl} download style={{ padding: "8px 20px", background: ACCENT, color: "#fff", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>⬇ Pobierz</a>
+              <button onClick={() => setLightboxUrl(null)} style={{ padding: "8px 20px", background: "rgba(255,255,255,0.15)", color: "#fff", borderRadius: 8, fontSize: 13, border: "none", cursor: "pointer" }}>Zamknij</button>
             </div>
           </div>
           <button
             onClick={() => setLightboxUrl(null)}
-            style={{
-              position: "absolute", top: 16, right: 16,
-              background: "rgba(255,255,255,0.15)", border: "none",
-              color: "#fff", fontSize: 20, cursor: "pointer",
-              width: 36, height: 36, borderRadius: "50%",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
+            style={{ position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", fontSize: 20, cursor: "pointer", width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}
           >×</button>
         </div>
       )}
