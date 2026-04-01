@@ -1884,16 +1884,16 @@ Copy: ${brief.copyProposals || "—"}`;
             {/* ZAPOTRZEBOWANIE NA COPY */}
             <Section title="ZAPOTRZEBOWANIE NA COPY">
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>Opisz czego potrzebujesz od copywritera — ile tekstów, jak długie, co mają zawierać.</div>
+                <div style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 4 }}>Opisz czego potrzebujesz od copywritera — ile tekstów, jak długie, co mają zawierać.</div>
                 {(brief.copyRequests || [{ label: "", text: "" }]).map((req, i) => (
                   <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
                       <input value={req.label} onChange={e => { const arr = [...(brief.copyRequests || [])]; arr[i] = { ...arr[i], label: e.target.value }; set("copyRequests", arr); }}
                         placeholder={`np. "Post Meta Ads", "Newsletter intro", "Blog 800 słów"...`}
-                        style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "7px 10px", fontSize: 12, color: "#1a1a1a", fontFamily: "inherit", boxSizing: "border-box", fontWeight: 600 }} />
+                        style={{ width: "100%", background: "var(--color-background-primary)", border: "1px solid var(--color-border-secondary)", borderRadius: 6, padding: "7px 10px", fontSize: 12, color: "var(--color-text-primary)", fontFamily: "inherit", boxSizing: "border-box", fontWeight: 600 }} />
                       <textarea value={req.text} onChange={e => { const arr = [...(brief.copyRequests || [])]; arr[i] = { ...arr[i], text: e.target.value }; set("copyRequests", arr); }}
                         placeholder="Opis: długość, ton, co ma być zawarte, CTA, słowa kluczowe..."
-                        rows={2} style={{ width: "100%", background: "#f9f7f5", border: "1px solid #ddd", borderRadius: 6, padding: "7px 10px", fontSize: 12, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                        rows={2} style={{ width: "100%", background: "var(--color-background-primary)", border: "1px solid var(--color-border-secondary)", borderRadius: 6, padding: "7px 10px", fontSize: 12, color: "var(--color-text-primary)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
                     </div>
                     <button onClick={() => set("copyRequests", (brief.copyRequests || []).filter((_, j) => j !== i))}
                       style={{ background: "none", border: "none", color: "#ccc", cursor: "pointer", fontSize: 18, padding: "6px 0", flexShrink: 0 }}>×</button>
@@ -1932,12 +1932,12 @@ Copy: ${brief.copyProposals || "—"}`;
             {copyFromModal && (
               <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }}
                 onClick={() => setCopyFromModal(null)}>
-                <div style={{ background: "#fff", borderRadius: 12, padding: 24, minWidth: 320, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
-                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 16, color: "#1a1a1a" }}>Kopiuj ustawienia z kanału:</div>
+                <div style={{ background: "var(--color-background-primary)", borderRadius: 12, padding: 24, minWidth: 320, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 16, color: "var(--color-text-primary)" }}>Kopiuj ustawienia z kanału:</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {CHANNELS.filter(c => c.id !== copyFromModal && brief.channels[c.id]?.active).map(c => (
                       <button key={c.id} onClick={() => copyFromChannel(c.id, copyFromModal)}
-                        style={{ textAlign: "left", padding: "10px 14px", borderRadius: 8, border: "1px solid #e0dbd4", background: "#f9f7f5", cursor: "pointer", fontSize: 12, fontFamily: "inherit", color: "#333" }}>
+                        style={{ textAlign: "left", padding: "10px 14px", borderRadius: 8, border: "1px solid var(--color-border-secondary)", background: "var(--color-background-primary)", cursor: "pointer", fontSize: 12, fontFamily: "inherit", color: "var(--color-text-primary)" }}>
                         {c.label}
                       </button>
                     ))}
@@ -2175,7 +2175,7 @@ Copy: ${brief.copyProposals || "—"}`;
                           <div style={{ padding: "10px 14px", borderBottom: "2px solid " + ACCENT + "40", display: "flex", justifyContent: "space-between", alignItems: "center", background: ACCENT + "18" }}>
                             <span style={{ fontSize: 12, fontWeight: 700, color: ACCENT, fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>✨ Synteza rozmowy</span>
                             <div style={{ display: "flex", gap: 6 }}>
-                              <button onClick={() => navigator.clipboard.writeText(msg.content)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, border: "1px solid " + ACCENT + "60", background: "#fff", color: ACCENT, cursor: "pointer", fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: 700 }}>Kopiuj</button>
+                              <button onClick={() => navigator.clipboard.writeText(msg.content)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, border: "1px solid " + ACCENT + "60", background: "var(--color-background-primary)", color: ACCENT, cursor: "pointer", fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: 700 }}>Kopiuj</button>
                               <button onClick={() => fillBriefFromSynthesis(msg.content)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, border: "none", background: ACCENT, color: "#fff", cursor: "pointer", fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: 700 }}>
                                 {fillingBrief ? "⏳..." : "📋 Wypełnij brief"}
                               </button>
@@ -2192,7 +2192,7 @@ Copy: ${brief.copyProposals || "—"}`;
                   return (
                     <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isUser ? "flex-end" : "flex-start" }}>
                       {!isUser && <div style={{ fontSize: 9, color: modelColors[msg.model] || "#aaa", marginBottom: 3, fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: 700 }}>{msg.model}</div>}
-                      <div style={{ maxWidth: "90%", padding: isUser ? "8px 12px" : "12px 16px", borderRadius: isUser ? "12px 12px 4px 12px" : "12px 12px 12px 4px", background: isUser ? ACCENT : "#fff", color: isUser ? "#fff" : "#1a1a1a", fontSize: 12, lineHeight: 1.6, wordBreak: "break-word", border: isUser ? "none" : "1px solid #e8e0d8", boxShadow: isUser ? "none" : "0 1px 4px rgba(0,0,0,0.06)" }}>
+                      <div style={{ maxWidth: "90%", padding: isUser ? "8px 12px" : "12px 16px", borderRadius: isUser ? "12px 12px 4px 12px" : "12px 12px 12px 4px", background: isUser ? ACCENT : "var(--color-background-primary)", color: isUser ? "#fff" : "var(--color-text-primary)", fontSize: 12, lineHeight: 1.6, wordBreak: "break-word", border: isUser ? "none" : "1px solid var(--color-border-secondary)", boxShadow: isUser ? "none" : "0 1px 4px rgba(0,0,0,0.06)" }}>
                         {isUser ? (
                           <div style={{ whiteSpace: "pre-wrap", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", fontSize: 13, lineHeight: 1.6 }}>
                             {msg.content}
@@ -2252,7 +2252,7 @@ Copy: ${brief.copyProposals || "—"}`;
                     </select>
                   </div>
                   {/* Załącz */}
-                  <label style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#333", padding: "6px 12px", border: "1px solid #bbb", borderRadius: 8, background: "#fff", whiteSpace: "nowrap" }}>
+                  <label style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "var(--color-text-primary)", padding: "6px 12px", border: "1px solid var(--color-border-secondary)", borderRadius: 8, background: "var(--color-background-primary)", whiteSpace: "nowrap" }}>
                     <input type="file" multiple accept="image/*,.pdf,.txt,.md" onChange={async e => {
                       const files = Array.from(e.target.files);
                       const loaded = await Promise.all(files.map(f => new Promise(resolve => {
@@ -2273,13 +2273,13 @@ Copy: ${brief.copyProposals || "—"}`;
                   {/* Deep Research */}
                   {(chatModel.startsWith("gemini") || chatModel.startsWith("gpt")) && (
                     <button onClick={() => setDeepResearch(d => !d)}
-                      style={{ fontSize: 12, padding: "6px 12px", borderRadius: 8, border: `1px solid ${deepResearch ? "#1a6fd4" : "#bbb"}`, background: deepResearch ? "#1a6fd4" : "#fff", color: deepResearch ? "#fff" : "#333", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, whiteSpace: "nowrap" }}>
+                      style={{ fontSize: 12, padding: "6px 12px", borderRadius: 8, border: `1px solid ${deepResearch ? "#1a6fd4" : "var(--color-border-secondary)"}`, background: deepResearch ? "#1a6fd4" : "var(--color-background-primary)", color: deepResearch ? "#fff" : "var(--color-text-primary)", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, whiteSpace: "nowrap" }}>
                       {deepResearch ? "🔬 Deep ON" : "🔬 Deep"}
                     </button>
                   )}
                   {/* Rozszerz */}
                   <button onClick={() => setChatExpanded(e => !e)}
-                    style={{ marginLeft: "auto", fontSize: 12, padding: "6px 12px", borderRadius: 8, border: "1px solid #bbb", background: chatExpanded ? "#333" : "#fff", color: chatExpanded ? "#fff" : "#333", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, whiteSpace: "nowrap" }}>
+                    style={{ marginLeft: "auto", fontSize: 12, padding: "6px 12px", borderRadius: 8, border: "1px solid var(--color-border-secondary)", background: chatExpanded ? "#333" : "var(--color-background-primary)", color: chatExpanded ? "#fff" : "var(--color-text-primary)", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, whiteSpace: "nowrap" }}>
                     {chatExpanded ? "↙ Zwiń" : "↗ Rozszerz"}
                   </button>
                 </div>

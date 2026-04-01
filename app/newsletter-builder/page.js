@@ -208,10 +208,10 @@ const defaultEdroneStyle = {
   lineHeight: "1.4", linkDecoration: "none", titlePadding: "10",
 };
 
-const inputStyle = { width: "100%", padding: "8px 10px", border: "1px solid #e8e4de", borderRadius: "7px", fontSize: "13px", fontFamily: "inherit", boxSizing: "border-box", outline: "none", background: "#fafaf8" };
+const inputStyle = { width: "100%", padding: "8px 10px", border: "1px solid var(--color-border-secondary)", borderRadius: "7px", fontSize: "13px", fontFamily: "inherit", boxSizing: "border-box", outline: "none", background: "var(--color-background-primary)", color: "var(--color-text-primary)" };
 
 function Label({ children, color }) {
-  return <label style={{ fontSize: "11px", color: color || "#888", display: "block", marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{children}</label>;
+  return <label style={{ fontSize: "11px", color: color || "var(--color-text-secondary)", display: "block", marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{children}</label>;
 }
 
 function CopyButton({ html }) {
