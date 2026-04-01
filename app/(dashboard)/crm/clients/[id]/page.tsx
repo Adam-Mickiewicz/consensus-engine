@@ -60,6 +60,11 @@ interface Profile {
   last_order: string | null;
   top_domena: string | null;
   winback_priority: string | null;
+  rfm_segment: string | null;
+  rfm_total_score: number | null;
+  customer_health_score: number | null;
+  purchase_probability_30d: number | null;
+  predicted_ltv_12m: number | null;
 }
 interface EventRow {
   id: number;
@@ -907,6 +912,11 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
             </span>
             {seg && <span className="cp-badge" style={{ background: SEG_COLORS[seg] ?? t.accent, color: "#fff" }}>{seg}</span>}
             {risk && <span className="cp-badge" style={{ background: RISK_COLORS[risk] ?? "#999", color: "#fff" }}>{risk}</span>}
+            {profile.rfm_segment && (
+              <span className="cp-badge" style={{ background: "#f5f2ee", color: "#b8763a", border: "1px solid #b8763a66", fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }}>
+                RFM: {profile.rfm_segment}
+              </span>
+            )}
             {profile.winback_priority && <span className="cp-badge" style={{ background: "#dd444422", color: "#dd4444" }}>⚡ Winback</span>}
           </div>
         </div>
@@ -922,6 +932,8 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
               { label: "Zamówienia", val: String(profile.orders_count ?? "—"), color: t.text },
               { label: "Pierwszy zakup", val: profile.first_order?.slice(0, 10) ?? "—", color: t.text },
               { label: "Ostatni zakup", val: profile.last_order?.slice(0, 10) ?? "—", color: t.text },
+              ...(profile.purchase_probability_30d != null ? [{ label: "Prob. zakupu 30d", val: `${Number(profile.purchase_probability_30d).toFixed(1)}%`, color: Number(profile.purchase_probability_30d) > 50 ? "#2d8a4e" : Number(profile.purchase_probability_30d) > 20 ? "#e6a817" : "#dd4444" }] : []),
+              ...(profile.predicted_ltv_12m != null ? [{ label: "Pred. LTV 12m", val: `${Number(profile.predicted_ltv_12m).toLocaleString("pl-PL", { maximumFractionDigits: 0 })} zł`, color: "#3577b3" }] : []),
             ].map(({ label, val, color }) => (
               <div key={label} style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color, fontVariantNumeric: "tabular-nums" }}>{val}</div>

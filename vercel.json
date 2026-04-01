@@ -26,6 +26,10 @@
     {
       "path": "/api/cron/segment-snapshot",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/recalculate-scores",
+      "schedule": "0 7 * * *"
     }
   ]
 }

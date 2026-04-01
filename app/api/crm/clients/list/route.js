@@ -4,21 +4,24 @@ import { getServiceClient } from '../../../../../lib/supabase/server';
 export const dynamic = 'force-dynamic';
 
 function buildQuery(sb, params) {
-  const { segment, risk, world, ltv_min, ltv_max, search, sort, date_from, date_to } = params;
+  const { segment, risk, world, ltv_min, ltv_max, search, sort, date_from, date_to, rfm_segment, rfm_r, rfm_f } = params;
 
   let q = sb.from('clients_360').select(
-    'client_id,legacy_segment,risk_level,ltv,orders_count,last_order,first_order,top_domena,winback_priority',
+    'client_id,legacy_segment,risk_level,ltv,orders_count,last_order,first_order,top_domena,winback_priority,rfm_segment,rfm_total_score,customer_health_score,purchase_probability_30d',
     { count: 'exact' }
   );
 
-  if (segment)   q = q.eq('legacy_segment', segment);
-  if (risk)      q = q.eq('risk_level', risk);
-  if (world)     q = q.eq('top_domena', world);
-  if (ltv_min)   q = q.gte('ltv', parseFloat(ltv_min));
-  if (ltv_max)   q = q.lte('ltv', parseFloat(ltv_max));
-  if (search)    q = q.ilike('client_id', `%${search}%`);
-  if (date_from) q = q.gte('last_order', date_from);
-  if (date_to)   q = q.lte('last_order', date_to);
+  if (segment)     q = q.eq('legacy_segment', segment);
+  if (risk)        q = q.eq('risk_level', risk);
+  if (world)       q = q.eq('top_domena', world);
+  if (ltv_min)     q = q.gte('ltv', parseFloat(ltv_min));
+  if (ltv_max)     q = q.lte('ltv', parseFloat(ltv_max));
+  if (search)      q = q.ilike('client_id', `%${search}%`);
+  if (date_from)   q = q.gte('last_order', date_from);
+  if (date_to)     q = q.lte('last_order', date_to);
+  if (rfm_segment) q = q.eq('rfm_segment', rfm_segment);
+  if (rfm_r)       q = q.eq('rfm_recency_score', parseInt(rfm_r));
+  if (rfm_f)       q = q.eq('rfm_frequency_score', parseInt(rfm_f));
 
   switch (sort) {
     case 'ltv_asc':         q = q.order('ltv',         { ascending: true  }); break;
@@ -43,8 +46,11 @@ export async function GET(request) {
       ltv_max:   searchParams.get('ltv_max')    || '',
       search:    searchParams.get('search')     || '',
       sort:      searchParams.get('sort')       || 'ltv_desc',
-      date_from: searchParams.get('date_from')  || '',
-      date_to:   searchParams.get('date_to')    || '',
+      date_from:   searchParams.get('date_from')    || '',
+      date_to:     searchParams.get('date_to')      || '',
+      rfm_segment: searchParams.get('rfm_segment')  || '',
+      rfm_r:       searchParams.get('rfm_r')        || '',
+      rfm_f:       searchParams.get('rfm_f')        || '',
     };
     const occasion  = searchParams.get('occasion') || '';
     const page      = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);

@@ -72,6 +72,7 @@ export default function ImportPage() {
   const [overview, setOverview] = useState<DataOverview | null>(null);
   const [granularity, setGranularity] = useState('yearly');
   const [overviewLoading, setOverviewLoading] = useState(false);
+  const [eanGaps, setEanGaps] = useState<{ product_name: string; event_count: number; unique_buyers: number }[] | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -118,6 +119,13 @@ export default function ImportPage() {
       .then(d => { setOverview(d); setOverviewLoading(false); })
       .catch(() => setOverviewLoading(false));
   }, [granularity]);
+
+  useEffect(() => {
+    fetch('/api/crm/ean-gaps?limit=10')
+      .then(r => r.json())
+      .then(d => setEanGaps(d.gaps ?? null))
+      .catch(() => {});
+  }, []);
 
   async function handleUpload() {
     if (files.length === 0 || status === "running") return;
@@ -522,6 +530,48 @@ export default function ImportPage() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Braki EAN */}
+        <div className="imp-block">
+          <div className="imp-section">Braki EAN</div>
+          <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, padding: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: t.text, fontFamily: "IBM Plex Mono, monospace" }}>Produkty bez EAN</div>
+                <div style={{ fontSize: 12, color: t.textSub, marginTop: 2 }}>Pobierz CSV, uzupełnij kolumnę EAN i wgraj z powrotem</div>
+              </div>
+              <button
+                onClick={() => window.open('/api/crm/ean-gaps?format=csv&limit=500', '_blank')}
+                style={{ padding: "8px 16px", background: t.accent, color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "IBM Plex Mono, monospace", flexShrink: 0 }}>
+                Pobierz CSV (top 500)
+              </button>
+            </div>
+            {eanGaps && eanGaps.length > 0 && (
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${t.border}` }}>
+                    <th style={{ textAlign: "left", padding: "6px 8px", color: t.textSub, fontWeight: 500 }}>Produkt</th>
+                    <th style={{ textAlign: "right", padding: "6px 8px", color: t.textSub, fontWeight: 500 }}>Zamówień</th>
+                    <th style={{ textAlign: "right", padding: "6px 8px", color: t.textSub, fontWeight: 500 }}>Kupców</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {eanGaps.slice(0, 10).map(g => (
+                    <tr key={g.product_name} style={{ borderBottom: `1px solid ${t.border}` }}>
+                      <td style={{ padding: "6px 8px", color: t.text, maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.product_name}</td>
+                      <td style={{ padding: "6px 8px", textAlign: "right", color: t.accent, fontWeight: 600 }}>{Number(g.event_count).toLocaleString("pl-PL")}</td>
+                      <td style={{ padding: "6px 8px", textAlign: "right", color: t.textSub }}>{Number(g.unique_buyers).toLocaleString("pl-PL")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {eanGaps && eanGaps.length === 0 && (
+              <div style={{ fontSize: 13, color: "#2d8a4e" }}>Brak produktów bez EAN</div>
+            )}
+            {!eanGaps && <div style={{ fontSize: 13, color: t.textSub }}>Ładowanie…</div>}
+          </div>
         </div>
 
         {/* Historia runów */}

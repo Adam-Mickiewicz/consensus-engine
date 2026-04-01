@@ -35,6 +35,9 @@ interface ClientRow {
   first_order: string | null;
   top_domena: string | null;
   winback_priority: string | null;
+  rfm_segment: string | null;
+  customer_health_score: number | null;
+  purchase_probability_30d: number | null;
 }
 
 function Skeleton({ t }: { t: typeof DARK }) {
@@ -76,7 +79,8 @@ export default function ClientsView() {
   const page     = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
   const date_from = searchParams.get("date_from") || "";
   const date_to  = searchParams.get("date_to")    || "";
-  const occasion = searchParams.get("occasion")   || "";
+  const occasion     = searchParams.get("occasion")    || "";
+  const rfm_segment  = searchParams.get("rfm_segment") || "";
 
   // Local-only (debounced) state for search
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
@@ -118,7 +122,7 @@ export default function ClientsView() {
 
   function resetFilters() {
     const p = new URLSearchParams(searchParams.toString());
-    ["segment","risk","world","ltv_min","ltv_max","search","date_from","date_to","occasion","page","sort"].forEach(k => p.delete(k));
+    ["segment","risk","world","ltv_min","ltv_max","search","date_from","date_to","occasion","rfm_segment","rfm_r","rfm_f","page","sort"].forEach(k => p.delete(k));
     setSearchInput("");
     router.push(`${pathname}?${p.toString()}`);
   }
@@ -179,7 +183,7 @@ export default function ClientsView() {
     }
   }
 
-  const hasFilters = !!(segment || risk || world || ltv_min || ltv_max || searchInput || date_from || date_to || occasion);
+  const hasFilters = !!(segment || risk || world || ltv_min || ltv_max || searchInput || date_from || date_to || occasion || rfm_segment);
 
   const thStyle = (col: string) => ({
     cursor: SORT_COLS.find(c => c.key === col) ? "pointer" : "default",
@@ -292,6 +296,13 @@ export default function ClientsView() {
               <option value="orders_asc">Zamówienia ↑</option>
             </select>
           </div>
+          <div className="cl-filter-group">
+            <span className="cl-filter-label">RFM Segment</span>
+            <select className="cl-select" value={rfm_segment} onChange={e => setParam("rfm_segment", e.target.value)}>
+              <option value="">Wszystkie</option>
+              {["Champions","Loyal","Potential Loyal","Recent","Promising","Need Attention","About to Sleep","At Risk","Cant Lose","Hibernating","Lost","Other"].map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
           {hasFilters && (
             <button className="cl-btn cl-btn-ghost" onClick={resetFilters} style={{ alignSelf: "flex-end" }}>Resetuj</button>
           )}
@@ -317,6 +328,8 @@ export default function ClientsView() {
                   <th>Dni od zakupu</th>
                   <th style={thStyle("first_order")} onClick={() => setSort("first_order")}>Pierwszy zakup{sortIcon("first_order")}</th>
                   <th>Top domena</th>
+                  <th>RFM</th>
+                  <th style={{ textAlign: "right" }}>Prob 30d</th>
                   <th>Winback</th>
                   <th></th>
                 </tr>
@@ -348,6 +361,20 @@ export default function ClientsView() {
                     })()}</td>
                     <td style={{ color: t.textSub, fontSize: 12 }}>{c.first_order ? new Date(c.first_order).toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}</td>
                     <td style={{ color: t.textSub, fontSize: 12, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis" }}>{c.top_domena ?? "—"}</td>
+                    <td>
+                      {c.rfm_segment ? (
+                        <span style={{ display: "inline-block", padding: "2px 7px", borderRadius: 4, fontSize: 10, fontWeight: 700, fontFamily: "IBM Plex Mono, monospace", background: "#b8763a18", color: "#b8763a", border: "1px solid #b8763a44", whiteSpace: "nowrap" }}>
+                          {c.rfm_segment}
+                        </span>
+                      ) : "—"}
+                    </td>
+                    <td style={{ textAlign: "right", fontSize: 12 }}>
+                      {c.purchase_probability_30d != null ? (
+                        <span style={{ color: Number(c.purchase_probability_30d) > 50 ? "#2d8a4e" : Number(c.purchase_probability_30d) > 20 ? "#e6a817" : t.textSub, fontWeight: Number(c.purchase_probability_30d) > 50 ? 700 : 400 }}>
+                          {Number(c.purchase_probability_30d).toFixed(1)}%
+                        </span>
+                      ) : "—"}
+                    </td>
                     <td>
                       {c.winback_priority ? (
                         <span className="cl-badge" style={{ background: "#ef444422", color: "#ef4444", fontSize: 10 }}>

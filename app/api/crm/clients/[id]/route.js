@@ -41,7 +41,7 @@ export async function GET(_request, { params }) {
     const client  = profileRes.data;
     const events  = eventsRes.data ?? [];
 
-    // === Barometer (0–100) ===
+    // === Barometer (0–100) — prefer customer_health_score if available ===
     const daysSinceLast = client.last_order
       ? Math.floor((Date.now() - new Date(client.last_order).getTime()) / 86400000)
       : 999;
@@ -51,7 +51,8 @@ export async function GET(_request, { params }) {
     const recencyScore  = Math.max(0, Math.min(100, Math.round(100 - (daysSinceLast / Math.max(avgInterval * 2, 1)) * 100)));
     const frequencyScore = Math.min(100, Math.round((client.orders_count / 10) * 100));
     const monetaryScore  = Math.min(100, Math.round(((client.ltv || 0) / 5000) * 100));
-    const barometerScore = Math.round(recencyScore * 0.4 + frequencyScore * 0.3 + monetaryScore * 0.2 + 50 * 0.1);
+    const clientSideScore = Math.round(recencyScore * 0.4 + frequencyScore * 0.3 + monetaryScore * 0.2 + 50 * 0.1);
+    const barometerScore = client.customer_health_score != null ? client.customer_health_score : clientSideScore;
     const barometerLabel = barometerScore > 75 ? 'Doskonały' : barometerScore > 50 ? 'Dobry' : barometerScore > 25 ? 'Zagrożony' : 'Krytyczny';
     const barometerColor = barometerScore > 75 ? '#2d8a4e' : barometerScore > 50 ? '#e6a817' : barometerScore > 25 ? '#dd4444' : '#999';
 
