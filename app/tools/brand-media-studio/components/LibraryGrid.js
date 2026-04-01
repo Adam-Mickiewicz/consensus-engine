@@ -121,13 +121,21 @@ function LibraryCard({ item, onDelete, onRerun, onExtend, onEdit, onOpen }) {
     <div style={{ border: "1px solid #eee", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
       {/* Preview — clickable */}
       <div
-        onClick={() => isVideo && onOpen(item)}
+        onClick={() => {
+          if (isVideo) {
+            onOpen(item);
+          } else if (item.output_urls?.length === 1) {
+            setLightboxUrl(item.output_urls[0]);
+          } else if (item.output_urls?.length > 1) {
+            setLightboxUrl(item.output_urls[0]);
+          }
+        }}
         style={{
           position: "relative",
           aspectRatio: isVideo ? "16/9" : "1/1",
           background: "#111",
           overflow: "hidden",
-          cursor: isVideo ? "zoom-in" : "default",
+          cursor: "zoom-in",
         }}
       >
         {isVideo && item.output_urls?.[0] ? (
@@ -178,11 +186,12 @@ function LibraryCard({ item, onDelete, onRerun, onExtend, onEdit, onOpen }) {
           background: "rgba(0,0,0,0)",
           display: "flex", alignItems: "center", justifyContent: "center",
           transition: "background 0.15s",
+          pointerEvents: "none",
         }}
           onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.18)"}
           onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0)"}
         >
-          <span style={{ color: "#fff", fontSize: 22, opacity: 0, pointerEvents: "none" }}>⊕</span>
+          <span style={{ color: "#fff", fontSize: 26, opacity: 0.85, textShadow: "0 1px 4px rgba(0,0,0,0.5)" }}>⊕</span>
         </div>
 
         <ExpiryBadge days={expires} />

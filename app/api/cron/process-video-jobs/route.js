@@ -405,6 +405,7 @@ export async function GET(request) {
           const size = orientationToSize[job.params?.orientation] || '1024x1024';
           const quality = job.params?.quality || 'standard';
           const variants = parseInt(job.params?.variants) || 1;
+          console.log(`[DALL-E3] job=${job.id} variants=${variants} size=${size} params=${JSON.stringify(job.params)}`);
           const dalleResults = [];
 
           for (let v = 0; v < variants; v++) {
@@ -435,6 +436,7 @@ export async function GET(request) {
           const size = orientationToSize[job.params?.orientation] || 'auto';
           const quality = job.params?.quality || 'auto';
           const n = parseInt(job.params?.variants) || 1;
+          console.log(`[GPT4o-Image] job=${job.id} n=${n} size=${size} params=${JSON.stringify(job.params)}`);
 
           const res = await fetch('https://api.openai.com/v1/images/generations', {
             method: 'POST',
@@ -465,11 +467,15 @@ export async function GET(request) {
         const googleModel = IMAGE_MODEL_MAP[job.model_id];
         if (!googleModel) throw new Error(`Nieznany model obrazu: ${job.model_id}`);
 
+      const imagenVariants = parseInt(job.params?.variants) || 1;
+      const imagenAspect = job.params?.orientation || '1:1';
+      console.log(`[Imagen] job=${job.id} model=${job.model_id} sampleCount=${imagenVariants} aspectRatio=${imagenAspect} params=${JSON.stringify(job.params)}`);
+
       const requestBody = {
         instances: [{ prompt: job.prompt || '' }],
         parameters: {
-          sampleCount: parseInt(job.params?.variants) || 1,
-          aspectRatio: job.params?.orientation || '1:1',
+          sampleCount: imagenVariants,
+          aspectRatio: imagenAspect,
         },
       };
 

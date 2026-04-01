@@ -306,16 +306,18 @@ export default function ImagesPage() {
     const jobs = await Promise.all(
       selectedModels.map(async ({ model, params }) => {
         try {
+          const reqBody = {
+            model_id: model.model_id,
+            prompt,
+            params: { ...params, style },
+            attachment_ids: attachments.map(a => a.id),
+            estimated_cost: (parseFloat(model.price_per_unit) * (parseInt(params.variants) || 1)).toFixed(2),
+          };
+          console.log('[generateAll] body for', model.model_id, JSON.stringify(reqBody));
           const res = await fetch("/api/brand-media/generate-image", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model_id: model.model_id,
-              prompt,
-              params: { ...params, style },
-              attachment_ids: attachments.map(a => a.id),
-              estimated_cost: (parseFloat(model.price_per_unit) * (parseInt(params.variants) || 1)).toFixed(2),
-            }),
+            body: JSON.stringify(reqBody),
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
