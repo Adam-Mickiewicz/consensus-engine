@@ -108,19 +108,17 @@ const CTA_OPTIONS = ["Kup teraz", "Sprawdź", "Dowiedz się więcej", "Zobacz of
 const PRIORITY_OPTIONS = ["PROMOCJA", "PRODUKT", "BENEFIT", "CENA", "NOWOŚĆ", "KOLEKCJA", "WYDARZENIE"];
 const VISIBLE_OPTIONS = ["Produkt", "Cena", "Rabat", "Kod rabatowy", "Data promocji", "Logo", "Packshot", "Twarz twórcy", "Claim/hasło", "Timer odliczania"];
 
+const defaultSlide = () => ({ cta: false, ctaText: "Kup teraz", ctaCustom: "", visible: [], hierarchy: ["", "", ""], notes: "" });
+
 const defaultChannel = () => ({
   active: false,
   selectedFormats: [],
   selectedTypes: [],
   formatNotes: {},
-  slides: "1",
-  cta: false,
-  ctaText: "Kup teraz",
-  ctaCustom: "",
-  visible: [],
-  hierarchy: ["", "", ""],
-  notes: "",
   sketchUrl: "",
+  references_url: "",
+  copy_needs: "",
+  slides: [defaultSlide()],
 });
 
 const defaultBrief = () => ({
@@ -151,7 +149,7 @@ const defaultBrief = () => ({
 
 function Label({ children }) {
   const { t } = React.useContext(ThemeCtx);
-  return <div style={{ fontSize: "10px", fontWeight: 700, color: t.muted, letterSpacing: 1.2, marginBottom: 5, textTransform: "uppercase", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>{children}</div>;
+  return <div style={{ fontSize: "10px", fontWeight: 700, color: t.textSub, letterSpacing: 1.2, marginBottom: 5, textTransform: "uppercase", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>{children}</div>;
 }
 
 function Tooltip({ text, children }) {
@@ -212,20 +210,49 @@ function CheckPill({ label, checked, onChange }) {
 
 function ChannelPanel({ channel, cfg, onChange }) {
   const { t } = React.useContext(ThemeCtx);
+
+  // Migrate old format (single cta/visible/hierarchy/notes) to new slides array format
+  const normCfg = React.useMemo(() => {
+    if (Array.isArray(cfg.slides)) return { references_url: "", copy_needs: "", ...cfg };
+    return {
+      ...cfg,
+      references_url: cfg.references_url || "",
+      copy_needs: cfg.copy_needs || "",
+      slides: [{
+        cta: cfg.cta !== undefined ? cfg.cta : false,
+        ctaText: cfg.ctaText || "Kup teraz",
+        ctaCustom: cfg.ctaCustom || "",
+        visible: cfg.visible || [],
+        hierarchy: cfg.hierarchy || ["", "", ""],
+        notes: cfg.notes || "",
+      }],
+    };
+  }, [cfg]);
+
+  const handleChange = (updates) => onChange({ ...normCfg, ...updates });
+
   const toggleFormat = (fmtId) => {
-    const cur = cfg.selectedFormats || [];
-    onChange({ ...cfg, selectedFormats: cur.includes(fmtId) ? cur.filter(x => x !== fmtId) : [...cur, fmtId] });
-  };
-  const toggleVisible = (val) => {
-    const cur = cfg.visible || [];
-    onChange({ ...cfg, visible: cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val] });
+    const cur = normCfg.selectedFormats || [];
+    handleChange({ selectedFormats: cur.includes(fmtId) ? cur.filter(x => x !== fmtId) : [...cur, fmtId] });
   };
   const setFormatData = (fmtId, key, val) => {
-    onChange({ ...cfg, formatData: { ...(cfg.formatData || {}), [fmtId]: { ...(cfg.formatData?.[fmtId] || {}), [key]: val } } });
+    handleChange({ formatData: { ...(normCfg.formatData || {}), [fmtId]: { ...(normCfg.formatData?.[fmtId] || {}), [key]: val } } });
   };
-  const getFormatData = (fmtId, key, def = "") => (cfg.formatData?.[fmtId]?.[key] ?? def);
+  const getFormatData = (fmtId, key, def = "") => (normCfg.formatData?.[fmtId]?.[key] ?? def);
 
-  const selectedFmts = channel.formats.filter(f => (cfg.selectedFormats || []).includes(f.id));
+  const updateSlide = (idx, updates) => {
+    const newSlides = normCfg.slides.map((s, i) => i === idx ? { ...s, ...updates } : s);
+    handleChange({ slides: newSlides });
+  };
+  const addSlide = () => handleChange({ slides: [...normCfg.slides, defaultSlide()] });
+  const removeSlide = (idx) => {
+    if (normCfg.slides.length <= 1) return;
+    handleChange({ slides: normCfg.slides.filter((_, i) => i !== idx) });
+  };
+
+  const selectedFmts = channel.formats.filter(f => (normCfg.selectedFormats || []).includes(f.id));
+  const slideLabel = channel.slidesLabel ? "slajdu" : "grafiki";
+  const slideTitle = (i) => channel.slidesLabel ? `Slajd ${i + 1}` : `Grafika ${i + 1}`;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -233,7 +260,7 @@ function ChannelPanel({ channel, cfg, onChange }) {
       <Field label="Wybierz formaty">
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           {channel.formats.map(f => (
-            <CheckPill key={f.id} label={f.label} checked={(cfg.selectedFormats || []).includes(f.id)} onChange={() => toggleFormat(f.id)} />
+            <CheckPill key={f.id} label={f.label} checked={(normCfg.selectedFormats || []).includes(f.id)} onChange={() => toggleFormat(f.id)} />
           ))}
         </div>
       </Field>
@@ -245,44 +272,42 @@ function ChannelPanel({ channel, cfg, onChange }) {
             <div key={fmt.id} style={{ background: t.subtle, border: `1px solid ${t.border}`, borderRadius: 8, overflow: "hidden" }}>
               <div style={{ padding: "7px 12px", background: ACCENT + "12", borderBottom: "1px solid #e0dbd4", display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: ACCENT, fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>{fmt.label}</span>
-                {fmt.isCarousel && <span style={{ fontSize: 10, color: "#aaa", fontStyle: "italic" }}>karuzela — opisz całość</span>}
+                {fmt.isCarousel && <span style={{ fontSize: 10, color: "#777", fontStyle: "italic" }}>karuzela — opisz całość</span>}
               </div>
               <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
-                {/* Typ materiału per format */}
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1, marginBottom: 5, textTransform: "uppercase", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>Typ materiału</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#555", letterSpacing: 1, marginBottom: 5, textTransform: "uppercase", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>Typ materiału</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                    {FORMAT_TYPES.map(t => {
+                    {FORMAT_TYPES.map(tp => {
                       const cur = getFormatData(fmt.id, "types", []);
-                      const checked = Array.isArray(cur) ? cur.includes(t) : false;
+                      const checked = Array.isArray(cur) ? cur.includes(tp) : false;
                       return (
-                        <button key={t} onClick={() => {
+                        <button key={tp} onClick={() => {
                           const cur2 = getFormatData(fmt.id, "types", []);
                           const arr = Array.isArray(cur2) ? cur2 : [];
-                          setFormatData(fmt.id, "types", checked ? arr.filter(x => x !== t) : [...arr, t]);
-                        }} style={{ padding: "4px 9px", borderRadius: 20, border: `1px solid ${checked ? ACCENT : "#ddd"}`, background: checked ? ACCENT + "15" : "#fff", color: checked ? ACCENT : "#888", fontSize: 11, cursor: "pointer", fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: checked ? 700 : 400 }}>
-                          {t}
+                          setFormatData(fmt.id, "types", checked ? arr.filter(x => x !== tp) : [...arr, tp]);
+                        }} style={{ padding: "4px 9px", borderRadius: 20, border: `1px solid ${checked ? ACCENT : "#ddd"}`, background: checked ? ACCENT + "15" : "#fff", color: checked ? ACCENT : "#555", fontSize: 11, cursor: "pointer", fontFamily: "var(--font-open-sans), system-ui, sans-serif", fontWeight: checked ? 700 : 400 }}>
+                          {tp}
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Opis per typ lub ogólny dla karuzeli */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {fmt.isCarousel ? (
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1, textTransform: "uppercase", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>Liczba kart:</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#555", letterSpacing: 1, textTransform: "uppercase", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>Liczba kart:</span>
                         <select value={getFormatData(fmt.id, "karuzela_cards", "3")} onChange={e => setFormatData(fmt.id, "karuzela_cards", e.target.value)}
-                          style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 4, padding: "2px 6px", fontSize: 11, fontFamily: "inherit", width: 52 }}>
+                          style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 4, padding: "2px 6px", fontSize: 11, color: "#1a1a1a", fontFamily: "inherit", width: 52 }}>
                           {["2","3","4","5","6","7","8","9","10+"].map(n => <option key={n}>{n}</option>)}
                         </select>
                       </div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1, marginBottom: 5, textTransform: "uppercase", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>Opis karuzeli</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "#555", letterSpacing: 1, marginBottom: 5, textTransform: "uppercase", fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>Opis karuzeli</div>
                       <textarea value={getFormatData(fmt.id, "note_karuzela", "")} onChange={e => setFormatData(fmt.id, "note_karuzela", e.target.value)}
                         placeholder="Co ma być w karuzeli? Motyw, liczba kart, treść poszczególnych slajdów..."
-                        rows={2} style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "6px 8px", fontSize: 12, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                        rows={2} style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "6px 8px", fontSize: 12, color: "#1a1a1a", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
                     </div>
                   ) : (
                     (() => {
@@ -294,9 +319,9 @@ function ChannelPanel({ channel, cfg, onChange }) {
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                               <span style={{ fontSize: 10, fontWeight: 700, color: "#555", fontFamily: "var(--font-open-sans), system-ui, sans-serif", textTransform: "uppercase" }}>{typ}</span>
                               <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                                <span style={{ fontSize: 10, color: "#888" }}>Liczba:</span>
+                                <span style={{ fontSize: 10, color: "#555" }}>Liczba:</span>
                                 <select value={getFormatData(fmt.id, "count_" + typ, "1")} onChange={e => setFormatData(fmt.id, "count_" + typ, e.target.value)}
-                                  style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 4, padding: "2px 6px", fontSize: 11, fontFamily: "inherit", width: 52 }}>
+                                  style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 4, padding: "2px 6px", fontSize: 11, color: "#1a1a1a", fontFamily: "inherit", width: 52 }}>
                                   {["1","2","3","4","5","6","7","8","9","10+"].map(n => <option key={n}>{n}</option>)}
                                 </select>
                                 {selectedFmts.filter(f2 => f2.id !== fmt.id && !f2.isCarousel).length > 0 && (
@@ -307,7 +332,7 @@ function ChannelPanel({ channel, cfg, onChange }) {
                                     if (srcNote) setFormatData(fmt.id, "note_" + typ, srcNote);
                                     if (srcCount) setFormatData(fmt.id, "count_" + typ, srcCount);
                                     e.target.value = "";
-                                  }} style={{ fontSize: 10, background: "#fff", border: "1px solid #ddd", borderRadius: 4, padding: "2px 6px", color: "#888", cursor: "pointer", fontFamily: "inherit" }}>
+                                  }} style={{ fontSize: 10, background: "#fff", border: "1px solid #ddd", borderRadius: 4, padding: "2px 6px", color: "#555", cursor: "pointer", fontFamily: "inherit" }}>
                                     <option value="">📋 Kopiuj z...</option>
                                     {selectedFmts.filter(f2 => f2.id !== fmt.id && !f2.isCarousel).map(f2 => (
                                       <option key={f2.id} value={f2.id}>{f2.label}</option>
@@ -320,7 +345,7 @@ function ChannelPanel({ channel, cfg, onChange }) {
                           <textarea value={getFormatData(fmt.id, typ === "ogólny" ? "note" : "note_" + typ, "")}
                             onChange={e => setFormatData(fmt.id, typ === "ogólny" ? "note" : "note_" + typ, e.target.value)}
                             placeholder={typ === "ogólny" ? "Opis zawartości, co ma być widoczne..." : `Brief dla ${typ} — co ma być widoczne, styl, treść...`}
-                            rows={2} style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "6px 8px", fontSize: 12, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                            rows={2} style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "6px 8px", fontSize: 12, color: "#1a1a1a", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
                         </div>
                       ));
                     })()
@@ -335,65 +360,92 @@ function ChannelPanel({ channel, cfg, onChange }) {
       {/* SZKIC dla email */}
       {channel.hasSketch && (
         <Field label="Szkic układu newslettera (link do Figma, Drive, zdjęcia)">
-          <input type="url" value={cfg.sketchUrl || ""} onChange={e => onChange({ ...cfg, sketchUrl: e.target.value })}
+          <input type="url" value={normCfg.sketchUrl || ""} onChange={e => handleChange({ sketchUrl: e.target.value })}
             placeholder="https://..."
-            style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 12, fontFamily: "inherit", boxSizing: "border-box" }} />
+            style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 12, color: "#1a1a1a", fontFamily: "inherit", boxSizing: "border-box" }} />
         </Field>
       )}
 
-      {/* LICZBA SLAJDÓW dla sliderów */}
-      {channel.slidesLabel && (
-        <Field label={channel.slidesLabel}>
-          <input
-            type="number"
-            min="1"
-            max="20"
-            value={cfg.slides || "1"}
-            onChange={e => onChange({ ...cfg, slides: e.target.value })}
-            style={{ width: 80, background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: "inherit" }}
-          />
-        </Field>
-      )}
-
-      {/* CTA */}
-      <Field label="CTA">
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <input type="checkbox" checked={cfg.cta || false} onChange={e => onChange({ ...cfg, cta: e.target.checked })}
-            style={{ accentColor: ACCENT, width: 16, height: 16 }} />
-          {cfg.cta && (
-            <select value={cfg.ctaText || "Kup teraz"} onChange={e => onChange({ ...cfg, ctaText: e.target.value })}
-              style={{ flex: 1, background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "7px 8px", fontSize: 12, fontFamily: "inherit" }}>
-              {CTA_OPTIONS.map(o => <option key={o}>{o}</option>)}
-            </select>
-          )}
-        </div>
-        {cfg.cta && cfg.ctaText === "Inne" && (
-          <Input value={cfg.ctaCustom || ""} onChange={v => onChange({ ...cfg, ctaCustom: v })} placeholder="Wpisz własny CTA..." style={{ marginTop: 6 }} />
-        )}
-      </Field>
-
-      {/* CO WIDOCZNE */}
-      <Field label={<Tooltip text="Zaznacz elementy które muszą pojawić się na grafice">Co ma być widoczne na grafice</Tooltip>}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {VISIBLE_OPTIONS.map(v => <CheckPill key={v} label={v} checked={(cfg.visible || []).includes(v)} onChange={() => toggleVisible(v)} />)}
-        </div>
-      </Field>
-
-      {/* HIERARCHIA */}
-      <Field label={<Tooltip text="Kolejność ważności elementów — co przykuwa uwagę w pierwszej kolejności">Hierarchia informacji</Tooltip>}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {[0, 1, 2].map(i => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 11, color: "#aaa", width: 20, textAlign: "center" }}>{i + 1}.</span>
-              <Input value={(cfg.hierarchy || ["", "", ""])[i] || ""} onChange={v => { const h = [...(cfg.hierarchy || ["", "", ""])]; h[i] = v; onChange({ ...cfg, hierarchy: h }); }} placeholder={["Najważniejsze (np. hasło, rabat)", "Drugie (np. produkt, data)", "Trzecie (np. logo, CTA)"][i]} />
+      {/* KONFIGURACJA PER SLAJD / GRAFIKA */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {normCfg.slides.map((slide, slideIdx) => (
+          <div key={slideIdx} style={{ border: `1px solid ${t.border}`, borderRadius: 8, overflow: "hidden" }}>
+            <div style={{ padding: "8px 12px", background: ACCENT + "12", borderBottom: `1px solid ${t.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: ACCENT, fontFamily: "var(--font-open-sans), system-ui, sans-serif" }}>{slideTitle(slideIdx)}</span>
+              {normCfg.slides.length > 1 && (
+                <button onClick={() => removeSlide(slideIdx)}
+                  style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 16, lineHeight: 1, padding: "0 2px" }} title="Usuń">×</button>
+              )}
             </div>
-          ))}
-        </div>
+            <div style={{ padding: "12px", display: "flex", flexDirection: "column", gap: 10 }}>
+              {/* CTA */}
+              <Field label="CTA">
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <input type="checkbox" checked={slide.cta || false} onChange={e => updateSlide(slideIdx, { cta: e.target.checked })}
+                    style={{ accentColor: ACCENT, width: 16, height: 16 }} />
+                  {slide.cta && (
+                    <select value={slide.ctaText || "Kup teraz"} onChange={e => updateSlide(slideIdx, { ctaText: e.target.value })}
+                      style={{ flex: 1, background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "7px 8px", fontSize: 12, color: "#1a1a1a", fontFamily: "inherit" }}>
+                      {CTA_OPTIONS.map(o => <option key={o}>{o}</option>)}
+                    </select>
+                  )}
+                </div>
+                {slide.cta && slide.ctaText === "Inne" && (
+                  <Input value={slide.ctaCustom || ""} onChange={v => updateSlide(slideIdx, { ctaCustom: v })} placeholder="Wpisz własny CTA..." style={{ marginTop: 6 }} />
+                )}
+              </Field>
+
+              {/* CO WIDOCZNE */}
+              <Field label={<Tooltip text="Zaznacz elementy które muszą pojawić się na grafice">Co ma być widoczne na grafice</Tooltip>}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {VISIBLE_OPTIONS.map(v => (
+                    <CheckPill key={v} label={v} checked={(slide.visible || []).includes(v)}
+                      onChange={() => {
+                        const cur = slide.visible || [];
+                        updateSlide(slideIdx, { visible: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v] });
+                      }} />
+                  ))}
+                </div>
+              </Field>
+
+              {/* HIERARCHIA */}
+              <Field label={<Tooltip text="Kolejność ważności elementów — co przykuwa uwagę w pierwszej kolejności">Hierarchia informacji</Tooltip>}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {[0, 1, 2].map(i => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 11, color: "#555", width: 20, textAlign: "center" }}>{i + 1}.</span>
+                      <Input value={(slide.hierarchy || ["", "", ""])[i] || ""}
+                        onChange={v => { const h = [...(slide.hierarchy || ["", "", ""])]; h[i] = v; updateSlide(slideIdx, { hierarchy: h }); }}
+                        placeholder={["Najważniejsze (np. hasło, rabat)", "Drugie (np. produkt, data)", "Trzecie (np. logo, CTA)"][i]} />
+                    </div>
+                  ))}
+                </div>
+              </Field>
+
+              {/* UWAGI */}
+              <Field label="Uwagi dodatkowe">
+                <Textarea value={slide.notes || ""} onChange={v => updateSlide(slideIdx, { notes: v })} placeholder="Dodatkowe wymagania, styl, tone of voice..." rows={2} />
+              </Field>
+            </div>
+          </div>
+        ))}
+
+        <button onClick={addSlide}
+          style={{ alignSelf: "flex-start", background: "none", border: `1px dashed ${ACCENT}`, borderRadius: 8, padding: "8px 16px", fontSize: 12, color: ACCENT, cursor: "pointer", fontFamily: "inherit" }}>
+          + Dodaj konfigurację {slideLabel}
+        </button>
+      </div>
+
+      {/* REFERENCJE GRAFICZNE */}
+      <Field label="Referencje graficzne">
+        <Input value={normCfg.references_url || ""} onChange={v => handleChange({ references_url: v })}
+          placeholder="Link do folderu z referencjami (Google Drive, Figma...)" />
       </Field>
 
-      {/* UWAGI */}
-      <Field label="Uwagi dodatkowe do kanału">
-        <Textarea value={cfg.notes || ""} onChange={v => onChange({ ...cfg, notes: v })} placeholder="Dodatkowe wymagania, styl, tone of voice dla tego kanału..." rows={2} />
+      {/* ZAPOTRZEBOWANIE NA COPY */}
+      <Field label="Zapotrzebowanie na copy">
+        <Textarea value={normCfg.copy_needs || ""} onChange={v => handleChange({ copy_needs: v })}
+          placeholder="Opisz jakie teksty są potrzebne (nagłówki, opisy, CTA...)" rows={2} />
       </Field>
     </div>
   );
@@ -766,18 +818,32 @@ export default function MarketingBrief() {
     setBrief(b => ({ ...b, references: { ...prev, [type]: prev[type].filter((_, i) => i !== idx) } }));
   };
 
+  const normChannel = (ch) => {
+    if (Array.isArray(ch.slides)) return ch;
+    return {
+      ...ch,
+      references_url: ch.references_url || "",
+      copy_needs: ch.copy_needs || "",
+      slides: [{
+        cta: ch.cta !== undefined ? ch.cta : false,
+        ctaText: ch.ctaText || "Kup teraz",
+        ctaCustom: ch.ctaCustom || "",
+        visible: ch.visible || [],
+        hierarchy: ch.hierarchy || ["", "", ""],
+        notes: ch.notes || "",
+      }],
+    };
+  };
+
   const copyFromChannel = (sourceId, targetId) => {
-    const src = brief.channels[sourceId];
-    const tgt = brief.channels[targetId];
+    const src = normChannel(brief.channels[sourceId]);
+    const tgt = normChannel(brief.channels[targetId]);
     setChannel(targetId, {
       ...tgt,
       selectedTypes: src.selectedTypes,
-      cta: src.cta,
-      ctaText: src.ctaText,
-      ctaCustom: src.ctaCustom,
-      visible: src.visible,
-      hierarchy: src.hierarchy,
-      notes: src.notes,
+      slides: src.slides,
+      references_url: src.references_url,
+      copy_needs: src.copy_needs,
     });
     setCopyFromModal(null);
   };
@@ -1252,15 +1318,34 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
             children.push(spacer(60));
           }
 
-          // Metadane kanału
-          const channelMeta = [
-            ["CTA", cfg.cta ? (cfg.ctaText === "Inne" ? cfg.ctaCustom : cfg.ctaText) : null],
-            ["Co widoczne", cfg.visible?.length ? cfg.visible.join(", ") : null],
-            ["Hierarchia", cfg.hierarchy?.filter(h => h).length ? cfg.hierarchy.filter(h => h).map((h, i) => `${i+1}. ${h}`).join(" → ") : null],
-            ["Szkic układu", cfg.sketchUrl || null],
-            ["Uwagi", cfg.notes || null],
+          // Normalize channel to new format for export
+          const normCfgEx = Array.isArray(cfg.slides) ? cfg : {
+            ...cfg, references_url: cfg.references_url || "", copy_needs: cfg.copy_needs || "",
+            slides: [{ cta: cfg.cta || false, ctaText: cfg.ctaText || "Kup teraz", ctaCustom: cfg.ctaCustom || "", visible: cfg.visible || [], hierarchy: cfg.hierarchy || ["", "", ""], notes: cfg.notes || "" }],
+          };
+
+          // Per-slide configs
+          for (let si = 0; si < normCfgEx.slides.length; si++) {
+            const slide = normCfgEx.slides[si];
+            const slideTitle = normCfgEx.slides.length > 1 ? (channelDef.slidesLabel ? `Slajd ${si+1}` : `Grafika ${si+1}`) : null;
+            if (slideTitle) {
+              children.push(new Paragraph({ spacing: { after: 40 }, children: [new TextRun({ text: slideTitle, bold: true, size: 19, font: "Arial", color: ACCENT_COLOR })] }));
+            }
+            const slideMeta = [
+              ["CTA", slide.cta ? (slide.ctaText === "Inne" ? slide.ctaCustom : slide.ctaText) : null],
+              ["Co widoczne", slide.visible?.length ? slide.visible.join(", ") : null],
+              ["Hierarchia", slide.hierarchy?.filter(h => h).length ? slide.hierarchy.filter(h => h).map((h, i) => `${i+1}. ${h}`).join(" → ") : null],
+              ["Uwagi", slide.notes || null],
+            ].filter(([, v]) => v);
+            if (slideMeta.length) children.push(kvTable(slideMeta));
+          }
+
+          const channelExtra = [
+            ["Szkic układu", normCfgEx.sketchUrl || null],
+            ["Referencje graficzne", normCfgEx.references_url || null],
+            ["Zapotrzebowanie na copy", normCfgEx.copy_needs || null],
           ].filter(([, v]) => v);
-          if (channelMeta.length) children.push(kvTable(channelMeta));
+          if (channelExtra.length) children.push(kvTable(channelExtra));
           children.push(spacer(200));
         }
       }
@@ -1305,29 +1390,44 @@ Odpowiedz WYŁĄCZNIE samym JSON, nic więcej.`;
       XLSX.utils.book_append_sheet(wb, ws1, "Ogólne");
 
       // Arkusz 2: Kanały - nowa struktura
-      const channelRows = [["Kanał", "Format", "Typ materiału", "Liczba", "Brief/Opis", "CTA", "Co widoczne", "Hierarchia", "Uwagi"]];
+      const channelRows = [["Kanał", "Format", "Typ materiału", "Liczba", "Brief/Opis", "Slajd/Grafika", "CTA", "Co widoczne", "Hierarchia", "Uwagi", "Referencje graficzne", "Copy needs"]];
       for (const [id, cfg] of Object.entries(brief.channels || {})) {
         if (!cfg.active) continue;
         const channelDef = CHANNELS.find(c => c.id === id);
+        const normCfgXls = Array.isArray(cfg.slides) ? cfg : {
+          ...cfg, references_url: cfg.references_url || "", copy_needs: cfg.copy_needs || "",
+          slides: [{ cta: cfg.cta || false, ctaText: cfg.ctaText || "Kup teraz", ctaCustom: cfg.ctaCustom || "", visible: cfg.visible || [], hierarchy: cfg.hierarchy || ["", "", ""], notes: cfg.notes || "" }],
+        };
         const selectedFmts = (channelDef?.formats || []).filter(f => (cfg.selectedFormats || []).includes(f.id));
+        const refUrl = normCfgXls.references_url || "";
+        const copyNeeds = normCfgXls.copy_needs || "";
+        const slidesArr = normCfgXls.slides;
+
+        const pushRow = (fmtLabel, typ, count, briefNote, slideIdx) => {
+          const slide = slidesArr[slideIdx] || slidesArr[0] || {};
+          const slideLabel = slidesArr.length > 1 ? (channelDef?.slidesLabel ? `Slajd ${slideIdx+1}` : `Grafika ${slideIdx+1}`) : "";
+          const ctaVal = slide.cta ? (slide.ctaText === "Inne" ? slide.ctaCustom : slide.ctaText) : "NIE";
+          channelRows.push([channelDef?.label || id, fmtLabel, typ, count, briefNote, slideLabel, ctaVal, (slide.visible||[]).join(", "), (slide.hierarchy||[]).filter(h=>h).map((h,i)=>`${i+1}. ${h}`).join(" | "), slide.notes || "", refUrl, copyNeeds]);
+        };
+
         if (selectedFmts.length === 0) {
-          channelRows.push([channelDef?.label || id, "—", "—", "—", cfg.notes || "", cfg.cta ? cfg.ctaText : "NIE", (cfg.visible||[]).join(", "), (cfg.hierarchy||[]).filter(h=>h).map((h,i)=>`${i+1}. ${h}`).join(" | "), cfg.notes || ""]);
+          for (let si = 0; si < slidesArr.length; si++) pushRow("—", "—", "—", "", si);
           continue;
         }
         for (const fmt of selectedFmts) {
           const fmtData = cfg.formatData?.[fmt.id] || {};
           if (fmt.isCarousel) {
-            channelRows.push([channelDef?.label || id, fmt.label, "Karuzela", fmtData.karuzela_cards || "3", fmtData.note_karuzela || "", cfg.cta ? cfg.ctaText : "NIE", (cfg.visible||[]).join(", "), (cfg.hierarchy||[]).filter(h=>h).map((h,i)=>`${i+1}. ${h}`).join(" | "), cfg.notes || ""]);
+            for (let si = 0; si < slidesArr.length; si++) pushRow(fmt.label, "Karuzela", fmtData.karuzela_cards || "3", fmtData.note_karuzela || "", si);
           } else {
             const types = Array.isArray(fmtData.types) ? fmtData.types : ["—"];
             for (const typ of types) {
-              channelRows.push([channelDef?.label || id, fmt.label, typ, fmtData["count_" + typ] || "1", fmtData["note_" + typ] || fmtData.note || "", cfg.cta ? cfg.ctaText : "NIE", (cfg.visible||[]).join(", "), (cfg.hierarchy||[]).filter(h=>h).map((h,i)=>`${i+1}. ${h}`).join(" | "), cfg.notes || ""]);
+              for (let si = 0; si < slidesArr.length; si++) pushRow(fmt.label, typ, fmtData["count_" + typ] || "1", fmtData["note_" + typ] || fmtData.note || "", si);
             }
           }
         }
       }
       const ws2 = XLSX.utils.aoa_to_sheet(channelRows);
-      ws2["!cols"] = [{ wch: 22 }, { wch: 22 }, { wch: 20 }, { wch: 8 }, { wch: 50 }, { wch: 15 }, { wch: 35 }, { wch: 35 }, { wch: 30 }];
+      ws2["!cols"] = [{ wch: 22 }, { wch: 22 }, { wch: 20 }, { wch: 8 }, { wch: 40 }, { wch: 12 }, { wch: 15 }, { wch: 30 }, { wch: 30 }, { wch: 25 }, { wch: 30 }, { wch: 30 }];
       XLSX.utils.book_append_sheet(wb, ws2, "Kanały");
 
       const xlsxBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
@@ -1647,7 +1747,7 @@ Copy: ${brief.copyProposals || "—"}`;
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {/* PRIORYTET */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#888", letterSpacing: 1.2, textTransform: "uppercase", fontFamily: "monospace" }}>Priorytet akcji</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#555", letterSpacing: 1.2, textTransform: "uppercase", fontFamily: "monospace" }}>Priorytet akcji</div>
                   <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                     {[1,2,3,4,5].map(star => (
                       <button key={star} onClick={() => set("priority", (brief.priority || 0) === star ? 0 : star)}
@@ -1729,7 +1829,7 @@ Copy: ${brief.copyProposals || "—"}`;
                 <Field label="Dodaj link (np. Dropbox, Drive, Pinterest)">
                   <div style={{ display: "flex", gap: 8 }}>
                     <input id="ref-link-input" type="url" placeholder="https://..." onKeyDown={e => { if(e.key==="Enter"){ addLink(e.target.value); e.target.value=""; }}}
-                      style={{ flex: 1, background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 13, fontFamily: "inherit" }} />
+                      style={{ flex: 1, background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "8px 10px", fontSize: 13, color: "#1a1a1a", fontFamily: "inherit" }} />
                     <button onClick={() => { const el = document.getElementById("ref-link-input"); addLink(el.value); el.value=""; }}
                       style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 6, padding: "8px 14px", fontSize: 12, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>+ Dodaj</button>
                   </div>
@@ -1786,7 +1886,7 @@ Copy: ${brief.copyProposals || "—"}`;
                     <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
                       <input value={req.label} onChange={e => { const arr = [...(brief.copyRequests || [])]; arr[i] = { ...arr[i], label: e.target.value }; set("copyRequests", arr); }}
                         placeholder={`np. "Post Meta Ads", "Newsletter intro", "Blog 800 słów"...`}
-                        style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "7px 10px", fontSize: 12, fontFamily: "inherit", boxSizing: "border-box", fontWeight: 600 }} />
+                        style={{ width: "100%", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "7px 10px", fontSize: 12, color: "#1a1a1a", fontFamily: "inherit", boxSizing: "border-box", fontWeight: 600 }} />
                       <textarea value={req.text} onChange={e => { const arr = [...(brief.copyRequests || [])]; arr[i] = { ...arr[i], text: e.target.value }; set("copyRequests", arr); }}
                         placeholder="Opis: długość, ton, co ma być zawarte, CTA, słowa kluczowe..."
                         rows={2} style={{ width: "100%", background: "#f9f7f5", border: "1px solid #ddd", borderRadius: 6, padding: "7px 10px", fontSize: 12, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
@@ -1873,16 +1973,16 @@ Copy: ${brief.copyProposals || "—"}`;
                         <div style={{ fontSize: 11, color: "#666", display: "flex", flexWrap: "wrap", gap: 8 }}>
                           {cfg.selectedFormats?.length > 0 && <span>📐 {cfg.selectedFormats.join(", ")}</span>}
                           {cfg.selectedTypes?.length > 0 && <span>🎨 {cfg.selectedTypes.join(", ")}</span>}
-                          {cfg.slides && <span>📄 {cfg.slides} slajd(ów)</span>}
-                          {cfg.cta && <span>👆 CTA: {cfg.ctaText === "Inne" ? cfg.ctaCustom : cfg.ctaText}</span>}
-                          {cfg.visible?.length > 0 && <span>👁 {cfg.visible.join(", ")}</span>}
+                          {Array.isArray(cfg.slides) && <span>📄 {cfg.slides.length} {c.slidesLabel ? "slajd(ów)" : "grafik(i)"}</span>}
+                          {Array.isArray(cfg.slides) && cfg.slides[0]?.cta && <span>👆 CTA: {cfg.slides[0].ctaText === "Inne" ? cfg.slides[0].ctaCustom : cfg.slides[0].ctaText}</span>}
+                          {Array.isArray(cfg.slides) && cfg.slides[0]?.visible?.length > 0 && <span>👁 {cfg.slides[0].visible.join(", ")}</span>}
                         </div>
-                        {cfg.hierarchy?.some(h => h) && (
-                          <div style={{ marginTop: 6, fontSize: 11, color: "#888" }}>
-                            Hierarchia: {cfg.hierarchy.filter(h => h).map((h, i) => `${i + 1}. ${h}`).join(" → ")}
+                        {Array.isArray(cfg.slides) && cfg.slides[0]?.hierarchy?.some(h => h) && (
+                          <div style={{ marginTop: 6, fontSize: 11, color: "#666" }}>
+                            Hierarchia: {cfg.slides[0].hierarchy.filter(h => h).map((h, i) => `${i + 1}. ${h}`).join(" → ")}
                           </div>
                         )}
-                        {cfg.notes && <div style={{ marginTop: 6, fontSize: 11, color: "#aaa", fontStyle: "italic" }}>{cfg.notes}</div>}
+                        {Array.isArray(cfg.slides) && cfg.slides[0]?.notes && <div style={{ marginTop: 6, fontSize: 11, color: "#777", fontStyle: "italic" }}>{cfg.slides[0].notes}</div>}
                       </div>
                     );
                   })}
