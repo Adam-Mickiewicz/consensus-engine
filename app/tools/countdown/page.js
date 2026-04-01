@@ -53,7 +53,7 @@ function buildHTML(deadline, cfg, tpl) {
   const digitItem = (unit, label) => tpl === "split"
     ? `<div style="display:flex;flex-direction:column;align-items:center;max-width:90px;flex:1"><div style="display:flex;justify-content:center"><div class="nwz-digits" data-unit="${unit}-d1" style="${digitCSS}">0</div><div class="nwz-digits" data-unit="${unit}-d2" style="${digitCSS}">0</div></div><div style="${labelCSS}">${label}</div></div>`
     : `<div style="display:flex;flex-direction:column;max-width:90px;flex:1"><div class="nwz-digits" data-unit="${unit}" style="${digitCSS}">00</div><div style="${labelCSS}">${label}</div></div>`;
-  return `<div id="promo-countdown" data-deadline="${deadline}" data-template="${tpl}" data-bg="${cfg.bg}" data-text="${cfg.text}" data-label-text="${cfg.labelText}">
+  return `<div id="promo-countdown" data-deadline="${deadline}" data-template="${tpl}" data-bg="${cfg.bg}" data-text="${cfg.text}" data-label-text="${cfg.labelText}" data-label-dni="DNI" data-label-godzin="GODZIN" data-label-minut="MINUT" data-label-sekund="SEKUND">
   <div style="display:flex;align-items:center;justify-content:center;gap:8px;font-family:Arial,sans-serif;width:100%;">
     ${digitItem("days","DNI")}
     <div style="${sepCSS}">:</div>
@@ -489,36 +489,52 @@ export default function CountdownGenerator() {
                 <CountdownPreview cfg={cfg} tplKey={tplKey} deadline={deadline} />
               </div>
             </div>
-            {/* KOD HTML */}
-            <div style={panelStyle}>
-              <div style={panelHead}>
-                <span>Kod HTML — wklej do slidera</span>
-                <CopyBtn text={html} label="Kopiuj HTML" />
-              </div>
-              <pre style={{ margin: 0, padding: "16px", background: t.codeBg, color: t.code, fontSize: "11px", lineHeight: 1.6, overflowX: "auto" }}>{html}</pre>
-            </div>
-            {/* KOD JS */}
-            <div style={{ ...panelStyle, border: jsModified ? "1px solid #cc4400" : `1px solid ${t.border}` }}>
-              <div style={{ ...panelHead, borderBottom: jsModified ? "1px solid #cc4400" : `1px solid ${t.border}`, color: jsModified ? "#ff6633" : t.textSub }}>
-                <span>{jsModified ? "Kod JS — ZMIENIONY — zaktualizuj w Shoperze!" : "Kod JS — bez zmian"}</span>
+            {/* PANEL 1 — JS (wgraj raz) */}
+            <div style={{ ...panelStyle, border: "1px solid #2d7a4f" }}>
+              <div style={{ ...panelHead, borderBottom: "1px solid #2d7a4f" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ fontWeight: 600, color: t.text }}>Uniwersalny JS (wgraj raz do Shopera)</span>
+                  <span style={{ background: "#2d7a4f", color: "#fff", fontSize: "10px", padding: "2px 8px", borderRadius: "999px", fontWeight: 700 }}>Wgraj raz</span>
+                </div>
                 <div style={{ display: "flex", gap: "8px" }}>
                   {jsModified && (
                     <button onClick={() => { setCustomJs(""); setJsModified(false); }}
-                      style={{ background: "none", color: "#666", border: "1px solid #333", borderRadius: "6px", padding: "5px 12px", fontSize: "11px", cursor: "pointer", fontFamily: "monospace" }}>
+                      style={{ background: "none", color: "#666", border: "1px solid #888", borderRadius: "6px", padding: "5px 12px", fontSize: "11px", cursor: "pointer", fontFamily: "monospace" }}>
                       Przywróć oryginał
                     </button>
                   )}
                   <CopyBtn text={jsCode} label="Kopiuj JS" />
                 </div>
               </div>
+              <div style={{ padding: "10px 16px", background: "#eefaf4", borderBottom: "1px solid #2d7a4f", fontSize: "12px", color: "#1a4a2e", lineHeight: 1.5 }}>
+                Ten kod wgraj raz do Shopera w ustawieniach globalnych. Nie musisz go aktualizować przy każdej akcji.
+              </div>
               <textarea value={jsCode} onChange={e => { setCustomJs(e.target.value); setJsModified(e.target.value !== defaultJs); }}
                 style={{ width: "100%", minHeight: "180px", background: t.codeBg, color: jsModified ? "#cc4400" : t.code, border: "none", padding: "16px", fontSize: "11px", fontFamily: "monospace", lineHeight: 1.6, resize: "vertical", boxSizing: "border-box", outline: "none" }} />
             </div>
-            {jsModified && (
-              <div style={{ background: "#3a1a0a", border: "1px solid #cc4400", borderRadius: "8px", padding: "14px 16px", fontSize: "12px", color: "#ff6633", lineHeight: 1.6, fontWeight: 700, marginBottom: "20px" }}>
-                Kod JS został zmieniony — pamiętaj zaktualizować plik JS w Shoperze przed użyciem nowego HTML!
+            {/* PANEL 2 — HTML (per akcja) */}
+            <div style={{ ...panelStyle, border: "1px solid #b8763a" }}>
+              <div style={{ ...panelHead, borderBottom: "1px solid #b8763a" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ fontWeight: 600, color: t.text }}>Kod HTML countera (per akcja)</span>
+                  <span style={{ background: "#b8763a", color: "#fff", fontSize: "10px", padding: "2px 8px", borderRadius: "999px", fontWeight: 700 }}>Per akcja</span>
+                </div>
+                <CopyBtn text={html} label="Kopiuj HTML" />
               </div>
-            )}
+              <div style={{ padding: "10px 16px", background: "#fdf6ee", borderBottom: "1px solid #b8763a", fontSize: "12px", color: "#5a3200", lineHeight: 1.5 }}>
+                Ten kod wklejaj przy każdej nowej akcji promocyjnej.
+              </div>
+              <pre style={{ margin: 0, padding: "16px", background: t.codeBg, color: t.code, fontSize: "11px", lineHeight: 1.6, overflowX: "auto" }}>{html}</pre>
+            </div>
+            {/* JAK TO DZIAŁA */}
+            <div style={{ background: t.bgPanel, border: `1px solid ${t.border}`, borderRadius: "12px", padding: "16px 20px", marginBottom: "20px" }}>
+              <p style={{ fontWeight: 500, marginBottom: "8px", color: t.text, fontSize: "13px" }}>Jak to działa?</p>
+              <ol style={{ fontSize: "13px", color: t.textSub, lineHeight: "1.8", paddingLeft: "20px", margin: 0 }}>
+                <li>Wgraj <strong>Uniwersalny JS</strong> raz do Shopera (Wygląd &rarr; Edytor HTML &rarr; przed &lt;/body&gt;)</li>
+                <li>Przy każdej nowej akcji — skonfiguruj counter i skopiuj tylko <strong>Kod HTML</strong></li>
+                <li>Wklej HTML w odpowiednie miejsce w Shoperze (slider, sekcja, popup)</li>
+              </ol>
+            </div>
           </div>}
         </div>
       </div>
