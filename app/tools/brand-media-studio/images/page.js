@@ -144,19 +144,41 @@ function JobCard({ job, onLightbox }) {
         </>
       )}
 
-      {/* Result image */}
+      {/* Result images — all variants */}
       {job.status === "done" && job.output_urls?.length > 0 && (
         <div>
-          <img
-            src={job.output_urls[0]}
-            style={{ width: "100%", display: "block", cursor: "pointer" }}
-            onClick={() => onLightbox(job.output_urls[0])}
-          />
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: job.output_urls.length > 1 ? "repeat(2,1fr)" : "1fr",
+            gap: "2px",
+          }}>
+            {job.output_urls.map((url, i) => (
+              <div key={i} style={{ position: "relative" }}>
+                <img
+                  src={url}
+                  style={{ width: "100%", display: "block", cursor: "pointer" }}
+                  onClick={() => onLightbox(url)}
+                />
+                <a
+                  href={url}
+                  download={`wariant-${i + 1}.png`}
+                  onClick={e => e.stopPropagation()}
+                  style={{
+                    position: "absolute", bottom: 4, right: 4,
+                    padding: "3px 8px",
+                    background: "rgba(0,0,0,0.6)",
+                    color: "#fff", borderRadius: 4,
+                    fontSize: 10, textDecoration: "none",
+                  }}
+                >⬇</a>
+              </div>
+            ))}
+          </div>
           <div style={{ padding: 8, display: "flex", gap: 6, borderTop: "0.5px solid #eee" }}>
             <a href={job.output_urls[0]} download style={{
               flex: 1, padding: 5, background: ACCENT, color: "#fff",
               borderRadius: 6, fontSize: 11, textDecoration: "none", textAlign: "center",
-            }}>⬇ Pobierz</a>
+            }}>⬇ Pobierz wszystkie</a>
             <button onClick={() => onLightbox(job.output_urls[0])} style={{
               flex: 1, padding: 5, border: "0.5px solid #ddd",
               borderRadius: 6, fontSize: 11, background: "transparent", cursor: "pointer",
