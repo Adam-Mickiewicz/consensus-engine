@@ -8,6 +8,7 @@ const BADGE_COLORS = {
   purple: { bg: "#f3e5f5", text: "#7b1fa2" },
   red:    { bg: "#fce4ec", text: "#c62828" },
   amber:  { bg: "#fff8e1", text: "#f57f17" },
+  gray:   { bg: "#eee",    text: "#888" },
 };
 
 export default function ModelSelector({ category, onModelChange, selectedModelId }) {
@@ -23,9 +24,10 @@ export default function ModelSelector({ category, onModelChange, selectedModelId
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setModels(data.models || []);
-        // Auto-select first model
+        // Auto-select first non-coming_soon model
         if (data.models?.length && !selectedModelId) {
-          onModelChange(data.models[0]);
+          const firstAvailable = data.models.find(m => !m.capabilities?.coming_soon) || data.models[0];
+          onModelChange(firstAvailable);
         }
       } catch (err) {
         console.error('ModelSelector fetch error:', err);
@@ -59,7 +61,11 @@ export default function ModelSelector({ category, onModelChange, selectedModelId
         Wybierz model
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-        {models.map((model) => {
+        {[...models].sort((a, b) => {
+          const aLast = a.capabilities?.coming_soon ? 1 : 0;
+          const bLast = b.capabilities?.coming_soon ? 1 : 0;
+          return aLast - bLast;
+        }).map((model) => {
           const isSelected = model.model_id === selectedModelId;
           const badgeStyle = BADGE_COLORS[model.badge_color] || BADGE_COLORS.amber;
 
@@ -71,10 +77,13 @@ export default function ModelSelector({ category, onModelChange, selectedModelId
                 border: `2px solid ${isSelected ? ACCENT : '#e5e5e5'}`,
                 borderRadius: 10,
                 padding: '14px 16px',
-                cursor: 'pointer',
+                cursor: model.capabilities?.coming_soon ? 'default' : 'pointer',
                 background: isSelected ? '#fdf7f2' : '#fff',
                 transition: 'border-color 0.15s, background 0.15s',
                 boxSizing: 'border-box',
+                opacity: model.capabilities?.coming_soon ? 0.5 : 1,
+                pointerEvents: model.capabilities?.coming_soon ? 'none' : 'auto',
+                filter: model.capabilities?.coming_soon ? 'grayscale(0.5)' : 'none',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -115,6 +124,7 @@ export default function ModelSelector({ category, onModelChange, selectedModelId
                 {model.capabilities?.extend && (
                   <span> · extend do {model.capabilities.extend_max_seconds}s</span>
                 )}
+                <span> · {model.provider === 'google' ? 'Google' : 'OpenAI'}</span>
               </div>
             </div>
           );
