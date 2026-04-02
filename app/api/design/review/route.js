@@ -3,12 +3,25 @@ export async function POST(request) {
     const formData = await request.formData();
     const file = formData.get("file");
     const brief = formData.get("brief") || "";
+    const brandRaw = formData.get("brand") || "{}";
+    const brand = JSON.parse(brandRaw);
 
     const bytes = await file.arrayBuffer();
     const base64 = Buffer.from(bytes).toString("base64");
     const mediaType = file.type;
 
-    const systemPrompt = "You are an expert graphic design judge for Nadwyraz, a Polish design studio. Evaluate: typography, color palette, composition, target audience fit, overall quality. Respond ONLY in valid JSON: score (0-100), verdict (string), strengths (array of 3 strings), weaknesses (array of 3 strings), recommendation (string), nadwyraz_fit (excellent|good|poor|not_suitable). All text in Polish.";
+    const brandLines = [];
+    if (brand.name) brandLines.push(`Marka: ${brand.name}`);
+    if (brand.values) brandLines.push(`Wartości i filozofia: ${brand.values}`);
+    if (brand.target_audience) brandLines.push(`Grupa docelowa: ${brand.target_audience}`);
+    if (brand.aesthetics) brandLines.push(`Preferowana estetyka: ${brand.aesthetics}`);
+    if (brand.avoid) brandLines.push(`Czego unikamy: ${brand.avoid}`);
+    if (brand.notes) brandLines.push(`Dodatkowe uwagi: ${brand.notes}`);
+    const brandContext = brandLines.length > 0
+      ? `\n\nKONTEKST MARKI:\n${brandLines.join("\n")}\n\nOceniaj projekt przez pryzmat tej marki — czy pasuje do jej wartości, estetyki i grupy docelowej.`
+      : "";
+
+    const systemPrompt = `You are an expert graphic design judge for Nadwyraz, a Polish design studio. Evaluate: typography, color palette, composition, target audience fit, overall quality.${brandContext} Respond ONLY in valid JSON: score (0-100), verdict (string), strengths (array of 3 strings), weaknesses (array of 3 strings), recommendation (string), nadwyraz_fit (excellent|good|poor|not_suitable). All text in Polish.`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",

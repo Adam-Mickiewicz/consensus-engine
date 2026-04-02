@@ -93,10 +93,27 @@ export default function DesignJudge() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedReview, setSelectedReview] = useState(null);
 
+  const brandEmpty = { name: "", values: "", target_audience: "", aesthetics: "", avoid: "", notes: "" };
+  const [brand, setBrand] = useState(brandEmpty);
+  const [brandSaved, setBrandSaved] = useState(false);
+
   useEffect(() => {
     if (tab === "history") fetchHistory();
     if (tab === "upload" && libSubTab === "browse") fetchLibrary();
   }, [tab, libSubTab]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("dj_brand_profile");
+      if (stored) setBrand(JSON.parse(stored));
+    } catch {}
+  }, []);
+
+  function handleBrandSave() {
+    localStorage.setItem("dj_brand_profile", JSON.stringify(brand));
+    setBrandSaved(true);
+    setTimeout(() => setBrandSaved(false), 2500);
+  }
 
   async function fetchLibrary() {
     setLibraryLoading(true);
@@ -172,6 +189,7 @@ export default function DesignJudge() {
       const fd = new FormData();
       fd.append("file", file);
       fd.append("brief", brief);
+      fd.append("brand", JSON.stringify(brand));
       const res = await fetch("/api/design/review", { method: "POST", body: fd });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
@@ -260,6 +278,10 @@ export default function DesignJudge() {
           Historia {history.length > 0 && tab !== "history" ? `(${history.length})` : ""}
         </button>
         <button style={s.tab(tab === "upload")} onClick={() => setTab("upload")}>Biblioteka</button>
+        <button style={{ ...s.tab(tab === "brand"), position: "relative" }} onClick={() => setTab("brand")}>
+          Marka {brand.name ? "·" : ""}
+          {brand.name && <span style={{ color: accent, marginLeft: 3, fontSize: 10 }}>{brand.name}</span>}
+        </button>
       </div>
 
       {/* ── REVIEW TAB ── */}
@@ -562,6 +584,40 @@ export default function DesignJudge() {
               {uploadSuccess && <div style={{ color: "#0d9e6e", marginTop: 12, fontSize: 12, textAlign: "center" }}>✓ Dodano do biblioteki!</div>}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── BRAND TAB ── */}
+      {tab === "brand" && (
+        <div>
+          <div style={{ ...s.card, marginBottom: 12 }}>
+            <div style={{ color: "#555", fontSize: 12, lineHeight: 1.6, marginBottom: 16, padding: "10px 12px", background: "#f5f3ef", borderRadius: 8 }}>
+              Profil marki jest automatycznie dołączany do każdej oceny projektu. Claude uwzględni go przy wystawianiu werdyktu.
+            </div>
+            <label style={s.label}>NAZWA MARKI</label>
+            <input value={brand.name} onChange={e => setBrand(b => ({ ...b, name: e.target.value }))} placeholder="np. Nadwyraz" style={s.input} />
+            <label style={s.label}>WARTOŚCI I FILOZOFIA</label>
+            <textarea value={brand.values} onChange={e => setBrand(b => ({ ...b, values: e.target.value }))} placeholder="Co marka wyznaje? Jaka jest jej misja i charakter?" style={{ ...s.textarea, minHeight: 90 }} />
+            <label style={s.label}>GRUPA DOCELOWA</label>
+            <textarea value={brand.target_audience} onChange={e => setBrand(b => ({ ...b, target_audience: e.target.value }))} placeholder="Kim są klienci marki? Wiek, styl życia, zainteresowania..." style={{ ...s.textarea, minHeight: 70 }} />
+            <label style={s.label}>ESTETYKA I STYL WIZUALNY</label>
+            <textarea value={brand.aesthetics} onChange={e => setBrand(b => ({ ...b, aesthetics: e.target.value }))} placeholder="Jaką estetykę preferujemy? Kolory, typografia, klimat..." style={{ ...s.textarea, minHeight: 70 }} />
+            <label style={s.label}>CZEGO UNIKAMY / ANTY-WZORY</label>
+            <textarea value={brand.avoid} onChange={e => setBrand(b => ({ ...b, avoid: e.target.value }))} placeholder="Co nam nie pasuje? Czego absolutnie nie chcemy w projektach?" style={{ ...s.textarea, minHeight: 70 }} />
+            <label style={s.label}>DODATKOWE UWAGI</label>
+            <textarea value={brand.notes} onChange={e => setBrand(b => ({ ...b, notes: e.target.value }))} placeholder="Cokolwiek jeszcze ważnego dla oceniającego..." style={{ ...s.textarea, minHeight: 60 }} />
+            <button onClick={handleBrandSave} style={s.btn}>
+              {brandSaved ? "✓ Zapisano!" : "ZAPISZ PROFIL MARKI"}
+            </button>
+            {brand.name && (
+              <button
+                onClick={() => { setBrand(brandEmpty); localStorage.removeItem("dj_brand_profile"); }}
+                style={{ background: "none", border: "1px solid #eee", borderRadius: 8, padding: "8px 16px", fontSize: 11, color: "#aaa", cursor: "pointer", fontFamily: "inherit", width: "100%", marginTop: 8 }}
+              >
+                Wyczyść profil
+              </button>
+            )}
+          </div>
         </div>
       )}
 
