@@ -91,6 +91,7 @@ export default function DesignJudge() {
   const [libAnalysis, setLibAnalysis] = useState(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisExpanded, setAnalysisExpanded] = useState(false);
+  const [analysisError, setAnalysisError] = useState(null);
 
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -110,6 +111,7 @@ export default function DesignJudge() {
 
   async function handleAnalyzeLibrary() {
     setAnalysisLoading(true);
+    setAnalysisError(null);
     try {
       const res = await fetch("/api/design/analyze-library", { method: "POST" });
       const data = await res.json();
@@ -117,7 +119,7 @@ export default function DesignJudge() {
       setLibAnalysis({ analysis: data.analysis, item_count: data.itemCount, updated_at: data.updatedAt });
       setAnalysisExpanded(true);
     } catch (e) {
-      setError(e.message);
+      setAnalysisError(e.message);
     }
     setAnalysisLoading(false);
   }
@@ -485,6 +487,11 @@ export default function DesignJudge() {
                     </button>
                   </div>
                 </div>
+                {analysisError && (
+                  <div style={{ marginTop: 10, padding: "8px 10px", background: "#fff0ee", borderRadius: 8, fontSize: 11, color: "#b83020" }}>
+                    Błąd: {analysisError}
+                  </div>
+                )}
                 {analysisExpanded && libAnalysis?.analysis && (
                   <div style={{ marginTop: 12, padding: "10px 12px", background: "#f5f3ef", borderRadius: 8, fontSize: 11, color: "#555", lineHeight: 1.7, whiteSpace: "pre-wrap", maxHeight: 300, overflowY: "auto" }}>
                     {libAnalysis.analysis}
