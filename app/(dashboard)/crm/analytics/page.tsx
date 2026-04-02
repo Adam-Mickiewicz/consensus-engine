@@ -50,6 +50,7 @@ const AVAILABLE_WIDGETS = [
   { id: 'top_products',      name: 'Top produkty',           description: 'Top 10 produktów po revenue',         default: false, size: 'half' },
   { id: 'season_calendar',   name: 'Nadchodzące okazje',     description: 'Najbliższe okazje z danymi YoY',       default: false, size: 'half' },
   { id: 'segment_migration', name: 'Migracja segmentów',     description: 'Przepływy między segmentami',          default: false, size: 'full' },
+  { id: 'traffic_pulse',     name: 'Traffic pulse',          description: 'Sesje, konwersje i top źródło (7d)',   default: false, size: 'half' },
 ];
 const DEFAULT_WIDGETS = AVAILABLE_WIDGETS.filter(w => w.default).map(w => w.id);
 
@@ -587,6 +588,62 @@ function MiniSeasonCalendar() {
   );
 }
 
+function MiniTrafficPulse() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/crm/traffic?section=overview&period=7d').then(r => r.json()).catch(() => null),
+      fetch('/api/crm/traffic?section=sources&period=7d').then(r => r.json()).catch(() => null),
+    ]).then(([overview, sources]) => {
+      setData({ overview, sources });
+      setLoading(false);
+    });
+  }, []);
+
+  const kpis = data?.overview?.kpis;
+  const prev = data?.overview?.previousPeriod;
+  const channels: any[] = data?.sources?.channels || [];
+  const topChannel = channels.sort((a: any, b: any) => b.sessions - a.sessions)[0];
+  const ga4Ok = data?.overview?.ga4_configured;
+
+  return (
+    <MiniWidgetShell title="Traffic pulse (7d)" href="/crm/traffic" loading={loading}>
+      {!ga4Ok ? (
+        <div style={{ fontSize: 12, color: '#999', textAlign: 'center', padding: 20 }}>GA4 nie skonfigurowane</div>
+      ) : !kpis ? (
+        <div style={{ fontSize: 12, color: '#999', textAlign: 'center', padding: 20 }}>Brak danych</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            {[
+              { label: 'Sesje', value: new Intl.NumberFormat('pl-PL').format(Math.round(kpis.sessions || 0)), delta: prev?.sessions ? ((kpis.sessions - prev.sessions) / prev.sessions * 100).toFixed(1) : null },
+              { label: 'Konwersja', value: (kpis.conversionRate || 0).toFixed(1) + '%', delta: null },
+            ].map((item, i) => (
+              <div key={i} style={{ background: '#faf8f5', borderRadius: 6, padding: '8px 10px' }}>
+                <div style={{ fontSize: 10, color: '#6b6b6b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{item.label}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', fontFamily: 'IBM Plex Mono, monospace' }}>{item.value}</div>
+                {item.delta && (
+                  <div style={{ fontSize: 10, color: parseFloat(item.delta) >= 0 ? '#2d8a4e' : '#dd4444' }}>
+                    {parseFloat(item.delta) >= 0 ? '+' : ''}{item.delta}% vs poprz.
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          {topChannel && (
+            <div style={{ fontSize: 12, padding: '6px 10px', background: '#faf8f5', borderRadius: 6 }}>
+              <span style={{ color: '#6b6b6b' }}>Top kanał: </span>
+              <span style={{ fontWeight: 600, color: '#b8763a' }}>{topChannel.channel}</span>
+              <span style={{ color: '#6b6b6b' }}> · {new Intl.NumberFormat('pl-PL').format(topChannel.sessions)} sesji</span>
+            </div>
+          )}
+        </div>
+      )}
+    </MiniWidgetShell>
+  );
+}
+
 function MiniSegmentMigration() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -831,6 +888,7 @@ export default function ExecutiveDashboard() {
             case 'repeat_ladder': return <MiniRepeatLadder />;
             case 'top_products': return <MiniTopProducts />;
             case 'season_calendar': return <MiniSeasonCalendar />;
+            case 'traffic_pulse': return <MiniTrafficPulse />;
             default: return null;
           }
         };
