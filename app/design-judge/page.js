@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { saveDesignReview, loadDesignReviews, deleteDesignReview, loadDesignLibrary, updateDesignLibraryItem, deleteDesignLibraryItem } from "../../lib/supabase";
+import { saveDesignReview, loadDesignReviews, deleteDesignReview, loadDesignLibrary, updateDesignLibraryItem, deleteDesignLibraryItem, saveBrandProfile, loadBrandProfile } from "../../lib/supabase";
 import Nav from "../components/Nav";
 
 const accent = "#b8763a";
@@ -103,14 +103,15 @@ export default function DesignJudge() {
   }, [tab, libSubTab]);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("dj_brand_profile");
-      if (stored) setBrand(JSON.parse(stored));
-    } catch {}
+    loadBrandProfile()
+      .then(data => { if (data) setBrand({ name: data.name || "", values: data.values || "", target_audience: data.target_audience || "", aesthetics: data.aesthetics || "", avoid: data.avoid || "", notes: data.notes || "" }); })
+      .catch(() => {
+        try { const s = localStorage.getItem("dj_brand_profile"); if (s) setBrand(JSON.parse(s)); } catch {}
+      });
   }, []);
 
-  function handleBrandSave() {
-    localStorage.setItem("dj_brand_profile", JSON.stringify(brand));
+  async function handleBrandSave() {
+    await saveBrandProfile(brand).catch(console.error);
     setBrandSaved(true);
     setTimeout(() => setBrandSaved(false), 2500);
   }
@@ -611,7 +612,7 @@ export default function DesignJudge() {
             </button>
             {brand.name && (
               <button
-                onClick={() => { setBrand(brandEmpty); localStorage.removeItem("dj_brand_profile"); }}
+                onClick={() => { setBrand(brandEmpty); saveBrandProfile(brandEmpty).catch(console.error); }}
                 style={{ background: "none", border: "1px solid #eee", borderRadius: 8, padding: "8px 16px", fontSize: 11, color: "#aaa", cursor: "pointer", fontFamily: "inherit", width: "100%", marginTop: 8 }}
               >
                 Wyczyść profil
