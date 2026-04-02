@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { saveDesignReview, loadDesignReviews, deleteDesignReview } from "../../lib/supabase";
+import { saveDesignReview, loadDesignReviews, deleteDesignReview, loadDesignLibrary, updateDesignLibraryItem, deleteDesignLibraryItem } from "../../lib/supabase";
 import Nav from "../components/Nav";
 
 const accent = "#b8763a";
@@ -80,13 +80,68 @@ export default function DesignJudge() {
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
 
+  const [libSubTab, setLibSubTab] = useState("browse");
+  const [library, setLibrary] = useState([]);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [editForm, setEditForm] = useState(null);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editSuccess, setEditSuccess] = useState(false);
+
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedReview, setSelectedReview] = useState(null);
 
   useEffect(() => {
     if (tab === "history") fetchHistory();
-  }, [tab]);
+    if (tab === "upload" && libSubTab === "browse") fetchLibrary();
+  }, [tab, libSubTab]);
+
+  async function fetchLibrary() {
+    setLibraryLoading(true);
+    const data = await loadDesignLibrary().catch(() => []);
+    setLibrary(data);
+    setLibraryLoading(false);
+  }
+
+  function openItemEdit(item) {
+    setSelectedItem(item);
+    setEditForm({
+      title: item.title || "",
+      description: item.description || "",
+      category: item.category || "good",
+      product_type: item.product_type || "",
+      target_audience: item.target_audience || "",
+      style_tags: Array.isArray(item.style_tags) ? item.style_tags.join(", ") : (item.style_tags || ""),
+    });
+    setEditSuccess(false);
+  }
+
+  async function handleEditSave() {
+    setEditSaving(true);
+    const tagsArray = editForm.style_tags.split(",").map(t => t.trim()).filter(Boolean);
+    const updated = await updateDesignLibraryItem(selectedItem.id, {
+      title: editForm.title,
+      description: editForm.description,
+      category: editForm.category,
+      product_type: editForm.product_type,
+      target_audience: editForm.target_audience,
+      style_tags: tagsArray,
+    }).catch(() => null);
+    if (updated) {
+      setLibrary(prev => prev.map(it => it.id === selectedItem.id ? updated : it));
+      setSelectedItem(updated);
+    }
+    setEditSaving(false);
+    setEditSuccess(true);
+  }
+
+  async function handleDeleteLibraryItem(id) {
+    if (!window.confirm("Usunąć ten projekt z biblioteki?")) return;
+    await deleteDesignLibraryItem(id).catch(console.error);
+    setLibrary(prev => prev.filter(it => it.id !== id));
+    setSelectedItem(null);
+  }
 
   async function fetchHistory() {
     setHistoryLoading(true);
@@ -155,6 +210,8 @@ export default function DesignJudge() {
       setUploadFile(null);
       setUploadPreview(null);
       setUploadForm({ title: "", description: "", category: "good", product_type: "", target_audience: "", style_tags: "" });
+      await fetchLibrary();
+      setLibSubTab("browse");
     } catch (e) {
       setError(e.message);
     }
@@ -337,33 +394,154 @@ export default function DesignJudge() {
         </div>
       )}
 
-      {/* ── UPLOAD TAB ── */}
+      {/* ── LIBRARY TAB ── */}
       {tab === "upload" && (
         <div>
-          <div style={s.card}>
-            <label style={s.label}>OBRAZ</label>
-            <input type="file" accept="image/*" onChange={handleUploadFile} style={{ marginBottom: 12, fontSize: 12 }} />
-            {uploadPreview && <img src={uploadPreview} style={{ width: "100%", borderRadius: 8, marginBottom: 12, maxHeight: 250, objectFit: "contain" }} />}
-            <label style={s.label}>TYTUŁ</label>
-            <input value={uploadForm.title} onChange={e => setUploadForm(f => ({ ...f, title: e.target.value }))} placeholder="Nazwa projektu" style={s.input} />
-            <label style={s.label}>OPIS (dlaczego dobry/zły?)</label>
-            <textarea value={uploadForm.description} onChange={e => setUploadForm(f => ({ ...f, description: e.target.value }))} placeholder="Opisz co jest dobre lub złe w tym projekcie i dlaczego..." style={s.textarea} />
-            <label style={s.label}>KATEGORIA</label>
-            <select value={uploadForm.category} onChange={e => setUploadForm(f => ({ ...f, category: e.target.value }))} style={{ ...s.input, marginBottom: 12 }}>
-              <option value="good">Dobry projekt</option>
-              <option value="bad">Zły projekt</option>
-            </select>
-            <label style={s.label}>TYP PRODUKTU</label>
-            <input value={uploadForm.product_type} onChange={e => setUploadForm(f => ({ ...f, product_type: e.target.value }))} placeholder="np. whisky, kawa, kosmetyki" style={s.input} />
-            <label style={s.label}>GRUPA DOCELOWA</label>
-            <input value={uploadForm.target_audience} onChange={e => setUploadForm(f => ({ ...f, target_audience: e.target.value }))} placeholder="np. mężczyźni 30-45, koneserzy" style={s.input} />
-            <label style={s.label}>TAGI STYLU (oddzielone przecinkami)</label>
-            <input value={uploadForm.style_tags} onChange={e => setUploadForm(f => ({ ...f, style_tags: e.target.value }))} placeholder="np. minimalizm, ciemny, luksus" style={s.input} />
-            <button onClick={handleUpload} disabled={!uploadFile || !uploadForm.title || !uploadForm.description || uploadLoading} style={{ ...s.btn, opacity: (!uploadFile || !uploadForm.title || !uploadForm.description || uploadLoading) ? 0.5 : 1 }}>
-              {uploadLoading ? "Zapisuję..." : "↑ DODAJ DO BIBLIOTEKI"}
+          {/* Sub-tabs */}
+          <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
+            <button style={s.tab(libSubTab === "browse")} onClick={() => setLibSubTab("browse")}>
+              Przeglądaj {library.length > 0 ? `(${library.length})` : ""}
             </button>
-            {uploadSuccess && <div style={{ color: "#0d9e6e", marginTop: 12, fontSize: 12, textAlign: "center" }}>✓ Dodano do biblioteki!</div>}
+            <button style={s.tab(libSubTab === "add")} onClick={() => setLibSubTab("add")}>
+              + Dodaj projekt
+            </button>
           </div>
+
+          {/* ── BROWSE ── */}
+          {libSubTab === "browse" && !selectedItem && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <div style={{ color: "#888", fontSize: 12 }}>
+                  {libraryLoading ? "Ładuję..." : `${library.length} projekt${library.length === 1 ? "" : library.length < 5 ? "y" : "ów"} w bibliotece`}
+                </div>
+                <button onClick={fetchLibrary} style={{ background: "none", border: "1px solid #ddd", borderRadius: 8, padding: "5px 12px", fontSize: 11, color: "#888", cursor: "pointer", fontFamily: "inherit" }}>
+                  ↺ Odśwież
+                </button>
+              </div>
+              {libraryLoading ? (
+                <div style={{ textAlign: "center", padding: 40, color: "#bbb" }}>Ładuję bibliotekę...</div>
+              ) : library.length === 0 ? (
+                <div style={{ ...s.card, textAlign: "center", padding: 48 }}>
+                  <div style={{ fontSize: 36, marginBottom: 12 }}>📚</div>
+                  <div style={{ color: "#aaa", fontSize: 13 }}>Biblioteka jest pusta</div>
+                  <div style={{ color: "#ccc", fontSize: 11, marginTop: 4 }}>Dodaj pierwsze projekty klikając "+ Dodaj projekt"</div>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
+                  {library.map(item => {
+                    const isGood = item.category === "good";
+                    const catColor = isGood ? "#0d9e6e" : "#b83020";
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => openItemEdit(item)}
+                        style={{ background: "#fff", borderRadius: 12, border: "1px solid #e8e4de", overflow: "hidden", cursor: "pointer", transition: "box-shadow 0.15s" }}
+                        onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.10)"}
+                        onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}
+                      >
+                        {item.image_url ? (
+                          <img src={item.image_url} alt={item.title} style={{ width: "100%", height: 130, objectFit: "cover", display: "block", background: "#f5f3ef" }} />
+                        ) : (
+                          <div style={{ width: "100%", height: 130, background: "#f5f3ef", display: "flex", alignItems: "center", justifyContent: "center", color: "#ccc", fontSize: 28 }}>🖼</div>
+                        )}
+                        <div style={{ padding: "10px 12px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: "#333", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{item.title}</div>
+                            <div style={{ background: catColor + "15", color: catColor, borderRadius: 20, padding: "2px 7px", fontSize: 9, fontWeight: 700, marginLeft: 6, flexShrink: 0 }}>
+                              {isGood ? "✓" : "✗"}
+                            </div>
+                          </div>
+                          {item.product_type && <div style={{ color: "#aaa", fontSize: 10, marginBottom: 3 }}>{item.product_type}</div>}
+                          {Array.isArray(item.style_tags) && item.style_tags.length > 0 && (
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginTop: 4 }}>
+                              {item.style_tags.slice(0, 3).map((tag, i) => (
+                                <span key={i} style={{ background: "#f0ece6", color: "#888", borderRadius: 10, padding: "1px 6px", fontSize: 9 }}>{tag}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── EDIT ITEM ── */}
+          {libSubTab === "browse" && selectedItem && (
+            <div>
+              <button onClick={() => setSelectedItem(null)} style={{ background: "none", border: "1px solid #ddd", borderRadius: 8, padding: "7px 14px", fontSize: 11, color: "#888", cursor: "pointer", fontFamily: "inherit", marginBottom: 16 }}>
+                ← Wróć do biblioteki
+              </button>
+              <div style={s.card}>
+                {selectedItem.image_url && (
+                  <img src={selectedItem.image_url} alt={selectedItem.title} style={{ width: "100%", borderRadius: 8, marginBottom: 16, maxHeight: 280, objectFit: "contain", background: "#f5f3ef" }} />
+                )}
+                <label style={s.label}>TYTUŁ</label>
+                <input value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} style={s.input} />
+                <label style={s.label}>OPIS</label>
+                <textarea value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} style={{ ...s.textarea, minHeight: 100 }} />
+                <label style={s.label}>KATEGORIA</label>
+                <select value={editForm.category} onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))} style={{ ...s.input, marginBottom: 12 }}>
+                  <option value="good">Dobry projekt</option>
+                  <option value="bad">Zły projekt</option>
+                </select>
+                <label style={s.label}>TYP PRODUKTU</label>
+                <input value={editForm.product_type} onChange={e => setEditForm(f => ({ ...f, product_type: e.target.value }))} placeholder="np. whisky, kawa, kosmetyki" style={s.input} />
+                <label style={s.label}>GRUPA DOCELOWA</label>
+                <input value={editForm.target_audience} onChange={e => setEditForm(f => ({ ...f, target_audience: e.target.value }))} placeholder="np. mężczyźni 30-45, koneserzy" style={s.input} />
+                <label style={s.label}>TAGI STYLU (oddzielone przecinkami)</label>
+                <input value={editForm.style_tags} onChange={e => setEditForm(f => ({ ...f, style_tags: e.target.value }))} placeholder="np. minimalizm, ciemny, luksus" style={{ ...s.input, marginBottom: 16 }} />
+                <button
+                  onClick={handleEditSave}
+                  disabled={editSaving}
+                  style={{ ...s.btn, opacity: editSaving ? 0.5 : 1, marginBottom: 8 }}
+                >
+                  {editSaving ? "Zapisuję..." : "✓ ZAPISZ ZMIANY"}
+                </button>
+                {editSuccess && <div style={{ color: "#0d9e6e", fontSize: 12, textAlign: "center", marginBottom: 8 }}>✓ Zapisano!</div>}
+              </div>
+              <button
+                onClick={() => handleDeleteLibraryItem(selectedItem.id)}
+                style={{ background: "none", border: "1px solid #f0ddd5", borderRadius: 8, padding: "8px 16px", fontSize: 11, color: "#b83020", cursor: "pointer", fontFamily: "inherit" }}
+              >
+                Usuń z biblioteki ✕
+              </button>
+            </div>
+          )}
+
+          {/* ── ADD ── */}
+          {libSubTab === "add" && (
+            <div style={s.card}>
+              <label style={s.label}>OBRAZ</label>
+              <input type="file" accept="image/*" onChange={handleUploadFile} style={{ marginBottom: 12, fontSize: 12 }} />
+              {uploadPreview && <img src={uploadPreview} style={{ width: "100%", borderRadius: 8, marginBottom: 12, maxHeight: 250, objectFit: "contain" }} />}
+              <label style={s.label}>TYTUŁ</label>
+              <input value={uploadForm.title} onChange={e => setUploadForm(f => ({ ...f, title: e.target.value }))} placeholder="Nazwa projektu" style={s.input} />
+              <label style={s.label}>OPIS (dlaczego dobry/zły?)</label>
+              <textarea value={uploadForm.description} onChange={e => setUploadForm(f => ({ ...f, description: e.target.value }))} placeholder="Opisz co jest dobre lub złe w tym projekcie i dlaczego..." style={s.textarea} />
+              <label style={s.label}>KATEGORIA</label>
+              <select value={uploadForm.category} onChange={e => setUploadForm(f => ({ ...f, category: e.target.value }))} style={{ ...s.input, marginBottom: 12 }}>
+                <option value="good">Dobry projekt</option>
+                <option value="bad">Zły projekt</option>
+              </select>
+              <label style={s.label}>TYP PRODUKTU</label>
+              <input value={uploadForm.product_type} onChange={e => setUploadForm(f => ({ ...f, product_type: e.target.value }))} placeholder="np. whisky, kawa, kosmetyki" style={s.input} />
+              <label style={s.label}>GRUPA DOCELOWA</label>
+              <input value={uploadForm.target_audience} onChange={e => setUploadForm(f => ({ ...f, target_audience: e.target.value }))} placeholder="np. mężczyźni 30-45, koneserzy" style={s.input} />
+              <label style={s.label}>TAGI STYLU (oddzielone przecinkami)</label>
+              <input value={uploadForm.style_tags} onChange={e => setUploadForm(f => ({ ...f, style_tags: e.target.value }))} placeholder="np. minimalizm, ciemny, luksus" style={s.input} />
+              <button
+                onClick={handleUpload}
+                disabled={!uploadFile || !uploadForm.title || !uploadForm.description || uploadLoading}
+                style={{ ...s.btn, opacity: (!uploadFile || !uploadForm.title || !uploadForm.description || uploadLoading) ? 0.5 : 1 }}
+              >
+                {uploadLoading ? "Zapisuję..." : "↑ DODAJ DO BIBLIOTEKI"}
+              </button>
+              {uploadSuccess && <div style={{ color: "#0d9e6e", marginTop: 12, fontSize: 12, textAlign: "center" }}>✓ Dodano do biblioteki!</div>}
+            </div>
+          )}
         </div>
       )}
 
