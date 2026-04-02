@@ -81,6 +81,7 @@ export default function DesignJudge() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
 
   const [libSubTab, setLibSubTab] = useState("browse");
+  const [libFilter, setLibFilter] = useState("all");
   const [library, setLibrary] = useState([]);
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -410,9 +411,21 @@ export default function DesignJudge() {
           {/* ── BROWSE ── */}
           {libSubTab === "browse" && !selectedItem && (
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                <div style={{ color: "#888", fontSize: 12 }}>
-                  {libraryLoading ? "Ładuję..." : `${library.length} projekt${library.length === 1 ? "" : library.length < 5 ? "y" : "ów"} w bibliotece`}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <div style={{ display: "flex", gap: 5 }}>
+                  {[["all", "Wszystkie"], ["good", "✓ Dobre"], ["bad", "✗ Złe"]].map(([val, label]) => {
+                    const active = libFilter === val;
+                    const color = val === "good" ? "#0d9e6e" : val === "bad" ? "#b83020" : "#888";
+                    return (
+                      <button
+                        key={val}
+                        onClick={() => setLibFilter(val)}
+                        style={{ padding: "5px 12px", borderRadius: 20, border: `1px solid ${active ? color : "#ddd"}`, background: active ? color + "15" : "#fff", color: active ? color : "#999", fontWeight: 700, fontSize: 10, cursor: "pointer", fontFamily: "inherit" }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
                 <button onClick={fetchLibrary} style={{ background: "none", border: "1px solid #ddd", borderRadius: 8, padding: "5px 12px", fontSize: 11, color: "#888", cursor: "pointer", fontFamily: "inherit" }}>
                   ↺ Odśwież
@@ -426,9 +439,15 @@ export default function DesignJudge() {
                   <div style={{ color: "#aaa", fontSize: 13 }}>Biblioteka jest pusta</div>
                   <div style={{ color: "#ccc", fontSize: 11, marginTop: 4 }}>Dodaj pierwsze projekty klikając "+ Dodaj projekt"</div>
                 </div>
-              ) : (
+              ) : (() => {
+                const filtered = libFilter === "all" ? library : library.filter(it => it.category === libFilter);
+                return filtered.length === 0 ? (
+                  <div style={{ ...s.card, textAlign: "center", padding: 32 }}>
+                    <div style={{ color: "#aaa", fontSize: 13 }}>Brak projektów w tej kategorii</div>
+                  </div>
+                ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
-                  {library.map(item => {
+                  {filtered.map(item => {
                     const isGood = item.category === "good";
                     const catColor = isGood ? "#0d9e6e" : "#b83020";
                     return (
@@ -464,7 +483,8 @@ export default function DesignJudge() {
                     );
                   })}
                 </div>
-              )}
+                );
+              })()}
             </div>
           )}
 
