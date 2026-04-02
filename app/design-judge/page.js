@@ -104,7 +104,14 @@ export default function DesignJudge() {
 
   useEffect(() => {
     loadBrandProfile()
-      .then(data => { if (data) setBrand({ name: data.name || "", values: data.values || "", target_audience: data.target_audience || "", aesthetics: data.aesthetics || "", avoid: data.avoid || "", notes: data.notes || "" }); })
+      .then(data => {
+        if (data && (data.name || data.values || data.target_audience || data.aesthetics || data.avoid || data.notes)) {
+          setBrand({ name: data.name || "", values: data.values || "", target_audience: data.target_audience || "", aesthetics: data.aesthetics || "", avoid: data.avoid || "", notes: data.notes || "" });
+        } else {
+          // Supabase empty — migrate from localStorage if present
+          try { const s = localStorage.getItem("dj_brand_profile"); if (s) setBrand(JSON.parse(s)); } catch {}
+        }
+      })
       .catch(() => {
         try { const s = localStorage.getItem("dj_brand_profile"); if (s) setBrand(JSON.parse(s)); } catch {}
       });
