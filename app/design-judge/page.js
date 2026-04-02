@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { saveDesignReview, loadDesignReviews, deleteDesignReview, loadDesignLibrary, updateDesignLibraryItem, deleteDesignLibraryItem, saveBrandProfile, loadBrandProfile } from "../../lib/supabase";
+import { saveDesignReview, loadDesignReviews, deleteDesignReview, loadDesignLibrary, updateDesignLibraryItem, deleteDesignLibraryItem, saveBrandProfile, loadBrandProfile, loadLibraryAnalysis } from "../../lib/supabase";
 import Nav from "../components/Nav";
 
 const accent = "#b8763a";
@@ -88,6 +88,9 @@ export default function DesignJudge() {
   const [editForm, setEditForm] = useState(null);
   const [editSaving, setEditSaving] = useState(false);
   const [editSuccess, setEditSuccess] = useState(false);
+  const [libAnalysis, setLibAnalysis] = useState(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisExpanded, setAnalysisExpanded] = useState(false);
 
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -99,8 +102,25 @@ export default function DesignJudge() {
 
   useEffect(() => {
     if (tab === "history") fetchHistory();
-    if (tab === "upload" && libSubTab === "browse") fetchLibrary();
+    if (tab === "upload" && libSubTab === "browse") {
+      fetchLibrary();
+      loadLibraryAnalysis().then(d => setLibAnalysis(d)).catch(() => {});
+    }
   }, [tab, libSubTab]);
+
+  async function handleAnalyzeLibrary() {
+    setAnalysisLoading(true);
+    try {
+      const res = await fetch("/api/design/analyze-library", { method: "POST" });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      setLibAnalysis({ analysis: data.analysis, item_count: data.itemCount, updated_at: data.updatedAt });
+      setAnalysisExpanded(true);
+    } catch (e) {
+      setError(e.message);
+    }
+    setAnalysisLoading(false);
+  }
 
   useEffect(() => {
     loadBrandProfile()
@@ -441,6 +461,37 @@ export default function DesignJudge() {
           {/* ── BROWSE ── */}
           {libSubTab === "browse" && !selectedItem && (
             <div>
+              {/* Analysis panel */}
+              <div style={{ background: "#fff", border: "1px solid #e8e4de", borderRadius: 12, padding: "12px 16px", marginBottom: 14 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#555" }}>Notatki AI z biblioteki</div>
+                    {libAnalysis ? (
+                      <div style={{ fontSize: 10, color: "#aaa", marginTop: 2 }}>
+                        {libAnalysis.item_count} projektów · odświeżono {new Date(libAnalysis.updated_at).toLocaleDateString("pl-PL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 10, color: "#ccc", marginTop: 2 }}>Brak notatek — kliknij aby wygenerować</div>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {libAnalysis && (
+                      <button onClick={() => setAnalysisExpanded(v => !v)} style={{ background: "none", border: "1px solid #ddd", borderRadius: 8, padding: "4px 10px", fontSize: 10, color: "#888", cursor: "pointer", fontFamily: "inherit" }}>
+                        {analysisExpanded ? "Zwiń" : "Podgląd"}
+                      </button>
+                    )}
+                    <button onClick={handleAnalyzeLibrary} disabled={analysisLoading || library.length === 0} style={{ background: accent, color: "#fff", border: "none", borderRadius: 8, padding: "5px 12px", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", opacity: analysisLoading || library.length === 0 ? 0.5 : 1 }}>
+                      {analysisLoading ? "Analizuję..." : libAnalysis ? "↺ Odśwież" : "▶ Generuj"}
+                    </button>
+                  </div>
+                </div>
+                {analysisExpanded && libAnalysis?.analysis && (
+                  <div style={{ marginTop: 12, padding: "10px 12px", background: "#f5f3ef", borderRadius: 8, fontSize: 11, color: "#555", lineHeight: 1.7, whiteSpace: "pre-wrap", maxHeight: 300, overflowY: "auto" }}>
+                    {libAnalysis.analysis}
+                  </div>
+                )}
+              </div>
+
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                 <div style={{ display: "flex", gap: 5 }}>
                   {[["all", "Wszystkie"], ["good", "✓ Dobre"], ["bad", "✗ Złe"]].map(([val, label]) => {

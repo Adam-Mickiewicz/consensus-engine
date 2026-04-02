@@ -1,5 +1,12 @@
+import { createClient } from "@supabase/supabase-js";
+
 export async function POST(request) {
   try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
+
     const formData = await request.formData();
     const file = formData.get("file");
     const brief = formData.get("brief") || "";
@@ -10,6 +17,7 @@ export async function POST(request) {
     const base64 = Buffer.from(bytes).toString("base64");
     const mediaType = file.type;
 
+    // Brand context block
     const brandLines = [];
     if (brand.name) brandLines.push(`Marka: ${brand.name}`);
     if (brand.values) brandLines.push(`Wartości i filozofia: ${brand.values}`);
@@ -21,7 +29,19 @@ export async function POST(request) {
       ? `\n\nKONTEKST MARKI:\n${brandLines.join("\n")}\n\nOceniaj projekt przez pryzmat tej marki — czy pasuje do jej wartości, estetyki i grupy docelowej.`
       : "";
 
-    const systemPrompt = `You are an expert graphic design judge for Nadwyraz, a Polish design studio. Evaluate: typography, color palette, composition, target audience fit, overall quality.${brandContext} Respond ONLY in valid JSON: score (0-100), verdict (string), strengths (array of 3 strings), weaknesses (array of 3 strings), recommendation (string), nadwyraz_fit (excellent|good|poor|not_suitable). All text in Polish.`;
+    // Library analysis notes
+    const { data: libAnalysis } = await supabase
+      .from("library_analysis")
+      .select("analysis, item_count")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const libraryContext = libAnalysis?.analysis
+      ? `\n\nNOTATKI Z BIBLIOTEKI PROJEKTÓW (${libAnalysis.item_count} przykładów):\n${libAnalysis.analysis}\n\nWykorzystaj te notatki jako punkt odniesienia przy ocenie.`
+      : "";
+
+    const systemPrompt = `You are an expert graphic design judge for Nadwyraz, a Polish design studio. Evaluate: typography, color palette, composition, target audience fit, overall quality.${brandContext}${libraryContext} Respond ONLY in valid JSON: score (0-100), verdict (string), strengths (array of 3 strings), weaknesses (array of 3 strings), recommendation (string), nadwyraz_fit (excellent|good|poor|not_suitable). All text in Polish.`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
