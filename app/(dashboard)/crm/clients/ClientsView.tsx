@@ -102,6 +102,13 @@ export default function ClientsView() {
   const [edroneLoading, setEdroneLoading] = useState(false);
   const [edroneResult,  setEdroneResult]  = useState<{ exported: number; missing: number } | null>(null);
 
+  // PII email reveal
+  const [emailsRevealed, setEmailsRevealed] = useState(false);
+  const [emailsMap,      setEmailsMap]      = useState<Record<string, string>>({});
+  const [emailsLoading,  setEmailsLoading]  = useState(false);
+  const [revealModal,    setRevealModal]    = useState(false);
+  const [piiExportModal, setPiiExportModal] = useState(false);
+
   function setParam(key: string, value: string) {
     const p = new URLSearchParams(searchParams.toString());
     if (value) p.set(key, value); else p.delete(key);
@@ -163,6 +170,37 @@ export default function ClientsView() {
     window.location.href = `/api/crm/clients/export?${searchParams.toString()}`;
   }
 
+  function exportCSVWithEmails() {
+    setPiiExportModal(false);
+    window.location.href = `/api/crm/clients/export?include_email=1&${searchParams.toString()}`;
+  }
+
+  async function revealEmails() {
+    setRevealModal(false);
+    setEmailsLoading(true);
+    try {
+      const ids = clients.map(c => c.client_id);
+      const res = await fetch('/api/crm/clients/reveal-emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_ids: ids }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setEmailsMap(data.emails ?? {});
+      setEmailsRevealed(true);
+    } catch (e: unknown) {
+      alert('Błąd: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setEmailsLoading(false);
+    }
+  }
+
+  function hideEmails() {
+    setEmailsRevealed(false);
+    setEmailsMap({});
+  }
+
   async function exportEdrone() {
     setEdroneLoading(true);
     setEdroneModal(false);
@@ -186,6 +224,12 @@ export default function ClientsView() {
       setEdroneLoading(false);
     }
   }
+
+  // Reset revealed emails whenever the displayed client list changes (page/filter navigation)
+  useEffect(() => {
+    setEmailsRevealed(false);
+    setEmailsMap({});
+  }, [clients]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const hasFilters = !!(segment || risk || world || ltv_min || ltv_max || searchInput || date_from || date_to || occasion || rfm_segment || lead_temp || gift_label_f);
 
@@ -241,9 +285,22 @@ export default function ClientsView() {
             Klienci 360°
             {!loading && <span className="cl-count">({total.toLocaleString("pl-PL")})</span>}
           </h1>
-          <button className="cl-btn cl-btn-primary" onClick={exportCSV} style={{ marginLeft: "auto" }}>
-            📥 Eksportuj CSV
-          </button>
+          <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+            <button className="cl-btn cl-btn-ghost" onClick={exportCSV}>📥 Eksportuj CSV</button>
+            <button className="cl-btn cl-btn-ghost" onClick={() => setPiiExportModal(true)}>📧 z emailami</button>
+            {emailsRevealed ? (
+              <button className="cl-btn cl-btn-ghost" onClick={hideEmails}>🔒 Ukryj emaile</button>
+            ) : (
+              <button
+                className="cl-btn cl-btn-primary"
+                onClick={() => setRevealModal(true)}
+                disabled={emailsLoading || loading || clients.length === 0}
+                style={{ opacity: (emailsLoading || loading || clients.length === 0) ? 0.5 : 1 }}
+              >
+                {emailsLoading ? "Ładowanie…" : "🔓 Odkryj emaile"}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Filters */}
@@ -343,6 +400,7 @@ export default function ClientsView() {
               <thead>
                 <tr>
                   <th>ID klienta</th>
+                  {emailsRevealed && <th>Email</th>}
                   <th>Segment</th>
                   <th>Risk</th>
                   <th style={{ textAlign: "right", ...thStyle("ltv") }} onClick={() => setSort("ltv")}>LTV{sortIcon("ltv")}</th>
@@ -363,6 +421,11 @@ export default function ClientsView() {
                 {clients.map(c => (
                   <tr key={c.client_id}>
                     <td><Link href={`/crm/clients/${c.client_id}`} className="cl-link">{c.client_id}</Link></td>
+                    {emailsRevealed && (
+                      <td style={{ fontSize: 12, fontFamily: "var(--font-geist-mono), monospace", color: emailsMap[c.client_id] ? t.accent : t.textSub }}>
+                        {emailsMap[c.client_id] ?? "—"}
+                      </td>
+                    )}
                     <td>
                       {c.legacy_segment ? (
                         <span className="cl-badge" style={{ background: SEG_COLORS[c.legacy_segment] ?? "#999", color: "#fff" }}>{c.legacy_segment}</span>
@@ -476,6 +539,40 @@ export default function ClientsView() {
             </div>
           )}
         </div>
+
+        {/* ── Modal: odkryj emaile na bieżącej stronie ────────────── */}
+        {revealModal && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+            <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 14, padding: "28px 32px", maxWidth: 420, width: "90%", fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
+              <div style={{ fontSize: 17, fontWeight: 700, color: t.text, marginBottom: 12 }}>🔓 Odkryj adresy email</div>
+              <div style={{ fontSize: 13, color: t.textSub, lineHeight: 1.7, marginBottom: 20 }}>
+                Wyświetlone zostaną adresy email <strong style={{ color: t.text }}>{clients.length} klientów</strong> z bieżącej strony.<br />
+                <span style={{ color: "#e6a817" }}>⚠ Operacja zostanie zalogowana w systemie bezpieczeństwa CRM.</span>
+              </div>
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                <button className="cl-btn cl-btn-ghost" onClick={() => setRevealModal(false)}>Anuluj</button>
+                <button className="cl-btn cl-btn-primary" onClick={revealEmails}>Odkryj emaile</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Modal: eksport CSV z emailami (PII) ──────────────────── */}
+        {piiExportModal && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+            <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 14, padding: "28px 32px", maxWidth: 420, width: "90%", fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
+              <div style={{ fontSize: 17, fontWeight: 700, color: t.text, marginBottom: 12 }}>📧 Eksport CSV z emailami</div>
+              <div style={{ fontSize: 13, color: t.textSub, lineHeight: 1.7, marginBottom: 20 }}>
+                Plik CSV będzie zawierał adresy email <strong style={{ color: t.text }}>{total.toLocaleString("pl-PL")} klientów</strong> z aktualnych filtrów.<br />
+                <span style={{ color: "#e6a817" }}>⚠ Operacja zostanie zalogowana w systemie bezpieczeństwa CRM.</span>
+              </div>
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                <button className="cl-btn cl-btn-ghost" onClick={() => setPiiExportModal(false)}>Anuluj</button>
+                <button className="cl-btn cl-btn-primary" onClick={exportCSVWithEmails}>Pobierz CSV</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Modal potwierdzenia ───────────────────────────────────── */}
         {edroneModal && (

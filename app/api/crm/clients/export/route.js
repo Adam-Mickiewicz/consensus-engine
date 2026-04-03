@@ -54,19 +54,45 @@ async function fetchAll(sb, params) {
   return rows;
 }
 
-function toCSV(rows) {
+function toCSV(rows, emailMap) {
   const COLS = ['client_id', 'legacy_segment', 'risk_level', 'ltv', 'orders_count', 'last_order', 'first_order', 'top_domena', 'winback_priority'];
+  const withEmail = !!emailMap;
   const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const lines = [COLS.join(',')];
+  const header = withEmail ? ['email', ...COLS] : COLS;
+  const lines = [header.join(',')];
   for (const r of rows) {
-    lines.push(COLS.map(c => escape(r[c])).join(','));
+    const base = COLS.map(c => escape(r[c]));
+    if (withEmail) {
+      lines.push([escape(emailMap.get(r.client_id) ?? ''), ...base].join(','));
+    } else {
+      lines.push(base.join(','));
+    }
   }
   return lines.join('\n');
+}
+
+async function fetchEmailsForExport(sb, clientIds) {
+  const emailMap = new Map();
+  const BATCH = 500;
+  for (let i = 0; i < clientIds.length; i += BATCH) {
+    const batch = clientIds.slice(i, i + BATCH);
+    const { data, error } = await sb
+      .from('master_key')
+      .select('client_id,email')
+      .in('client_id', batch)
+      .not('email', 'is', null);
+    if (error) { console.error('[export] master_key fetch error:', error.message); continue; }
+    for (const row of data ?? []) {
+      if (row.email) emailMap.set(row.client_id, row.email);
+    }
+  }
+  return emailMap;
 }
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
+    const includeEmail = searchParams.get('include_email') === '1';
     const params = {
       segment: searchParams.get('segment') || '',
       risk:    searchParams.get('risk') || '',
@@ -79,12 +105,30 @@ export async function GET(request) {
 
     const sb = getServiceClient();
     const rows = await fetchAll(sb, params);
-    const csv = toCSV(rows);
+
+    let emailMap = null;
+    if (includeEmail && rows.length > 0) {
+      emailMap = await fetchEmailsForExport(sb, rows.map(r => r.client_id));
+      // Log PII export
+      try {
+        await sb.from('vault_access_log').insert({
+          accessed_by: null,
+          client_id:   'BULK_EXPORT_PII',
+          accessed_at: new Date().toISOString(),
+          reason: `pii_csv_export count=${rows.length} found=${emailMap.size}`,
+        });
+      } catch (e) {
+        console.warn('[export] vault_access_log insert failed:', e?.message);
+      }
+    }
+
+    const csv = toCSV(rows, emailMap);
+    const suffix = includeEmail ? '_z_emailami' : '';
 
     return new Response(csv, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="klienci_${new Date().toISOString().slice(0, 10)}.csv"`,
+        'Content-Disposition': `attachment; filename="klienci${suffix}_${new Date().toISOString().slice(0, 10)}.csv"`,
       },
     });
   } catch (err) {
