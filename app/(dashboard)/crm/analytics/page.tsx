@@ -805,14 +805,12 @@ export default function ExecutiveDashboard() {
 
   useEffect(() => { load(); }, [load]);
 
-  if (loading) return <DashboardSkeleton />;
-  if (error || !data) return <ErrorState message={error} onRetry={load} />;
+  // Client-side date filtering — must be before early returns (Rules of Hooks)
+  const revenue = data?.revenue ?? [];
+  const promo = data?.promo ?? {} as Promo;
 
-  const { kpis, matrix, revenue, funnel, worlds, promo } = data;
-
-  // Client-side date filtering — instant, no extra fetches
   const filteredRevenue = useMemo(() => {
-    if (!revenue?.length || !dateRange.from) return revenue || [];
+    if (!revenue.length || !dateRange.from) return revenue;
     return revenue.filter(r => r.month >= dateRange.from && r.month <= dateRange.to);
   }, [revenue, dateRange.from, dateRange.to]);
 
@@ -824,8 +822,13 @@ export default function ExecutiveDashboard() {
       total_revenue: total,
       promo_revenue: promoRev,
       promo_share_pct: total > 0 ? Math.round(promoRev / total * 1000) / 10 : 0,
-    };
+    } as Promo;
   }, [filteredRevenue, promo]);
+
+  if (loading) return <DashboardSkeleton />;
+  if (error || !data) return <ErrorState message={error} onRetry={load} />;
+
+  const { kpis, matrix, funnel, worlds } = data;
 
   const activeWidgets = dashboardMode === 'general' ? AVAILABLE_WIDGETS.map(w => w.id) : customWidgets;
   const show = (id: string) => activeWidgets.includes(id);
