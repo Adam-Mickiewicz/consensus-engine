@@ -384,7 +384,11 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('products');
-  const [dateRange, setDateRange] = useState({ from: '', to: '', label: 'Ostatnie 12m' });
+  const [dateRange, setDateRange] = useState(() => {
+    const to = new Date().toISOString().split('T')[0];
+    const from = new Date(Date.now() - 365 * 86400000).toISOString().split('T')[0];
+    return { from, to, label: 'Ostatnie 12m' };
+  });
 
   const load = useCallback(() => {
     setLoading(true); setError(null);
@@ -398,7 +402,7 @@ export default function ProductsPage() {
         setData(d); setLoading(false);
       })
       .catch((e: Error) => { setError(e.message); setLoading(false); });
-  }, [dateRange]);
+  }, [dateRange.from, dateRange.to]);
 
   useEffect(() => { load(); }, [load]);
 

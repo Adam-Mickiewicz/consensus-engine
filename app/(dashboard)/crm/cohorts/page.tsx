@@ -250,7 +250,10 @@ export default function CohortsPage() {
   const [data, setData] = useState<CohortData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState({ from: '', to: '', label: 'Cała historia' });
+  const [dateRange, setDateRange] = useState(() => {
+    const to = new Date().toISOString().split('T')[0];
+    return { from: '2017-01-01', to, label: 'Cała historia' };
+  });
 
   const load = useCallback(() => {
     setLoading(true); setError(null);
@@ -264,7 +267,7 @@ export default function CohortsPage() {
         setData(d); setLoading(false);
       })
       .catch((e: Error) => { setError(e.message); setLoading(false); });
-  }, [dateRange]);
+  }, [dateRange.from, dateRange.to]);
 
   useEffect(() => { load(); }, [load]);
 
