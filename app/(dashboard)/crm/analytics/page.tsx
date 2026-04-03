@@ -413,11 +413,21 @@ function MiniCohort() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    fetch('/api/crm/cohorts?limit=6').then(r => r.json()).then(d => { setData(d); setLoading(false); }).catch(() => setLoading(false));
+    fetch('/api/crm/cohorts').then(r => r.json()).then(d => { setData(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
+  // Pivot: retention rows (cohort_month, months_after, cohort_size, retention_pct) -> per-cohort with M+1, M+3
+  const retention = data?.retention || [];
+  const byMonth: Record<string, any> = {};
+  for (const r of retention) {
+    const key = r.cohort_month;
+    if (!byMonth[key]) byMonth[key] = { cohort_month: key, cohort_size: r.cohort_size };
+    if (r.months_after === 1) byMonth[key].m1 = r.retention_pct;
+    if (r.months_after === 3) byMonth[key].m3 = r.retention_pct;
+  }
+  const cohorts = Object.values(byMonth).sort((a: any, b: any) => b.cohort_month.localeCompare(a.cohort_month)).slice(0, 6);
   return (
     <MiniWidgetShell title="Kohorty (mini)" href="/crm/cohorts" loading={loading}>
-      {data?.cohorts?.length > 0 ? (
+      {cohorts.length > 0 ? (
         <div style={{ overflowX: 'auto', maxHeight: 280 }}>
           <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 11 }}>
             <thead>
@@ -428,12 +438,12 @@ function MiniCohort() {
               </tr>
             </thead>
             <tbody>
-              {data.cohorts.slice(0, 6).map((c: any, i: number) => (
+              {cohorts.map((c: any, i: number) => (
                 <tr key={i} style={{ borderBottom: '1px solid #f0ece6' }}>
-                  <td style={{ padding: '5px 6px', fontFamily: 'IBM Plex Mono, monospace' }}>{c.cohort_month || c.cohort}</td>
-                  <td style={{ padding: '5px 6px', textAlign: 'right' }}>{(c.cohort_size || c.clients || 0).toLocaleString('pl-PL')}</td>
-                  <td style={{ padding: '5px 6px', textAlign: 'right', color: '#2d8a4e' }}>{c.m1_retention ? c.m1_retention + '%' : '—'}</td>
-                  <td style={{ padding: '5px 6px', textAlign: 'right', color: '#3577b3' }}>{c.m3_retention ? c.m3_retention + '%' : '—'}</td>
+                  <td style={{ padding: '5px 6px', fontFamily: 'IBM Plex Mono, monospace' }}>{(c.cohort_month || '').slice(0, 7)}</td>
+                  <td style={{ padding: '5px 6px', textAlign: 'right' }}>{(c.cohort_size || 0).toLocaleString('pl-PL')}</td>
+                  <td style={{ padding: '5px 6px', textAlign: 'right', color: '#2d8a4e' }}>{c.m1 != null ? c.m1 + '%' : '—'}</td>
+                  <td style={{ padding: '5px 6px', textAlign: 'right', color: '#3577b3' }}>{c.m3 != null ? c.m3 + '%' : '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -450,16 +460,16 @@ function MiniPromo() {
   useEffect(() => {
     fetch('/api/crm/promotions').then(r => r.json()).then(d => { setData(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
-  const segments = data?.promo_segments || data?.dependency || [];
+  const segments = (data?.dependency || data?.promo_segments || []).filter((s: any) => s.dependency_segment !== 'never_promo');
   return (
     <MiniWidgetShell title="Promo dependency" href="/crm/promotions" loading={loading}>
       {segments.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {segments.slice(0, 5).map((s: any, i: number) => {
-            const pct = s.promo_pct || s.pct || 0;
+            const pct = Math.round(s.avg_promo_pct ?? s.promo_pct ?? s.pct ?? 0);
             return (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 90, fontSize: 11, color: '#1a1a1a', flexShrink: 0 }}>{s.segment || s.name || '—'}</div>
+                <div style={{ width: 90, fontSize: 11, color: '#1a1a1a', flexShrink: 0 }}>{s.dependency_segment || s.segment || s.name || '—'}</div>
                 <div style={{ flex: 1, background: '#f0ece6', borderRadius: 3, height: 14, overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${Math.min(pct, 100)}%`, background: '#e6a817', borderRadius: 3 }} />
                 </div>
@@ -479,14 +489,14 @@ function MiniTimeToSecond() {
   useEffect(() => {
     fetch('/api/crm/cohorts?type=time_to_second').then(r => r.json()).then(d => { setData(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
-  const buckets = data?.time_to_second || data?.histogram || [];
+  const buckets = data?.timeToSecond || data?.time_to_second || data?.histogram || [];
   return (
     <MiniWidgetShell title="Time to 2nd order" href="/crm/cohorts" loading={loading}>
       {buckets.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           {buckets.map((b: any, i: number) => {
-            const maxVal = Math.max(...buckets.map((x: any) => x.count || x.clients || 0), 1);
-            const val = b.count || b.clients || 0;
+            const maxVal = Math.max(...buckets.map((x: any) => x.client_count || x.count || x.clients || 0), 1);
+            const val = b.client_count || b.count || b.clients || 0;
             return (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ width: 70, fontSize: 10, color: '#6b6b6b', flexShrink: 0 }}>{b.bucket || b.range}</div>
