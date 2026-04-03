@@ -118,13 +118,13 @@ function KpiRow({ kpis, promo, revenue }: { kpis: KPIs; promo: Promo; revenue: R
   const repeaters = (kpis as any).repeaters_in_range ?? kpis.repeaters_90d ?? 0;
   const buyers = (kpis as any).buyers_in_range ?? kpis.buyers_90d ?? 0;
   const repeatRate = buyers > 0 ? (repeaters / buyers * 100).toFixed(1) : '0.0';
-  const last3Repeat = revenue.slice(-3).reduce((s, r) => s + (r.repeat_revenue || 0), 0);
+  const repeatRevenue = revenue.reduce((s, r) => s + (r.repeat_revenue || 0), 0);
   const newPct = promo?.new_product_share_pct || 0;
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 4 }}>
       <KpiCard label={<Tooltip text="Liczba klientów, którzy złożyli zamówienie w ostatnich 90 dniach">Aktywni 90d</Tooltip>} value={formatNumber(activeClients)} subtitle={`z ${formatNumber(kpis.total_clients)} wszystkich`} />
       <KpiCard label={<Tooltip text="Procent klientów aktywnych 90d z więcej niż 1 zamówieniem">Wsk. powtarzalności 90d</Tooltip>} value={repeatRate + '%'} subtitle={`${formatNumber(repeaters)} powracających`} accent={parseFloat(repeatRate) < 10} />
-      <KpiCard label={<Tooltip text="Suma przychodów od klientów z 2+ zamówieniami w ostatnich 3 miesiącach">Przychód powracających</Tooltip>} value={formatPLN(last3Repeat)} subtitle="ostatnie 3 miesiące" />
+      <KpiCard label={<Tooltip text="Suma przychodów od klientów z 2+ zamówieniami w wybranym zakresie dat">Przychód powracających</Tooltip>} value={formatPLN(repeatRevenue)} subtitle={`${revenue.length} mies. w zakresie`} />
       <KpiCard label={<Tooltip text="Suma LTV klientów Diamond/Platinum/Gold ze statusem Risk lub HighRisk">Zagrożony przychód</Tooltip>} value={formatPLN(kpis.at_risk_revenue)} subtitle={`${formatNumber(kpis.at_risk_count)} klientów`} accent />
       <KpiCard label={<Tooltip text="Klienci Diamond/Platinum w statusie Utraceni lub Wysokie ryzyko">VIP do odzyskania</Tooltip>} value={formatNumber(kpis.winback_vip_count)} subtitle={`~${formatPLN(kpis.winback_vip_revenue)} potential`} />
       <KpiCard label={<Tooltip text="Klienci z 1 zamówieniem złożonym 30-90 dni temu">Kandydaci na 2. zam.</Tooltip>} value={formatNumber(kpis.second_order_candidates)} subtitle="New, 30-90d window" />
