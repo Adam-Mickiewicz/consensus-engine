@@ -673,7 +673,7 @@ export default function PromotionsPage() {
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, fontFamily: 'IBM Plex Mono, monospace' }}>
-          Promocje &amp; Incrementality
+          Promocje i efektywność
         </h1>
         <p style={{ fontSize: 13, color: T.muted, margin: '4px 0 0' }}>
           Ocena wpływu promocji na przychód i retencję
