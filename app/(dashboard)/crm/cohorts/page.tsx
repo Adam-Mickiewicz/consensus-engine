@@ -269,6 +269,13 @@ export default function CohortsPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  // useMemo must be before early returns (Rules of Hooks)
+  const retention = data?.retention ?? [];
+  const filteredCohorts = useMemo(() => {
+    if (!retention.length || !dateRange.from) return retention;
+    return retention.filter(r => r.cohort_month >= dateRange.from && r.cohort_month <= dateRange.to);
+  }, [retention, dateRange.from, dateRange.to]);
+
   if (loading) return <Skeleton />;
   if (error || !data) return (
     <div style={{ padding: 24 }}>
@@ -278,11 +285,6 @@ export default function CohortsPage() {
       </div>
     </div>
   );
-
-  const filteredCohorts = useMemo(() => {
-    if (!data?.retention || !dateRange.from) return data?.retention || [];
-    return data.retention.filter(r => r.cohort_month >= dateRange.from && r.cohort_month <= dateRange.to);
-  }, [data?.retention, dateRange.from, dateRange.to]);
 
   const insights = generateInsights(filteredCohorts, data.timeToSecond, data.byContext);
 
