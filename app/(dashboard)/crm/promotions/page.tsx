@@ -1,7 +1,7 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import DateRangePicker from '../components/DateRangePicker';
 import Tooltip from '../components/Tooltip';
 
@@ -136,9 +136,78 @@ function qualityBadge(row: PromoScorecard, globalAOV: number) {
   return { label: 'Mieszana', color: T.warning, bg: '#fff3cd' };
 }
 
+declare global { interface Window { Chart: any; } }
+
+// ─── Chart.js Loader ─────────────────────────────────────────────────────────
+
+function useChart(
+  canvasRef: React.RefObject<HTMLCanvasElement>,
+  buildConfig: () => any,
+  deps: any[]
+) {
+  const chartRef = useRef<any>(null);
+  const buildFnRef = useRef(buildConfig);
+  const scriptAddedRef = useRef(false);
+  useEffect(() => { buildFnRef.current = buildConfig; });
+
+  useEffect(() => {
+    function render() {
+      if (!canvasRef.current || !window.Chart) return;
+      if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
+      const cfg = buildFnRef.current();
+      if (!cfg) return;
+      chartRef.current = new window.Chart(canvasRef.current, cfg);
+    }
+    if (window.Chart) {
+      render();
+    } else if (!scriptAddedRef.current) {
+      scriptAddedRef.current = true;
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+      s.onload = () => render();
+      document.head.appendChild(s);
+    }
+    return () => { if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; } };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+}
+
 // ─── TAB 1: Scorecard ─────────────────────────────────────────────────────────
 
 function ScorecardTab({ scorecard }: { scorecard: PromoScorecard[] }) {
+  const barCanvasRef = useRef<HTMLCanvasElement>(null);
+  const globalAOV = scorecard.length > 0 ? scorecard.reduce((s, r) => s + r.avg_order_value, 0) / scorecard.length : 0;
+  const sorted = [...scorecard].sort((a, b) => b.promo_revenue - a.promo_revenue).slice(0, 15);
+
+  useChart(barCanvasRef, () => {
+    if (!sorted.length) return null;
+    const badges = sorted.map(r => qualityBadge(r, globalAOV));
+    return {
+      type: 'bar',
+      data: {
+        labels: sorted.map(r => r.promo_name.length > 22 ? r.promo_name.slice(0, 22) + '…' : r.promo_name),
+        datasets: [{
+          label: 'Revenue',
+          data: sorted.map(r => r.promo_revenue),
+          backgroundColor: badges.map(b => b.color + 'bb'),
+          borderColor: badges.map(b => b.color),
+          borderWidth: 1, borderRadius: 3,
+        }],
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx: any) => '  ' + formatPLN(ctx.raw) } },
+        },
+        scales: {
+          x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: (v: any) => v >= 1000 ? Math.round(v / 1000) + 'K' : v, font: { size: 10, family: 'IBM Plex Mono, monospace' }, color: '#6b6b6b' } },
+          y: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#1a1a1a' } },
+        },
+      },
+    };
+  }, [sorted.map(r => r.promo_revenue).join(','), globalAOV]);
+
   if (scorecard.length === 0) {
     return (
       <div style={{ background: '#fff8e1', border: `1px solid ${T.warning}`, borderRadius: 8, padding: 20, color: '#6b4700' }}>
@@ -147,15 +216,16 @@ function ScorecardTab({ scorecard }: { scorecard: PromoScorecard[] }) {
     );
   }
 
-  const globalAOV = scorecard.reduce((s, r) => s + r.avg_order_value, 0) / scorecard.length;
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Cards per promotion */}
       {scorecard.map((row) => {
         const badge = qualityBadge(row, globalAOV);
         const discountLabel = row.discount_min != null
           ? `−${row.discount_min}${row.discount_max && row.discount_max !== row.discount_min ? `–${row.discount_max}` : ''}%`
           : row.free_shipping ? 'Darmowa dostawa' : '';
+        const newPct = row.promo_customers > 0 ? (row.new_customers_in_promo / row.promo_customers) * 100 : 0;
+        const aovPct = globalAOV > 0 ? Math.min(100, (row.avg_order_value / globalAOV) * 100) : 0;
 
         return (
           <div key={row.id} style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: 16 }}>
@@ -164,58 +234,84 @@ function ScorecardTab({ scorecard }: { scorecard: PromoScorecard[] }) {
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 2 }}>
                   {row.promo_name}
-                  {discountLabel && (
-                    <span style={{ marginLeft: 8, fontSize: 12, color: T.muted, fontWeight: 400 }}>({discountLabel})</span>
-                  )}
+                  {discountLabel && <span style={{ marginLeft: 8, fontSize: 12, color: T.muted, fontWeight: 400 }}>({discountLabel})</span>}
                 </div>
                 <div style={{ fontSize: 12, color: T.muted }}>
                   {fmtDate(row.start_date)} – {fmtDate(row.end_date)}
-                  {row.code_name && <span style={{ marginLeft: 8, background: T.bg, padding: '1px 6px', borderRadius: 4, fontFamily: 'monospace' }}>code: {row.code_name}</span>}
-                  {row.season && row.season.length > 0 && (
-                    <span style={{ marginLeft: 8 }}>{row.season.join(', ')}</span>
-                  )}
+                  {row.code_name && <span style={{ marginLeft: 8, background: T.bg, padding: '1px 6px', borderRadius: 4, fontFamily: 'IBM Plex Mono, monospace' }}>kod: {row.code_name}</span>}
+                  {row.season && row.season.length > 0 && <span style={{ marginLeft: 8 }}>{row.season.join(', ')}</span>}
                 </div>
               </div>
-              <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, background: badge.bg, color: badge.color }}>
-                {badge.label}
-              </span>
+              <Tooltip text={badge.label === 'Dobra jakość' ? 'Nowi klienci ≥30% i AOV ≥80% średniej' : badge.label === 'Słaba jakość' ? 'Nowi klienci <10% lub AOV <60% średniej' : 'Pośrednie wyniki — ani dobra, ani słaba'}>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, background: badge.bg, color: badge.color, cursor: 'help' }}>
+                  {badge.label}
+                </span>
+              </Tooltip>
             </div>
 
             {/* Metrics grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 12 }}>
               {[
-                { label: 'Revenue', value: formatPLN(row.promo_revenue) },
-                { label: 'Zamówienia', value: fmt(row.promo_orders) },
-                { label: 'Klienci', value: fmt(row.promo_customers) },
-                { label: 'Nowi klienci', value: fmt(row.new_customers_in_promo) },
-                { label: 'Śr. wartość zam.', value: `${row.avg_order_value.toFixed(0)} zł` },
+                { label: 'Revenue',          value: formatPLN(row.promo_revenue) },
+                { label: 'Zamówienia',        value: fmt(row.promo_orders) },
+                { label: 'Klienci',           value: fmt(row.promo_customers) },
+                { label: 'Nowi klienci',      value: fmt(row.new_customers_in_promo) },
+                { label: 'Śr. wartość zam.',  value: `${row.avg_order_value.toFixed(0)} zł` },
               ].map((m) => (
-                <div key={m.label}>
-                  <div style={{ fontSize: 11, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>{m.label}</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{m.value}</div>
+                <div key={m.label} style={{ background: T.bg, borderRadius: 6, padding: '8px 10px' }}>
+                  <div style={{ fontSize: 10, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 3, fontFamily: 'IBM Plex Mono, monospace' }}>{m.label}</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: T.text, fontFamily: 'IBM Plex Mono, monospace' }}>{m.value}</div>
                 </div>
               ))}
             </div>
 
-            {/* New customer % bar */}
-            {row.promo_customers > 0 && (
-              <div style={{ marginTop: 10 }}>
-                <div style={{ fontSize: 11, color: T.muted, marginBottom: 4 }}>
-                  Nowi klienci: {((row.new_customers_in_promo / row.promo_customers) * 100).toFixed(0)}%
+            {/* Progress bars */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {/* New customers bar */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: T.muted, marginBottom: 4 }}>
+                  <span>Nowi klienci</span>
+                  <span style={{ fontWeight: 600, color: newPct >= 30 ? T.success : newPct < 10 ? T.danger : T.warning }}>{newPct.toFixed(0)}%</span>
                 </div>
-                <div style={{ height: 4, background: T.bg, borderRadius: 2, overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%',
-                    width: `${Math.min(100, (row.new_customers_in_promo / row.promo_customers) * 100)}%`,
-                    background: T.accent,
-                    borderRadius: 2,
-                  }} />
+                <div style={{ height: 6, background: T.bg, borderRadius: 3, overflow: 'hidden', border: `1px solid ${T.border}` }}>
+                  <div style={{ height: '100%', width: `${newPct}%`, background: newPct >= 30 ? T.success : newPct < 10 ? T.danger : T.warning, borderRadius: 3, transition: 'width 0.4s' }} />
                 </div>
               </div>
-            )}
+              {/* AOV vs avg bar */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: T.muted, marginBottom: 4 }}>
+                  <span>AOV vs średnia ({globalAOV.toFixed(0)} zł)</span>
+                  <span style={{ fontWeight: 600, color: aovPct >= 80 ? T.success : aovPct < 60 ? T.danger : T.warning }}>{row.avg_order_value.toFixed(0)} zł</span>
+                </div>
+                <div style={{ height: 6, background: T.bg, borderRadius: 3, overflow: 'hidden', border: `1px solid ${T.border}`, position: 'relative' }}>
+                  <div style={{ height: '100%', width: `${Math.min(aovPct, 100)}%`, background: aovPct >= 80 ? T.success : aovPct < 60 ? T.danger : T.warning, borderRadius: 3, transition: 'width 0.4s' }} />
+                  {/* avg marker at 100% */}
+                </div>
+              </div>
+            </div>
           </div>
         );
       })}
+
+      {/* Comparison bar chart */}
+      <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: 16 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 4, fontFamily: 'IBM Plex Mono, monospace' }}>Porównanie promocji — revenue</div>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 12, flexWrap: 'wrap' }}>
+          {[
+            { color: T.success, label: 'Dobra jakość (nowi ≥30%, AOV ≥80%)' },
+            { color: T.warning, label: 'Mieszana' },
+            { color: T.danger,  label: 'Słaba jakość' },
+          ].map(l => (
+            <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 10, height: 10, borderRadius: 2, background: l.color }} />
+              <span style={{ fontSize: 11, color: T.muted }}>{l.label}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ position: 'relative', height: Math.max(200, sorted.length * 30) }}>
+          <canvas ref={barCanvasRef} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -223,6 +319,8 @@ function ScorecardTab({ scorecard }: { scorecard: PromoScorecard[] }) {
 // ─── TAB 2: Dependency ────────────────────────────────────────────────────────
 
 function DependencyTab({ dependency }: { dependency: PromoDependency[] }) {
+  const donutRef = useRef<HTMLCanvasElement>(null);
+  const groupedRef = useRef<HTMLCanvasElement>(null);
   const total = dependency.reduce((s, r) => s + r.client_count, 0);
   const addicted = dependency.find((r) => r.dependency_segment === 'promo_addicted');
   const neverPromo = dependency.find((r) => r.dependency_segment === 'never_promo');
@@ -231,76 +329,212 @@ function DependencyTab({ dependency }: { dependency: PromoDependency[] }) {
     ? (neverPromo.avg_ltv / addicted.avg_ltv).toFixed(1)
     : null;
 
+  const DEP_ORDER = ['never_promo', 'low_promo', 'mixed', 'promo_led', 'promo_addicted'];
+  const ordered = DEP_ORDER.map(k => dependency.find(r => r.dependency_segment === k)).filter(Boolean) as PromoDependency[];
+
+  // Donut chart
+  useChart(donutRef, () => {
+    if (!ordered.length) return null;
+    return {
+      type: 'doughnut',
+      data: {
+        labels: ordered.map(r => DEP_LABELS[r.dependency_segment]?.label || r.dependency_segment),
+        datasets: [{
+          data: ordered.map(r => r.client_count),
+          backgroundColor: ordered.map(r => DEP_COLORS[r.dependency_segment] || T.muted),
+          borderWidth: 2, borderColor: '#fff',
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        cutout: '62%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx: any) => {
+                const pct = total > 0 ? ((ctx.raw / total) * 100).toFixed(1) : '0';
+                return `  ${ctx.raw.toLocaleString('pl-PL')} kl. (${pct}%)`;
+              },
+            },
+          },
+        },
+      },
+    };
+  }, [ordered.map(r => r.client_count).join(',')]);
+
+  // Grouped bar: avg LTV per segment (single dataset, colors per bar)
+  useChart(groupedRef, () => {
+    if (!ordered.length) return null;
+    return {
+      type: 'bar',
+      data: {
+        labels: ordered.map(r => DEP_LABELS[r.dependency_segment]?.label.split(' ')[0] || r.dependency_segment),
+        datasets: [
+          {
+            label: 'Avg LTV (zł)',
+            data: ordered.map(r => Math.round(r.avg_ltv)),
+            backgroundColor: ordered.map(r => DEP_COLORS[r.dependency_segment] + 'bb'),
+            borderColor: ordered.map(r => DEP_COLORS[r.dependency_segment]),
+            borderWidth: 1, borderRadius: 4,
+            yAxisID: 'y',
+          },
+          {
+            label: 'Avg zamówień',
+            data: ordered.map(r => parseFloat(r.avg_orders.toFixed(1))),
+            backgroundColor: '#b8763a55',
+            borderColor: '#b8763a',
+            borderWidth: 1, borderRadius: 4,
+            yAxisID: 'y1',
+          },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx: any) => ctx.datasetIndex === 0
+                ? `  Avg LTV: ${ctx.raw.toLocaleString('pl-PL')} zł`
+                : `  Avg zamówień: ${ctx.raw}`,
+            },
+          },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#1a1a1a' } },
+          y: {
+            type: 'linear', position: 'left',
+            grid: { color: 'rgba(0,0,0,0.04)' },
+            ticks: { callback: (v: any) => v >= 1000 ? Math.round(v/1000) + 'K zł' : v + ' zł', font: { size: 10 }, color: T.success },
+            title: { display: true, text: 'Avg LTV (zł)', color: T.success, font: { size: 10 } },
+          },
+          y1: {
+            type: 'linear', position: 'right',
+            grid: { drawOnChartArea: false },
+            ticks: { callback: (v: any) => v + ' zam.', font: { size: 10 }, color: '#b8763a' },
+            title: { display: true, text: 'Avg zamówień', color: '#b8763a', font: { size: 10 } },
+          },
+        },
+      },
+    };
+  }, [ordered.map(r => r.avg_ltv).join(',')]);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
       {/* Alert */}
       {parseFloat(addictedPct) > 20 && (
         <div style={{ background: '#fde8e8', border: `1px solid ${T.danger}`, borderRadius: 8, padding: 12, color: T.danger, fontSize: 13 }}>
-          <strong>Uwaga:</strong> {addictedPct}% klientów kupuje wyłącznie w promocjach (uzależnieni). To {formatPLN(addicted?.total_ltv || 0)} LTV at risk.
+          <strong>Uwaga:</strong> {addictedPct}% klientów kupuje wyłącznie w promocjach — {formatPLN(addicted?.total_ltv || 0)} LTV at risk.
         </div>
       )}
 
-      {/* Stacked bar */}
-      <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: 16 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: T.text }}>Rozkład uzależnienia od promocji</div>
-        <div style={{ display: 'flex', height: 28, borderRadius: 4, overflow: 'hidden', gap: 1 }}>
-          {dependency.map((row) => {
-            const pct = total > 0 ? (row.client_count / total) * 100 : 0;
-            if (pct < 0.5) return null;
-            return (
-              <div
-                key={row.dependency_segment}
-                style={{ width: `${pct}%`, background: DEP_COLORS[row.dependency_segment] || T.muted, position: 'relative' }}
-                title={`${DEP_LABELS[row.dependency_segment]?.label || row.dependency_segment}: ${pct.toFixed(1)}%`}
-              />
-            );
-          })}
+      {/* Row: stacked bar + donut */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+
+        {/* Stacked bar */}
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: 16 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 12, fontFamily: 'IBM Plex Mono, monospace' }}>Rozkład uzależnienia</div>
+          <div style={{ display: 'flex', height: 32, borderRadius: 4, overflow: 'hidden', gap: 1, marginBottom: 16 }}>
+            {ordered.map((row) => {
+              const pct = total > 0 ? (row.client_count / total) * 100 : 0;
+              if (pct < 0.3) return null;
+              return (
+                <div
+                  key={row.dependency_segment}
+                  style={{ width: `${pct}%`, background: DEP_COLORS[row.dependency_segment] || T.muted }}
+                  title={`${DEP_LABELS[row.dependency_segment]?.label}: ${pct.toFixed(1)}%`}
+                />
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {ordered.map((row) => {
+              const cfg = DEP_LABELS[row.dependency_segment] || { label: row.dependency_segment, color: T.muted, bg: T.bg, tooltip: '' };
+              const pct = total > 0 ? ((row.client_count / total) * 100).toFixed(1) : '0';
+              return (
+                <div key={row.dependency_segment} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 2, background: DEP_COLORS[row.dependency_segment], flexShrink: 0 }} />
+                  <div style={{ flex: 1, fontSize: 12, color: T.text }}>
+                    <Tooltip text={cfg.tooltip || ''}>{cfg.label}</Tooltip>
+                  </div>
+                  <div style={{ fontSize: 12, fontFamily: 'IBM Plex Mono, monospace', color: T.muted }}>{pct}%</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, fontFamily: 'IBM Plex Mono, monospace', minWidth: 70, textAlign: 'right' }}>{row.client_count.toLocaleString('pl-PL')}</div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
-          {dependency.map((row) => {
-            const cfg = (DEP_LABELS[row.dependency_segment] || { label: row.dependency_segment, color: T.muted, bg: T.bg, tooltip: '' }) as { label: string; color: string; bg: string; tooltip: string };
-            const pct = total > 0 ? ((row.client_count / total) * 100).toFixed(1) : '0';
-            return (
-              <div key={row.dependency_segment} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ width: 10, height: 10, borderRadius: 2, background: DEP_COLORS[row.dependency_segment] }} />
-                <span style={{ fontSize: 12, color: T.muted }}>
-                  {cfg.tooltip
-                    ? <Tooltip text={cfg.tooltip}>{cfg.label} ({pct}%)</Tooltip>
-                    : <>{cfg.label} ({pct}%)</>}
-                </span>
+
+        {/* Donut chart */}
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: 16 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 12, fontFamily: 'IBM Plex Mono, monospace' }}>Struktura bazy klientów</div>
+          <div style={{ position: 'relative', height: 200 }}>
+            <canvas ref={donutRef} />
+            {/* Center text */}
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: T.text, fontFamily: 'IBM Plex Mono, monospace' }}>{total.toLocaleString('pl-PL')}</div>
+              <div style={{ fontSize: 11, color: T.muted }}>klientów</div>
+            </div>
+          </div>
+          {/* Legend */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12, justifyContent: 'center' }}>
+            {ordered.map(r => (
+              <div key={r.dependency_segment} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }}>
+                <div style={{ width: 8, height: 8, borderRadius: 2, background: DEP_COLORS[r.dependency_segment] }} />
+                <span style={{ color: T.muted }}>{DEP_LABELS[r.dependency_segment]?.label.split(' ')[0]}</span>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Table */}
+      {/* Grouped bar: LTV vs orders per segment */}
+      <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: 16 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 4, fontFamily: 'IBM Plex Mono, monospace' }}>Avg LTV vs Avg zamówień per segment</div>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 12, height: 12, borderRadius: 2, background: T.success }} />
+            <span style={{ fontSize: 11, color: T.muted }}>Avg LTV (zł) — lewa oś</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 12, height: 12, borderRadius: 2, background: '#b8763a' }} />
+            <span style={{ fontSize: 11, color: T.muted }}>Avg zamówień — prawa oś</span>
+          </div>
+        </div>
+        <div style={{ position: 'relative', height: 240 }}>
+          <canvas ref={groupedRef} />
+        </div>
+        <div style={{ fontSize: 12, color: T.muted, marginTop: 8, fontStyle: 'italic' }}>
+          Wyższy LTV i więcej zamówień = klienci nigdy-promo są cenniejszi mimo mniejszego % klientów
+        </div>
+      </div>
+
+      {/* Table (detail) */}
       <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, overflow: 'hidden' }}>
+        <div style={{ padding: '10px 16px', borderBottom: `1px solid ${T.border}`, fontSize: 13, fontWeight: 700, color: T.text, fontFamily: 'IBM Plex Mono, monospace' }}>Dane szczegółowe</div>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ background: T.bg }}>
-              {['Segment', 'Klienci', 'Total LTV', 'Avg LTV', 'Avg zamówień', 'Avg % promo'].map((h) => (
-                <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  {h}
-                </th>
+              {['Segment', 'Klienci', 'Total LTV', 'Avg LTV', 'Avg zam.', 'Avg % promo'].map((h) => (
+                <th key={h} style={{ padding: '8px 14px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {dependency.map((row, i) => {
-              const cfg = DEP_LABELS[row.dependency_segment] || { label: row.dependency_segment, color: T.muted, bg: T.bg, tooltip: '' };
+            {ordered.map((row, i) => {
+              const cfg = DEP_LABELS[row.dependency_segment] || { label: row.dependency_segment, color: T.muted, bg: T.bg };
               return (
                 <tr key={row.dependency_segment} style={{ borderTop: i > 0 ? `1px solid ${T.border}` : undefined }}>
-                  <td style={{ padding: '10px 14px' }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: cfg.bg, color: cfg.color }}>
-                      {cfg.label}
-                    </span>
+                  <td style={{ padding: '8px 14px' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: cfg.bg, color: cfg.color }}>{cfg.label}</span>
                   </td>
-                  <td style={{ padding: '10px 14px', fontWeight: 600 }}>{fmt(row.client_count)}</td>
-                  <td style={{ padding: '10px 14px' }}>{formatPLN(row.total_ltv)}</td>
-                  <td style={{ padding: '10px 14px' }}>{row.avg_ltv.toFixed(0)} zł</td>
-                  <td style={{ padding: '10px 14px' }}>{row.avg_orders.toFixed(1)}</td>
-                  <td style={{ padding: '10px 14px' }}>{row.avg_promo_pct.toFixed(1)}%</td>
+                  <td style={{ padding: '8px 14px', fontWeight: 600 }}>{fmt(row.client_count)}</td>
+                  <td style={{ padding: '8px 14px' }}>{formatPLN(row.total_ltv)}</td>
+                  <td style={{ padding: '8px 14px' }}>{row.avg_ltv.toFixed(0)} zł</td>
+                  <td style={{ padding: '8px 14px' }}>{row.avg_orders.toFixed(1)}</td>
+                  <td style={{ padding: '8px 14px' }}>{row.avg_promo_pct.toFixed(1)}%</td>
                 </tr>
               );
             })}
@@ -308,23 +542,36 @@ function DependencyTab({ dependency }: { dependency: PromoDependency[] }) {
         </table>
       </div>
 
-      {/* Insight */}
+      {/* Insights */}
       <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: 16 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, color: T.text }}>Kluczowe wnioski</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 12, fontFamily: 'IBM Plex Mono, monospace' }}>Kluczowe wnioski</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {addicted && total > 0 && (
-            <div style={{ fontSize: 13, color: T.text }}>
-              • <strong>{addictedPct}%</strong> klientów kupuje wyłącznie w promo — to {formatPLN(addicted.total_ltv)} LTV at risk
+            <div style={{ borderLeft: `4px solid ${T.danger}`, background: '#fde8e822', padding: '10px 14px', borderRadius: '0 6px 6px 0' }}>
+              <span style={{ fontSize: 13, color: T.text }}>
+                <strong style={{ color: T.danger }}>{addictedPct}%</strong> klientów kupuje wyłącznie w promo — to <strong>{formatPLN(addicted.total_ltv)}</strong> LTV at risk
+              </span>
             </div>
           )}
-          {ltvRatio && (
-            <div style={{ fontSize: 13, color: T.text }}>
-              • Klienci nigdy-promo mają <strong>{ltvRatio}×</strong> wyższy avg LTV niż uzależnieni od promo
+          {ltvRatio && parseFloat(ltvRatio) > 1 && (
+            <div style={{ borderLeft: `4px solid ${T.success}`, background: '#e8f5ee22', padding: '10px 14px', borderRadius: '0 6px 6px 0' }}>
+              <span style={{ fontSize: 13, color: T.text }}>
+                Klienci nigdy-promo mają <strong style={{ color: T.success }}>{ltvRatio}×</strong> wyższy avg LTV niż uzależnieni od promo
+              </span>
             </div>
           )}
           {neverPromo && total > 0 && (
-            <div style={{ fontSize: 13, color: T.text }}>
-              • <strong>{((neverPromo.client_count / total) * 100).toFixed(0)}%</strong> klientów nigdy nie kupowało w promo — to {formatPLN(neverPromo.total_ltv)} pełnowartościowego LTV
+            <div style={{ borderLeft: `4px solid ${T.info}`, background: '#3577b322', padding: '10px 14px', borderRadius: '0 6px 6px 0' }}>
+              <span style={{ fontSize: 13, color: T.text }}>
+                <strong style={{ color: T.info }}>{((neverPromo.client_count / total) * 100).toFixed(0)}%</strong> klientów nigdy nie kupowało w promo — to <strong>{formatPLN(neverPromo.total_ltv)}</strong> pełnowartościowego LTV
+              </span>
+            </div>
+          )}
+          {addicted && neverPromo && (
+            <div style={{ borderLeft: `4px solid ${T.warning}`, background: '#fff3cd22', padding: '10px 14px', borderRadius: '0 6px 6px 0' }}>
+              <span style={{ fontSize: 13, color: T.text }}>
+                Uzależnieni składają śr. <strong>{addicted.avg_orders.toFixed(1)} zamówień</strong> vs <strong>{neverPromo.avg_orders.toFixed(1)}</strong> u klientów bez promo — więcej zamówień, ale niższy AOV
+              </span>
             </div>
           )}
         </div>
@@ -336,34 +583,95 @@ function DependencyTab({ dependency }: { dependency: PromoDependency[] }) {
 // ─── TAB 3: Seasonality ───────────────────────────────────────────────────────
 
 function SeasonTab({ seasons }: { seasons: SeasonPerformance[] }) {
+  const barRef = useRef<HTMLCanvasElement>(null);
   const seasonNames = [...new Set(seasons.map((r) => r.season))].sort();
   const years = [...new Set(seasons.map((r) => r.year))].sort();
 
+  const YEAR_COLORS = ['#c5c0b8', '#8a9fc0', '#3577b3', '#b8763a', '#2d8a4e'];
   const bySeasonYear: Record<string, Record<number, SeasonPerformance>> = {};
   seasons.forEach((r) => {
     if (!bySeasonYear[r.season]) bySeasonYear[r.season] = {};
     bySeasonYear[r.season][r.year] = r;
   });
 
+  const prettySeasons = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  useChart(barRef, () => {
+    if (!seasonNames.length || !years.length) return null;
+    return {
+      type: 'bar',
+      data: {
+        labels: seasonNames.map(s => prettySeasons(s).length > 12 ? prettySeasons(s).slice(0, 12) + '…' : prettySeasons(s)),
+        datasets: years.map((y, idx) => ({
+          label: String(y),
+          data: seasonNames.map(s => bySeasonYear[s]?.[y]?.revenue ?? 0),
+          backgroundColor: (YEAR_COLORS[idx] || '#999') + 'bb',
+          borderColor: YEAR_COLORS[idx] || '#999',
+          borderWidth: 1, borderRadius: 3,
+        })),
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx: any) => {
+                const s = seasons.find(r => r.year === years[ctx.datasetIndex] && prettySeasons(r.season).startsWith(ctx.label.replace('…', '')));
+                return [
+                  `  ${ctx.dataset.label}: ${formatPLN(ctx.raw)}`,
+                  s ? `  ${s.orders} zam. · ${s.unique_customers} kl.` : '',
+                ].filter(Boolean);
+              },
+            },
+          },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#1a1a1a' } },
+          y: {
+            grid: { color: 'rgba(0,0,0,0.04)' },
+            ticks: { callback: (v: any) => v >= 1000 ? Math.round(v / 1000) + 'K' : v, font: { size: 10 }, color: T.muted },
+          },
+        },
+      },
+    };
+  }, [seasons.map(r => r.revenue).join(',')]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+      {/* Grouped bar chart */}
+      <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: 16 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 4, fontFamily: 'IBM Plex Mono, monospace' }}>Revenue per okazja — porównanie roczne</div>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+          {years.map((y, idx) => (
+            <div key={y} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 12, height: 12, borderRadius: 2, background: YEAR_COLORS[idx] || '#999' }} />
+              <span style={{ fontSize: 11, color: T.muted }}>{y}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ position: 'relative', height: 300 }}>
+          <canvas ref={barRef} />
+        </div>
+      </div>
+
+      {/* YoY table per season */}
       {seasonNames.map((season) => {
         const rows = bySeasonYear[season];
         const yrs = years.filter((y) => rows[y]);
+        const maxRev = Math.max(...yrs.map(y => rows[y].revenue), 1);
         return (
           <div key={season} style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, overflow: 'hidden' }}>
-            <div style={{ padding: '10px 16px', background: T.bg, borderBottom: `1px solid ${T.border}`, fontSize: 13, fontWeight: 600, color: T.text }}>
-              {season.replace(/_/g, ' ')}
+            <div style={{ padding: '10px 16px', background: T.bg, borderBottom: `1px solid ${T.border}`, fontSize: 13, fontWeight: 700, color: T.text, fontFamily: 'IBM Plex Mono, monospace' }}>
+              {prettySeasons(season)}
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: T.bg }}>
-                  <th style={{ padding: '8px 14px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase' }}>Rok</th>
-                  <th style={{ padding: '8px 14px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase' }}>Revenue</th>
-                  <th style={{ padding: '8px 14px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase' }}>Zamówienia</th>
-                  <th style={{ padding: '8px 14px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase' }}>Klienci</th>
-                  <th style={{ padding: '8px 14px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase' }}>Avg OV</th>
-                  <th style={{ padding: '8px 14px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase' }}>YoY</th>
+                  {['Rok', 'Revenue', 'Bar', 'Zamówienia', 'Klienci', 'Avg OV', 'YoY'].map((h) => (
+                    <th key={h} style={{ padding: '6px 12px', textAlign: h === 'Bar' ? 'left' : 'right', fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase' }}>{h === 'Bar' ? '' : h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -371,17 +679,26 @@ function SeasonTab({ seasons }: { seasons: SeasonPerformance[] }) {
                   const row = rows[y];
                   const prev = rows[y - 1];
                   const yoy = prev && prev.revenue > 0 ? ((row.revenue - prev.revenue) / prev.revenue) * 100 : null;
-                  const yoyColor = yoy === null ? T.muted : yoy >= 0 ? T.success : T.danger;
-                  const rowBorder = yoy !== null ? (yoy >= 0 ? `3px solid ${T.success}` : `3px solid ${T.danger}`) : undefined;
                   return (
-                    <tr key={y} style={{ borderTop: i > 0 ? `1px solid ${T.border}` : undefined, borderLeft: rowBorder }}>
-                      <td style={{ padding: '8px 14px', fontWeight: 600 }}>{y}</td>
-                      <td style={{ padding: '8px 14px', textAlign: 'right' }}>{formatPLN(row.revenue)}</td>
-                      <td style={{ padding: '8px 14px', textAlign: 'right' }}>{fmt(row.orders)}</td>
-                      <td style={{ padding: '8px 14px', textAlign: 'right' }}>{fmt(row.unique_customers)}</td>
-                      <td style={{ padding: '8px 14px', textAlign: 'right' }}>{row.avg_order_value.toFixed(0)} zł</td>
-                      <td style={{ padding: '8px 14px', textAlign: 'right', color: yoyColor, fontWeight: 600 }}>
-                        {yoy === null ? '—' : `${yoy >= 0 ? '+' : ''}${yoy.toFixed(0)}%`}
+                    <tr key={y} style={{ borderTop: i > 0 ? `1px solid ${T.border}` : undefined }}>
+                      <td style={{ padding: '7px 12px', textAlign: 'right', fontWeight: 600, fontFamily: 'IBM Plex Mono, monospace' }}>{y}</td>
+                      <td style={{ padding: '7px 12px', textAlign: 'right' }}>{formatPLN(row.revenue)}</td>
+                      <td style={{ padding: '7px 12px', width: 100 }}>
+                        <div style={{ height: 8, background: T.bg, borderRadius: 2, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${(row.revenue / maxRev) * 100}%`, background: T.accent, borderRadius: 2 }} />
+                        </div>
+                      </td>
+                      <td style={{ padding: '7px 12px', textAlign: 'right', color: T.muted }}>{fmt(row.orders)}</td>
+                      <td style={{ padding: '7px 12px', textAlign: 'right', color: T.muted }}>{fmt(row.unique_customers)}</td>
+                      <td style={{ padding: '7px 12px', textAlign: 'right', color: T.muted }}>{row.avg_order_value.toFixed(0)} zł</td>
+                      <td style={{ padding: '7px 12px', textAlign: 'right' }}>
+                        {yoy === null ? (
+                          <span style={{ color: T.pale }}>—</span>
+                        ) : (
+                          <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: yoy >= 0 ? '#e8f5ee' : '#fde8e8', color: yoy >= 0 ? T.success : T.danger }}>
+                            {yoy >= 0 ? '+' : ''}{yoy.toFixed(0)}%
+                          </span>
+                        )}
                       </td>
                     </tr>
                   );
@@ -394,6 +711,7 @@ function SeasonTab({ seasons }: { seasons: SeasonPerformance[] }) {
     </div>
   );
 }
+
 
 // ─── TAB 4: Calendar ─────────────────────────────────────────────────────────
 
@@ -525,29 +843,43 @@ function CalendarTab({ promotions, seasons, onRefresh }: { promotions: Promotion
           <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 4, fontFamily: 'IBM Plex Mono, monospace' }}>Nadchodzące okazje (90 dni)</div>
           <div style={{ fontSize: 12, color: T.muted, marginBottom: 16 }}>Okazje w ciągu 90 dni z wynikami rok temu</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {upcoming.map(occ => (
-              <div key={occ.seasonKey} style={{
-                display: 'flex', alignItems: 'center', gap: 16,
-                padding: '10px 14px', background: occ.daysAway <= 14 ? 'rgba(230,168,23,0.06)' : T.bg,
-                border: `1px solid ${occ.daysAway <= 14 ? T.warning : T.border}`, borderRadius: 6,
-              }}>
-                <div style={{ minWidth: 120, fontSize: 13, fontWeight: 600, color: T.text }}>{occ.name}</div>
-                <div style={{ minWidth: 80, fontSize: 12, color: T.muted, fontFamily: 'IBM Plex Mono, monospace' }}>
-                  {occ.occDate.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' })}
-                </div>
-                <div style={{ minWidth: 80, fontSize: 12, fontWeight: 600, color: occ.daysAway <= 7 ? T.danger : occ.daysAway <= 14 ? T.warning : T.muted }}>
-                  za {occ.daysAway} dni
-                </div>
-                {occ.lastYearPerf ? (
-                  <div style={{ fontSize: 12, color: T.muted }}>
-                    Rok temu: <strong style={{ color: T.text }}>{formatPLN(occ.lastYearPerf.revenue)}</strong>
-                    <span style={{ marginLeft: 8 }}>{occ.lastYearPerf.orders} zam.</span>
+            {upcoming.map(occ => {
+              const urgencyColor = occ.daysAway <= 7 ? T.danger : occ.daysAway <= 14 ? T.warning : T.info;
+              const daysBarPct = Math.max(0, Math.min(100, (1 - occ.daysAway / 90) * 100));
+              return (
+                <div key={occ.seasonKey} style={{
+                  padding: '12px 14px', background: occ.daysAway <= 14 ? 'rgba(230,168,23,0.04)' : T.bg,
+                  border: `1px solid ${occ.daysAway <= 14 ? T.warning : T.border}`, borderRadius: 6,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
+                    <div style={{ minWidth: 130, fontSize: 13, fontWeight: 600, color: T.text }}>{occ.name}</div>
+                    <div style={{ fontSize: 12, color: T.muted, fontFamily: 'IBM Plex Mono, monospace' }}>
+                      {occ.occDate.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: urgencyColor, minWidth: 80 }}>
+                      za {occ.daysAway} dni
+                    </div>
+                    {occ.lastYearPerf ? (
+                      <div style={{ fontSize: 12, color: T.muted }}>
+                        Rok temu: <strong style={{ color: T.text }}>{formatPLN(occ.lastYearPerf.revenue)}</strong>
+                        <span style={{ marginLeft: 6, color: T.muted }}>{occ.lastYearPerf.orders} zam.</span>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 12, color: T.pale }}>brak danych za rok temu</div>
+                    )}
                   </div>
-                ) : (
-                  <div style={{ fontSize: 12, color: T.pale }}>brak danych za rok temu</div>
-                )}
-              </div>
-            ))}
+                  {/* Days countdown bar: fills as we get closer */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ flex: 1, height: 6, background: T.bg, borderRadius: 3, overflow: 'hidden', border: `1px solid ${T.border}` }}>
+                      <div style={{ height: '100%', width: `${daysBarPct}%`, background: urgencyColor, borderRadius: 3, transition: 'width 0.3s' }} />
+                    </div>
+                    <div style={{ fontSize: 10, color: T.muted, minWidth: 50, textAlign: 'right' }}>
+                      {occ.daysAway <= 7 ? '🔴 pilne' : occ.daysAway <= 14 ? '🟡 wkrótce' : '🔵 planuj'}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
