@@ -66,7 +66,7 @@ function FilterPanel({ label, filters, onChange, worldOptions }: { label: string
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <MultiSelect label="Segment" options={SEGMENT_OPTIONS} selected={filters.segments}
           onChange={v => onChange({ ...filters, segments: v })} />
-        <MultiSelect label="Risk" options={RISK_OPTIONS} selected={filters.risks}
+        <MultiSelect label="Ryzyko" options={RISK_OPTIONS} selected={filters.risks}
           onChange={v => onChange({ ...filters, risks: v })} />
         <MultiSelect label="Domena" options={worldOptions} selected={filters.worlds}
           onChange={v => onChange({ ...filters, worlds: v })} />
@@ -100,10 +100,10 @@ interface GroupResult {
 function ResultPanel({ label, result }: { label: string; result: GroupResult }) {
   const metrics = [
     { key: 'Klienci', value: fmtNum(result.client_count) },
-    { key: 'Avg LTV', value: formatPLN(result.avg_ltv) },
-    { key: 'Avg zamówień', value: (result.avg_orders || 0).toFixed(1) },
-    { key: 'Avg częstotliwość', value: (result.avg_frequency || 0).toFixed(2) + '/rok' },
-    { key: 'Total LTV', value: formatPLN(result.total_ltv) },
+    { key: 'Śr. LTV', value: formatPLN(result.avg_ltv) },
+    { key: 'Śr. zamówień', value: (result.avg_orders || 0).toFixed(1) },
+    { key: 'Śr. częstotliwość', value: (result.avg_frequency || 0).toFixed(2) + '/rok' },
+    { key: 'Łączne LTV', value: formatPLN(result.total_ltv) },
   ];
 
   return (
@@ -132,7 +132,7 @@ function ResultPanel({ label, result }: { label: string; result: GroupResult }) 
 
       {result.risk_distribution && result.risk_distribution.length > 0 && (
         <div>
-          <div style={{ fontSize: 11, color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', marginBottom: 8 }}>Risk</div>
+          <div style={{ fontSize: 11, color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', marginBottom: 8 }}>Ryzyko</div>
           {result.risk_distribution.map(r => (
             <DistBar key={r.risk} label={r.risk} count={r.count} total={result.client_count} color={RISK_COLORS[r.risk] || '#999'} />
           ))}
@@ -174,7 +174,7 @@ function DeltaSection({ groupA, groupB }: { groupA: GroupResult; groupB: GroupRe
 
   return (
     <div style={{ marginTop: 20, background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 12 }}>Delta</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 12 }}>Różnice A vs B</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {deltas.map((d, i) => (
           <div key={i} style={{

@@ -79,7 +79,7 @@ function FunnelSection({ funnel }: { funnel: FunnelRow[] }) {
   const totalClients = sorted.reduce((s,r)=>s+r.client_count, 0);
   return (
     <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16, fontFamily: 'IBM Plex Mono, monospace' }}>Lifecycle funnel</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16, fontFamily: 'IBM Plex Mono, monospace' }}>Lejek lifecycle</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {sorted.map((row, i) => {
           const barW = Math.max((row.client_count / maxCount) * 100, 4);
@@ -163,7 +163,7 @@ function RepeatLadder({ ladder }: { ladder: LadderRow[] }) {
   const maxAov = Math.max(...sorted.map(r => r.avg_aov), 1);
   return (
     <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 4, fontFamily: 'IBM Plex Mono, monospace' }}>Repeat ladder</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 4, fontFamily: 'IBM Plex Mono, monospace' }}>Drabina powrotu</div>
       <div style={{ fontSize: 12, color: '#6b6b6b', marginBottom: 16 }}>Rozkład klientów wg liczby zamówień + avg AOV</div>
       <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 12 }}>
         <thead>
@@ -197,11 +197,11 @@ function WorldsBreakdown({ worlds }: { worlds: WorldRow[] }) {
   const maxLtv = Math.max(...worlds.map(w => w.total_ltv), 1);
   return (
     <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16, fontFamily: 'IBM Plex Mono, monospace' }}>Domeny breakdown</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16, fontFamily: 'IBM Plex Mono, monospace' }}>Podział wg domen</div>
       <table style={{ borderCollapse: 'collapse', width: '100%' }}>
         <thead>
           <tr style={{ borderBottom: '2px solid #e8e0d8' }}>
-            {['Domena','Klienci','Revenue','Repeat%','Avg LTV','VIP','Lost'].map(h => (
+            {['Domena','Klienci','Przychód','Wsk. powrotu','Śr. LTV','VIP','Utraceni'].map(h => (
               <th key={h} style={{ padding: '6px 8px', fontSize: 10, color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: h==='Domena'?'left':'right' }}>{h}</th>
             ))}
           </tr>
@@ -429,11 +429,11 @@ function RfmTab() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Segment table */}
       <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', overflowX: 'auto' }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16, fontFamily: 'IBM Plex Mono, monospace' }}>RFM Segmenty</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16, fontFamily: 'IBM Plex Mono, monospace' }}>Scoring RFM — segmenty</div>
         <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 12 }}>
           <thead>
             <tr style={{ borderBottom: '2px solid #e8e0d8' }}>
-              {['Segment','Klienci','Total LTV','Avg LTV','Avg Orders','Avg Recency','Prob 30d','Pred. LTV 12m'].map(h => (
+              {['Segment','Klienci','Total LTV','Śr. LTV','Śr. zamówień','Śr. recency','Prawdop. 30d','Prognoza LTV 12m'].map(h => (
                 <th key={h} style={{ padding: '6px 10px', fontSize: 10, color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: h==='Segment'?'left':'right' }}>{h}</th>
               ))}
             </tr>
@@ -463,7 +463,7 @@ function RfmTab() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         {/* RFM Heatmap */}
         <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 4, fontFamily: 'IBM Plex Mono, monospace' }}>Heatmap R × F</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 4, fontFamily: 'IBM Plex Mono, monospace' }}>Heatmapa RFM — R × F</div>
           <div style={{ fontSize: 11, color: '#6b6b6b', marginBottom: 16 }}>Kliknij komórkę → filtruj listę klientów</div>
           <table style={{ borderCollapse: 'collapse', fontSize: 11 }}>
             <thead>
@@ -510,7 +510,7 @@ function RfmTab() {
 
         {/* Predictive overview */}
         <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16, fontFamily: 'IBM Plex Mono, monospace' }}>Predictive Overview</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16, fontFamily: 'IBM Plex Mono, monospace' }}>Przegląd predykcji</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
             {[
               { label: 'Pred. revenue 12m', value: formatPLN(pred?.total_predicted_ltv || 0), color: '#b8763a' },
@@ -586,7 +586,7 @@ function JourneyTab() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Journey flow */}
       <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 4, fontFamily: 'IBM Plex Mono, monospace' }}>Ścieżka zakupowa</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 4, fontFamily: 'IBM Plex Mono, monospace' }}>Ścieżka zakupowa klienta</div>
         <div style={{ fontSize: 12, color: '#6b6b6b', marginBottom: 16 }}>Top grupy produktów per numer zamówienia (1.–3.)</div>
         {steps.length === 0 ? (
           <div style={{ color: '#6b6b6b', fontSize: 13 }}>Brak danych — matview wymaga produktów z EAN</div>
@@ -696,8 +696,9 @@ function JourneyTab() {
 // Main
 // ─────────────────────────────────────────────────────────────────────────────
 
-const TABS = ['Lifecycle', 'RFM Scoring', 'Customer Journey'] as const;
+const TABS = ['Lifecycle', 'Scoring RFM', 'Ścieżka zakupowa'] as const;
 type Tab = typeof TABS[number];
+
 
 export default function LifecyclePage() {
   const [data, setData] = useState<LifecycleData | null>(null);
@@ -705,6 +706,7 @@ export default function LifecyclePage() {
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState({ from: '', to: '', label: 'Cała historia' });
   const [activeTab, setActiveTab] = useState<Tab>('Lifecycle');
+
 
   const load = useCallback(() => {
     setLoading(true); setError(null);
@@ -763,8 +765,8 @@ export default function LifecyclePage() {
         </>
       )}
 
-      {activeTab === 'RFM Scoring' && <RfmTab />}
-      {activeTab === 'Customer Journey' && <JourneyTab />}
+      {activeTab === 'Scoring RFM' && <RfmTab />}
+      {activeTab === 'Ścieżka zakupowa' && <JourneyTab />}
     </div>
   );
 }

@@ -136,7 +136,7 @@ function WorldsTab({ worlds }: { worlds: WorldRow[] }) {
       <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 12 }}>
         <thead>
           <tr style={{ borderBottom: '2px solid #e8e0d8' }}>
-            {['Domena','Klienci','Revenue','Repeat rate','Avg LTV','VIP','Lost','Avg orders'].map(h => (
+            {['Domena','Klienci','Przychód','Wsk. powrotu','Śr. LTV','VIP','Utraceni','Śr. zamówień'].map(h => (
               <th key={h} style={{ padding: '8px 10px', fontSize: 10, color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: h==='Domena'?'left':'right', background: '#faf8f5', borderBottom: '2px solid #e8e0d8' }}>{h}</th>
             ))}
           </tr>
@@ -375,8 +375,8 @@ const TABS = [
   { id: 'products', label: 'Produkty' },
   { id: 'worlds', label: 'Domeny' },
   { id: 'seasons', label: 'Sezonowość' },
-  { id: 'crosssell', label: 'Cross-sell' },
-  { id: 'launch', label: '🚀 Launch Monitor' },
+  { id: 'crosssell', label: 'Produkty powiązane' },
+  { id: 'launch', label: '🚀 Monitor nowości' },
 ];
 
 export default function ProductsPage() {

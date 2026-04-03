@@ -15,9 +15,9 @@ const DARK = {
 const MODULES = [
   {
     href: "/crm/analytics",
-    label: "Executive Dashboard",
+    label: "Panel zarządczy",
     icon: "📊",
-    desc: "KPI strategiczne, Value×Risk matrix, Revenue trend, Alerty",
+    desc: "KPI strategiczne, Macierz Wartość×Ryzyko, Trend przychodów, Alerty",
     badge: null,
   },
   {
@@ -45,21 +45,21 @@ const MODULES = [
     href: "/crm/products",
     label: "Produkty & Domeny",
     icon: "📦",
-    desc: "Performance produktów, domeny, sezonowość, cross-sell, launch monitor",
+    desc: "Performance produktów, domeny, sezonowość, produkty powiązane, monitor nowości",
     badge: null,
   },
   {
     href: "/crm/promotions",
     label: "Promocje",
     icon: "🏷️",
-    desc: "Scorecard, promo dependency, kalendarz okazji",
+    desc: "Karta wyników, uzależnienie od promo, kalendarz okazji",
     badge: null,
   },
   {
     href: "/crm/actions",
     label: "Akcje CRM",
     icon: "⚡",
-    desc: "Opportunity queue, lead scoring, gift analysis",
+    desc: "Szanse sprzedaży, scoring sprzedażowy, analiza prezentowa",
     badge: null,
   },
   {

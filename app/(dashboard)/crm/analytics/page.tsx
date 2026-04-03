@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import DateRangePicker from '../components/DateRangePicker';
+import Tooltip from '../components/Tooltip';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface KPIs {
@@ -37,20 +38,20 @@ function formatDate(d: Date): string {
 // ─── Widget Registry ──────────────────────────────────────────────────────────
 const AVAILABLE_WIDGETS = [
   { id: 'kpi_row',           name: 'KPI strategiczne',       description: '8 kart z kluczowymi metrykami',       default: true,  size: 'full' },
-  { id: 'value_risk_matrix', name: 'Value × Risk matrix',    description: 'Heatmap segmentów vs ryzyka',          default: true,  size: 'half' },
-  { id: 'revenue_trend',     name: 'Revenue trend',          description: 'Wykres przychodów 18m',                default: true,  size: 'half' },
-  { id: 'opportunity_cards', name: 'Opportunity cards',      description: '4 karty z akcjami do podjęcia',        default: true,  size: 'full' },
-  { id: 'lifecycle_funnel',  name: 'Lifecycle funnel',       description: 'Lejek New → Diamond',                  default: true,  size: 'half' },
-  { id: 'worlds_performance',name: 'Worlds performance',     description: 'Top światy wg repeat rate',            default: true,  size: 'half' },
-  { id: 'alert_center',      name: 'Alert center',           description: 'Automatyczne alerty i rekomendacje',   default: true,  size: 'full' },
-  { id: 'cohort_mini',       name: 'Kohorty (mini)',         description: 'Ostatnie 6 kohort z retencją M+1/M+3', default: false, size: 'half' },
-  { id: 'promo_dependency',  name: 'Promo dependency',       description: 'Segmentacja promo-zależności',         default: false, size: 'half' },
-  { id: 'time_to_second',    name: 'Time to 2nd order',      description: 'Histogram czasu do drugiego zakupu',   default: false, size: 'half' },
-  { id: 'repeat_ladder',     name: 'Repeat ladder',          description: 'Rozkład klientów wg liczby zamówień',  default: false, size: 'half' },
-  { id: 'top_products',      name: 'Top produkty',           description: 'Top 10 produktów po revenue',         default: false, size: 'half' },
-  { id: 'season_calendar',   name: 'Nadchodzące okazje',     description: 'Najbliższe okazje z danymi YoY',       default: false, size: 'half' },
-  { id: 'segment_migration', name: 'Migracja segmentów',     description: 'Przepływy między segmentami',          default: false, size: 'full' },
-  { id: 'traffic_pulse',     name: 'Traffic pulse',          description: 'Sesje, konwersje i top źródło (7d)',   default: false, size: 'half' },
+  { id: 'value_risk_matrix', name: 'Macierz wartość × ryzyko', description: 'Heatmap segmentów vs ryzyka',          default: true,  size: 'half' },
+  { id: 'revenue_trend',     name: 'Trend przychodów',         description: 'Wykres przychodów 18m',                default: true,  size: 'half' },
+  { id: 'opportunity_cards', name: 'Karty szans',              description: '4 karty z akcjami do podjęcia',        default: true,  size: 'full' },
+  { id: 'lifecycle_funnel',  name: 'Lejek lifecycle',          description: 'Lejek New → Diamond',                  default: true,  size: 'half' },
+  { id: 'worlds_performance',name: 'Wydajność domen',          description: 'Top światy wg repeat rate',            default: true,  size: 'half' },
+  { id: 'alert_center',      name: 'Centrum alertów',          description: 'Automatyczne alerty i rekomendacje',   default: true,  size: 'full' },
+  { id: 'cohort_mini',       name: 'Kohorty (mini)',           description: 'Ostatnie 6 kohort z retencją M+1/M+3', default: false, size: 'half' },
+  { id: 'promo_dependency',  name: 'Uzależnienie od promo',    description: 'Segmentacja promo-zależności',         default: false, size: 'half' },
+  { id: 'time_to_second',    name: 'Czas do 2. zamówienia',    description: 'Histogram czasu do drugiego zakupu',   default: false, size: 'half' },
+  { id: 'repeat_ladder',     name: 'Drabina powrotu',          description: 'Rozkład klientów wg liczby zamówień',  default: false, size: 'half' },
+  { id: 'top_products',      name: 'Top produkty',             description: 'Top 10 produktów po revenue',         default: false, size: 'half' },
+  { id: 'season_calendar',   name: 'Nadchodzące okazje',       description: 'Najbliższe okazje z danymi YoY',       default: false, size: 'half' },
+  { id: 'segment_migration', name: 'Migracja segmentów',       description: 'Przepływy między segmentami',          default: false, size: 'full' },
+  { id: 'traffic_pulse',     name: 'Puls ruchu (7d)',          description: 'Sesje, konwersje i top źródło (7d)',   default: false, size: 'half' },
 ];
 const DEFAULT_WIDGETS = AVAILABLE_WIDGETS.filter(w => w.default).map(w => w.id);
 
@@ -101,7 +102,7 @@ function ErrorState({ message, onRetry }: { message: string | null; onRetry: () 
 }
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
-function KpiCard({ label, value, subtitle, accent }: { label: string; value: string | React.ReactNode; subtitle?: string; accent?: boolean }) {
+function KpiCard({ label, value, subtitle, accent }: { label: string | React.ReactNode; value: string | React.ReactNode; subtitle?: string; accent?: boolean }) {
   return (
     <div style={{ background: '#ffffff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
       <div style={{ fontSize: 11, color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>{label}</div>
@@ -121,14 +122,14 @@ function KpiRow({ kpis, promo, revenue }: { kpis: KPIs; promo: Promo; revenue: R
   const newPct = promo?.new_product_share_pct || 0;
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 4 }}>
-      <KpiCard label="Active (zakres)" value={formatNumber(activeClients)} subtitle={`z ${formatNumber(kpis.total_clients)} wszystkich`} />
-      <KpiCard label="Repeat rate" value={repeatRate + '%'} subtitle={`${formatNumber(repeaters)} powracających`} accent={parseFloat(repeatRate) < 10} />
-      <KpiCard label="Repeat revenue 90d" value={formatPLN(last3Repeat)} subtitle="ostatnie 3 miesiące" />
-      <KpiCard label="At-risk revenue" value={formatPLN(kpis.at_risk_revenue)} subtitle={`${formatNumber(kpis.at_risk_count)} klientów`} accent />
-      <KpiCard label="Winback VIP" value={formatNumber(kpis.winback_vip_count)} subtitle={`~${formatPLN(kpis.winback_vip_revenue)} potential`} />
-      <KpiCard label="2nd order candidates" value={formatNumber(kpis.second_order_candidates)} subtitle="New, 30-90d window" />
-      <KpiCard label="Promo share" value={(promo?.promo_share_pct || 0) + '%'} subtitle={`${formatPLN(promo?.promo_revenue || 0)} z ${formatPLN(promo?.total_revenue || 0)}`} />
-      <KpiCard label="Nowości share" value={newPct.toFixed(0) + '%'} subtitle="udział nowości w sprzedaży" />
+      <KpiCard label={<Tooltip text="Liczba klientów, którzy złożyli zamówienie w ostatnich 90 dniach">Aktywni 90d</Tooltip>} value={formatNumber(activeClients)} subtitle={`z ${formatNumber(kpis.total_clients)} wszystkich`} />
+      <KpiCard label={<Tooltip text="Procent klientów aktywnych 90d z więcej niż 1 zamówieniem">Wsk. powtarzalności 90d</Tooltip>} value={repeatRate + '%'} subtitle={`${formatNumber(repeaters)} powracających`} accent={parseFloat(repeatRate) < 10} />
+      <KpiCard label={<Tooltip text="Suma przychodów od klientów z 2+ zamówieniami w ostatnich 3 miesiącach">Przychód powracających</Tooltip>} value={formatPLN(last3Repeat)} subtitle="ostatnie 3 miesiące" />
+      <KpiCard label={<Tooltip text="Suma LTV klientów Diamond/Platinum/Gold ze statusem Risk lub HighRisk">Zagrożony przychód</Tooltip>} value={formatPLN(kpis.at_risk_revenue)} subtitle={`${formatNumber(kpis.at_risk_count)} klientów`} accent />
+      <KpiCard label={<Tooltip text="Klienci Diamond/Platinum w statusie Utraceni lub Wysokie ryzyko">VIP do odzyskania</Tooltip>} value={formatNumber(kpis.winback_vip_count)} subtitle={`~${formatPLN(kpis.winback_vip_revenue)} potential`} />
+      <KpiCard label={<Tooltip text="Klienci z 1 zamówieniem złożonym 30-90 dni temu">Kandydaci na 2. zam.</Tooltip>} value={formatNumber(kpis.second_order_candidates)} subtitle="New, 30-90d window" />
+      <KpiCard label={<Tooltip text="Procent przychodu z ostatnich 90 dni wygenerowany podczas promocji">Udział promo</Tooltip>} value={(promo?.promo_share_pct || 0) + '%'} subtitle={`${formatPLN(promo?.promo_revenue || 0)} z ${formatPLN(promo?.total_revenue || 0)}`} />
+      <KpiCard label={<Tooltip text="Procent przychodu z produktów oznaczonych jako nowość">Udział nowości</Tooltip>} value={newPct.toFixed(0) + '%'} subtitle="udział nowości w sprzedaży" />
     </div>
   );
 }
@@ -149,7 +150,8 @@ function ValueRiskMatrix({ matrix }: { matrix: MatrixRow[] }) {
   const maxLtv = Math.max(...matrix.map(r => r.total_ltv), 1);
   return (
     <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16, fontFamily: 'IBM Plex Mono, monospace' }}>Value × Risk matrix</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 4, fontFamily: 'IBM Plex Mono, monospace' }}>Macierz Wartość × Ryzyko</div>
+      <div style={{ fontSize: 11, color: '#6b6b6b', marginBottom: 12 }}>Wiersze: segmenty wg wartości (Diamond = najcenniejsi). Kolumny: poziom ryzyka odejścia. Kliknij komórkę aby zobaczyć listę klientów.</div>
       <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 12 }}>
         <thead>
           <tr>
@@ -245,10 +247,10 @@ function RevenueTrend({ revenue }: { revenue: RevenueRow[] }) {
   return (
     <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', fontFamily: 'IBM Plex Mono, monospace' }}>Revenue trend</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', fontFamily: 'IBM Plex Mono, monospace' }}>Trend przychodów</div>
         <div style={{ display: 'flex', gap: 12, fontSize: 11, color: '#6b6b6b', alignItems: 'center' }}>
-          <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#2d8a4e', borderRadius: 2, marginRight: 4 }} />Repeat</span>
-          <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#d4cfc7', borderRadius: 2, marginRight: 4 }} />New</span>
+          <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#2d8a4e', borderRadius: 2, marginRight: 4 }} />🟢 Przychód powracających</span>
+          <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#d4cfc7', borderRadius: 2, marginRight: 4 }} />🔘 Nowi klienci</span>
         </div>
       </div>
       <div style={{ height: 220 }}><canvas ref={canvasRef} /></div>
@@ -259,10 +261,10 @@ function RevenueTrend({ revenue }: { revenue: RevenueRow[] }) {
 // ─── Opportunity Cards ────────────────────────────────────────────────────────
 function OpportunityCards({ kpis, promo }: { kpis: KPIs; promo: Promo }) {
   const cards = [
-    { color: '#d44', title: 'VIP reactivation', desc: 'Diamond/Platinum, Lost/HighRisk', value: formatNumber(kpis.winback_vip_count), sub: 'Revenue pool: ' + formatPLN(kpis.winback_vip_revenue), href: '/crm/winback', link: 'Zobacz segment →' },
-    { color: '#e6a817', title: 'Convert to 2nd order', desc: 'First-time buyers, 30-90d window', value: formatNumber(kpis.second_order_candidates), sub: 'Optymalny moment na kampanię', href: '/crm/clients?segment=New', link: 'Zobacz segment →' },
-    { color: '#3577b3', title: 'Promo share revenue', desc: 'Udział promo w revenue', value: (promo?.promo_share_pct || 0) + '%', sub: formatPLN(promo?.promo_revenue || 0) + ' z ' + formatPLN(promo?.total_revenue || 0), href: '/crm/clients', link: 'Filtruj klientów →' },
-    { color: '#2d8a4e', title: 'Diamond klienci', desc: 'Legacy Diamond segment', value: formatNumber(kpis.diamond_count), sub: 'avg LTV: ' + formatPLN((kpis.total_ltv || 0) / Math.max(kpis.diamond_count || 1, 1)), href: '/crm/clients?segment=Diamond', link: 'Zobacz segment →' },
+    { color: '#d44', title: 'Reaktywacja VIP', desc: 'Diamond/Platinum, Lost/HighRisk', value: formatNumber(kpis.winback_vip_count), sub: 'Pula przychodów: ' + formatPLN(kpis.winback_vip_revenue), href: '/crm/winback', link: 'Zobacz segment →' },
+    { color: '#e6a817', title: 'Konwersja na 2. zamówienie', desc: 'Klienci po 1. zakupie, okno 30-90d', value: formatNumber(kpis.second_order_candidates), sub: 'Optymalny moment na kampanię', href: '/crm/clients?segment=New', link: 'Zobacz segment →' },
+    { color: '#3577b3', title: 'Udział promo w przychodzie', desc: 'Udział promo w revenue', value: (promo?.promo_share_pct || 0) + '%', sub: formatPLN(promo?.promo_revenue || 0) + ' z ' + formatPLN(promo?.total_revenue || 0), href: '/crm/clients', link: 'Filtruj klientów →' },
+    { color: '#2d8a4e', title: 'Klienci Diamond', desc: 'Segment Legacy Diamond', value: formatNumber(kpis.diamond_count), sub: 'avg LTV: ' + formatPLN((kpis.total_ltv || 0) / Math.max(kpis.diamond_count || 1, 1)), href: '/crm/clients?segment=Diamond', link: 'Zobacz segment →' },
   ];
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 20 }}>
@@ -291,7 +293,7 @@ function LifecycleFunnel({ funnel }: { funnel: FunnelRow[] }) {
   const maxCount = Math.max(...sorted.map(s => s.client_count), 1);
   return (
     <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16, fontFamily: 'IBM Plex Mono, monospace' }}>Lifecycle funnel</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16, fontFamily: 'IBM Plex Mono, monospace' }}>Lejek lifecycle</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {sorted.map((row, i) => {
           const barWidth = Math.max((row.client_count / maxCount) * 100, 4);
@@ -321,11 +323,11 @@ function WorldsPerformance({ worlds }: { worlds: WorldRow[] }) {
   const maxRepeatRate = Math.max(...worlds.map(w => w.repeat_rate || 0), 1);
   return (
     <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16, fontFamily: 'IBM Plex Mono, monospace' }}>Worlds performance</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16, fontFamily: 'IBM Plex Mono, monospace' }}>Wydajność domen</div>
       <table style={{ borderCollapse: 'collapse', width: '100%' }}>
         <thead>
           <tr style={{ borderBottom: '2px solid #e8e0d8' }}>
-            {['World', 'Klienci', 'Repeat rate', 'Avg LTV', 'VIP%'].map(h => (
+            {['Domena', 'Klienci', 'Wsk. powrotu', 'Śr. LTV', 'VIP%'].map(h => (
               <th key={h} style={{ padding: '6px 8px', fontSize: 10, color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: h === 'World' ? 'left' : 'right', fontWeight: 600 }}>{h}</th>
             ))}
           </tr>
@@ -386,7 +388,7 @@ function AlertCenter({ kpis, promo, worlds }: { kpis: KPIs; promo: Promo; worlds
   if (!alerts.length) return null;
   return (
     <div style={{ marginTop: 20 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 10 }}>Alerty</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 10 }}>Centrum alertów</div>
       {alerts.map((a, i) => (
         <div key={i} style={{ borderLeft: `4px solid ${ALERT_COLORS[a.type]}`, background: ALERT_BG[a.type], padding: '12px 16px', marginBottom: 8, borderRadius: '0 4px 4px 0', fontSize: 13, color: '#1a1a1a' }}>
           {a.text}
@@ -462,7 +464,7 @@ function MiniPromo() {
   }, []);
   const segments = (data?.dependency || data?.promo_segments || []).filter((s: any) => s.dependency_segment !== 'never_promo');
   return (
-    <MiniWidgetShell title="Promo dependency" href="/crm/promotions" loading={loading}>
+    <MiniWidgetShell title="Uzależnienie od promo" href="/crm/promotions" loading={loading}>
       {segments.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {segments.slice(0, 5).map((s: any, i: number) => {
@@ -491,7 +493,7 @@ function MiniTimeToSecond() {
   }, []);
   const buckets = data?.timeToSecond || data?.time_to_second || data?.histogram || [];
   return (
-    <MiniWidgetShell title="Time to 2nd order" href="/crm/cohorts" loading={loading}>
+    <MiniWidgetShell title="Czas do 2. zamówienia" href="/crm/cohorts" loading={loading}>
       {buckets.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           {buckets.map((b: any, i: number) => {
@@ -522,7 +524,7 @@ function MiniRepeatLadder() {
   const ladder = data?.ladder || [];
   const maxClients = Math.max(...ladder.map((r: any) => r.clients || 0), 1);
   return (
-    <MiniWidgetShell title="Repeat ladder" href="/crm/lifecycle" loading={loading}>
+    <MiniWidgetShell title="Drabina powrotu" href="/crm/lifecycle" loading={loading}>
       {ladder.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           {ladder.slice(0, 7).map((r: any, i: number) => (
@@ -618,7 +620,7 @@ function MiniTrafficPulse() {
   const ga4Ok = data?.overview?.ga4_configured;
 
   return (
-    <MiniWidgetShell title="Traffic pulse (7d)" href="/crm/traffic" loading={loading}>
+    <MiniWidgetShell title="Puls ruchu (7d)" href="/crm/traffic" loading={loading}>
       {!ga4Ok ? (
         <div style={{ fontSize: 12, color: '#999', textAlign: 'center', padding: 20 }}>GA4 nie skonfigurowane</div>
       ) : !kpis ? (
@@ -740,7 +742,7 @@ function WidgetPicker({ customWidgets, onChange, onSave, onReset }: {
       </div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
         <button onClick={onReset} style={{ padding: '6px 12px', fontSize: 12, border: '1px solid #e8e0d8', borderRadius: 4, cursor: 'pointer', background: '#fff', fontFamily: 'IBM Plex Mono, monospace' }}>
-          Reset do domyślnych
+          Przywróć domyślne
         </button>
         <button onClick={onSave} style={{ padding: '6px 12px', fontSize: 12, border: 'none', borderRadius: 4, cursor: 'pointer', background: '#b8763a', color: '#fff', fontFamily: 'IBM Plex Mono, monospace' }}>
           Zapisz konfigurację
@@ -830,7 +832,7 @@ export default function ExecutiveDashboard() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: '#1a1a1a', margin: 0, marginBottom: 6 }}>Executive Dashboard</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: '#1a1a1a', margin: 0, marginBottom: 6 }}>Panel zarządczy</h1>
           <div style={{ fontSize: 13, color: '#6b6b6b' }}>Stan bazy klientów Nadwyraz.com · odświeżono {formatDate(lastRefresh)}</div>
         </div>
         <button onClick={load} style={{ padding: '7px 16px', border: '1px solid #e8e0d8', background: '#fff', borderRadius: 4, fontSize: 12, cursor: 'pointer', color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', flexShrink: 0 }}>
@@ -862,7 +864,7 @@ export default function ExecutiveDashboard() {
             background: editMode ? '#b8763a' : '#fff', color: editMode ? '#fff' : '#6b6b6b',
             cursor: 'pointer', fontFamily: 'IBM Plex Mono, monospace',
           }}>
-            {editMode ? 'Zamknij edycję' : '⚙ Edytuj widgety'}
+            {editMode ? 'Zamknij edycję' : '⚙ Edytuj widżety'}
           </button>
         )}
       </div>

@@ -260,7 +260,7 @@ export default function ClientsView() {
             </select>
           </div>
           <div className="cl-filter-group">
-            <span className="cl-filter-label">Risk</span>
+            <span className="cl-filter-label">Ryzyko</span>
             <select className="cl-select" value={risk} onChange={e => setParam("risk", e.target.value)}>
               <option value="">Wszystkie</option>
               {["OK","Risk","HighRisk","Lost"].map(r => <option key={r} value={r}>{r}</option>)}
@@ -301,7 +301,7 @@ export default function ClientsView() {
             </select>
           </div>
           <div className="cl-filter-group">
-            <span className="cl-filter-label">RFM Segment</span>
+            <span className="cl-filter-label">Segment RFM</span>
             <select className="cl-select" value={rfm_segment} onChange={e => setParam("rfm_segment", e.target.value)}>
               <option value="">Wszystkie</option>
               {["Champions","Loyal","Potential Loyal","Recent","Promising","Need Attention","About to Sleep","At Risk","Cant Lose","Hibernating","Lost","Other"].map(s => <option key={s} value={s}>{s}</option>)}
@@ -311,10 +311,10 @@ export default function ClientsView() {
             <span className="cl-filter-label">Lead temp</span>
             <select className="cl-select" value={lead_temp} onChange={e => setParam("lead_temp", e.target.value)}>
               <option value="">Wszystkie</option>
-              <option value="Hot">🔥 Hot</option>
-              <option value="Warm">🟡 Warm</option>
-              <option value="Cool">🔵 Cool</option>
-              <option value="Cold">❄️ Cold</option>
+              <option value="Hot">🔥 Gorący</option>
+              <option value="Warm">🟡 Ciepły</option>
+              <option value="Cool">🔵 Chłodny</option>
+              <option value="Cold">❄️ Zimny</option>
             </select>
           </div>
           <div className="cl-filter-group">

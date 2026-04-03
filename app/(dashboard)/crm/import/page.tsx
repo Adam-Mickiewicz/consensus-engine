@@ -486,7 +486,7 @@ export default function ImportPage() {
                       <th>Okres</th>
                       <th style={{ textAlign: "right" }}>Klienci</th>
                       <th style={{ textAlign: "right" }}>Zamówienia</th>
-                      <th style={{ textAlign: "right" }}>Revenue</th>
+                      <th style={{ textAlign: "right" }}>Przychód</th>
                       <th style={{ textAlign: "right" }}>Śr. AOV</th>
                     </tr>
                   </thead>

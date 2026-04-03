@@ -339,12 +339,12 @@ export default function TrafficPage() {
   useEffect(() => { fetchData(tab, period); }, [tab, period, fetchData]);
 
   const TABS: { id: Tab; label: string }[] = [
-    { id: 'overview', label: 'Overview' },
+    { id: 'overview', label: 'Przegląd' },
     { id: 'sources', label: 'Źródła' },
-    { id: 'funnel', label: 'Funnel' },
+    { id: 'funnel', label: 'Lejek' },
     { id: 'products', label: 'Produkty' },
-    { id: 'search', label: 'Wyszukiwanie' },
-    { id: 'devices', label: 'Geo & Devices' },
+    { id: 'search', label: 'Wyszukiwania' },
+    { id: 'devices', label: 'Geo i urządzenia' },
   ];
 
   const pillBtn = (active: boolean) => ({
@@ -499,7 +499,7 @@ function SourcesTab({ data }: { data: any }) {
                 <Th right>Nowi</Th>
                 <Th right>Zakupy</Th>
                 <Th right>Przychód</Th>
-                <Th right>Conv. rate</Th>
+                <Th right>Wsk. konwersji</Th>
               </tr>
             </thead>
             <tbody>
@@ -535,7 +535,7 @@ function SourcesTab({ data }: { data: any }) {
                 <Th right>Sesje</Th>
                 <Th right>Zakupy</Th>
                 <Th right>Przychód</Th>
-                <Th right>Conv. rate</Th>
+                <Th right>Wsk. konwersji</Th>
               </tr>
             </thead>
             <tbody>
@@ -566,7 +566,7 @@ function SourcesTab({ data }: { data: any }) {
                   <Th right>Sesje</Th>
                   <Th right>Zakupy</Th>
                   <Th right>Przychód</Th>
-                  <Th right>Conv. rate</Th>
+                  <Th right>Wsk. konwersji</Th>
                 </tr>
               </thead>
               <tbody>
@@ -643,7 +643,7 @@ function ProductsTab({ data }: { data: any }) {
               <Th right>Odsłony</Th>
               <Th right>Zakupy</Th>
               <Th right>Przychód</Th>
-              <Th right>Conv. rate</Th>
+              <Th right>Wsk. konwersji</Th>
             </tr>
           </thead>
           <tbody>

@@ -103,10 +103,10 @@ const RISK_COLORS: Record<string, string> = {
 };
 
 const TEMP_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  Hot:  { bg: T.danger,  text: '#fff', label: '🔥 Hot'  },
-  Warm: { bg: T.warning, text: '#fff', label: '🟡 Warm' },
-  Cool: { bg: T.info,    text: '#fff', label: '🔵 Cool' },
-  Cold: { bg: '#999',    text: '#fff', label: '❄️ Cold' },
+  Hot:  { bg: T.danger,  text: '#fff', label: '🔥 Gorący'  },
+  Warm: { bg: T.warning, text: '#fff', label: '🟡 Ciepły' },
+  Cool: { bg: T.info,    text: '#fff', label: '🔵 Chłodny' },
+  Cold: { bg: '#999',    text: '#fff', label: '❄️ Zimny' },
 };
 
 // ─── Action Suggestions ───────────────────────────────────────────────────────
@@ -303,7 +303,7 @@ function LeadScoringTab() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead style={{ position: 'sticky', top: 0, background: T.bg, zIndex: 1 }}>
               <tr>
-                {['Client ID','Segment','Lead Score','Prob. 30d','Pred. LTV 12m','Nieakt.','Domena'].map(h => (
+                {['Client ID','Segment','Scoring sprzedażowy','Prawdop. 30d','Prognoza LTV 12m','Nieakt.','Domena'].map(h => (
                   <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase', whiteSpace: 'nowrap', borderBottom: `1px solid ${T.border}` }}>{h}</th>
                 ))}
               </tr>
@@ -340,8 +340,8 @@ function LeadScoringTab() {
 
       {/* Scoring methodology */}
       <div style={{ background: '#faf8f5', border: `1px solid ${T.border}`, borderRadius: 8, padding: 16 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8, fontFamily: 'IBM Plex Mono, monospace' }}>Metodologia scoringu</div>
-        <div style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>Lead score składa się z pięciu czynników:</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8, fontFamily: 'IBM Plex Mono, monospace' }}>Metodologia scoringu sprzedażowego</div>
+        <div style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>Scoring sprzedażowy składa się z pięciu czynników:</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
           {[
             { label: 'Purchase probability', pct: 40, color: T.danger },
@@ -483,9 +483,9 @@ function GiftAnalysisTab() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'queue',  label: 'Opportunity Queue' },
-  { id: 'leads',  label: 'Lead Scoring'       },
-  { id: 'gift',   label: 'Gift Analysis'      },
+  { id: 'queue',  label: 'Szanse sprzedaży'     },
+  { id: 'leads',  label: 'Scoring sprzedażowy'  },
+  { id: 'gift',   label: 'Analiza prezentowa'   },
 ];
 
 export default function ActionsPage() {

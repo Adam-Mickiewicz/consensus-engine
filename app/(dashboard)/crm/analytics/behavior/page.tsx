@@ -15,9 +15,9 @@ const SEG_OPTIONS = [
 const RISK_OPTIONS = [
   { value: "", label: "Wszystkie poziomy" },
   { value: "OK",       label: "✅ OK" },
-  { value: "Risk",     label: "⚠️ Risk" },
-  { value: "HighRisk", label: "🔴 HighRisk" },
-  { value: "Lost",     label: "💀 Lost" },
+  { value: "Risk",     label: "⚠️ Ryzyko" },
+  { value: "HighRisk", label: "🔴 Wysokie ryzyko" },
+  { value: "Lost",     label: "💀 Utraceni" },
 ];
 const DOMENY = [
   "Hobby", "Literatura", "Polszczyzna", "Zwierzęta", "Relacje i miłość",

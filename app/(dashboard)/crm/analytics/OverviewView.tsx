@@ -256,7 +256,7 @@ export default function OverviewView() {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead>
                     <tr>
-                      {["Segment", "Klienci", "% bazy", "Suma LTV", "Avg LTV"].map(h => (
+                      {["Segment", "Klienci", "% bazy", "Suma LTV", "Śr. LTV"].map(h => (
                         <th key={h} style={{ padding: "8px 12px", textAlign: h === "Segment" ? "left" : "right", color: t.textSub, fontSize: 10, fontWeight: 500, borderBottom: `1px solid ${t.border}` }}>{h}</th>
                       ))}
                     </tr>

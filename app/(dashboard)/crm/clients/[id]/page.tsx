@@ -554,12 +554,13 @@ function TagGroup({ label, items, limit = 5, chipStyle, t }: {
 function Barometer({ data, t }: { data: BarometerData; t: typeof DARK }) {
   return (
     <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 8, padding: 16, marginBottom: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
         <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace", color: t.text }}>
           Barometr klienta
         </span>
         <span style={{ fontSize: 20, fontWeight: 700, color: data.color }}>{data.score}/100</span>
       </div>
+      <div style={{ fontSize: 11, color: t.textSub, marginBottom: 8, fontStyle: 'italic' }}>Kondycja klienta (0–100): Recency 40% · Częstotliwość 30% · Wartość 20% · Trend 10%</div>
       <div style={{ height: 8, background: t.border, borderRadius: 4, overflow: "hidden", marginBottom: 6 }}>
         <div style={{ height: "100%", width: `${data.score}%`, background: data.color, borderRadius: 4, transition: "width 0.5s ease" }} />
       </div>
@@ -939,9 +940,9 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
               { label: "Zamówienia", val: String(profile.orders_count ?? "—"), color: t.text },
               { label: "Pierwszy zakup", val: profile.first_order?.slice(0, 10) ?? "—", color: t.text },
               { label: "Ostatni zakup", val: profile.last_order?.slice(0, 10) ?? "—", color: t.text },
-              ...(profile.purchase_probability_30d != null ? [{ label: "Prob. zakupu 30d", val: `${Number(profile.purchase_probability_30d).toFixed(1)}%`, color: Number(profile.purchase_probability_30d) > 50 ? "#2d8a4e" : Number(profile.purchase_probability_30d) > 20 ? "#e6a817" : "#dd4444" }] : []),
-              ...(profile.predicted_ltv_12m != null ? [{ label: "Pred. LTV 12m", val: `${Number(profile.predicted_ltv_12m).toLocaleString("pl-PL", { maximumFractionDigits: 0 })} zł`, color: "#3577b3" }] : []),
-              ...(profile.lead_score != null ? [{ label: "Lead Score", val: String(profile.lead_score), color: TEMP_COLORS[profile.lead_temperature ?? ""] ?? t.text }] : []),
+              ...(profile.purchase_probability_30d != null ? [{ label: "Prawdop. zakupu 30d", val: `${Number(profile.purchase_probability_30d).toFixed(1)}%`, color: Number(profile.purchase_probability_30d) > 50 ? "#2d8a4e" : Number(profile.purchase_probability_30d) > 20 ? "#e6a817" : "#dd4444" }] : []),
+              ...(profile.predicted_ltv_12m != null ? [{ label: "Prognoza LTV 12m", val: `${Number(profile.predicted_ltv_12m).toLocaleString("pl-PL", { maximumFractionDigits: 0 })} zł`, color: "#3577b3" }] : []),
+              ...(profile.lead_score != null ? [{ label: "Scoring sprzedażowy", val: String(profile.lead_score), color: TEMP_COLORS[profile.lead_temperature ?? ""] ?? t.text }] : []),
               ...(profile.lead_temperature ? [{ label: "Temperatura", val: profile.lead_temperature, color: TEMP_COLORS[profile.lead_temperature] ?? t.text }] : []),
             ].map(({ label, val, color }) => (
               <div key={label} style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
@@ -952,7 +953,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
             {/* Gift indicator */}
             <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: giftColor }}>🎁 {giftScore}%</div>
-              <div style={{ fontSize: 10, color: t.textSub, marginTop: 2 }}>Gift indicator</div>
+              <div style={{ fontSize: 10, color: t.textSub, marginTop: 2 }}>Wskaźnik prezentowy</div>
               <div style={{ fontSize: 10, color: giftColor, marginTop: 2 }}>{giftLabel}</div>
             </div>
           </div>

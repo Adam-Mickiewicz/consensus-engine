@@ -680,8 +680,8 @@ export default function PromotionsPage() {
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: 4, width: 'fit-content' }}>
         {([
-          { key: 'scorecard', label: 'Scorecard' },
-          { key: 'dependency', label: 'Promo Dependency' },
+          { key: 'scorecard', label: 'Karta wyników' },
+          { key: 'dependency', label: 'Uzależnienie od promo' },
           { key: 'seasons', label: 'Sezonowość' },
           { key: 'calendar', label: 'Kalendarz' },
         ] as const).map((t) => (

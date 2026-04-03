@@ -64,8 +64,9 @@ function RetentionHeatmap({ retention }: { retention: RetentionRow[] }) {
 
   return (
     <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', overflowX: 'auto' }}>
-      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 4, fontFamily: 'IBM Plex Mono, monospace' }}>Cohort retention heatmap</div>
-      <div style={{ fontSize: 12, color: '#6b6b6b', marginBottom: 16 }}>% klientów z kohorty którzy wrócili w danym miesiącu · zielony &gt; 8% · żółty 4-8% · czerwony &lt; 4%</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 4, fontFamily: 'IBM Plex Mono, monospace' }}>Heatmapa retencji kohort</div>
+      <div style={{ fontSize: 12, color: '#6b6b6b', marginBottom: 4 }}>% klientów z kohorty którzy wrócili w danym miesiącu · zielony &gt; 8% · żółty 4-8% · czerwony &lt; 4%</div>
+      <div style={{ fontSize: 12, color: '#6b6b6b', marginBottom: 16, fontStyle: 'italic' }}>Wiersz = miesiąc pierwszego zakupu. Komórka = % klientów z kohorty, którzy kupili ponownie w miesiącu M+N.</div>
       <table style={{ borderCollapse: 'collapse', fontSize: 11, minWidth: 700 }}>
         <thead>
           <tr>
@@ -301,7 +302,7 @@ export default function CohortsPage() {
 
       {insights.length > 0 && (
         <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 10 }}>Key Insights</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 10 }}>Kluczowe obserwacje</div>
           {insights.map((ins, i) => (
             <div key={i} style={{ borderLeft: `4px solid ${INSIGHT_COLORS[ins.type]}`, background: INSIGHT_BG[ins.type], padding: '12px 16px', marginBottom: 8, borderRadius: '0 4px 4px 0', fontSize: 13, color: '#1a1a1a' }}>
               {ins.text}

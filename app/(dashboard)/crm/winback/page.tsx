@@ -166,8 +166,8 @@ function WinbackContent() {
   const TIER_OPTS: { value: Tier; label: string }[] = [
     { value: "vip",      label: "💎 VIP REANIMACJA" },
     { value: "all",      label: "Wszyscy" },
-    { value: "lost",     label: "Lost" },
-    { value: "highrisk", label: "High Risk" },
+    { value: "lost",     label: "Utraceni" },
+    { value: "highrisk", label: "Wysokie ryzyko" },
   ];
 
   return (
