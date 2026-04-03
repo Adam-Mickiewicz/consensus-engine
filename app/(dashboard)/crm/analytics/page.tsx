@@ -1,7 +1,7 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import DateRangePicker from '../components/DateRangePicker';
 import Tooltip from '../components/Tooltip';
 
@@ -794,17 +794,14 @@ export default function ExecutiveDashboard() {
 
   const load = useCallback(() => {
     setLoading(true); setError(null);
-    const params = new URLSearchParams();
-    if (dateRange.from) params.set('date_from', dateRange.from);
-    if (dateRange.to) params.set('date_to', dateRange.to);
-    fetch(`/api/crm/dashboard?${params}`)
+    fetch('/api/crm/dashboard')
       .then(r => r.json())
       .then((d: DashboardData & { error?: string }) => {
         if (d.error) throw new Error(d.error);
         setData(d); setLastRefresh(new Date()); setLoading(false);
       })
       .catch((e: Error) => { setError(e.message); setLoading(false); });
-  }, [dateRange.from, dateRange.to]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
@@ -812,6 +809,23 @@ export default function ExecutiveDashboard() {
   if (error || !data) return <ErrorState message={error} onRetry={load} />;
 
   const { kpis, matrix, revenue, funnel, worlds, promo } = data;
+
+  // Client-side date filtering — instant, no extra fetches
+  const filteredRevenue = useMemo(() => {
+    if (!revenue?.length || !dateRange.from) return revenue || [];
+    return revenue.filter(r => r.month >= dateRange.from && r.month <= dateRange.to);
+  }, [revenue, dateRange.from, dateRange.to]);
+
+  const filteredPromo = useMemo(() => {
+    const total = filteredRevenue.reduce((s, r) => s + (r.total_revenue || 0), 0);
+    const promoRev = filteredRevenue.reduce((s, r) => s + (r.promo_revenue || 0), 0);
+    return {
+      ...promo,
+      total_revenue: total,
+      promo_revenue: promoRev,
+      promo_share_pct: total > 0 ? Math.round(promoRev / total * 1000) / 10 : 0,
+    };
+  }, [filteredRevenue, promo]);
 
   const activeWidgets = dashboardMode === 'general' ? AVAILABLE_WIDGETS.map(w => w.id) : customWidgets;
   const show = (id: string) => activeWidgets.includes(id);
@@ -880,7 +894,7 @@ export default function ExecutiveDashboard() {
       )}
 
       {/* KPI row */}
-      {show('kpi_row') && <KpiRow kpis={kpis} promo={promo} revenue={revenue} />}
+      {show('kpi_row') && <KpiRow kpis={kpis} promo={filteredPromo} revenue={filteredRevenue} />}
 
       {/* Half-width pairs */}
       {halfPairs.map(([a, b]) => {
@@ -891,7 +905,7 @@ export default function ExecutiveDashboard() {
         const renderWidget = (id: string) => {
           switch (id) {
             case 'value_risk_matrix': return <ValueRiskMatrix matrix={matrix} />;
-            case 'revenue_trend': return <RevenueTrend revenue={revenue} />;
+            case 'revenue_trend': return <RevenueTrend revenue={filteredRevenue} />;
             case 'lifecycle_funnel': return <LifecycleFunnel funnel={funnel} />;
             case 'worlds_performance': return <WorldsPerformance worlds={worlds} />;
             case 'cohort_mini': return <MiniCohort />;
@@ -921,13 +935,13 @@ export default function ExecutiveDashboard() {
       })}
 
       {/* Full-width widgets */}
-      {show('opportunity_cards') && <OpportunityCards kpis={kpis} promo={promo} />}
+      {show('opportunity_cards') && <OpportunityCards kpis={kpis} promo={filteredPromo} />}
       {show('segment_migration') && (
         <div style={{ marginTop: 20 }}>
           <MiniSegmentMigration />
         </div>
       )}
-      {show('alert_center') && <AlertCenter kpis={kpis} promo={promo} worlds={worlds} />}
+      {show('alert_center') && <AlertCenter kpis={kpis} promo={filteredPromo} worlds={worlds} />}
     </div>
   );
 }
