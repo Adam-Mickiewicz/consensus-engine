@@ -258,7 +258,7 @@ function DependencyTab({ dependency }: { dependency: PromoDependency[] }) {
         </div>
         <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
           {dependency.map((row) => {
-            const cfg = DEP_LABELS[row.dependency_segment] || { label: row.dependency_segment, color: T.muted, bg: T.bg, tooltip: '' };
+            const cfg = (DEP_LABELS[row.dependency_segment] || { label: row.dependency_segment, color: T.muted, bg: T.bg, tooltip: '' }) as { label: string; color: string; bg: string; tooltip: string };
             const pct = total > 0 ? ((row.client_count / total) * 100).toFixed(1) : '0';
             return (
               <div key={row.dependency_segment} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
