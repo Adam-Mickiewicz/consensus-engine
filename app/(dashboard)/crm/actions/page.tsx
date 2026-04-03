@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
 import Tooltip from '../components/Tooltip';
+import DateRangePicker from '../components/DateRangePicker';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -252,16 +253,22 @@ function SegmentTable({ clients, segmentKey, onClose }: { clients: SegmentClient
 
 // ─── Lead Scoring Tab ─────────────────────────────────────────────────────────
 
-function LeadScoringTab() {
+function LeadScoringTab({ dateRange }: { dateRange: { from: string; to: string; label: string } }) {
   const [data, setData] = useState<{ distribution: LeadDist[]; topHot: HotLead[] } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/crm/lead-scoring')
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (dateRange.label !== 'Cała historia') {
+      params.set('date_from', dateRange.from);
+      params.set('date_to', dateRange.to);
+    }
+    fetch(`/api/crm/lead-scoring${params.toString() ? '?' + params : ''}`)
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
+  }, [dateRange.from, dateRange.to]);
 
   if (loading) return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -376,16 +383,22 @@ function LeadScoringTab() {
 
 // ─── Gift Analysis Tab ────────────────────────────────────────────────────────
 
-function GiftAnalysisTab() {
+function GiftAnalysisTab({ dateRange }: { dateRange: { from: string; to: string; label: string } }) {
   const [data, setData] = useState<{ giftDistribution: GiftDist[] } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/crm/lead-scoring')
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (dateRange.label !== 'Cała historia') {
+      params.set('date_from', dateRange.from);
+      params.set('date_to', dateRange.to);
+    }
+    fetch(`/api/crm/lead-scoring${params.toString() ? '?' + params : ''}`)
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
+  }, [dateRange.from, dateRange.to]);
 
   if (loading) return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -505,14 +518,23 @@ export default function ActionsPage() {
   const [expandedSegment, setExpandedSegment] = useState<string | null>(null);
   const [segmentClients, setSegmentClients] = useState<SegmentClient[] | null>(null);
   const [segmentLoading, setSegmentLoading] = useState(false);
+  const [dateRange, setDateRange] = useState({ from: new Date(Date.now() - 90 * 86400000).toISOString().split('T')[0], to: new Date().toISOString().split('T')[0], label: 'Ostatnie 90d' });
 
-  useEffect(() => {
-    fetch('/api/crm/actions')
+  const loadQueue = useCallback(() => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (dateRange.label !== 'Cała historia') {
+      params.set('date_from', dateRange.from);
+      params.set('date_to', dateRange.to);
+    }
+    fetch(`/api/crm/actions${params.toString() ? '?' + params : ''}`)
       .then(r => r.json())
       .then(d => { if (d.error) setError(d.error); else setOpportunities(d.opportunities || []); })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [dateRange.from, dateRange.to]);
+
+  useEffect(() => { loadQueue(); }, [loadQueue]);
 
   const expandSegment = useCallback((segKey: string) => {
     if (expandedSegment === segKey) { setExpandedSegment(null); setSegmentClients(null); return; }
@@ -538,9 +560,15 @@ export default function ActionsPage() {
     <div style={{ padding: 24, background: T.bg, minHeight: '100vh', fontFamily: 'system-ui, sans-serif', color: T.text }}>
       <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
 
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, fontFamily: 'IBM Plex Mono, monospace' }}>Akcje CRM</h1>
-        <p style={{ fontSize: 13, color: T.muted, margin: '4px 0 0' }}>Segmenty, lead scoring i analiza prezentowa</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, fontFamily: 'IBM Plex Mono, monospace' }}>Akcje CRM</h1>
+          <p style={{ fontSize: 13, color: T.muted, margin: '4px 0 0' }}>Segmenty, lead scoring i analiza prezentowa</p>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <DateRangePicker onChange={setDateRange} defaultPreset="Ostatnie 90d" />
+          <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>Filtruje klientów aktywnych w wybranym okresie (wg daty ostatniego zamówienia)</div>
+        </div>
       </div>
 
       {error && (
@@ -638,10 +666,10 @@ export default function ActionsPage() {
         )}
 
         {/* ── Tab: Lead Scoring ── */}
-        {activeTab === 'leads' && <LeadScoringTab />}
+        {activeTab === 'leads' && <LeadScoringTab dateRange={dateRange} />}
 
         {/* ── Tab: Gift Analysis ── */}
-        {activeTab === 'gift' && <GiftAnalysisTab />}
+        {activeTab === 'gift' && <GiftAnalysisTab dateRange={dateRange} />}
       </div>
     </div>
   );

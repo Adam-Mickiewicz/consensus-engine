@@ -23,14 +23,25 @@ export async function GET(request) {
       return new Response(csv, { headers: { 'Content-Type': 'text/csv', 'Content-Disposition': `attachment; filename="hot-leads.csv"` } });
     }
 
+    const dateFrom = searchParams.get('date_from');
+    const dateTo = searchParams.get('date_to');
+
+    const distQuery = (dateFrom && dateTo)
+      ? supabase.rpc('get_lead_distribution_for_range', { p_from: dateFrom, p_to: dateTo })
+      : supabase.from('crm_lead_distribution').select('*');
+
+    const giftQuery = (dateFrom && dateTo)
+      ? supabase.rpc('get_gift_distribution_for_range', { p_from: dateFrom, p_to: dateTo })
+      : supabase.from('crm_gift_distribution').select('*');
+
     const [distRes, hotRes, giftRes] = await Promise.all([
-      supabase.from('crm_lead_distribution').select('*'),
+      distQuery,
       supabase.from('clients_360')
         .select('client_id,legacy_segment,rfm_segment,ltv,orders_count,lead_score,lead_temperature,purchase_probability_30d,predicted_ltv_12m,top_domena,days_since_last_order')
         .eq('lead_temperature', 'Hot')
         .order('lead_score', { ascending: false })
         .limit(50),
-      supabase.from('crm_gift_distribution').select('*'),
+      giftQuery,
     ]);
 
     return Response.json({

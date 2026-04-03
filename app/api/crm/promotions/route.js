@@ -20,9 +20,13 @@ export async function GET(request) {
     // Also fetch raw promotions for calendar
     let promoQuery = supabase.from('promotions').select('id,promo_name,discount_type,discount_min,free_shipping,start_date,end_date,season,code_name').order('start_date', { ascending: false });
 
+    const dependencyQuery = (dateFrom && dateTo)
+      ? supabase.rpc('get_promo_dependency_for_range', { p_from: dateFrom, p_to: dateTo })
+      : supabase.from('crm_promo_dependency').select('*');
+
     const [scorecardRes, dependencyRes, seasonsRes, promoListRes] = await Promise.all([
       scorecardQuery,
-      supabase.from('crm_promo_dependency').select('*'),
+      dependencyQuery,
       supabase.from('crm_season_performance').select('*').order('season').order('year'),
       promoQuery,
     ]);

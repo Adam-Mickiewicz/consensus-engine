@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
+import DateRangePicker from '../components/DateRangePicker';
 import Tooltip from '../components/Tooltip';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -648,9 +649,16 @@ export default function PromotionsPage() {
   const [data, setData] = useState<{ scorecard: PromoScorecard[]; dependency: PromoDependency[]; seasons: SeasonPerformance[]; promotions: Promotion[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState({ from: '2017-01-01', to: new Date().toISOString().split('T')[0], label: 'Cała historia' });
+
   const load = useCallback(() => {
     setLoading(true); setError(null);
-    fetch('/api/crm/promotions')
+    const params = new URLSearchParams();
+    if (dateRange.label !== 'Cała historia') {
+      params.set('date_from', dateRange.from);
+      params.set('date_to', dateRange.to);
+    }
+    fetch(`/api/crm/promotions${params.toString() ? '?' + params : ''}`)
       .then((r) => r.json())
       .then((d) => {
         if (d.error) setError(d.error);
@@ -658,20 +666,26 @@ export default function PromotionsPage() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [dateRange.from, dateRange.to]);
 
   useEffect(() => { load(); }, [load]);
 
   return (
     <div style={{ padding: 24, background: T.bg, minHeight: '100vh', fontFamily: 'system-ui, sans-serif', color: T.text }}>
       {/* Header */}
-      <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, fontFamily: 'IBM Plex Mono, monospace' }}>
-          Promocje i efektywność
-        </h1>
-        <p style={{ fontSize: 13, color: T.muted, margin: '4px 0 0' }}>
-          Ocena wpływu promocji na przychód i retencję
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, fontFamily: 'IBM Plex Mono, monospace' }}>
+            Promocje i efektywność
+          </h1>
+          <p style={{ fontSize: 13, color: T.muted, margin: '4px 0 0' }}>
+            Ocena wpływu promocji na przychód i retencję
+          </p>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <DateRangePicker onChange={setDateRange} defaultPreset="Cała historia" />
+          <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>Filtruje klientów aktywnych w wybranym okresie (wg daty ostatniego zamówienia)</div>
+        </div>
       </div>
 
       {/* Tabs */}

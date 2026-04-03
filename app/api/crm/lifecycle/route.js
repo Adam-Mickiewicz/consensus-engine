@@ -9,13 +9,21 @@ export async function GET(request) {
     const dateFrom = searchParams.get('date_from');
     const dateTo = searchParams.get('date_to');
 
+    const funnelQuery = (dateFrom && dateTo)
+      ? sb.rpc('get_lifecycle_for_range',      { p_from: dateFrom, p_to: dateTo })
+      : sb.from('crm_lifecycle_funnel').select('*');
+
+    const matrixQuery = (dateFrom && dateTo)
+      ? sb.rpc('get_segment_risk_for_range',   { p_from: dateFrom, p_to: dateTo })
+      : sb.from('crm_segment_risk_matrix').select('*');
+
     const worldsQuery = (dateFrom && dateTo)
-      ? sb.rpc('get_worlds_for_range', { p_from: dateFrom, p_to: dateTo })
+      ? sb.rpc('get_worlds_clients_for_range', { p_from: dateFrom, p_to: dateTo })
       : sb.from('crm_worlds_performance').select('*');
 
     const [funnelRes, matrixRes, ladderRes, worldsRes] = await Promise.all([
-      sb.from('crm_lifecycle_funnel').select('*'),
-      sb.from('crm_segment_risk_matrix').select('*'),
+      funnelQuery,
+      matrixQuery,
       sb.from('crm_repeat_ladder').select('*'),
       worldsQuery,
     ]);

@@ -11,11 +11,14 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const segment = searchParams.get('segment');
+    const dateFrom = searchParams.get('date_from');
+    const dateTo = searchParams.get('date_to');
 
-    const { data: opportunities, error: e1 } = await supabase
-      .from('crm_opportunity_queue')
-      .select('*')
-      .order('sort_order', { ascending: true });
+    const opportunitiesQuery = (dateFrom && dateTo)
+      ? supabase.rpc('get_opportunities_for_range', { p_from: dateFrom, p_to: dateTo })
+      : supabase.from('crm_opportunity_queue').select('*').order('sort_order', { ascending: true });
+
+    const { data: opportunities, error: e1 } = await opportunitiesQuery;
 
     let segmentClients = null;
     if (segment) {

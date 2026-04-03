@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
+import DateRangePicker from '../components/DateRangePicker';
 import Tooltip from '../components/Tooltip';
 
 interface FunnelRow { stage: string; client_count: number; total_ltv: number; avg_ltv: number; avg_orders: number; }
@@ -724,26 +725,38 @@ export default function LifecyclePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('Lifecycle');
+  const [dateRange, setDateRange] = useState({ from: '2017-01-01', to: new Date().toISOString().split('T')[0], label: 'Cała historia' });
 
   const load = useCallback(() => {
     setLoading(true); setError(null);
-    fetch('/api/crm/lifecycle')
+    const params = new URLSearchParams();
+    if (dateRange.label !== 'Cała historia') {
+      params.set('date_from', dateRange.from);
+      params.set('date_to', dateRange.to);
+    }
+    fetch(`/api/crm/lifecycle${params.toString() ? '?' + params : ''}`)
       .then(r => r.json())
       .then((d: LifecycleData & { error?: string }) => {
         if (d.error) throw new Error(d.error);
         setData(d); setLoading(false);
       })
       .catch((e: Error) => { setError(e.message); setLoading(false); });
-  }, []);
+  }, [dateRange.from, dateRange.to]);
 
   useEffect(() => { load(); }, [load]);
 
   return (
     <div style={{ padding: 24, maxWidth: 1400, margin: '0 auto', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif' }}>
       <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
-      <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: '#1a1a1a', margin: 0, marginBottom: 6 }}>Lifecycle &amp; Segmenty</h1>
-        <div style={{ fontSize: 13, color: '#6b6b6b' }}>Struktura bazy klientów, RFM scoring i ścieżki zakupowe</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: '#1a1a1a', margin: 0, marginBottom: 6 }}>Lifecycle &amp; Segmenty</h1>
+          <div style={{ fontSize: 13, color: '#6b6b6b' }}>Struktura bazy klientów, RFM scoring i ścieżki zakupowe</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <DateRangePicker onChange={setDateRange} defaultPreset="Cała historia" />
+          <div style={{ fontSize: 11, color: '#6b6b6b', marginTop: 4 }}>Filtruje klientów aktywnych w wybranym okresie (wg daty ostatniego zamówienia)</div>
+        </div>
       </div>
 
       {/* Tab bar */}
