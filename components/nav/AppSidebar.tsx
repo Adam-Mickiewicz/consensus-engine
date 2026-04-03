@@ -33,6 +33,7 @@ const SUBCATEGORIES: Record<string, SubItem[]> = {
     { href: "/crm/compare",    label: "Porównanie grup" },
     { href: "/crm/traffic",     label: "Ruch & Pozyskanie" },
     { href: "/crm/import",      label: "Import / ETL", admin: true },
+    { href: "/crm/logs",        label: "Logi systemu",  admin: true },
   ],
   products: [],
   b2b: [],
