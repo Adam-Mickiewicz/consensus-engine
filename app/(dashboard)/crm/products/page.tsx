@@ -1,7 +1,7 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import DateRangePicker from '../components/DateRangePicker';
 
 interface ProductRow { product_name: string | null; ean: number | null; times_sold: number; total_quantity: number; total_revenue: number; unique_buyers: number; repeat_buyers: number; buyer_repeat_rate: number; promo_sales: number; promo_share_pct: number; collection: string | null; product_group: string | null; available: boolean | null; }
@@ -228,39 +228,132 @@ function SeasonsTab({ seasons }: { seasons: SeasonRow[] }) {
   );
 }
 
+function CrossSellPairsChart({ crossSell }: { crossSell: CrossSellRow[] }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const chartRef = useRef<any>(null);
+  const scriptAddedRef = useRef(false);
+  const renderFnRef = useRef<() => void>(() => {});
+
+  const top10 = crossSell.slice(0, 10);
+
+  const renderChart = useCallback(() => {
+    if (!canvasRef.current || !window.Chart || !top10.length) return;
+    if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
+    const labels = top10.map(r => {
+      const a = r.product_a.length > 22 ? r.product_a.slice(0, 22) + '…' : r.product_a;
+      const b = r.product_b.length > 22 ? r.product_b.slice(0, 22) + '…' : r.product_b;
+      return `${a} + ${b}`;
+    });
+    chartRef.current = new window.Chart(canvasRef.current, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{ data: top10.map(r => r.co_occurrence), backgroundColor: '#b8763a', borderRadius: 4, hoverBackgroundColor: '#9a6030' }],
+      },
+      options: {
+        indexAxis: 'y' as const,
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.raw} razy razem` } } },
+        scales: {
+          x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 10, family: 'IBM Plex Mono, monospace' }, color: '#6b6b6b' } },
+          y: { grid: { display: false }, ticks: { font: { size: 10, family: 'IBM Plex Mono, monospace' }, color: '#1a1a1a' } },
+        },
+      },
+    });
+  }, [top10]);
+
+  useEffect(() => { renderFnRef.current = renderChart; }, [renderChart]);
+  useEffect(() => {
+    if (window.Chart) { renderChart(); return () => { chartRef.current?.destroy(); chartRef.current = null; }; }
+    if (!scriptAddedRef.current) {
+      scriptAddedRef.current = true;
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+      s.onload = () => renderFnRef.current();
+      document.head.appendChild(s);
+    }
+    return () => { chartRef.current?.destroy(); chartRef.current = null; };
+  }, [renderChart]);
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 4 }}>Top 10 par — częstość kupowania razem</div>
+      <div style={{ fontSize: 11, color: '#6b6b6b', marginBottom: 12 }}>Długość paska = liczba zamówień zawierających oba produkty jednocześnie</div>
+      <div style={{ height: 320 }}><canvas ref={canvasRef} /></div>
+    </div>
+  );
+}
+
 function CrossSellTab({ crossSell }: { crossSell: CrossSellRow[] }) {
+  const [showTable, setShowTable] = useState(false);
   const top20 = crossSell.slice(0, 20);
+  const top10 = crossSell.slice(0, 10);
   const maxOcc = Math.max(...top20.map(r => r.co_occurrence), 1);
+
   return (
     <div>
       <div style={{ fontSize: 13, color: '#6b6b6b', marginBottom: 16 }}>
         Produkty najczęściej kupowane razem w jednym zamówieniu. Użyj do planowania bundli i rekomendacji.
       </div>
-      <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 12 }}>
-        <thead>
-          <tr style={{ borderBottom: '2px solid #e8e0d8' }}>
-            {['Produkt A','Produkt B','Razem (razy)',''].map(h => (
-              <th key={h} style={{ padding: '8px 10px', fontSize: 10, color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: h==='Razem (razy)'?'right':'left', background: '#faf8f5', borderBottom: '2px solid #e8e0d8' }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {top20.map((r, i) => (
-            <tr key={i} style={{ borderBottom: '1px solid #f0ece6' }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background='#faf8f5'}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background='transparent'}>
-              <td style={{ padding: '8px 10px', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.product_a}</td>
-              <td style={{ padding: '8px 10px', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.product_b}</td>
-              <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: '#b8763a' }}>{r.co_occurrence}</td>
-              <td style={{ padding: '8px 10px', width: 120 }}>
-                <div style={{ height: 6, background: '#f0ece6', borderRadius: 3 }}>
-                  <div style={{ height: '100%', width: `${r.co_occurrence/maxOcc*100}%`, background: '#b8763a', borderRadius: 3 }} />
+
+      {/* SEKCJA A: Para visualization */}
+      <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 12 }}>Pary produktowe — wizualizacja</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {top10.map((r, i) => {
+            const thickness = Math.max(2, Math.round(r.co_occurrence / maxOcc * 8));
+            const opacity = 0.3 + (r.co_occurrence / maxOcc) * 0.7;
+            const nameA = r.product_a.length > 28 ? r.product_a.slice(0, 28) + '…' : r.product_a;
+            const nameB = r.product_b.length > 28 ? r.product_b.slice(0, 28) + '…' : r.product_b;
+            return (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a1a', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.product_a}>{nameA}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 120 }}>
+                  <div style={{ flex: 1, height: thickness, background: `rgba(184,118,58,${opacity})`, borderRadius: thickness }} />
+                  <span style={{ fontSize: 10, color: '#b8763a', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', whiteSpace: 'nowrap' }}>{r.co_occurrence}×</span>
+                  <div style={{ flex: 1, height: thickness, background: `rgba(184,118,58,${opacity})`, borderRadius: thickness }} />
                 </div>
-              </td>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.product_b}>{nameB}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* SEKCJA B: Bar chart */}
+      {crossSell.length > 0 && <CrossSellPairsChart crossSell={crossSell} />}
+
+      {/* Tabela — zwinięta */}
+      <button onClick={() => setShowTable(s => !s)} style={{ padding: '6px 14px', background: 'none', border: '1px solid #e8e0d8', borderRadius: 4, fontSize: 12, color: '#6b6b6b', cursor: 'pointer', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 12 }}>
+        {showTable ? 'Ukryj tabelę szczegółów ↑' : 'Pokaż tabelę szczegółów ↓'}
+      </button>
+      {showTable && (
+        <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 12 }}>
+          <thead>
+            <tr style={{ borderBottom: '2px solid #e8e0d8' }}>
+              {['Produkt A','Produkt B','Razem (razy)',''].map(h => (
+                <th key={h} style={{ padding: '8px 10px', fontSize: 10, color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: h==='Razem (razy)'?'right':'left', background: '#faf8f5', borderBottom: '2px solid #e8e0d8' }}>{h}</th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {top20.map((r, i) => (
+              <tr key={i} style={{ borderBottom: '1px solid #f0ece6' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background='#faf8f5'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background='transparent'}>
+                <td style={{ padding: '8px 10px', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.product_a}</td>
+                <td style={{ padding: '8px 10px', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.product_b}</td>
+                <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: '#b8763a' }}>{r.co_occurrence}</td>
+                <td style={{ padding: '8px 10px', width: 120 }}>
+                  <div style={{ height: 6, background: '#f0ece6', borderRadius: 3 }}>
+                    <div style={{ height: '100%', width: `${r.co_occurrence/maxOcc*100}%`, background: '#b8763a', borderRadius: 3 }} />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
@@ -276,10 +369,144 @@ interface LaunchSummary {
   avg_repeat_pct: number; new_customer_attracted: number;
 }
 
+function LaunchBubbleChart({ products, benchmark30d }: { products: LaunchProduct[]; benchmark30d: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const chartRef = useRef<any>(null);
+  const scriptAddedRef = useRef(false);
+  const renderFnRef = useRef<() => void>(() => {});
+
+  const renderChart = useCallback(() => {
+    if (!canvasRef.current || !window.Chart || !products.length) return;
+    if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
+    const maxBuyers = Math.max(...products.map(p => p.unique_buyers), 1);
+    const points = products.map(p => {
+      const revPer30d = p.total_revenue * 30 / Math.max(p.days_since_launch, 1);
+      const aboveBenchmark = benchmark30d > 0 && revPer30d >= benchmark30d;
+      return {
+        x: new Date(p.launch_date).getTime(),
+        y: Math.round(p.total_revenue),
+        r: Math.max(4, Math.round(p.unique_buyers / maxBuyers * 24)),
+        label: p.product_name || '—',
+        buyers: p.unique_buyers,
+        bg: aboveBenchmark ? '#2d8a4e' : '#dd4444',
+      };
+    });
+    chartRef.current = new window.Chart(canvasRef.current, {
+      type: 'bubble',
+      data: {
+        datasets: [{
+          data: points,
+          backgroundColor: points.map(p => p.bg + 'bb'),
+          borderColor: points.map(p => p.bg),
+          borderWidth: 1,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx: any) => {
+                const p = points[ctx.dataIndex];
+                return [`${p.label}`, `Revenue: ${formatPLN(p.y)}`, `Kupcy: ${p.buyers}`];
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            type: 'time' as const,
+            time: { unit: 'month' as const },
+            grid: { color: 'rgba(0,0,0,0.04)' },
+            ticks: { font: { size: 10, family: 'IBM Plex Mono, monospace' }, color: '#6b6b6b' },
+            title: { display: true, text: 'Data premiery', color: '#6b6b6b', font: { size: 10 } },
+          },
+          y: {
+            grid: { color: 'rgba(0,0,0,0.04)' },
+            ticks: { font: { size: 10 }, color: '#6b6b6b', callback: (v: number) => Math.round(v / 1000) + 'K zł' },
+            title: { display: true, text: 'Revenue łączny', color: '#6b6b6b', font: { size: 10 } },
+          },
+        },
+      },
+    });
+  }, [products, benchmark30d]);
+
+  useEffect(() => { renderFnRef.current = renderChart; }, [renderChart]);
+  useEffect(() => {
+    const loadChart = () => renderFnRef.current();
+    if (window.Chart) { renderChart(); return () => { chartRef.current?.destroy(); chartRef.current = null; }; }
+    if (!scriptAddedRef.current) {
+      scriptAddedRef.current = true;
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+      s.onload = () => {
+        // Load chartjs-adapter-date-fns for time scale
+        const adapter = document.createElement('script');
+        adapter.src = 'https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js';
+        adapter.onload = loadChart;
+        document.head.appendChild(adapter);
+      };
+      document.head.appendChild(s);
+    }
+    return () => { chartRef.current?.destroy(); chartRef.current = null; };
+  }, [renderChart]);
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 4 }}>Timeline premier</div>
+      <div style={{ display: 'flex', gap: 16, fontSize: 11, color: '#6b6b6b', marginBottom: 12 }}>
+        <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#2d8a4e', marginRight: 4 }} />Powyżej benchmarku</span>
+        <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#dd4444', marginRight: 4 }} />Poniżej benchmarku</span>
+        <span>Rozmiar bąbla = liczba kupujących</span>
+      </div>
+      <div style={{ height: 320 }}><canvas ref={canvasRef} /></div>
+    </div>
+  );
+}
+
+function LaunchBenchmarkChart({ products, benchmark30d }: { products: LaunchProduct[]; benchmark30d: number }) {
+  const sorted = [...products].sort((a, b) => b.total_revenue - a.total_revenue).slice(0, 15);
+  const maxRev = Math.max(...sorted.map(p => p.total_revenue), 1);
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 4 }}>Revenue vs benchmark</div>
+      <div style={{ fontSize: 11, color: '#6b6b6b', marginBottom: 14 }}>
+        Linia referencyjna: benchmark avg 30d = <strong style={{ color: '#1a1a1a' }}>{formatPLN(benchmark30d)}</strong> · Zielony = powyżej · Czerwony = poniżej
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {sorted.map((p) => {
+          const revPer30d = p.total_revenue * 30 / Math.max(p.days_since_launch, 1);
+          const aboveBench = benchmark30d > 0 && revPer30d >= benchmark30d;
+          const barW = (p.total_revenue / maxRev) * 100;
+          const benchmarkW = benchmark30d > 0 ? Math.min((benchmark30d / maxRev) * 100, 99) : 0;
+          const name = (p.product_name || '—').length > 36 ? (p.product_name || '').slice(0, 36) + '…' : (p.product_name || '—');
+          return (
+            <div key={p.ean}>
+              <div style={{ fontSize: 10, color: '#1a1a1a', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.product_name || '—'}>{name}</div>
+              <div style={{ position: 'relative', height: 18, background: '#f0ece6', borderRadius: 3 }}>
+                <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${barW}%`, background: aboveBench ? '#2d8a4e' : '#dd4444', borderRadius: 3, opacity: 0.75 }} />
+                {benchmarkW > 0 && (
+                  <div style={{ position: 'absolute', left: `${benchmarkW}%`, top: 0, height: '100%', width: 2, background: '#b8763a', zIndex: 2 }} />
+                )}
+                <span style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', fontSize: 10, fontWeight: 700, color: aboveBench ? '#2d8a4e' : '#dd4444', fontFamily: 'IBM Plex Mono, monospace' }}>
+                  {formatPLN(p.total_revenue)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function LaunchMonitorTab() {
   const [products, setProducts] = useState<LaunchProduct[]>([]);
   const [summary, setSummary] = useState<LaunchSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showTable, setShowTable] = useState(false);
   const sk: React.CSSProperties = { background: 'linear-gradient(90deg,#e8e0d8 25%,#f0ece6 50%,#e8e0d8 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite', borderRadius: 8 };
 
   useEffect(() => {
@@ -304,20 +531,19 @@ function LaunchMonitorTab() {
     </div>
   );
 
-  // Benchmark: avg revenue per product in first 30d
   const benchmark30d = products.length > 0
     ? products.reduce((s, p) => s + (p.days_since_launch <= 30 ? p.total_revenue : p.total_revenue * 30 / Math.max(p.days_since_launch, 1)), 0) / products.length
     : 0;
 
   return (
     <div>
-      {/* KPI row */}
+      {/* SEKCJA A: KPI */}
       {summary && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 20 }}>
           {[
             { label: 'Premiery 12m', value: summary.total_launches.toString() },
             { label: 'Łączny revenue', value: formatPLN(summary.total_revenue) },
-            { label: 'Unikalnych kupców', value: summary.total_buyers.toLocaleString('pl-PL') },
+            { label: 'Śr. revenue / premiera', value: summary.total_launches > 0 ? formatPLN(summary.total_revenue / summary.total_launches) : '—' },
             { label: 'Nowych klientów', value: summary.new_customer_attracted.toLocaleString('pl-PL') + (summary.total_buyers > 0 ? ' (' + Math.round(summary.new_customer_attracted / summary.total_buyers * 100) + '%)' : '') },
           ].map(({ label, value }) => (
             <div key={label} style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
@@ -328,45 +554,50 @@ function LaunchMonitorTab() {
         </div>
       )}
 
-      {/* Benchmark note */}
-      <div style={{ fontSize: 12, color: '#6b6b6b', marginBottom: 12 }}>
-        Benchmark avg revenue 30d: <strong style={{ color: '#1a1a1a' }}>{formatPLN(benchmark30d)}</strong> ·
-        Zielony &gt;150% · Czerwony &lt;80%
-      </div>
+      {/* SEKCJA B: Bubble timeline */}
+      <LaunchBubbleChart products={products} benchmark30d={benchmark30d} />
 
-      {/* Table */}
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 12 }}>
-          <thead>
-            <tr style={{ background: '#faf8f5', borderBottom: '2px solid #e8e0d8' }}>
-              {['Produkt','Premiera','Dni','Revenue','Kupcy','Nowi kl.','Repeat%','vs benchmark'].map(h => (
-                <th key={h} style={{ padding: '8px 10px', fontSize: 10, color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: h === 'Produkt' ? 'left' : 'right', whiteSpace: 'nowrap' }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((p, i) => {
-              const revPer30d = p.total_revenue * 30 / Math.max(p.days_since_launch, 1);
-              const vsBenchmark = benchmark30d > 0 ? Math.round(revPer30d / benchmark30d * 100) : 0;
-              const benchColor = vsBenchmark > 150 ? '#2d8a4e' : vsBenchmark < 80 ? '#dd4444' : '#1a1a1a';
-              return (
-                <tr key={p.ean} style={{ borderBottom: '1px solid #f0ece6' }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#faf8f5'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
-                  <td style={{ padding: '8px 10px', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: i < 3 ? 700 : 400 }}>{p.product_name || '—'}</td>
-                  <td style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap', color: '#6b6b6b' }}>{new Date(p.launch_date).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' })}</td>
-                  <td style={{ padding: '8px 10px', textAlign: 'right', color: '#6b6b6b' }}>{p.days_since_launch}</td>
-                  <td style={{ padding: '8px 10px', textAlign: 'right', color: '#b8763a', fontWeight: 600 }}>{formatPLN(p.total_revenue)}</td>
-                  <td style={{ padding: '8px 10px', textAlign: 'right' }}>{p.unique_buyers.toLocaleString('pl-PL')}</td>
-                  <td style={{ padding: '8px 10px', textAlign: 'right', color: '#2d8a4e' }}>{p.new_customer_buyers.toLocaleString('pl-PL')}</td>
-                  <td style={{ padding: '8px 10px', textAlign: 'right', color: (p.repeat_buyer_pct ?? 0) >= 30 ? '#2d8a4e' : '#1a1a1a' }}>{p.repeat_buyer_pct != null ? p.repeat_buyer_pct + '%' : '—'}</td>
-                  <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: benchColor }}>{vsBenchmark}%</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {/* SEKCJA C: Benchmark bar */}
+      <LaunchBenchmarkChart products={products} benchmark30d={benchmark30d} />
+
+      {/* Tabela — zwinięta */}
+      <button onClick={() => setShowTable(s => !s)} style={{ padding: '6px 14px', background: 'none', border: '1px solid #e8e0d8', borderRadius: 4, fontSize: 12, color: '#6b6b6b', cursor: 'pointer', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 12 }}>
+        {showTable ? 'Ukryj tabelę szczegółów ↑' : 'Pokaż tabelę szczegółów ↓'}
+      </button>
+      {showTable && (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 12 }}>
+            <thead>
+              <tr style={{ background: '#faf8f5', borderBottom: '2px solid #e8e0d8' }}>
+                {['Produkt','Premiera','Dni','Revenue','Kupcy','Nowi kl.','Repeat%','vs benchmark'].map(h => (
+                  <th key={h} style={{ padding: '8px 10px', fontSize: 10, color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: h === 'Produkt' ? 'left' : 'right', whiteSpace: 'nowrap' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((p, i) => {
+                const revPer30d = p.total_revenue * 30 / Math.max(p.days_since_launch, 1);
+                const vsBenchmark = benchmark30d > 0 ? Math.round(revPer30d / benchmark30d * 100) : 0;
+                const benchColor = vsBenchmark > 150 ? '#2d8a4e' : vsBenchmark < 80 ? '#dd4444' : '#1a1a1a';
+                return (
+                  <tr key={p.ean} style={{ borderBottom: '1px solid #f0ece6' }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#faf8f5'}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
+                    <td style={{ padding: '8px 10px', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: i < 3 ? 700 : 400 }}>{p.product_name || '—'}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap', color: '#6b6b6b' }}>{new Date(p.launch_date).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' })}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right', color: '#6b6b6b' }}>{p.days_since_launch}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right', color: '#b8763a', fontWeight: 600 }}>{formatPLN(p.total_revenue)}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right' }}>{p.unique_buyers.toLocaleString('pl-PL')}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right', color: '#2d8a4e' }}>{p.new_customer_buyers.toLocaleString('pl-PL')}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right', color: (p.repeat_buyer_pct ?? 0) >= 30 ? '#2d8a4e' : '#1a1a1a' }}>{p.repeat_buyer_pct != null ? p.repeat_buyer_pct + '%' : '—'}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: benchColor }}>{vsBenchmark}%</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
