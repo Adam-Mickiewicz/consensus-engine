@@ -1,7 +1,7 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import DateRangePicker from '../components/DateRangePicker';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -258,17 +258,14 @@ export default function CohortsPage() {
 
   const load = useCallback(() => {
     setLoading(true); setError(null);
-    const params = new URLSearchParams();
-    if (dateRange.from) params.set('date_from', dateRange.from);
-    if (dateRange.to) params.set('date_to', dateRange.to);
-    fetch(`/api/crm/cohorts?${params}`)
+    fetch('/api/crm/cohorts')
       .then(r => r.json())
       .then((d: CohortData & { error?: string }) => {
         if (d.error) throw new Error(d.error);
         setData(d); setLoading(false);
       })
       .catch((e: Error) => { setError(e.message); setLoading(false); });
-  }, [dateRange.from, dateRange.to]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
@@ -282,7 +279,12 @@ export default function CohortsPage() {
     </div>
   );
 
-  const insights = generateInsights(data.retention, data.timeToSecond, data.byContext);
+  const filteredCohorts = useMemo(() => {
+    if (!data?.retention || !dateRange.from) return data?.retention || [];
+    return data.retention.filter(r => r.cohort_month >= dateRange.from && r.cohort_month <= dateRange.to);
+  }, [data?.retention, dateRange.from, dateRange.to]);
+
+  const insights = generateInsights(filteredCohorts, data.timeToSecond, data.byContext);
 
   return (
     <div style={{ padding: 24, maxWidth: 1400, margin: '0 auto', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif' }}>
@@ -293,7 +295,7 @@ export default function CohortsPage() {
 
       <DateRangePicker onChange={setDateRange} defaultPreset="Cała historia" />
 
-      <RetentionHeatmap retention={data.retention} />
+      <RetentionHeatmap retention={filteredCohorts} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 20 }}>
         <TimeToSecond data={data.timeToSecond} />
