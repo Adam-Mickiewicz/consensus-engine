@@ -2,7 +2,6 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
-import DateRangePicker from '../components/DateRangePicker';
 import Tooltip from '../components/Tooltip';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -649,14 +648,9 @@ export default function PromotionsPage() {
   const [data, setData] = useState<{ scorecard: PromoScorecard[]; dependency: PromoDependency[]; seasons: SeasonPerformance[]; promotions: Promotion[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState({ from: '', to: '', label: 'Ostatnie 12m' });
-
   const load = useCallback(() => {
     setLoading(true); setError(null);
-    const params = new URLSearchParams();
-    if (dateRange.from) params.set('date_from', dateRange.from);
-    if (dateRange.to) params.set('date_to', dateRange.to);
-    fetch(`/api/crm/promotions?${params}`)
+    fetch('/api/crm/promotions')
       .then((r) => r.json())
       .then((d) => {
         if (d.error) setError(d.error);
@@ -664,7 +658,7 @@ export default function PromotionsPage() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [dateRange]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
@@ -679,8 +673,6 @@ export default function PromotionsPage() {
           Ocena wpływu promocji na przychód i retencję
         </p>
       </div>
-
-      <DateRangePicker onChange={setDateRange} defaultPreset="Ostatnie 12m" />
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: 4, width: 'fit-content' }}>

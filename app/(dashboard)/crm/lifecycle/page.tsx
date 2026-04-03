@@ -2,7 +2,6 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
-import DateRangePicker from '../components/DateRangePicker';
 import Tooltip from '../components/Tooltip';
 
 interface FunnelRow { stage: string; client_count: number; total_ltv: number; avg_ltv: number; avg_orders: number; }
@@ -724,23 +723,18 @@ export default function LifecyclePage() {
   const [data, setData] = useState<LifecycleData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState({ from: '', to: '', label: 'Cała historia' });
   const [activeTab, setActiveTab] = useState<Tab>('Lifecycle');
-
 
   const load = useCallback(() => {
     setLoading(true); setError(null);
-    const params = new URLSearchParams();
-    if (dateRange.from) params.set('date_from', dateRange.from);
-    if (dateRange.to) params.set('date_to', dateRange.to);
-    fetch(`/api/crm/lifecycle?${params}`)
+    fetch('/api/crm/lifecycle')
       .then(r => r.json())
       .then((d: LifecycleData & { error?: string }) => {
         if (d.error) throw new Error(d.error);
         setData(d); setLoading(false);
       })
       .catch((e: Error) => { setError(e.message); setLoading(false); });
-  }, [dateRange]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
@@ -767,7 +761,6 @@ export default function LifecyclePage() {
 
       {activeTab === 'Lifecycle' && (
         <>
-          {activeTab === 'Lifecycle' && <DateRangePicker onChange={setDateRange} defaultPreset="Cała historia" />}
           {loading ? <Skeleton /> : error || !data ? (
             <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 32, textAlign: 'center' }}>
               <div style={{ color: '#dd4444', marginBottom: 12 }}>Błąd: {error}</div>
