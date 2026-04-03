@@ -239,7 +239,7 @@ function WinbackContent() {
             </div>
           </div>
           <div className="wb-filter-group">
-            <span className="wb-filter-label">Świat</span>
+            <span className="wb-filter-label">Domena</span>
             <select className="wb-select" value={searchParams.get("world") || ""} onChange={e => setParam("world", e.target.value)}>
               <option value="">Wszystkie</option>
               {worlds.map(w => <option key={w} value={w}>{w}</option>)}

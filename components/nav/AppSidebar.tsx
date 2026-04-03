@@ -27,7 +27,7 @@ const SUBCATEGORIES: Record<string, SubItem[]> = {
     { href: "/crm/clients",     label: "Klienci" },
     { href: "/crm/cohorts",     label: "Kohorty & Retencja" },
     { href: "/crm/lifecycle",   label: "Lifecycle & Segmenty" },
-    { href: "/crm/products",    label: "Produkty & Światy" },
+    { href: "/crm/products",    label: "Produkty & Domeny" },
     { href: "/crm/promotions",  label: "Promocje" },
     { href: "/crm/actions",     label: "Akcje CRM" },
     { href: "/crm/compare",    label: "Porównanie grup" },

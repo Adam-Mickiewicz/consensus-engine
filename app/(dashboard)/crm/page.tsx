@@ -43,9 +43,9 @@ const MODULES = [
   },
   {
     href: "/crm/products",
-    label: "Produkty & Światy",
+    label: "Produkty & Domeny",
     icon: "📦",
-    desc: "Performance produktów, światy, sezonowość, cross-sell, launch monitor",
+    desc: "Performance produktów, domeny, sezonowość, cross-sell, launch monitor",
     badge: null,
   },
   {

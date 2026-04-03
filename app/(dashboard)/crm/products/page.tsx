@@ -136,8 +136,8 @@ function WorldsTab({ worlds }: { worlds: WorldRow[] }) {
       <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 12 }}>
         <thead>
           <tr style={{ borderBottom: '2px solid #e8e0d8' }}>
-            {['World','Klienci','Revenue','Repeat rate','Avg LTV','VIP','Lost','Avg orders'].map(h => (
-              <th key={h} style={{ padding: '8px 10px', fontSize: 10, color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: h==='World'?'left':'right', background: '#faf8f5', borderBottom: '2px solid #e8e0d8' }}>{h}</th>
+            {['Domena','Klienci','Revenue','Repeat rate','Avg LTV','VIP','Lost','Avg orders'].map(h => (
+              <th key={h} style={{ padding: '8px 10px', fontSize: 10, color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: h==='Domena'?'left':'right', background: '#faf8f5', borderBottom: '2px solid #e8e0d8' }}>{h}</th>
             ))}
           </tr>
         </thead>
@@ -373,7 +373,7 @@ function LaunchMonitorTab() {
 
 const TABS = [
   { id: 'products', label: 'Produkty' },
-  { id: 'worlds', label: 'Światy' },
+  { id: 'worlds', label: 'Domeny' },
   { id: 'seasons', label: 'Sezonowość' },
   { id: 'crosssell', label: 'Cross-sell' },
   { id: 'launch', label: '🚀 Launch Monitor' },
@@ -415,7 +415,7 @@ export default function ProductsPage() {
   return (
     <div style={{ padding: 24, maxWidth: 1400, margin: '0 auto', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif' }}>
       <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: '#1a1a1a', margin: 0, marginBottom: 6 }}>Produkty &amp; Światy</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: '#1a1a1a', margin: 0, marginBottom: 6 }}>Produkty &amp; Domeny</h1>
         <div style={{ fontSize: 13, color: '#6b6b6b' }}>CRM perspective na asortyment i sezonowość</div>
       </div>
 

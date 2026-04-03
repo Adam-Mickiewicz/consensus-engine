@@ -267,7 +267,7 @@ export default function ClientsView() {
             </select>
           </div>
           <div className="cl-filter-group">
-            <span className="cl-filter-label">Świat</span>
+            <span className="cl-filter-label">Domena</span>
             <select className="cl-select" value={world} onChange={e => setParam("world", e.target.value)}>
               <option value="">Wszystkie</option>
               {worlds.map(w => <option key={w} value={w}>{w}</option>)}

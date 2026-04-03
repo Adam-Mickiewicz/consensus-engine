@@ -197,12 +197,12 @@ function WorldsBreakdown({ worlds }: { worlds: WorldRow[] }) {
   const maxLtv = Math.max(...worlds.map(w => w.total_ltv), 1);
   return (
     <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16, fontFamily: 'IBM Plex Mono, monospace' }}>Worlds breakdown</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16, fontFamily: 'IBM Plex Mono, monospace' }}>Domeny breakdown</div>
       <table style={{ borderCollapse: 'collapse', width: '100%' }}>
         <thead>
           <tr style={{ borderBottom: '2px solid #e8e0d8' }}>
-            {['World','Klienci','Revenue','Repeat%','Avg LTV','VIP','Lost'].map(h => (
-              <th key={h} style={{ padding: '6px 8px', fontSize: 10, color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: h==='World'?'left':'right' }}>{h}</th>
+            {['Domena','Klienci','Revenue','Repeat%','Avg LTV','VIP','Lost'].map(h => (
+              <th key={h} style={{ padding: '6px 8px', fontSize: 10, color: '#6b6b6b', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: h==='Domena'?'left':'right' }}>{h}</th>
             ))}
           </tr>
         </thead>

@@ -115,12 +115,12 @@ const ACTION_SUGGESTIONS: Record<string, { title: string; actions: string[]; tim
   vip_reactivation: {
     title: 'VIP do reanimacji',
     actions: [
-      'Personalizowany email z produktami z ulubionego świata klienta',
+      'Personalizowany email z produktami z ulubionej domeny klienta',
       'Ekskluzywny rabat -15% (niepubliczny, tylko dla VIP)',
       'SMS reminder z personalizowaną ofertą',
     ],
     timing: 'Natychmiast — każdy dzień to utracony przychód',
-    offer: 'Rabat % lub darmowa wysyłka + nowość z ulubionego świata',
+    offer: 'Rabat % lub darmowa wysyłka + nowość z ulubionej domeny',
   },
   second_order: {
     title: 'Konwersja na 2. zamówienie',
@@ -146,7 +146,7 @@ const ACTION_SUGGESTIONS: Record<string, { title: string; actions: string[]; tim
     title: 'Returning zagrożeni',
     actions: [
       'Automatyczny email retencyjny',
-      'Cross-sell z innego świata niż dotychczasowe zakupy',
+      'Cross-sell z innej domeny niż dotychczasowe zakupy',
       'Social proof — „inni klienci kupili też..."',
     ],
     timing: 'Gdy days_since_last_order > 1,3× avg_interval klienta',
@@ -212,7 +212,7 @@ function SegmentTable({ clients, segmentKey, onClose }: { clients: SegmentClient
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
           <thead style={{ position: 'sticky', top: 0, background: T.bg, zIndex: 1 }}>
             <tr>
-              {['Client ID','Segment','Risk','LTV','Zamówienia','Ostatnie zam.','Nieakt.','Świat'].map(h => (
+              {['Client ID','Segment','Risk','LTV','Zamówienia','Ostatnie zam.','Nieakt.','Domena'].map(h => (
                 <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase', whiteSpace: 'nowrap', borderBottom: `1px solid ${T.border}` }}>{h}</th>
               ))}
             </tr>
@@ -303,7 +303,7 @@ function LeadScoringTab() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead style={{ position: 'sticky', top: 0, background: T.bg, zIndex: 1 }}>
               <tr>
-                {['Client ID','Segment','Lead Score','Prob. 30d','Pred. LTV 12m','Nieakt.','Świat'].map(h => (
+                {['Client ID','Segment','Lead Score','Prob. 30d','Pred. LTV 12m','Nieakt.','Domena'].map(h => (
                   <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase', whiteSpace: 'nowrap', borderBottom: `1px solid ${T.border}` }}>{h}</th>
                 ))}
               </tr>

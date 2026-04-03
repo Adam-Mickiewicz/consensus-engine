@@ -79,7 +79,7 @@ export default function WorldsView({ data }: { data: WorldsData }) {
 
       <div className="wl-wrap">
         <h1 className="wl-title">Mapa Zainteresowań</h1>
-        <p className="wl-sub">DNA taksonomiczne bazy klientów — tagi, światy i filary marki Nadwyraz.com</p>
+        <p className="wl-sub">DNA taksonomiczne bazy klientów — tagi, domeny i filary marki Nadwyraz.com</p>
 
         <div className="wl-two">
           {/* Top granular tags */}
@@ -140,7 +140,7 @@ export default function WorldsView({ data }: { data: WorldsData }) {
         {/* Segment × World heatmap */}
         {data.heatmap.length > 0 && (
           <div className="wl-block">
-            <div className="wl-section">Heatmapa: Segment × Ulubiony Świat</div>
+            <div className="wl-section">Heatmapa: Segment × Ulubiona Domena</div>
             <div className="wl-card" style={{ overflowX: "auto" }}>
               <table className="wl-heat-table">
                 <thead>

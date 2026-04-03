@@ -68,7 +68,7 @@ function FilterPanel({ label, filters, onChange, worldOptions }: { label: string
           onChange={v => onChange({ ...filters, segments: v })} />
         <MultiSelect label="Risk" options={RISK_OPTIONS} selected={filters.risks}
           onChange={v => onChange({ ...filters, risks: v })} />
-        <MultiSelect label="Świat" options={worldOptions} selected={filters.worlds}
+        <MultiSelect label="Domena" options={worldOptions} selected={filters.worlds}
           onChange={v => onChange({ ...filters, worlds: v })} />
       </div>
     </div>
