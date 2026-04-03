@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
 import DateRangePicker from '../components/DateRangePicker';
+import Tooltip from '../components/Tooltip';
 
 interface FunnelRow { stage: string; client_count: number; total_ltv: number; avg_ltv: number; avg_orders: number; }
 interface MatrixRow { legacy_segment: string; risk_level: string; client_count: number; total_ltv: number; avg_ltv: number; avg_orders: number; }
@@ -378,10 +379,25 @@ function SegmentMigrationSection() {
 // RFM Tab
 // ─────────────────────────────────────────────────────────────────────────────
 
+const RFM_TOOLTIPS: Record<string, string> = {
+  Champions:        'Kupują często, niedawno i dużo. Najcenniejsi klienci.',
+  Loyal:            'Regularne zakupy z wysoką wartością zamówień.',
+  'Potential Loyal':'Niedawno aktywni, kupili kilka razy. Warto wzmocnić relację.',
+  Recent:           'Kupili niedawno, ale jeszcze mało. Potencjał na rozwój.',
+  Promising:        'Niedawny zakup, niska częstotliwość. Potrzebują zachęty do powrotu.',
+  'Need Attention': 'Średnia aktywność. Mogą odejść bez działania.',
+  'About to Sleep': 'Dawno nie kupili, ale mieli umiarkowaną aktywność.',
+  'At Risk':        'Wartościowi klienci, którzy przestają kupować. Pilna interwencja!',
+  'Cant Lose':      'Najcenniejsi klienci, którzy odchodzą. Natychmiastowe działanie!',
+  Hibernating:      'Dawno nieaktywni, niska wartość. Trudni do odzyskania.',
+  Lost:             'Bardzo dawno nie kupili. Reaktywacja wymaga silnej oferty.',
+  Other:            'Klienci, którzy nie pasują do żadnego standardowego segmentu.',
+};
+
 function RfmBadge({ segment }: { segment: string }) {
   const color = RFM_SEGMENT_COLORS[segment] || '#999';
   const isBorder = ['Cant Lose', 'At Risk', 'About to Sleep'].includes(segment);
-  return (
+  const badge = (
     <span style={{
       display: 'inline-block', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 700,
       background: isBorder ? '#fff' : color + '22',
@@ -390,6 +406,9 @@ function RfmBadge({ segment }: { segment: string }) {
       fontFamily: 'IBM Plex Mono, monospace',
     }}>{segment}</span>
   );
+  const tip = RFM_TOOLTIPS[segment];
+  if (!tip) return badge;
+  return <Tooltip text={tip}>{badge}</Tooltip>;
 }
 
 function RfmTab() {
@@ -464,7 +483,8 @@ function RfmTab() {
         {/* RFM Heatmap */}
         <div style={{ background: '#fff', border: '1px solid #e8e0d8', borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 4, fontFamily: 'IBM Plex Mono, monospace' }}>Heatmapa RFM — R × F</div>
-          <div style={{ fontSize: 11, color: '#6b6b6b', marginBottom: 16 }}>Kliknij komórkę → filtruj listę klientów</div>
+          <div style={{ fontSize: 11, color: '#6b6b6b', marginBottom: 4 }}>Kliknij komórkę → filtruj listę klientów</div>
+          <div style={{ fontSize: 11, color: '#6b6b6b', marginBottom: 16, fontStyle: 'italic' }}>Wiersze: Recency (R5=niedawno, R1=dawno). Kolumny: Frequency (F1=rzadko, F5=często). Liczba = klienci. Ciemniejszy = więcej.</div>
           <table style={{ borderCollapse: 'collapse', fontSize: 11 }}>
             <thead>
               <tr>

@@ -3,6 +3,7 @@ import React, { use, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import PIIAccessButton from "../../../../../components/auth/PIIAccessButton";
 import PIIMasked from "../../../../../components/crm/PIIMasked";
+import Tooltip from "../../components/Tooltip";
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 
@@ -28,6 +29,12 @@ const RISK_COLORS: Record<string, string> = {
 };
 const TEMP_COLORS: Record<string, string> = {
   Hot: "#dd4444", Warm: "#e6a817", Cool: "#3577b3", Cold: "#999999",
+};
+const TEMP_TOOLTIPS: Record<string, string> = {
+  Hot:  'Scoring ≥70. Bardzo wysokie prawdopodobieństwo zakupu. Kontaktuj natychmiast.',
+  Warm: 'Scoring 45–69. Dobre szanse na zakup. Warto wysłać ofertę.',
+  Cool: 'Scoring 20–44. Umiarkowane zainteresowanie. Utrzymuj kontakt.',
+  Cold: 'Scoring <20. Niskie szanse na zakup w krótkim terminie.',
 };
 const SEASON_COLORS: Record<string, string> = {
   wiosna: "#22c55e", spring: "#22c55e",
@@ -943,17 +950,23 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
               ...(profile.purchase_probability_30d != null ? [{ label: "Prawdop. zakupu 30d", val: `${Number(profile.purchase_probability_30d).toFixed(1)}%`, color: Number(profile.purchase_probability_30d) > 50 ? "#2d8a4e" : Number(profile.purchase_probability_30d) > 20 ? "#e6a817" : "#dd4444" }] : []),
               ...(profile.predicted_ltv_12m != null ? [{ label: "Prognoza LTV 12m", val: `${Number(profile.predicted_ltv_12m).toLocaleString("pl-PL", { maximumFractionDigits: 0 })} zł`, color: "#3577b3" }] : []),
               ...(profile.lead_score != null ? [{ label: "Scoring sprzedażowy", val: String(profile.lead_score), color: TEMP_COLORS[profile.lead_temperature ?? ""] ?? t.text }] : []),
-              ...(profile.lead_temperature ? [{ label: "Temperatura", val: profile.lead_temperature, color: TEMP_COLORS[profile.lead_temperature] ?? t.text }] : []),
-            ].map(({ label, val, color }) => (
+              ...(profile.lead_temperature ? [{ label: "Temperatura", val: profile.lead_temperature, color: TEMP_COLORS[profile.lead_temperature] ?? t.text, tooltip: TEMP_TOOLTIPS[profile.lead_temperature] }] : []),
+            ].map(({ label, val, color, tooltip }: { label: string; val: string; color: string; tooltip?: string }) => (
               <div key={label} style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color, fontVariantNumeric: "tabular-nums" }}>{val}</div>
-                <div style={{ fontSize: 10, color: t.textSub, marginTop: 2 }}>{label}</div>
+                <div style={{ fontSize: 10, color: t.textSub, marginTop: 2 }}>
+                  {tooltip ? <Tooltip text={tooltip}>{label}</Tooltip> : label}
+                </div>
               </div>
             ))}
             {/* Gift indicator */}
             <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: giftColor }}>🎁 {giftScore}%</div>
-              <div style={{ fontSize: 10, color: t.textSub, marginTop: 2 }}>Wskaźnik prezentowy</div>
+              <div style={{ fontSize: 10, color: t.textSub, marginTop: 2 }}>
+                <Tooltip text={giftScore >= 60 ? 'Klient głównie kupuje prezenty — wysoka sezonowość, produkty prezentowe, zestawy.' : giftScore >= 30 ? 'Mix zakupów — część dla siebie, część jako prezenty.' : 'Klient kupuje głównie dla siebie — niska korelacja z okazjami prezentowymi.'}>
+                  Wskaźnik prezentowy
+                </Tooltip>
+              </div>
               <div style={{ fontSize: 10, color: giftColor, marginTop: 2 }}>{giftLabel}</div>
             </div>
           </div>

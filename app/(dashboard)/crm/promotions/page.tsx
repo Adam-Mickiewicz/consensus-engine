@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
 import DateRangePicker from '../components/DateRangePicker';
+import Tooltip from '../components/Tooltip';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -108,12 +109,12 @@ function Skeleton() {
 
 // ─── Dependency Labels ────────────────────────────────────────────────────────
 
-const DEP_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  never_promo:    { label: 'Nigdy w promo',          color: T.success, bg: '#e8f5ee' },
-  low_promo:      { label: 'Niska zależność (<33%)',  color: '#1a7a3a', bg: '#d4edda' },
-  mixed:          { label: 'Mieszani (33–66%)',       color: '#8a6000', bg: '#fff3cd' },
-  promo_led:      { label: 'Promo-driven (66–90%)',   color: '#9a4800', bg: '#ffe5cc' },
-  promo_addicted: { label: 'Uzależnieni (>90%)',      color: T.danger,  bg: '#fde8e8' },
+const DEP_LABELS: Record<string, { label: string; color: string; bg: string; tooltip: string }> = {
+  never_promo:    { label: 'Nigdy w promo',          color: T.success, bg: '#e8f5ee', tooltip: 'Klienci, którzy nigdy nie kupili w trakcie promocji. Najcenniejszy segment — kupują po pełnej cenie.' },
+  low_promo:      { label: 'Niska zależność (<33%)',  color: '#1a7a3a', bg: '#d4edda', tooltip: 'Mniej niż 33% zamówień złożonych w promocji. Zdrowy profil zakupowy.' },
+  mixed:          { label: 'Mieszani (33–66%)',       color: '#8a6000', bg: '#fff3cd', tooltip: '33–66% zamówień w promo. Klienci wrażliwi na ceny, ale nie uzależnieni.' },
+  promo_led:      { label: 'Promo-driven (66–90%)',   color: '#9a4800', bg: '#ffe5cc', tooltip: '66–90% zamówień w promo. Wysoka wrażliwość cenowa — ryzyko utraty marży.' },
+  promo_addicted: { label: 'Uzależnieni (>90%)',      color: T.danger,  bg: '#fde8e8', tooltip: 'Ponad 90% zamówień złożonych w promocji. Krytyczne ryzyko marży — rozważ zmianę strategii.' },
 };
 
 const DEP_COLORS: Record<string, string> = {
@@ -257,12 +258,16 @@ function DependencyTab({ dependency }: { dependency: PromoDependency[] }) {
         </div>
         <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
           {dependency.map((row) => {
-            const cfg = DEP_LABELS[row.dependency_segment] || { label: row.dependency_segment, color: T.muted, bg: T.bg };
+            const cfg = DEP_LABELS[row.dependency_segment] || { label: row.dependency_segment, color: T.muted, bg: T.bg, tooltip: '' };
             const pct = total > 0 ? ((row.client_count / total) * 100).toFixed(1) : '0';
             return (
               <div key={row.dependency_segment} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <div style={{ width: 10, height: 10, borderRadius: 2, background: DEP_COLORS[row.dependency_segment] }} />
-                <span style={{ fontSize: 12, color: T.muted }}>{cfg.label} ({pct}%)</span>
+                <span style={{ fontSize: 12, color: T.muted }}>
+                  {cfg.tooltip
+                    ? <Tooltip text={cfg.tooltip}>{cfg.label} ({pct}%)</Tooltip>
+                    : <>{cfg.label} ({pct}%)</>}
+                </span>
               </div>
             );
           })}
@@ -283,7 +288,7 @@ function DependencyTab({ dependency }: { dependency: PromoDependency[] }) {
           </thead>
           <tbody>
             {dependency.map((row, i) => {
-              const cfg = DEP_LABELS[row.dependency_segment] || { label: row.dependency_segment, color: T.muted, bg: T.bg };
+              const cfg = DEP_LABELS[row.dependency_segment] || { label: row.dependency_segment, color: T.muted, bg: T.bg, tooltip: '' };
               return (
                 <tr key={row.dependency_segment} style={{ borderTop: i > 0 ? `1px solid ${T.border}` : undefined }}>
                   <td style={{ padding: '10px 14px' }}>

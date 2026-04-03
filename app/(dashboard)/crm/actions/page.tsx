@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
+import Tooltip from '../components/Tooltip';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -85,6 +86,14 @@ const T = {
   bg: '#f5f2ee', card: '#fff', border: '#e8e0d8',
   accent: '#b8763a', danger: '#dd4444', warning: '#e6a817',
   success: '#2d8a4e', info: '#3577b3', text: '#1a1a1a', muted: '#6b6b6b',
+};
+
+const OPP_TOOLTIPS: Record<string, string> = {
+  vip_reactivation:  'Najcenniejsi klienci (Diamond/Platinum) którzy odeszli. Priorytet #1.',
+  second_order:      'Okno 30-90 dni po 1. zakupie — kluczowy moment na konwersję.',
+  falling_frequency: 'Klienci z rosnącym interwałem zakupów — ryzyko uśpienia.',
+  returning_at_risk: 'Klienci powracający, którzy zaczynają odchodzić.',
+  dormant_loyals:    'Lojalni klienci, którzy przestali kupować — warto ich odzyskać.',
 };
 
 const URGENCY: Record<string, { color: string; bg: string; dot: string }> = {
@@ -562,7 +571,11 @@ export default function ActionsPage() {
                   const isExpanded = expandedSegment === opp.opportunity_type;
                   return (
                     <div key={opp.opportunity_type} style={{ background: isExpanded ? '#faf8f5' : T.card, border: `1px solid ${isExpanded ? T.accent : T.border}`, borderLeft: `4px solid ${urg.dot}`, borderRadius: 8, padding: 16 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: urg.color, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.3px' }}>{opp.label}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: urg.color, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                        {OPP_TOOLTIPS[opp.opportunity_type]
+                          ? <Tooltip text={OPP_TOOLTIPS[opp.opportunity_type]}>{opp.label}</Tooltip>
+                          : opp.label}
+                      </div>
                       <div style={{ fontSize: 11, color: T.muted, marginBottom: 10, lineHeight: 1.4 }}>{opp.description}</div>
                       <div style={{ fontSize: 28, fontWeight: 700, color: T.text, lineHeight: 1, marginBottom: 6 }}>{opp.client_count.toLocaleString('pl-PL')}</div>
                       <div style={{ fontSize: 12, color: T.muted, marginBottom: 2 }}>Revenue pool: <strong style={{ color: T.text }}>{formatPLN(opp.revenue_potential)}</strong></div>

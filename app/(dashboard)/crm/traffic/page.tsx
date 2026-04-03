@@ -593,7 +593,8 @@ function FunnelTab({ data }: { data: any }) {
   const rows: FunnelRow[] = data.funnel || [];
   return (
     <div>
-      <div style={{ fontSize: 12, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 16 }}>E-commerce funnel</div>
+      <div style={{ fontSize: 12, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>E-commerce funnel</div>
+      <div style={{ fontSize: 11, color: C.muted, marginBottom: 16, fontStyle: 'italic' }}>Ścieżka od wyświetlenia strony do zakupu. Procent = konwersja z poprzedniego kroku.</div>
       {rows.length === 0
         ? <div style={{ color: C.muted, fontSize: 13 }}>Brak danych. Upewnij się że GA4 zbiera eventy e-commerce.</div>
         : <FunnelView rows={rows} />
